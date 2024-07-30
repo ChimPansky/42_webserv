@@ -1,0 +1,12 @@
+# IDE
+.vscode
+
+# binaries
+build
+*.o
+*.d
+*.a
+*.out
+
+# debug syms
+.nfs*
