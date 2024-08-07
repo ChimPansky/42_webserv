@@ -17,6 +17,17 @@
 7) include what u use only, sort alphabetically.
 8) ifndef guard with full path instead of pragmas: src/webserver/cluster/Cluster.h #ifndef WS_WEBSERVER_CLUSTER_CLUSTER_H ...
 9) .cpp for source code, .h for headers
+10) getter for private var _c is c(), setter is set_c()
+11) if and loops always provide scope (even 1-liners), curly brace on same line:
+```
+if (a) {
+	...
+} else if (b) {
+   ...
+} else {
+   ...
+}
+```
 
 1) if class does not have private members it is a struct
 2) class either should have a state or be an interface. otherwise use free functions in a namespace
@@ -27,3 +38,36 @@
 7) Variables declared right before use, no empty declarations, outer namespace
 8) avoid #defines except include guards, prefer static const class variables
 9) c casts are forbidden
+10) simple types goes by value, complex types by const ref or ref. const when possible
+11) prefer refs to pointers
+
+```
+class A {
+  public:  // 2 spaces for access modifires instead of 4
+	A();
+	const std::string& c() const;
+	void set_c(const std::string& c);
+  private:
+    int _a;
+	bool _b;
+	std::string _c;
+}
+
+A::A(int a, bool b, const std::string& c)
+  : _a(a),  // 2 spaces init sign, 4 spaces
+    _b(b),
+	_c(c)
+{
+    // do smth, 4 spaces
+}
+
+const std::string& A::c() const
+{
+
+}
+
+void A::set_c(const std::string& c)
+{
+
+}
+```
