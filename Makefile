@@ -7,9 +7,8 @@ BUILD_DIR = build
 DEFAULT_CONF = conf/webserv.conf
 
 CC = c++
-CFLAGS = -std=c++98
-CFLAGS += -Wall -Werror -Wextra -Wpedantic
-CFLAGS += -g -Og #-fsanitize=address,undefined,leak
+CFLAGS += -Wall -Werror -Wextra -Wpedantic -std=c++98
+CFLAGS += -glldb -Og #-fsanitize=address,undefined,leak
 
 #IFLAGS = -I/usr/include -I./include
 #LFLAGS = -lm
