@@ -4,7 +4,8 @@
 ## Materials
 
 [How the web works: HTTP and CGI explained](https://www.garshol.priv.no/download/text/http-tut.html)
-https://www.codequoi.com/en/sockets-and-network-programming-in-c/
+
+[Sockets and network programming in C](https://www.codequoi.com/en/sockets-and-network-programming-in-c/)
 
 [Cookies (bonus)](https://medium.com/from-the-scratch/cookies-visualized-everything-you-ever-need-to-know-about-web-cookies-c5f3b403dc65)
 
