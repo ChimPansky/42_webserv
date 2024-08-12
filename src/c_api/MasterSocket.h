@@ -5,7 +5,9 @@
 #include <sys/socket.h>  // socket, bind
 #include <unistd.h>      // close
 
-#include "Socket.h"
+#include <memory>      // auto_ptr
+
+#include "SlaveSocket.h"
 
 namespace c_api {
 
@@ -16,11 +18,12 @@ class MasterSocket {
     MasterSocket(const MasterSocket&);
     MasterSocket& operator=(const MasterSocket&);
   public:
-    MasterSocket(in_addr_t ip, in_port_t port);
+    MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock = true);
     ~MasterSocket();
-    int sockfd() const;
+    int sockfd() const;  // technically breaks incapsulation. mb remove
+    std::auto_ptr<int*> accept();  // should it be here?
   private:
-    Socket _sock;
+    int _sockfd;
 };
 
 }  // namespace c_api

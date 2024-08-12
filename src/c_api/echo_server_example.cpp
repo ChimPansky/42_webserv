@@ -6,11 +6,14 @@ int main() {
     std::string ip = "127.0.0.1";
     unsigned short port = 12346;
     c_api::MasterSocket master(c_api::ipv4_from_string(ip), port);
+
     ::listen(master.sockfd(), SOMAXCONN);
+
     std::cout << "listening on " << ip << ":" << port << "..." << std::endl;
     struct sockaddr addr;
     socklen_t addr_len;
     int slave_socket_fd = -1;
+
     while (true) {
         slave_socket_fd = accept(master.sockfd(), &addr, &addr_len);
         if (slave_socket_fd == -1 && errno != EAGAIN) {
