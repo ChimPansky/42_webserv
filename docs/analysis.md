@@ -7,6 +7,8 @@
 
 [Sockets and network programming in C](https://www.codequoi.com/en/sockets-and-network-programming-in-c/)
 
+[open csf book, chapter 4, 5](https://w3.cs.jmu.edu/kirkpams/OpenCSF/Books/csf/html/index.html)
+
 [Cookies (bonus)](https://medium.com/from-the-scratch/cookies-visualized-everything-you-ever-need-to-know-about-web-cookies-c5f3b403dc65)
 
 
