@@ -4,7 +4,6 @@
 
 namespace c_api {
 
-// REUSEADDR in case port already open in the kernel but has no associated socket
 SlaveSocket::SlaveSocket(int fd)
   : _sockfd(fd)
 {}

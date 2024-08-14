@@ -17,11 +17,13 @@ class MasterSocket {
     MasterSocket();
     MasterSocket(const MasterSocket&);
     MasterSocket& operator=(const MasterSocket&);
+    
   public:
     MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock = true);
     ~MasterSocket();
     int sockfd() const;  // technically breaks incapsulation. mb remove
-    std::auto_ptr<int*> accept();  // should it be here?
+    int accept() const;
+
   private:
     int _sockfd;
 };

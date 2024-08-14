@@ -32,6 +32,13 @@ MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
     }
 }
 
+int MasterSocket::accept() const {
+    struct sockaddr addr;
+    socklen_t addr_len;
+    int client_fd = ::accept(_sockfd, &addr, &addr_len);
+    return client_fd;
+}
+
 // technically at this point socket must be unbinded
 //   probably with 'shutdown', which is not in the allowed funcs
 //   otherwise socket will be close but port still occupied
