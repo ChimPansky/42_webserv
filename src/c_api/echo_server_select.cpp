@@ -27,13 +27,13 @@ int main() {
         int maxfd = SlaveSockets.empty() ? master.sockfd() : std::max(master.sockfd(), *SlaveSockets.rbegin());
 
         /* on select wait for ready fds or timeout */
-        int num_of_fds = select(maxfd, &select_rd_set, /* write fds */ NULL, /* err fds */ NULL, /* timeout */ NULL);
+        int num_of_fds = select(maxfd + 1, &select_rd_set, /* write fds */ NULL, /* err fds */ NULL, /* timeout */ NULL);
         if (num_of_fds <= 0) {
             // select errors or empty set
             std::cout << " no connections :(" << std::endl;
             continue;
         }
-        for (int i = 0; i < maxfd; ++i) {
+        for (int i = 0; i <= maxfd; ++i) {
             set_it it;
             if (FD_ISSET(i, &select_rd_set) && ((it = SlaveSockets.find(i)) != SlaveSockets.end())) {
                 static char buf[1024];
@@ -41,9 +41,13 @@ int main() {
                 if (recv_sz <= 0 && errno != EAGAIN) {
                     close(*it);
                     SlaveSockets.erase(it);
+                    std::cout << "connection closed" << std::endl;
                 } else if (recv_sz != 0) {
                     buf[recv_sz] = 0;
-                    std::cout << buf << std::endl;
+                    std::cout << buf;
+                    if (buf[0] == '\0') {
+                        std::cout << std::endl;
+                    }
                     send(*it, buf, recv_sz, MSG_NOSIGNAL);
                     ++it;
                 }

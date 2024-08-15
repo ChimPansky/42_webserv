@@ -16,6 +16,7 @@ class Client {
     Client();
   public:
     Client(utils::unique_ptr<c_api::ClientSocket> s);
+    inline bool connection_closed() const { return _connection_closed; }
     class ClientReadCallback : public utils::ICallback {
       public:
         ClientReadCallback(Client& c);
@@ -27,8 +28,10 @@ class Client {
   private:
     utils::unique_ptr<c_api::ClientSocket> _client_sock;
     std::vector<char> _buf;  // string?
+    size_t _buf_send_idx;
     http::Request _rq;
     http::Response _rs;
+    bool _connection_closed;
 };
 
 #endif  // WS_CLIENT_H

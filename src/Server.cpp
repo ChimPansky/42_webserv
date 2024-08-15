@@ -31,5 +31,14 @@ int Server::MasterSocketCallback::call(int fd)
 }
 
 void Server::check_clients() {
-
+    client_iterator it = _clients.begin();
+    while (it != _clients.end()) {
+        if (it->second->connection_closed()) {
+            client_iterator tmp = it;
+            ++it;
+            _clients.erase(tmp);
+        } else {
+            ++it;
+        }
+    }
 }

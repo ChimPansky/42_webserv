@@ -35,6 +35,7 @@ class Server {
     std::string _name;
     c_api::MasterSocket _master_sock;
     std::map<int, utils::unique_ptr<Client> > _clients;
+    typedef std::map<int, utils::unique_ptr<Client> >::iterator client_iterator;
 };
 
 #endif  // WS_SERVER_H

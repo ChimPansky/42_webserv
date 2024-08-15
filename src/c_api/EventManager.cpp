@@ -51,13 +51,13 @@ int EventManager::check_with_select() {
         max_fd = std::max(_wr_sock.rbegin()->first, max_fd);
     }
     struct timeval timeout = {10, 0};
-    int num_of_fds = select(max_fd, &select_rd_set, &select_wr_set, /* err fds */ NULL, &timeout);
+    int num_of_fds = select(max_fd + 1, &select_rd_set, &select_wr_set, /* err fds */ NULL, &timeout);
     if (num_of_fds < 0) {
         // select errors or empty set, return error code?
         return 1;
     }
     // iterate over i here cuz call can change callbacks map
-    for (int i = 0; i < max_fd; ++i) {
+    for (int i = 0; i <= max_fd; ++i) {
         SockMapIt it;
         if (FD_ISSET(i, &select_rd_set) && ((it = _rd_sock.find(i)) != _rd_sock.end())) {
             it->second->call(i);

@@ -5,8 +5,8 @@
 #include <sys/socket.h>  // socket, bind
 #include <unistd.h>      // close
 
-// #include "ClientSocket.h"
-// #include "utils/unique_ptr.h"
+#include "ClientSocket.h"
+#include "utils/unique_ptr.h"
 
 namespace c_api {
 
@@ -22,7 +22,7 @@ class MasterSocket {
     ~MasterSocket();
     int sockfd() const;
     // check result for null!
-    // utils::unique_ptr<ClientSocket> accept() const;
+    utils::unique_ptr<ClientSocket> accept() const;
 
   private:
     int _sockfd;
