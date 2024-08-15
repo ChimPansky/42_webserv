@@ -8,13 +8,21 @@ DEFAULT_CONF = conf/webserv.conf
 
 CC = c++
 CFLAGS += -Wall -Werror -Wextra -Wpedantic -std=c++98
-CFLAGS += -glldb -Og #-fsanitize=address,undefined,leak
+CFLAGS += -g -Og #-fsanitize=address,undefined,leak
 
-#IFLAGS = -I/usr/include -I./include
+IFLAGS = -I./src
 #LFLAGS = -lm
 
 FILENAMES = \
-	webserv.cpp
+	c_api/ClientSocket.cpp \
+	c_api/EventManager.cpp \
+	c_api/MasterSocket.cpp \
+	c_api/utils.cpp \
+	Client.cpp \
+	Config.cpp \
+	Server.cpp \
+	ServerCluster.cpp \
+	main.cpp
 
 SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES))
 OBJ = $(SRC:%.cpp=$(BUILD_DIR)/%.o)

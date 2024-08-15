@@ -1,8 +1,6 @@
 #ifndef WS_CONFIG_H
 #define WS_CONFIG_H
 
-#include <vector>
-
 class Config {
   private:
     Config();

@@ -2,12 +2,14 @@
 #include "utils.h"
 #include <iostream>
 
+#include <errno.h>
+
 int main() {
     std::string ip = "127.0.0.1";
     unsigned short port = 12346;
     c_api::MasterSocket master(c_api::ipv4_from_string(ip), port);
 
-    ::listen(master.sockfd(), SOMAXCONN);
+    // ::listen(master.sockfd(), SOMAXCONN);
 
     std::cout << "listening on " << ip << ":" << port << "..." << std::endl;
     struct sockaddr addr;

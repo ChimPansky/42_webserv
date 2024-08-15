@@ -1,20 +1,19 @@
 #ifndef WS_SERVER_CLUSTER_H
 #define WS_SERVER_CLUSTER_H
 
-#include <memory>
 #include <vector>
 
 #include "Config.h"
 #include "Server.h"
-#include "utils/ICallback.h"
+#include "utils/unique_ptr.h"
 
 class ServerCluster {
   public:
     ServerCluster(const Config&);
     void Run();
   private:
-    std::vector<std::auto_ptr<Server> > _servers;
-    c_api::EventManager _event_manager;
+    std::vector<utils::unique_ptr<Server> > _servers;
+    typedef std::vector<utils::unique_ptr<Server> >::const_iterator ServersIt;
     bool _run;
 };
 

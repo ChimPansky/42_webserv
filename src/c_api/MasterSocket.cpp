@@ -32,12 +32,15 @@ MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
     }
 }
 
-int MasterSocket::accept() const {
-    struct sockaddr addr;
-    socklen_t addr_len;
-    int client_fd = ::accept(_sockfd, &addr, &addr_len);
-    return client_fd;
-}
+// utils::unique_ptr<ClientSocket> MasterSocket::accept() const {
+//     struct sockaddr addr;
+//     socklen_t addr_len;
+//     int client_fd = ::accept(_sockfd, &addr, &addr_len);
+//     if (client_fd < 0) {
+//         return utils::unique_ptr<ClientSocket>();
+//     }
+//     return utils::unique_ptr<ClientSocket>(new ClientSocket(client_fd));
+// }
 
 // technically at this point socket must be unbinded
 //   probably with 'shutdown', which is not in the allowed funcs
