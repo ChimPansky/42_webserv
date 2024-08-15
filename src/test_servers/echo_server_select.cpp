@@ -2,7 +2,6 @@
 #include <string>
 #include <algorithm>
 
-#include "utils.h"
 #include "MasterSocket.h"
 #include <errno.h>
 #include <iostream>
@@ -10,7 +9,7 @@
 int main() {
     std::string ip = "127.0.0.1";
     unsigned short port = 12346;
-    c_api::MasterSocket master(c_api::ipv4_from_string(ip), port);
+    c_api::MasterSocket master(INADDR_LOOPBACK, port);
     std::set<int> SlaveSockets;
 
     typedef std::set<int>::iterator set_it;
