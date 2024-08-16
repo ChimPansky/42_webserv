@@ -1,0 +1,11 @@
+compilation_database_dir: ./cache/bear
+output_directory: docs
+diagrams:
+  myproject_class:
+    type: class
+    glob:
+      - src/**.cpp
+    exclude:
+      namespaces:
+        - std
+        - uptr

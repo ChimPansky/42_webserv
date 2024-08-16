@@ -1,5 +1,9 @@
 build
+.cache
+.vscode
+
 *.o
 *.d
 
 a.out
+webserv
