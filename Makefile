@@ -59,7 +59,14 @@ run:
 debug:
 	./lldb $(NAME) $(DEFAULT_CONF)
 
+clang-uml:
+	mv compile_flags.txt bkp_compile_flags.txt
+	bear -- make
+	clang-uml
+	rm compile_commands.json
+	mv bkp_compile_flags.txt compile_flags.txt
+
 # valgrind:
 # 	valgrind --trace-children=yes --track-origins=yes --leak-check=full --show-leak-kinds=all --track-fds=all ./$(NAME) $(DEFAULT_CONF)
 
-.PHONY: all bonus clean fclean re run debug valgrind
+.PHONY: all bonus clean fclean re run debug valgrind clang-uml
