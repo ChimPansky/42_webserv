@@ -7,10 +7,13 @@
 namespace c_api {
 
 in_addr_t ipv4_from_string(const std::string& ip_str) {
-    in_addr_t ipv4 = 0;
+    if (ip_str == "localhost") {
+        return INADDR_LOOPBACK;
+    }
 
     std::stringstream iss(ip_str);
 
+    in_addr_t ipv4 = 0;
     for(int i = 0; i < 4; ++i) {
         in_addr_t part;
         iss >> part;
