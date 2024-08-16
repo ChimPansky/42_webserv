@@ -15,7 +15,15 @@ IFLAGS = -I./$(SOURCE_DIR)
 LDFLAGS =
 
 FILENAMES = \
-	webserv.cpp
+	c_api/ClientSocket.cpp \
+	c_api/EventManager.cpp \
+	c_api/MasterSocket.cpp \
+	c_api/utils.cpp \
+	Client.cpp \
+	Config.cpp \
+	Server.cpp \
+	ServerCluster.cpp \
+	main.cpp
 
 SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES))
 OBJ = $(SRC:%.cpp=$(BUILD_DIR)/%.o)
@@ -37,7 +45,7 @@ $(NAME): $(OBJ) $(LIBFT) $(LIBMLX)
 	@echo "$(GREEN)Executable $(NAME) created!$(DEF_COLOR)"
 
 bonus:
-	echo "no bonus yet"
+	@echo "$(RED)no bonus yet$(DEF_COLOR)"
 
 $(BUILD_DIR)/%.o : %.cpp
 	mkdir -p $(@D)
