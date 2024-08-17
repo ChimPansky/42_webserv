@@ -9,7 +9,7 @@ Server::Server(const std::string& name, in_addr_t ip, in_port_t port)
   : _name(name), _master_sock(ip, port)
 {
     c_api::EventManager::get()
-        .register_read_callback(_master_sock.sockfd(), utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
+        .RegisterReadCallback(_master_sock.sockfd(), utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
 }
 
 Server::MasterSocketCallback::MasterSocketCallback(Server& server)
@@ -17,10 +17,10 @@ Server::MasterSocketCallback::MasterSocketCallback(Server& server)
 {}
 
 // accept, create new client, register read callback for client,
-int Server::MasterSocketCallback::call(int fd)
+int Server::MasterSocketCallback::Call(int fd)
 {
     // assert fd = master.sockfd
-    utils::unique_ptr<c_api::ClientSocket> client_sock = _server._master_sock.accept();
+    utils::unique_ptr<c_api::ClientSocket> client_sock = _server._master_sock.Accept();
     if (fd < 0) {
         // error
         return -1;
@@ -30,7 +30,7 @@ int Server::MasterSocketCallback::call(int fd)
     return 0;
 }
 
-void Server::check_clients() {
+void Server::CheckClients() {
     client_iterator it = _clients.begin();
     while (it != _clients.end()) {
         if (it->second->connection_closed()) {

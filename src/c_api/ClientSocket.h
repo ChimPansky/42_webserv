@@ -17,8 +17,8 @@ class ClientSocket {
     ClientSocket(int sockfd);
     ~ClientSocket();
     int sockfd() const;
-    ssize_t  recv(std::vector<char>& buf, size_t sz = _buf_sz) const;
-    ssize_t  send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
+    ssize_t  Recv(std::vector<char>& buf, size_t sz = _buf_sz) const;
+    ssize_t  Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
   private:
     int _sockfd;
     static const size_t _buf_sz = 666;

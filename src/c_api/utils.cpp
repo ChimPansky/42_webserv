@@ -8,7 +8,7 @@ namespace c_api {
 
 // NOLINTBEGIN
 
-in_addr_t ipv4_from_string(const std::string& ip_str) {
+in_addr_t IPv4FromString(const std::string& ip_str) {
     if (ip_str == "localhost") {
         return INADDR_LOOPBACK;
     }
@@ -37,7 +37,7 @@ in_addr_t ipv4_from_string(const std::string& ip_str) {
     return ipv4;
 }
 
-std::string ipv4_to_string(in_addr_t ipv4) {
+std::string IPv4ToString(in_addr_t ipv4) {
     std::stringstream ss;
     ss << (ipv4 >> 24)
        << '.' << ((ipv4 >> 16) % 256)
@@ -55,10 +55,10 @@ std::string ipv4_to_string(in_addr_t ipv4) {
 int main() {
     std::string ip;
     ip = "127.0.0.1";
-    std::cout << ip << " == " << c_api::ipv4_to_string(INADDR_LOOPBACK) << std::endl;
-    std::cout << INADDR_LOOPBACK << " == " << c_api::ipv4_from_string(ip) << std::endl;
+    std::cout << ip << " == " << c_api::IPv4ToString(INADDR_LOOPBACK) << std::endl;
+    std::cout << INADDR_LOOPBACK << " == " << c_api::IPv4FromString(ip) << std::endl;
     ip = "0.0.0.0";
-    std::cout << ip << " == " << c_api::ipv4_to_string(INADDR_ANY) << std::endl;
-    std::cout << INADDR_ANY << " == " << c_api::ipv4_from_string(ip) << std::endl;
+    std::cout << ip << " == " << c_api::IPv4ToString(INADDR_ANY) << std::endl;
+    std::cout << INADDR_ANY << " == " << c_api::IPv4FromString(ip) << std::endl;
 }
 */
