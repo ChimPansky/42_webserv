@@ -9,11 +9,11 @@ Client::Client(utils::unique_ptr<c_api::ClientSocket> sock)
         .register_read_callback(_client_sock->sockfd(), utils::unique_ptr<utils::ICallback>(new ClientReadCallback(*this)));
 }
 
-Client::ClientReadCallback::ClientReadCallback(Client& c)
-  : _client(c)
+Client::ClientReadCallback::ClientReadCallback(Client& client)
+  : _client(client)
 {}
 
-int Client::ClientReadCallback::call(int) {
+int Client::ClientReadCallback::call(int /*fd*/) {
     // assert fd == client_sock.fd
     long bytes_recvdd = _client._client_sock->recv(_client._buf);
     if (bytes_recvdd <= 0) {

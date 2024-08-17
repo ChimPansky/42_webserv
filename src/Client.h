@@ -15,11 +15,11 @@ class Client {
     Client& operator=(const Client&);
     Client();
   public:
-    Client(utils::unique_ptr<c_api::ClientSocket> s);
+    Client(utils::unique_ptr<c_api::ClientSocket> client_sock);
     inline bool connection_closed() const { return _connection_closed; }
     class ClientReadCallback : public utils::ICallback {
       public:
-        ClientReadCallback(Client& c);
+        ClientReadCallback(Client& client);
         // read from sock,
         virtual int call(int fd);
       private:

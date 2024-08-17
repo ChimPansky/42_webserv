@@ -6,6 +6,8 @@
 
 namespace c_api {
 
+// NOLINTBEGIN
+
 in_addr_t ipv4_from_string(const std::string& ip_str) {
     if (ip_str == "localhost") {
         return INADDR_LOOPBACK;
@@ -43,6 +45,8 @@ std::string ipv4_to_string(in_addr_t ipv4) {
        << '.' << (ipv4 % 256);
     return ss.str();
 }
+
+// NOLINTEND
 
 }  // namespace c_api
 
