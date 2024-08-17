@@ -22,7 +22,7 @@ class MasterSocket {
     ~MasterSocket();
     int sockfd() const;
     // check result for null!
-    utils::unique_ptr<ClientSocket> accept() const;
+    utils::unique_ptr<ClientSocket> Accept() const;
 
   private:
     int _sockfd;
