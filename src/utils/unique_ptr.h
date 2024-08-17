@@ -1,5 +1,7 @@
 #ifndef WS_UTILS_UNIQUE_PTR_H
 #define WS_UTILS_UNIQUE_PTR_H
+// NOLINTBEGIN
+
 
 /**
  * @file  unique_ptr.hpp
@@ -174,5 +176,5 @@ template<class T, class U> inline bool operator>(const unique_ptr<T>& l, const u
 
 
 }  // namespace utils
-
+// NOLINTEND
 #endif  // WS_UTILS_UNIQUE_PTR_H

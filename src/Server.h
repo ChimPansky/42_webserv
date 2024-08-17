@@ -21,7 +21,7 @@ class Server {
     Server(const std::string& name, in_addr_t ip, in_port_t port);
     class MasterSocketCallback : public utils::ICallback {
       public:
-        MasterSocketCallback(Server& s);
+        MasterSocketCallback(Server& server);
         // accept, create new client, register read callback for client,
         virtual int call(int fd);
       private:
