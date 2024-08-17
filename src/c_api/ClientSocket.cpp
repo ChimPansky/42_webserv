@@ -40,7 +40,6 @@ ssize_t  ClientSocket::Recv(std::vector<char>& buf, size_t sz) const {
     return bytes_recvd;
 }
 
-// add it inside buf instead of realloc?
 ssize_t  ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const {
     if (idx + sz > buf.size()) {
         throw std::runtime_error("idx is too big");
