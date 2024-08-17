@@ -8,8 +8,9 @@
 Server::Server(const std::string& name, in_addr_t ip, in_port_t port)
   : _name(name), _master_sock(ip, port)
 {
-    c_api::EventManager::get()
-        .RegisterReadCallback(_master_sock.sockfd(), utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
+    c_api::EventManager::get().RegisterReadCallback(
+        _master_sock.sockfd(),
+        utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
 }
 
 Server::MasterSocketCallback::MasterSocketCallback(Server& server)
@@ -33,12 +34,13 @@ void Server::MasterSocketCallback::Call(int fd)
 void Server::CheckClients() {
     client_iterator it = _clients.begin();
     while (it != _clients.end()) {
-        if (it->second->connection_closed()) {
+        Client& client = *it->second;
+        if (client.connection_closed()) {
             client_iterator tmp = it;
             ++it;
             _clients.erase(tmp);
-        } else {
-            ++it;
+            continue;
         }
+        ++it;
     }
 }
