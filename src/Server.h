@@ -23,7 +23,7 @@ class Server {
       public:
         MasterSocketCallback(Server& server);
         // accept, create new client, register read callback for client,
-        virtual int Call(int fd);
+        virtual void Call(int fd);
       private:
         Server& _server;
     };

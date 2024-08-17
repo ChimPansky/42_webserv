@@ -22,7 +22,7 @@ class Client {
       public:
         ClientReadCallback(Client& client);
         // read from sock,
-        virtual int Call(int fd);
+        virtual void Call(int fd);
       private:
         Client& _client;
     };
