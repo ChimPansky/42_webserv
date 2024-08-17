@@ -1,4 +1,0 @@
--Ilib
--Isrc
--std=c++98
--xc++
