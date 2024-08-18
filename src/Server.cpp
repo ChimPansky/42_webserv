@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "c_api/EventManager.h"
+#include "c_api/utils.h"
 
 // create master socket, register read callback for master socket in event manager
 Server::Server(const std::string& name, in_addr_t ip, in_port_t port)
@@ -10,6 +11,11 @@ Server::Server(const std::string& name, in_addr_t ip, in_port_t port)
 {
     c_api::EventManager::get()
         .register_read_callback(_master_sock.sockfd(), utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
+    std::cout << "Server " << _name << " is listening on " << c_api::ipv4_to_string(ip) << ":" << port << " ..." << std::endl;
+}
+
+Server::~Server() {
+    std::cout << "Server " << _name << " was shut down." << std::endl;
 }
 
 Server::MasterSocketCallback::MasterSocketCallback(Server& server)

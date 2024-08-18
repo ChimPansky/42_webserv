@@ -19,6 +19,7 @@ class Server {
   public:
     // create master socket, register read callback for master socket in event manager
     Server(const std::string& name, in_addr_t ip, in_port_t port);
+    ~Server();
     class MasterSocketCallback : public utils::ICallback {
       public:
         MasterSocketCallback(Server& server);
