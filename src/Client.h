@@ -18,9 +18,19 @@ class Client {
     Client(utils::unique_ptr<c_api::ClientSocket> client_sock);
     ~Client();
     bool connection_closed() const;
+    bool IsRequestReady() const;
+    void ProcessNewData(ssize_t bytes_recvdd);
     class ClientReadCallback : public utils::ICallback {
       public:
         ClientReadCallback(Client& client);
+        // read from sock,
+        virtual void Call(int fd);
+      private:
+        Client& _client;
+    };
+    class ClientWriteCallback : public utils::ICallback {
+      public:
+        ClientWriteCallback(Client& client);
         // read from sock,
         virtual void Call(int fd);
       private:

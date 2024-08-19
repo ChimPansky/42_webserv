@@ -12,23 +12,29 @@ namespace c_api {
 class EventManager {
   public:
     enum MultiplexType {
-        SELECT = 0,
-        POLL = 1,
-        EPOLL = 2
+        MT_SELECT = 0,
+        MT_POLL = 1,
+        MT_EPOLL = 2
+    };
+    enum CallbackType {
+        CT_READ = 1,
+        CT_WRITE = 2,
+        CT_ANY = 3  // CT_ANY == CT_READ | CT_WRITE
     };
   private:
     EventManager();
     EventManager(const EventManager&);
     EventManager& operator=(const EventManager&);
-    EventManager(MultiplexType _mx_type = SELECT);
+    EventManager(MultiplexType _mx_type);
   public:
+    // use return to indicate error, eg, callback for fd already registered?
     int RegisterReadCallback(int, utils::unique_ptr<utils::ICallback>);
     int RegisterWriteCallback(int, utils::unique_ptr<utils::ICallback>);
-    void DeleteCallbacksByFd(int fd);
+    void DeleteCallbacksByFd(int fd, CallbackType cb_type = CT_ANY);
 
     // all select-poll-epoll logic goes in here
     int CheckOnce();
-    static void init(MultiplexType _mx_type = SELECT);
+    static void init(MultiplexType _mx_type);
     static EventManager& get();
   private:
     int _CheckWithSelect();

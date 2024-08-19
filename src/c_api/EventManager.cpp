@@ -22,13 +22,13 @@ void EventManager::init(EventManager::MultiplexType mx_type) {
 
 EventManager& EventManager::get() {
     if (!EventManager::_instance) {
-        init();
+        throw std::runtime_error("Event manager is not initialised");
     }
     return (*EventManager::_instance);
 }
 
 int EventManager::CheckOnce() {
-    if (_mx_type == SELECT) {
+    if (_mx_type == MT_SELECT) {
         return _CheckWithSelect();
     }
     return _CheckWithSelect();
@@ -43,7 +43,7 @@ int EventManager::_CheckWithSelect() {
         FD_SET(it->first, &select_rd_set);
     }
     for (SockMapIt it = _wr_sock.begin(); it != _wr_sock.end(); ++it) {
-        FD_SET(it->first, &select_rd_set);
+        FD_SET(it->first, &select_wr_set);
     }
     // _rd_sock is never empty as long as at least 1 master socket exist
     int max_fd = _rd_sock.rbegin()->first;
@@ -79,9 +79,13 @@ int EventManager::RegisterWriteCallback(int fd, utils::unique_ptr<utils::ICallba
     return 0;
 }
 
-void EventManager::DeleteCallbacksByFd(int fd) {
-     _wr_sock.erase(fd);
-     _rd_sock.erase(fd);
+void EventManager::DeleteCallbacksByFd(int fd, CallbackType type) {
+    if (type & CT_READ) {
+        _rd_sock.erase(fd);
+    }
+    if (type & CT_WRITE) {
+        _wr_sock.erase(fd);
+    }
 }
 
 }  // namespcae c_api

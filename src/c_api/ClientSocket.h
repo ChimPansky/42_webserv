@@ -1,13 +1,15 @@
 #ifndef WS_C_API_CLIENT_SOCKET_H
 #define WS_C_API_CLIENT_SOCKET_H
 
+#include <sys/types.h>
+
 #include <cstddef>
 #include <vector>
-#include <sys/types.h>
 
 namespace c_api {
 
 // socker binded to addr
+// consider add sockaddr_t to check for incoming ip?
 class ClientSocket {
   private:
     ClientSocket();
@@ -17,6 +19,8 @@ class ClientSocket {
     ClientSocket(int sockfd);
     ~ClientSocket();
     int sockfd() const;
+
+    // come up with a better signature for recv/send
     ssize_t  Recv(std::vector<char>& buf, size_t sz = _buf_sz) const;
     ssize_t  Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
   private:

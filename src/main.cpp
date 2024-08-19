@@ -10,6 +10,7 @@
 // opendir, readdir and closedir
 
 #include "ServerCluster.h"
+#include "c_api/EventManager.h"
 
 #include <iostream>
 #include <csignal>
@@ -25,7 +26,10 @@ int main(int ac, char **av) {
 		return 1;
 	}
 	signal(SIGINT, StopCluster);
-	ServerCluster::Start((Config(av[1])));  // curly braces is a dream
+	
+  c_api::EventManager::init(c_api::EventManager::MT_SELECT);
+	
+  ServerCluster::Start((Config(av[1])));  // curly braces is a dream
 											 // another approach is Config::parse which returns config,
 											 // but then copy c-tor for Configrequired, as RVO is not guaranteed
 	return 0;
