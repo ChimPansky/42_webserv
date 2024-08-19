@@ -1,10 +1,10 @@
-compilation_database_dir: ./cache/bear
+compilation_database_dir: .
 output_directory: docs
 diagrams:
   myproject_class:
     type: class
     glob:
-      - src/**.cpp
+      - src/main.cpp
     exclude:
       namespaces:
         - std

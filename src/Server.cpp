@@ -10,8 +10,8 @@ Server::Server(const std::string& name, in_addr_t ip, in_port_t port)
   : _name(name), _master_sock(ip, port)
 {
     c_api::EventManager::get()
-        .register_read_callback(_master_sock.sockfd(), utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
-    std::cout << "Server " << _name << " is listening on " << c_api::ipv4_to_string(ip) << ":" << port << " ..." << std::endl;
+        .RegisterReadCallback(_master_sock.sockfd(), utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
+    std::cout << "Server " << _name << " is listening on " << c_api::IPv4ToString(ip) << ":" << port << " ..." << std::endl;
 }
 
 Server::~Server() {
