@@ -30,7 +30,7 @@ class Server {
     };
     // if client is ready to write register wr callback,
     // if client timed out, rm it from map
-    void CheckClients();
+    void check_clients();
     const std::string& name();
   private:
     std::string _name;

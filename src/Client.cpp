@@ -6,7 +6,7 @@ Client::Client(utils::unique_ptr<c_api::ClientSocket> sock)
   : _client_sock(sock), _buf_send_idx(0), _connection_closed(false)
 {
     c_api::EventManager::get()
-        .RegisterReadCallback(_client_sock->sockfd(), utils::unique_ptr<utils::ICallback>(new ClientReadCallback(*this)));
+        .register_read_callback(_client_sock->sockfd(), utils::unique_ptr<utils::ICallback>(new ClientReadCallback(*this)));
 }
 
 Client::~Client() {

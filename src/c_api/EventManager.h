@@ -22,12 +22,12 @@ class EventManager {
     EventManager& operator=(const EventManager&);
     EventManager(MultiplexType _mx_type = SELECT);
   public:
-    int RegisterReadCallback(int, utils::unique_ptr<utils::ICallback>);
+    int register_read_callback(int, utils::unique_ptr<utils::ICallback>);
     int RegisterWriteCallback(int, utils::unique_ptr<utils::ICallback>);
     void DeleteCallbacksByFd(int fd);
 
     // all select-poll-epoll logic goes in here
-    int CheckOnce();
+    int check_once();
     static void init(MultiplexType _mx_type = SELECT);
     static EventManager& get();
   private:

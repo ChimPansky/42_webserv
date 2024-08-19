@@ -27,7 +27,7 @@ EventManager& EventManager::get() {
     return (*EventManager::_instance);
 }
 
-int EventManager::CheckOnce() {
+int EventManager::check_once() {
     if (_mx_type == SELECT) {
         return _CheckWithSelect();
     }
@@ -69,7 +69,7 @@ int EventManager::_CheckWithSelect() {
     return 0;
 }
 
-int EventManager::RegisterReadCallback(int fd, utils::unique_ptr<utils::ICallback> callback) {
+int EventManager::register_read_callback(int fd, utils::unique_ptr<utils::ICallback> callback) {
     _rd_sock.insert(std::make_pair(fd, callback));
     return 0;
 }

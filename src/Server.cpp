@@ -36,7 +36,7 @@ int Server::MasterSocketCallback::Call(int fd)
     return 0;
 }
 
-void Server::CheckClients() {
+void Server::check_clients() {
     client_iterator it = _clients.begin();
     while (it != _clients.end()) {
         if (it->second->connection_closed()) {

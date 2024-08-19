@@ -37,7 +37,7 @@ in_addr_t IPv4FromString(const std::string& ip_str) {
     return ipv4;
 }
 
-std::string IPv4ToString(in_addr_t ipv4) {
+std::string ipv4_to_string(in_addr_t ipv4) {
     std::stringstream ss;
     ss << (ipv4 >> 24)
        << '.' << ((ipv4 >> 16) % 256)
