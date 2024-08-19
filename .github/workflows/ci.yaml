@@ -60,7 +60,7 @@ jobs:
       - name: Set up test environment
         uses: ./.github/actions/setup
       - name: 🔨 Compile with Makefile
-        run: make CXX=clang++-12
+        run: make CXX="clang++-12"
   combine_compilation_test_results:
     name: Combine Compilation Test Results
     needs: compilation_test
