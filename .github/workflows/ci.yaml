@@ -1,0 +1,70 @@
+# .github/workflows/ci_workflow.yaml
+name: CI Workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  HOME: /home/runner
+
+jobs:
+  check-commit-message:
+    name: Check Commit Message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Title Format
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '\[(DOCS|FEAT|FIX|STYLE|DEVOPS|REFACTOR|PERF|TEST|CHORE)\] .+$'
+          error: 'Your PR title must contain a commit type like "[FIX]".'
+          excludeDescription: 'false'  # Check the entire commit message
+          excludeTitle: 'false'  # Do not exclude the title
+          checkAllCommitMessages: 'false'  # Check only the PR title, assuming it's the first commit
+        if: github.event_name == 'pull_request' && !contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch')
+      - name: Check Commit Type and Verb
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^(feat|fix|docs|style|refactor|perf|test|chore|devops): (Add|Remove|Update|Fix|Refactor|Improve).*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
+          error: 'Commit message must follow the format "<type>: <verb>. <description>". Valid types: feat, fix, docs, style, refactor, perf, test, chore. Valid verbs: Add, Remove, Update, Fix, Refactor, Improve, Test.'
+          excludeDescription: 'true' # optional: this excludes the description body of a pull request
+          excludeTitle: 'true' # optional: this excludes the title of a pull request
+          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
+      - name: Check Line Length
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^.{0,80}$'
+          error: 'The maximum line length of 80 characters is exceeded.'
+          excludeDescription: 'true' # optional: this excludes the description body of a pull request
+          excludeTitle: 'true' # optional: this excludes the title of a pull request
+          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
+        if: (!contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch'))
+  compilation_test:
+    name: Compilation Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang, clang-12]
+    steps:
+      - name: Checkout source branch of pull request
+        uses: actions/checkout@v4
+      - name: Set up test environment
+        uses: ./.github/actions/setup
+      - name: 🔨 Compile with Makefile
+        run: make CXX="${{ matrix.compiler }}"
+  combine_compilation_test_results:
+    name: Combine Compilation Test Results
+    needs: compilation_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Combine compilation test results
+        run: echo "All compilation tests finished"
