@@ -21,9 +21,9 @@ void ServerCluster::Start(const Config& config) {
     _run = true;
     ServerCluster cluster(config);
     while(_run) {
-        c_api::EventManager::get().check_once();
+        c_api::EventManager::get().CheckOnce();
         for (ServersIt it = cluster._servers.begin(); it != cluster._servers.end(); ++it) {
-            (*it)->check_clients();
+            (*it)->CheckClients();
         }
     }
 }
