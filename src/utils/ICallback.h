@@ -9,8 +9,10 @@ namespace utils {
 //   has to be copyable cuz fuck cpp98, so no values inside, refs only
 class ICallback {
   public:
-    // possible returns for errcodes, rm sock from listening, so on
-    virtual int Call(int fd) = 0;
+    // possible returns for errcodes
+    // possible args for assert right fd
+    // consider changing to void Call()
+    virtual void Call(int fd) = 0;
     virtual ~ICallback() {};
 };
 

@@ -22,17 +22,15 @@ Client::ClientReadCallback::ClientReadCallback(Client& client)
   : _client(client)
 {}
 
-int Client::ClientReadCallback::Call(int /*fd*/) {
+void Client::ClientReadCallback::Call(int /*fd*/) {
     // assert fd == client_sock.fd
     long bytes_recvdd = _client._client_sock->Recv(_client._buf);
     if (bytes_recvdd <= 0) {
       // close connection
       _client._connection_closed = true;
       std::cout << "Connection closed" << std::endl;
-      return 0;
     }
     std::cout << bytes_recvdd << " bytes recvd" << std::endl;
     std::cout.write(_client._buf.data(), _client._buf.size()) << std::flush;
     bytes_recvdd = _client._client_sock->Send(_client._buf, _client._buf_send_idx, bytes_recvdd);
-    return bytes_recvdd;
 }

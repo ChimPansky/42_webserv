@@ -23,17 +23,17 @@ Server::MasterSocketCallback::MasterSocketCallback(Server& server)
 {}
 
 // accept, create new client, register read callback for client,
-int Server::MasterSocketCallback::Call(int fd)
+void Server::MasterSocketCallback::Call(int fd)
 {
     // assert fd = master.sockfd
     utils::unique_ptr<c_api::ClientSocket> client_sock = _server._master_sock.Accept();
     if (fd < 0) {
         // error
-        return -1;
+        std::cerr << "Error accepting connection on " << _server._name << std::endl;
+        return ;
     }
     _server._clients[fd] = utils::unique_ptr<Client>(new Client(client_sock));
     std::cout << "New incoming connection on " << _server._name << std::endl;
-    return 0;
 }
 
 void Server::CheckClients() {
