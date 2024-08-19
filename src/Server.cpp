@@ -23,10 +23,10 @@ Server::MasterSocketCallback::MasterSocketCallback(Server& server)
 {}
 
 // accept, create new client, register read callback for client,
-int Server::MasterSocketCallback::call(int fd)
+int Server::MasterSocketCallback::Call(int fd)
 {
     // assert fd = master.sockfd
-    utils::unique_ptr<c_api::ClientSocket> client_sock = _server._master_sock.accept();
+    utils::unique_ptr<c_api::ClientSocket> client_sock = _server._master_sock.Accept();
     if (fd < 0) {
         // error
         return -1;
@@ -36,7 +36,7 @@ int Server::MasterSocketCallback::call(int fd)
     return 0;
 }
 
-void Server::check_clients() {
+void Server::CheckClients() {
     client_iterator it = _clients.begin();
     while (it != _clients.end()) {
         if (it->second->connection_closed()) {

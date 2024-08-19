@@ -10,7 +10,7 @@ namespace utils {
 class ICallback {
   public:
     // possible returns for errcodes, rm sock from listening, so on
-    virtual int call(int fd) = 0;
+    virtual int Call(int fd) = 0;
     virtual ~ICallback() {};
 };
 

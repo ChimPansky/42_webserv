@@ -27,14 +27,14 @@ EventManager& EventManager::get() {
     return (*EventManager::_instance);
 }
 
-int EventManager::check_once() {
+int EventManager::CheckOnce() {
     if (_mx_type == SELECT) {
-        return check_with_select();
+        return _CheckWithSelect();
     }
-    return check_with_select();
+    return _CheckWithSelect();
 }
 
-int EventManager::check_with_select() {
+int EventManager::_CheckWithSelect() {
     fd_set select_rd_set;
     fd_set select_wr_set;
     FD_ZERO(&select_rd_set);
@@ -60,23 +60,28 @@ int EventManager::check_with_select() {
     for (int i = 0; i <= max_fd; ++i) {
         SockMapIt it;
         if (FD_ISSET(i, &select_rd_set) && ((it = _rd_sock.find(i)) != _rd_sock.end())) {
-            it->second->call(i);
+            it->second->Call(i);
         }
         if (FD_ISSET(i, &select_wr_set) && ((it = _wr_sock.find(i)) != _wr_sock.end())) {
-            it->second->call(i);
+            it->second->Call(i);
         }
     }
     return 0;
 }
 
-int EventManager::register_read_callback(int fd, utils::unique_ptr<utils::ICallback> callback) {
+int EventManager::RegisterReadCallback(int fd, utils::unique_ptr<utils::ICallback> callback) {
     _rd_sock.insert(std::make_pair(fd, callback));
     return 0;
 }
 
-int EventManager::register_write_callback(int fd, utils::unique_ptr<utils::ICallback> callback) {
+int EventManager::RegisterWriteCallback(int fd, utils::unique_ptr<utils::ICallback> callback) {
     _wr_sock.insert(std::make_pair(fd, callback));
     return 0;
+}
+
+void EventManager::DeleteCallbacksByFd(int fd) {
+     _wr_sock.erase(fd);
+     _rd_sock.erase(fd);
 }
 
 }  // namespcae c_api

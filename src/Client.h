@@ -16,12 +16,13 @@ class Client {
     Client();
   public:
     Client(utils::unique_ptr<c_api::ClientSocket> client_sock);
-    inline bool connection_closed() const { return _connection_closed; }
+    ~Client();
+    bool connection_closed() const;
     class ClientReadCallback : public utils::ICallback {
       public:
         ClientReadCallback(Client& client);
         // read from sock,
-        virtual int call(int fd);
+        virtual int Call(int fd);
       private:
         Client& _client;
     };

@@ -24,13 +24,13 @@ class Server {
       public:
         MasterSocketCallback(Server& server);
         // accept, create new client, register read callback for client,
-        virtual int call(int fd);
+        virtual int Call(int fd);
       private:
         Server& _server;
     };
     // if client is ready to write register wr callback,
     // if client timed out, rm it from map
-    void check_clients();
+    void CheckClients();
     const std::string& name();
   private:
     std::string _name;

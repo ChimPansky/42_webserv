@@ -32,7 +32,7 @@ MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
     }
 }
 
-utils::unique_ptr<ClientSocket> MasterSocket::accept() const {
+utils::unique_ptr<ClientSocket> MasterSocket::Accept() const {
     struct sockaddr addr;
     socklen_t addr_len;
     int client_fd = ::accept(_sockfd, &addr, &addr_len);

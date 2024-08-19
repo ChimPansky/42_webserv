@@ -30,7 +30,7 @@ int ClientSocket::sockfd() const {
     return _sockfd;
 }
 
-ssize_t  ClientSocket::recv(std::vector<char>& buf, size_t sz) const {
+ssize_t  ClientSocket::Recv(std::vector<char>& buf, size_t sz) const {
     ssize_t bytes_recvd = ::recv(_sockfd, (void*)_buf, std::min(sz, _buf_sz), MSG_NOSIGNAL);
     if (bytes_recvd > 0) {
         size_t init_sz = buf.size();
@@ -41,7 +41,7 @@ ssize_t  ClientSocket::recv(std::vector<char>& buf, size_t sz) const {
 }
 
 // add it inside buf instead of realloc?
-ssize_t  ClientSocket::send(const std::vector<char>& buf, size_t& idx, size_t sz) const {
+ssize_t  ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const {
     if (idx + sz > buf.size()) {
         throw std::runtime_error("idx is too big");
     }
