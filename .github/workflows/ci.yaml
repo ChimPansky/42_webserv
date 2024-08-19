@@ -52,15 +52,15 @@ jobs:
     timeout-minutes: 2
     strategy:
       fail-fast: false
-      matrix:
-        compiler: [g++, clang, clang-12]
+      #matrix:
+      #  compiler: [g++, clang, clang-12]
     steps:
       - name: Checkout source branch of pull request
         uses: actions/checkout@v4
       - name: Set up test environment
         uses: ./.github/actions/setup
       - name: 🔨 Compile with Makefile
-        run: make
+        run: make CXX=clang++-12
   combine_compilation_test_results:
     name: Combine Compilation Test Results
     needs: compilation_test
