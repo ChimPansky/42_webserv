@@ -1,5 +1,6 @@
 #include "MasterSocket.h"
 
+#include <cstring>
 #include <stdexcept>
 
 namespace c_api {
@@ -34,7 +35,8 @@ MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
 
 utils::unique_ptr<ClientSocket> MasterSocket::Accept() const {
     struct sockaddr addr;
-    socklen_t addr_len;
+    memset(&addr, 0, sizeof(addr));
+    socklen_t addr_len = 0;
     int client_fd = ::accept(_sockfd, &addr, &addr_len);
     if (client_fd < 0) {
         return utils::unique_ptr<ClientSocket>();
