@@ -4,6 +4,7 @@ build
 
 *.o
 *.d
+*.puml
 
 a.out
 webserv

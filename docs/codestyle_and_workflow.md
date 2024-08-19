@@ -8,17 +8,20 @@
 
 # Codestyle main points
 
-1) CamelCase for typenames (classes, typedefs, structs, enums, so on)
-2) snake_case for all the rest of the code
-3) indent with 4 spaces (never use tabs) (namespace does not increase indent) (change vs code settings if necessary: insert spaces(4) for tabs...)
-4) name private members of class with underscore (e.g.: _name, _type,...)
-5) no very long lines (aim 100 soft limit, 120 hard limit)
-6) no very big functions (50 lines soft limit, no hard limit)
-7) include what u use only, sort alphabetically.
-8) ifndef guard with full path instead of pragmas: src/webserver/cluster/Cluster.h #ifndef WS_WEBSERVER_CLUSTER_CLUSTER_H ...
-9) .cpp for source code, .h for headers
-10) getter for private var _c is c(), setter is set_c()
-11) if and loops always provide scope (even 1-liners), curly brace on same line:
+1) PascalCase: typenames (classes, typedefs, structs, enums, so on), Function names (including class methods, except getters/setters)
+2) snake_case: (var names, param names `int lines_cnt = 0`)
+3) UPPER_CASE: defines and macros (`#define WS_WEBSERVER_CLUSTER_CLUSTER_H`, `MAX_INT`)
+4) camelCase: constants (`static const int kBufSize = 666`)
+5) exceptions allowed when mke sense (follow c style or existing library style)
+6) indent with 4 spaces (never use tabs) (namespace does not increase indent) (change vs code settings if necessary: insert spaces(4) for tabs...)
+7) name private members of class with underscore (e.g.: _name, _type,...)
+8) no very long lines (aim 100 soft limit, 120 hard limit)
+9) no very big functions (50 lines soft limit, no hard limit)
+10) include what u use only, sort alphabetically.
+11) ifndef guard with full path instead of pragmas: src/webserver/cluster/Cluster.h #ifndef WS_WEBSERVER_CLUSTER_CLUSTER_H ...
+12) .cpp for source code, .h for headers
+13) getter for private var _c is c(), setter is set_c()
+14) if and loops always provide scope (even 1-liners), curly brace on same line:
 ```
 if (a) {
 	...
