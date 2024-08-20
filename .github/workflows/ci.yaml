@@ -31,7 +31,6 @@ jobs:
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^(build|chore|ci|docs|fix|perf|refactor|style|test)(?:\([^\)]*\))?(?:!)?: \S.*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
-          #'^(build|chore|ci|docs|style|refactor|perf|test): .*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
           error: 'Commit message must follow the format "<type>[(optional scope)][!]: <description>.". Valid types: build, chore, ci, docs, fix, style, perf, refactor, style, test.'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
