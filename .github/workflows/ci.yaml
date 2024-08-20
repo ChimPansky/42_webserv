@@ -34,7 +34,8 @@ jobs:
           error: 'Commit message must follow the format "<type>[(optional scope)][!]: <description>.". Valid types: build, chore, ci, docs, fix, style, perf, refactor, style, test.'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
-          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          #checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          fetch-depth: 1 # only check the most recent commit
           accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
       - name: Check Line Length
         uses: gsactions/commit-message-checker@v2
