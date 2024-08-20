@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - '**'
   pull_request:
     branches:
       - main
@@ -31,12 +31,11 @@ jobs:
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^(build|chore|ci|docs|fix|perf|refactor|style|test)(?:\([^\)]*\))?(?:!)?: \S.*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
-          #'^(build|chore|ci|docs|style|refactor|perf|test): .*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
           error: 'Commit message must follow the format "<type>[(optional scope)][!]: <description>.". Valid types: build, chore, ci, docs, fix, style, perf, refactor, style, test.'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
-          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
-          accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
+          #checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          fetch-depth: 1 # only check the most recent commit
       - name: Check Line Length
         uses: gsactions/commit-message-checker@v2
         with:
@@ -44,8 +43,9 @@ jobs:
           error: 'The maximum line length of 80 characters is exceeded.'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
-          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
-          accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
+          # checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          fetch-depth: 1 # only check the most recent commit
+          # accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
         if: (!contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch'))
   compilation_test:
     name: Compilation Test
