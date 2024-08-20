@@ -25,7 +25,7 @@ jobs:
           error: 'PR title hast to start with a commit type - for example [REFACTOR] - followed by a description".'
           excludeDescription: 'false'  # Check the entire commit message
           excludeTitle: 'false'  # Do not exclude the title
-          checkAllCommitMessages: 'false'  # Check only the PR title, assuming it's the first commit 
+          checkAllCommitMessages: 'false'  # Check only the PR title, assuming it's the first commit
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch')
       - name: Check Commit Type and Verb
         uses: gsactions/commit-message-checker@v2
