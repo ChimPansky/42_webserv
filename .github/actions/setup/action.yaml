@@ -6,13 +6,9 @@ runs:
   steps:
     - run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential clang-12 valgrind make
+        sudo apt-get install -y build-essential clang-12 make
       shell: bash
     - run: make --version
       shell: bash
-    # - run: g++ --version
-    #   shell: bash
-    # - run: clang --version
-    #   shell: bash
-    - run: valgrind --version
+    - run: clang-12 --version
       shell: bash

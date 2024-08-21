@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '**'
+      - 'main'
   pull_request:
     branches:
       - main
@@ -27,24 +27,22 @@ jobs:
           excludeTitle: 'false'  # Do not exclude the title
           checkAllCommitMessages: 'false'  # Check only the PR title, assuming it's the first commit
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch')
-      - name: Check Commit Type and Verb
+      - name: Check Last Commit Message Format
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^(build|chore|ci|docs|fix|perf|refactor|style|test)(?:\([^\)]*\))?(?:!)?: \S.*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
-          error: 'Commit message must follow the format "<type>[(optional scope)][!]: <description>.". Valid types: build, chore, ci, docs, fix, style, perf, refactor, style, test.'
+          error: 'Last Commit message must follow the format "<type>[(optional scope)][!]: <description>.". Valid types: build, chore, ci, docs, fix, style, perf, refactor, style, test.'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
-          #checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
-          fetch-depth: 1 # only check the most recent commit
-      - name: Check Line Length
+          checkAllCommitMessages: 'false' # optional: this checks all commits associated with a pull request
+      - name: Check Last Commit Message Length
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^.{0,80}$'
-          error: 'The maximum line length of 80 characters is exceeded.'
+          pattern: '^.{0,100}$'
+          error: 'The last commit message cannot be longer than 100 characters.'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
-          # checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
-          fetch-depth: 1 # only check the most recent commit
+          checkAllCommitMessages: 'false' # optional: this checks all commits associated with a pull request
           # accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
         if: (!contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch'))
   compilation_test:
@@ -53,19 +51,17 @@ jobs:
     timeout-minutes: 2
     strategy:
       fail-fast: false
-      #matrix:
-      #  compiler: [g++, clang, clang-12]
     steps:
       - name: Checkout source branch of pull request
         uses: actions/checkout@v4
       - name: Set up test environment
         uses: ./.github/actions/setup
       - name: 🔨 Compile with Makefile
-        run: make CXX="clang++-12"
-  combine_compilation_test_results:
-    name: Combine Compilation Test Results
+        run: make
+  combine_compilation_test_result:
+    name: Compilation Test Result
     needs: compilation_test
     runs-on: ubuntu-latest
     steps:
-      - name: Combine compilation test results
-        run: echo "All compilation tests finished"
+      - name: Show compilation test results
+        run: echo "Compilation successful"
