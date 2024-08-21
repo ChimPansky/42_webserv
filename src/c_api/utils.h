@@ -1,8 +1,9 @@
 #ifndef WS_C_API_UTILS_H
 #define WS_C_API_UTILS_H
 
-#include <string>
 #include <netinet/in.h>
+
+#include <string>
 
 namespace c_api {
 

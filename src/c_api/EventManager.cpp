@@ -9,32 +9,35 @@ namespace c_api {
 utils::unique_ptr<EventManager> EventManager::_instance(NULL);
 
 // private c'tor
-EventManager::EventManager(EventManager::MultiplexType mx_type)
-  : _mx_type(mx_type)
+EventManager::EventManager(EventManager::MultiplexType mx_type) : _mx_type(mx_type)
 {}
 
-void EventManager::init(EventManager::MultiplexType mx_type) {
+void EventManager::init(EventManager::MultiplexType mx_type)
+{
     if (EventManager::_instance) {
         throw std::runtime_error("event manager was already initialized");
     }
     EventManager::_instance.reset(new EventManager(mx_type));
 }
 
-EventManager& EventManager::get() {
+EventManager& EventManager::get()
+{
     if (!EventManager::_instance) {
         throw std::runtime_error("Event manager is not initialised");
     }
     return (*EventManager::_instance);
 }
 
-int EventManager::CheckOnce() {
+int EventManager::CheckOnce()
+{
     if (_mx_type == MT_SELECT) {
         return _CheckWithSelect();
     }
     return _CheckWithSelect();
 }
 
-int EventManager::_CheckWithSelect() {
+int EventManager::_CheckWithSelect()
+{
     fd_set select_rd_set;
     fd_set select_wr_set;
     FD_ZERO(&select_rd_set);
@@ -51,7 +54,8 @@ int EventManager::_CheckWithSelect() {
         max_fd = std::max(_wr_sock.rbegin()->first, max_fd);
     }
     struct timeval timeout = {10, 0};
-    int num_of_fds = select(max_fd + 1, &select_rd_set, &select_wr_set, /* err fds */ NULL, &timeout);
+    int num_of_fds =
+        select(max_fd + 1, &select_rd_set, &select_wr_set, /* err fds */ NULL, &timeout);
     if (num_of_fds < 0) {
         // select errors or empty set, return error code?
         return 1;
@@ -69,17 +73,20 @@ int EventManager::_CheckWithSelect() {
     return 0;
 }
 
-int EventManager::RegisterReadCallback(int fd, utils::unique_ptr<utils::ICallback> callback) {
+int EventManager::RegisterReadCallback(int fd, utils::unique_ptr<utils::ICallback> callback)
+{
     _rd_sock.insert(std::make_pair(fd, callback));
     return 0;
 }
 
-int EventManager::RegisterWriteCallback(int fd, utils::unique_ptr<utils::ICallback> callback) {
+int EventManager::RegisterWriteCallback(int fd, utils::unique_ptr<utils::ICallback> callback)
+{
     _wr_sock.insert(std::make_pair(fd, callback));
     return 0;
 }
 
-void EventManager::DeleteCallbacksByFd(int fd, CallbackType type) {
+void EventManager::DeleteCallbacksByFd(int fd, CallbackType type)
+{
     if (type & CT_READ) {
         _rd_sock.erase(fd);
     }
@@ -88,4 +95,4 @@ void EventManager::DeleteCallbacksByFd(int fd, CallbackType type) {
     }
 }
 
-}  // namespcae c_api
+}  // namespace c_api
