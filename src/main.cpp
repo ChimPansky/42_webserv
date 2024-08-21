@@ -27,7 +27,7 @@ int main(int ac, char **av)
         std::cerr << "usage: ws <path-to-config-file>" << std::endl;
         return 1;
     }
-    signal(SIGINT, StopCluster);
+    signal(SIGINT, StopCluster) ;
 
     c_api::EventManager::init(c_api::EventManager::MT_SELECT);
 
