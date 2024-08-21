@@ -22,7 +22,9 @@ jobs:
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '\[(BUILD|CHORE|CI|DOCS|FIX|PERF|REFACTOR|STYLE|TEST)\] \S.*'
-          error: 'PR title hast to start with a commit type - for example [REFACTOR] - followed by a description".'
+          error: 'PR title hast to start with a type - for example "[REFACTOR] optimize folder structure".
+                  Valid types: BUILD, CHORE, CI, DOCS, FIX, PERF, REFACTOR, STYLE, TEST.
+                  To fix this problem, delete this PR and create a new one!'
           excludeDescription: 'false'  # Check the entire commit message
           excludeTitle: 'false'  # Do not exclude the title
           checkAllCommitMessages: 'false'  # Check only the PR title, assuming it's the first commit
@@ -31,7 +33,8 @@ jobs:
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^(build|chore|ci|docs|fix|perf|refactor|style|test)(?:\([^\)]*\))?(?:!)?: \S.*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
-          error: 'Last Commit message must follow the format "<type>[(optional scope)][!]: <description>.". Valid types: build, chore, ci, docs, fix, style, perf, refactor, style, test.'
+          error: 'Last Commit message must follow the format "<type>[(optional scope)][!]: <description>.".
+                  Valid types: build, chore, ci, docs, fix, style, perf, refactor, style, test.'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
           checkAllCommitMessages: 'false' # optional: this checks all commits associated with a pull request
