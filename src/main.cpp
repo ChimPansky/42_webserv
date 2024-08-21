@@ -21,14 +21,15 @@ void StopCluster(int /*signum*/) {
 }
 
 int main(int ac, char **av) {
+    trigger compilation error for workflow test!
 	if (ac != 2) {
 		std::cerr << "usage: ws <path-to-config-file>" << std::endl;
 		return 1;
 	}
 	signal(SIGINT, StopCluster);
-	
+
   c_api::EventManager::init(c_api::EventManager::MT_SELECT);
-	
+
   ServerCluster::Start((Config(av[1])));  // curly braces is a dream
 											 // another approach is Config::parse which returns config,
 											 // but then copy c-tor for Configrequired, as RVO is not guaranteed
