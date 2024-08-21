@@ -14,7 +14,7 @@ MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
     if (_sockfd < 0) {
         throw std::runtime_error("cannot create socket");
     }
-	int optval = 1;
+    int optval = 1;
     ::setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
     struct sockaddr_in sa;
@@ -27,13 +27,15 @@ MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
         throw std::runtime_error("cannot bind master_socket to the address");
     }
 
-    // start listening for incoming connections, if more then SOMAXCONN are not accepted, rest will be ignored
+    // start listening for incoming connections, if more then SOMAXCONN are not accepted, rest will
+    // be ignored
     if (::listen(_sockfd, SOMAXCONN) != 0) {
         throw std::runtime_error("cannot bind master_socket");
     }
 }
 
-utils::unique_ptr<ClientSocket> MasterSocket::Accept() const {
+utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
+{
     struct sockaddr addr;
     memset(&addr, 0, sizeof(addr));
     socklen_t addr_len = 0;
@@ -49,12 +51,14 @@ utils::unique_ptr<ClientSocket> MasterSocket::Accept() const {
 //   otherwise socket will be close but port still occupied
 //   untill kernel wont free it
 //   search more
-MasterSocket::~MasterSocket() {
-	/* shutdown(_sockfd, SHUT_RDWR); */
+MasterSocket::~MasterSocket()
+{
+    /* shutdown(_sockfd, SHUT_RDWR); */
     close(_sockfd);
 }
 
-int MasterSocket::sockfd() const {
+int MasterSocket::sockfd() const
+{
     return _sockfd;
 }
 

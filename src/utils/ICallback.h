@@ -13,7 +13,7 @@ class ICallback {
     // possible args for assert right fd
     // consider changing to void Call()
     virtual void Call(int fd) = 0;
-    virtual ~ICallback() {};
+    virtual ~ICallback(){};
 };
 
 }  // namespace utils

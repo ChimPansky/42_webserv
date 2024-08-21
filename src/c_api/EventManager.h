@@ -21,11 +21,13 @@ class EventManager {
         CT_WRITE = 2,
         CT_ANY = 3  // CT_ANY == CT_READ | CT_WRITE
     };
+
   private:
     EventManager();
     EventManager(const EventManager&);
     EventManager& operator=(const EventManager&);
     EventManager(MultiplexType _mx_type);
+
   public:
     // use return to indicate error, eg, callback for fd already registered?
     int RegisterReadCallback(int, utils::unique_ptr<utils::ICallback>);
@@ -36,6 +38,7 @@ class EventManager {
     int CheckOnce();
     static void init(MultiplexType _mx_type);
     static EventManager& get();
+
   private:
     int _CheckWithSelect();
     int _CheckWithPoll();

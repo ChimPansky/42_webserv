@@ -7,20 +7,21 @@
 
 // create master socket, register read callback for master socket in event manager
 Server::Server(const std::string& name, in_addr_t ip, in_port_t port)
-  : _name(name), _master_sock(ip, port)
+    : _name(name), _master_sock(ip, port)
 {
     c_api::EventManager::get().RegisterReadCallback(
-        _master_sock.sockfd(), 
+        _master_sock.sockfd(),
         utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
-    std::cout << "Server " << _name << " is listening on " << c_api::IPv4ToString(ip) << ":" << port << " ..." << std::endl;
+    std::cout << "Server " << _name << " is listening on " << c_api::IPv4ToString(ip) << ":" << port
+              << " ..." << std::endl;
 }
 
-Server::~Server() {
+Server::~Server()
+{
     std::cout << "Server " << _name << " was shut down." << std::endl;
 }
 
-Server::MasterSocketCallback::MasterSocketCallback(Server& server)
-  : _server(server)
+Server::MasterSocketCallback::MasterSocketCallback(Server& server) : _server(server)
 {}
 
 // accept, create new client, register read callback for client,
@@ -31,13 +32,14 @@ void Server::MasterSocketCallback::Call(int fd)
     if (fd < 0) {
         // error
         std::cerr << "Error accepting connection on " << _server._name << std::endl;
-        return ;
+        return;
     }
     _server._clients[fd] = utils::unique_ptr<Client>(new Client(client_sock));
     std::cout << "New incoming connection on " << _server._name << std::endl;
 }
 
-void Server::CheckClients() {
+void Server::CheckClients()
+{
     client_iterator it = _clients.begin();
     while (it != _clients.end()) {
         Client& client = *it->second;
