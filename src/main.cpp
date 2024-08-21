@@ -21,7 +21,6 @@ void StopCluster(int /*signum*/) {
 }
 
 int main(int ac, char **av) {
-    trigger compilation error for workflow test!
 	if (ac != 2) {
 		std::cerr << "usage: ws <path-to-config-file>" << std::endl;
 		return 1;
