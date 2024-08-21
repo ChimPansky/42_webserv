@@ -10,5 +10,5 @@ runs:
       shell: bash
     - run: make --version
       shell: bash
-    - run: valgrind --version
+    - run: clang-12 --version
       shell: bash
