@@ -23,7 +23,7 @@ int main() {
             usleep(1000 * 1000);
             continue;
         }
-        std::cout << "opened new conection" << std::endl;
+        std::cout << "opened new connection" << std::endl;
         char buf[128];
         errno = 0;
         while (long a = recv(slave_socket_fd, buf, 127, MSG_NOSIGNAL)) {
