@@ -14,6 +14,7 @@ class Client {
     Client(const Client&);
     Client& operator=(const Client&);
     Client();
+
   public:
     Client(utils::unique_ptr<c_api::ClientSocket> client_sock);
     ~Client();
@@ -25,6 +26,7 @@ class Client {
         ClientReadCallback(Client& client);
         // read from sock,
         virtual void Call(int fd);
+
       private:
         Client& _client;
     };
@@ -33,9 +35,11 @@ class Client {
         ClientWriteCallback(Client& client);
         // read from sock,
         virtual void Call(int fd);
+
       private:
         Client& _client;
     };
+
   private:
     utils::unique_ptr<c_api::ClientSocket> _client_sock;
     std::vector<char> _buf;  // string?
