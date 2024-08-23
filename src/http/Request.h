@@ -8,13 +8,14 @@ enum Method {
     GET,
     POST,
     DELETE
-} enum Version {
+};
+enum Version {
     Ver0_9,
     Ver1_0,
     Ver1_1,
     Ver2,
     Ver3
-}
+};
 
 class Request {
   private:
