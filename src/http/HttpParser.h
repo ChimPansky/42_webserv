@@ -1,0 +1,4 @@
+#ifndef WS_HTTP_HTTPPARSER_H
+#define WS_HTTP_HTTPPARSER_H
+
+#endif  // WS_HTTP_HTTPPARSER_H
