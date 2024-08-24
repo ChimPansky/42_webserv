@@ -5,7 +5,6 @@
 
 #include "c_api/ClientSocket.h"
 #include "http/Request.h"
-#include "http/RequestParser.h"
 #include "http/Response.h"
 #include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
@@ -20,6 +19,7 @@ class Client {
     Client(utils::unique_ptr<c_api::ClientSocket> client_sock);
     ~Client();
     bool connection_closed() const;
+    const http::Request&   rq() const;
     bool IsRequestReady() const;
     void ProcessNewData(ssize_t bytes_recvdd);
     class ClientReadCallback : public utils::ICallback {
@@ -46,7 +46,6 @@ class Client {
     std::vector<char> _buf;  // string?
     size_t _buf_send_idx;
     http::Request _rq;
-    http::RequestParser _rq_parser;
     http::Response _rs;
     bool _connection_closed;
 };

@@ -1,8 +1,10 @@
 #include "Client.h"
 
+#include <cstddef>
 #include <iostream>
 
 #include "c_api/EventManager.h"
+#include "http/Request.h"
 
 Client::Client(utils::unique_ptr<c_api::ClientSocket> sock)
     : _client_sock(sock), _buf_send_idx(0), _connection_closed(false)
@@ -19,6 +21,10 @@ Client::~Client()
 bool Client::connection_closed() const
 {
     return _connection_closed;
+}
+
+const http::Request& Client::rq() const {
+    return _rq;
 }
 
 #include <cstring>
@@ -40,7 +46,9 @@ Connection: Closed\n\r\
 void Client::ProcessNewData(ssize_t bytes_recvdd)
 {
     std::cout << "\n" << bytes_recvdd << " bytes recvd" << std::endl;
-    if (/*request is ready*/ _rq.raw_request().size() > 30) {
+    if (IsRequestReady()) {
+        std::cout << _rq.raw_request() << std::endl;
+
         // if cgi run and register callbacks for cgi
         // else return static page
 
@@ -90,4 +98,10 @@ void Client::ClientWriteCallback::Call(int /*fd*/)
         _client._connection_closed = true;
         std::cout << _client._buf_send_idx << " bytes sent, connection closed" << std::endl;
     }
+}
+
+bool Client::IsRequestReady() const
+{
+    size_t rq_size = _rq.raw_request().size();
+    return (rq_size >= 4 && _rq.raw_request().substr(rq_size - 4) == http::httpEOF);
 }

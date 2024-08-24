@@ -1,3 +1,4 @@
+// maybe we dont even need this class. --> do the parsing directly in Request class...
 #ifndef WS_REQUEST_PARSER_H
 #define WS_REQUEST_PARSER_H
 

@@ -35,6 +35,7 @@ void Server::MasterSocketCallback::Call(int fd)
         return;
     }
     _server._clients[fd] = utils::unique_ptr<Client>(new Client(client_sock));
+    _server._clients[fd]->rq().Print();
     std::cout << "New incoming connection on " << _server._name << std::endl;
 }
 
