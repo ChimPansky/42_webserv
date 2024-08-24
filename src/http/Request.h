@@ -18,11 +18,15 @@ enum Version {
 };
 
 class Request {
+  public:
+    void AddChunkToRequest(const char* chunk, size_t chunk_sz);
+    const std::string& raw_request() const;
+
   private:
-    std::string _rawRequest;
-    http::Method _method;
+    std::string _raw_request;
+    // http::Method _method;
     std::string _url;  // later: put this in struct/class with path, query string (?). fragment (#)
-    http::Version _version;
+    // http::Version _version;
     std::map<std::string, std::string> _headers;
     std::string _body;
 };

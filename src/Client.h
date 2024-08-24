@@ -5,6 +5,7 @@
 
 #include "c_api/ClientSocket.h"
 #include "http/Request.h"
+#include "http/RequestParser.h"
 #include "http/Response.h"
 #include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
@@ -45,6 +46,7 @@ class Client {
     std::vector<char> _buf;  // string?
     size_t _buf_send_idx;
     http::Request _rq;
+    http::RequestParser _rq_parser;
     http::Response _rs;
     bool _connection_closed;
 };

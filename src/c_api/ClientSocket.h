@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <vector>
+#include "../http/Request.h"
 
 namespace c_api {
 
@@ -21,13 +22,14 @@ class ClientSocket {
     ~ClientSocket();
     int sockfd() const;
 
-    // come up with a better signature for recv/send
-    ssize_t Recv(std::vector<char>& buf, size_t sz = _buf_sz) const;
+    // come up with a better signature for recv/send -->
+    // Recv should take request and Send should take response as parameter
+    ssize_t Recv(http::Request& rq, size_t sz = _buf_sz) const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
 
   private:
     int _sockfd;
-    static const size_t _buf_sz = 666;
+    static const size_t _buf_sz = 10;
     char _buf[_buf_sz];
 };
 

@@ -39,9 +39,8 @@ Connection: Closed\n\r\
 
 void Client::ProcessNewData(ssize_t bytes_recvdd)
 {
-    std::cout << bytes_recvdd << " bytes recvd" << std::endl;
-    std::cout.write(_buf.data(), _buf.size()) << std::flush;
-    if (/*request is ready*/ _buf.size() > 20) {
+    std::cout << "\n" << bytes_recvdd << " bytes recvd" << std::endl;
+    if (/*request is ready*/ _rq.raw_request().size() > 30) {
         // if cgi run and register callbacks for cgi
         // else return static page
 
@@ -62,7 +61,8 @@ Client::ClientReadCallback::ClientReadCallback(Client& client) : _client(client)
 void Client::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    long bytes_recvdd = _client._client_sock->Recv(_client._buf);
+    long bytes_recvdd = _client._client_sock->Recv(
+        _client._rq);  // server receives from client connection --> store in Client-Request
     if (bytes_recvdd <= 0) {
         // close connection
         _client._connection_closed = true;
