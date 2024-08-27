@@ -3,39 +3,17 @@
 #include <iostream>
 namespace http {
 
+const char* httpEOF = "\r\n\r\n";
+
+Request::Request() : _rq_parser(*this) {}
+
 void    Request::AddChunkToRequest(const char* chunk, size_t chunk_sz)
 {
+   std::cout << "adding chunk to Request: " << chunk << std::endl;
     _raw_request.append(chunk, chunk_sz);
-    std::cout << "adding chunk: " << chunk << std::endl;
-}
+   std::cout << "parsing chunk with RequestParser... " << std::endl;
+    _rq_parser.ParseNext(chunk, chunk_sz);
 
-void    Request::ParseNext() {
-    while (_parse_idx < _raw_request.size()) {
-        char    c = _raw_request.data()[_parse_idx];
-        switch(_parse_state) {
-            case kStart:
-                _parse_str += c;
-                _parse_state = kMethod;
-                break;
-            case kMethod:
-                ParseMethod();
-                break;
-            case kURI:
-                ParseURI();
-                break;
-            case kVersion:
-                ParseVersion();
-                break;
-            case kHeaders:
-                ParseHeaders();
-                break;
-            case kBody:
-                ParseBody();
-                break;
-            default:
-                break;
-        }
-    }
 }
 
 const std::string& Request::raw_request() const
@@ -44,9 +22,11 @@ const std::string& Request::raw_request() const
 }
 
 void    Request::Print() const {
-    std::cout << "_parse_state: " << _parse_state << std::endl;
-    std::cout << "_parse_idc: " << _parse_idx << std::endl;
-    std::cout << "_error: " << _error << std::endl;
+    std::cout << "Request Data: " << std::endl;
+    std::cout << "_method: " << _method << std::endl;
+    std::cout << "_version: " << _version << std::endl;
+    std::cout << "_uri: " << _uri << std::endl;
+    //...
 }
 
 }  // namespace http

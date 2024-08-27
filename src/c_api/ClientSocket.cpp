@@ -31,12 +31,17 @@ int ClientSocket::sockfd() const
     return _sockfd;
 }
 
-ssize_t ClientSocket::Recv(http::Request& rq, size_t sz) const
+const char* ClientSocket::buf() const {
+    return _buf;
+}
+
+size_t ClientSocket::buf_sz() {
+    return _buf_sz;
+}
+
+ssize_t ClientSocket::Recv() const
 {
-    ssize_t bytes_recvd = ::recv(_sockfd, (void*)_buf, std::min(sz, _buf_sz), MSG_NOSIGNAL);
-    if (bytes_recvd > 0) {
-        rq.AddChunkToRequest(_buf, bytes_recvd);
-    }
+    ssize_t bytes_recvd = ::recv(_sockfd, (void*)_buf, _buf_sz, MSG_NOSIGNAL);
     return bytes_recvd;
 }
 

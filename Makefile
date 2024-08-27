@@ -24,6 +24,7 @@ FILENAMES = \
 	Server.cpp \
 	ServerCluster.cpp \
 	http/Request.cpp \
+	http/RequestParser.cpp \
 	main.cpp
 
 SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES))

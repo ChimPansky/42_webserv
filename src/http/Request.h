@@ -4,13 +4,15 @@
 #include <cstddef>
 #include <map>
 #include <string>
+
+#include "RequestParser.h"
 namespace http {
 enum Method {
     GET,
     POST,
     DELETE
 };
-enum Version {
+enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
     Ver0_9,
     Ver1_0,
     Ver1_1,
@@ -18,41 +20,40 @@ enum Version {
     Ver3
 };
 
-static const char* httpEOF = "\r\n\r\n";
+extern const char* httpEOF;
+
+class RequestParser;
 
 class Request {
   public:
-    void                AddChunkToRequest(const char* chunk, size_t chunk_sz);
-    void                ParseNext();
-    void                ParseMethod();
-    void                ParseURI();
-    void                ParseVersion();
-    void                ParseHeaders();
-    void                ParseBody();
-    const std::string&  raw_request() const;
-    void                Print() const;
+    Request();
+    void AddChunkToRequest(const char* chunk, size_t chunk_sz);
+
+    // Getters:
+    const std::string& raw_request() const;
+    Method method() const;
+    Version& version() const;
+
+    // Setters:
+    void set_method(Method);
+    void set_version(Version);
+    void set_uri(const std::string& uri);
+
+    void Print() const;
 
   private:
-    enum ParseState {
-        kStart,
-        kMethod,
-        kURI,
-        kVersion,
-        kHeaders,
-        kBody,
-        kEnd
-    };
-    ParseState  _parse_state;
-    std::string _parse_str;
-    size_t      _parse_idx;
+    RequestParser _rq_parser;
     std::string _raw_request;
-    // http::Method _method;
-    std::string _url;  // later: put this in struct/class with path, query string (?). fragment (#)
-    // http::Version _version;
+    Method _method;
+    Version _version;
+    std::string _uri;  // later: put this in struct/class with path, query string (?). fragment (#)
+    std::string _host;
+    std::string _user_agent;
+    std::string _accept;
     std::map<std::string, std::string> _headers;
+    size_t _body_len;
     std::string _body;
     int _error;
-
 };
 }  // namespace http
 

@@ -46,6 +46,7 @@ Connection: Closed\n\r\
 void Client::ProcessNewData(ssize_t bytes_recvdd)
 {
     std::cout << "\n" << bytes_recvdd << " bytes recvd" << std::endl;
+    _rq.AddChunkToRequest(_client_sock->buf(), bytes_recvdd);
     if (IsRequestReady()) {
         std::cout << _rq.raw_request() << std::endl;
 
@@ -69,8 +70,7 @@ Client::ClientReadCallback::ClientReadCallback(Client& client) : _client(client)
 void Client::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    long bytes_recvdd = _client._client_sock->Recv(
-        _client._rq);  // server receives from client connection --> store in Client-Request
+    long bytes_recvdd = _client._client_sock->Recv();  // server receives from client connection --> store in ClientSocket-Buffer
     if (bytes_recvdd <= 0) {
         // close connection
         _client._connection_closed = true;
@@ -102,6 +102,7 @@ void Client::ClientWriteCallback::Call(int /*fd*/)
 
 bool Client::IsRequestReady() const
 {
+    std::cout << "Checking if request is ready (looking for http::EOF...)" << std::endl;
     size_t rq_size = _rq.raw_request().size();
     return (rq_size >= 4 && _rq.raw_request().substr(rq_size - 4) == http::httpEOF);
 }

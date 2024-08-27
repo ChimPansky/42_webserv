@@ -21,15 +21,18 @@ class ClientSocket {
     ClientSocket(int sockfd);
     ~ClientSocket();
     int sockfd() const;
+    const char* buf() const;
+    size_t buf_sz();
 
     // come up with a better signature for recv/send -->
-    // Recv should take request and Send should take response as parameter
-    ssize_t Recv(http::Request& rq, size_t sz = _buf_sz) const;
+    // --> removed parameters for Recv
+    // --> always try to read clientsocket._buf_sz bytes into clientsocket._buf;
+    ssize_t Recv() const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
 
   private:
     int _sockfd;
-    static const size_t _buf_sz = 10;
+    static const size_t _buf_sz = 10;   // keeping this small while working on http-parsing
     char _buf[_buf_sz];
 };
 
