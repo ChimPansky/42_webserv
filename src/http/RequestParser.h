@@ -10,14 +10,14 @@ class Request;
 class RequestParser {
   private:
     enum ParseState {
-        kStart,
-        kMethod,
-        kURI,
-        kVersion,
-        kHeaders,
-        kBody,
-        kEnd,
-        kError
+        PS_START,
+        PS_METHOD,
+        PS_URI,
+        PS_VERSION,
+        PS_HEADERS,
+        PS_BODY,
+        PS_END,
+        PS_ERROR
     };
 
   public:

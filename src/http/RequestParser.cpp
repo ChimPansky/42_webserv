@@ -13,23 +13,23 @@ void RequestParser::ParseNext(const char* chunk, size_t chunk_sz)
     while (chunk_idx < chunk_sz) {
         char c = chunk[chunk_idx];
         switch (_parse_state) {
-            case kStart:
+            case PS_START:
                 _parse_str += c;
-                _parse_state = kMethod;
+                _parse_state = PS_METHOD;
                 break;
-            case kMethod:
+            case PS_METHOD:
                 ParseMethod();
                 break;
-            case kURI:
+            case PS_URI:
                 ParseURI();
                 break;
-            case kVersion:
+            case PS_VERSION:
                 ParseVersion();
                 break;
-            case kHeaders:
+            case PS_HEADERS:
                 ParseHeaders();
                 break;
-            case kBody:
+            case PS_BODY:
                 ParseBody();
                 break;
             default:

@@ -10,7 +10,7 @@
 
 namespace c_api {
 
-const size_t ClientSocket::_buf_sz;
+const size_t ClientSocket::_kBufSize;
 
 ClientSocket::ClientSocket(int fd) : _sockfd(fd)
 {}
@@ -35,13 +35,9 @@ const char* ClientSocket::buf() const {
     return _buf;
 }
 
-size_t ClientSocket::buf_sz() {
-    return _buf_sz;
-}
-
-ssize_t ClientSocket::Recv() const
+ssize_t ClientSocket::Recv()
 {
-    ssize_t bytes_recvd = ::recv(_sockfd, (void*)_buf, _buf_sz, MSG_NOSIGNAL);
+    ssize_t bytes_recvd = ::recv(_sockfd, (void*)_buf, _kBufSize, MSG_NOSIGNAL);
     return bytes_recvd;
 }
 

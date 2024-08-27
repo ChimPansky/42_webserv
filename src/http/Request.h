@@ -8,16 +8,16 @@
 #include "RequestParser.h"
 namespace http {
 enum Method {
-    GET,
-    POST,
-    DELETE
+    HTTP_GET,
+    HTTP_POST,
+    HTTP_DELETE
 };
 enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
-    Ver0_9,
-    Ver1_0,
-    Ver1_1,
-    Ver2,
-    Ver3
+    HTTP_0_9,
+    HTTP_1_0,
+    HTTP_1_1,
+    HTTP_2,
+    HTTP_3
 };
 
 extern const char* httpEOF;

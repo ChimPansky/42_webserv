@@ -20,7 +20,6 @@ class Client {
     ~Client();
     bool connection_closed() const;
     const http::Request&   rq() const;
-    bool IsRequestReady() const;
     void ProcessNewData(ssize_t bytes_recvdd);
     class ClientReadCallback : public utils::ICallback {
       public:
@@ -42,6 +41,8 @@ class Client {
     };
 
   private:
+    bool IsRequestReady() const;
+    
     utils::unique_ptr<c_api::ClientSocket> _client_sock;
     std::vector<char> _buf;  // string?
     size_t _buf_send_idx;
