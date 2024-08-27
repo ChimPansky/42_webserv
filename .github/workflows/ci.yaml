@@ -21,7 +21,7 @@ jobs:
       - name: Check Title Format
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '\[(BUILD|CHORE|CI|DOCS|FEAT|FIX|PERF|REFACTOR|STYLE|TEST)\] \S.*'
+          pattern: '\[(BUILD|CHORE|CI|DOCS|DRAFT|FEAT|FIX|PERF|REFACTOR|STYLE|TEST)\] \S.*'
           error: 'PR title hast to start with a commit type - for example [REFACTOR] - followed by a description".'
           excludeDescription: 'false'  # Check the entire commit message
           excludeTitle: 'false'  # Do not exclude the title
