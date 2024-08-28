@@ -31,7 +31,7 @@ jobs:
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^[a-z]+(?:\([^\)]*\))?(?:!)?: \S.*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
-          error: 'Commit messages must follow the format "<type>[(optional scope)][!]: <description>.". See https://stackoverflow.com/questions/8981194/changing-git-commit-message-after-push-given-that-no-one-pulled-from-remote for renames'
+          error: 'Commit messages must follow the format "<type>[(optional scope)][!]: <description>.". See changing-git-commit-message-after-push-given-that-no-one-pulled-from-remote on stackoverflow for renames'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
           checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
