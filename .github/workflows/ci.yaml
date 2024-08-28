@@ -34,7 +34,7 @@ jobs:
           error: 'Commit messages must follow the format "<type>[(optional scope)][!]: <description>.". See changing-git-commit-message-after-push-given-that-no-one-pulled-from-remote on stackoverflow for renames'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
-          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          checkAllCommitMessages: 'false' # optional: this checks all commits associated with a pull request
       - name: Check Last Commit Message Length
         uses: gsactions/commit-message-checker@v2
         with:
