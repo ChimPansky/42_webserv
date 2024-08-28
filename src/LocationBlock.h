@@ -20,8 +20,8 @@ class   LocationBlock : public HttpBlock {
     bool cgi() const;
     const std::string& cgi_path() const;
     const std::string& cgi_extension() const;
-    virtual void parse(std::ifstream& file);
-    virtual const std::vector<std::string>&    getTokens();
+    void parse(std::ifstream& file);
+    const std::vector<std::string>&    getTokens();
 };
 
 #endif  // WS_LOCATIONBLOCK_H

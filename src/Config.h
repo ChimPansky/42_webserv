@@ -1,13 +1,10 @@
 #ifndef WS_CONFIG_H
 #define WS_CONFIG_H
 
-#include "HttpBlock.h"
+#include "ServerBlock.h"
 #include <fstream>
 #include <string>
 #include <vector>
-
-class ServerBlock;
-class LocationBlock;
 
 // hopefully will be trivially-copyable
 class Config {

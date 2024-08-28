@@ -27,8 +27,8 @@ class HttpBlock {
     int client_max_body_size() const;
     int keepalive_timeout() const;
     const std::map<int, std::string>& error_pages();
-    virtual void  parse( std::ifstream& file );
-    virtual const std::vector<std::string>&    getTokens();
+    void  parse( std::ifstream& file );
+    const std::vector<std::string>&    getTokens();
 };
 
 #endif  // WS__HTTPBLOCK_H

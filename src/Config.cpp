@@ -29,24 +29,14 @@ const std::string& Config::use() const
     return _use;
 }
 
-const std::string&  ServerBlock::error_log() const
+const std::string&  Config::error_log() const
 {
     return _error_log;
 }
 
-const std::string&  ServerBlock::error_log_level() const
+const std::string&  Config::error_log_level() const
 {
     return _error_log_level;
-}
-
-const std::string&  ServerBlock::access_log() const
-{
-    return _access_log;
-}
-
-const std::string&  ServerBlock::access_log_level() const
-{
-    return _access_log_level;
 }
 
 const HttpBlock& Config::http_block()
