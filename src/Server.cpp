@@ -7,10 +7,10 @@
 
 // create master socket, register read callback for master socket in event manager
 Server::Server(const std::string& name, in_addr_t ip, in_port_t port)
-    : name_(name), _master_sock(ip, port)
+    : name_(name), master_sock_(ip, port)
 {
     c_api::EventManager::get().RegisterReadCallback(
-        _master_sock.sockfd(),
+        master_sock_.sockfd(),
         utils::unique_ptr<utils::ICallback>(new MasterSocketCallback(*this)));
     std::cout << "Server " << name_ << " is listening on " << c_api::IPv4ToString(ip) << ":" << port
               << " ..." << std::endl;
@@ -28,7 +28,7 @@ Server::MasterSocketCallback::MasterSocketCallback(Server& server) : server_(ser
 void Server::MasterSocketCallback::Call(int fd)
 {
     // assert fd = master.sockfd
-    utils::unique_ptr<c_api::ClientSocket> client_sock = server_._master_sock.Accept();
+    utils::unique_ptr<c_api::ClientSocket> client_sock = server_.master_sock_.Accept();
     if (fd < 0) {
         // error
         std::cerr << "Error accepting connection on " << server_.name_ << std::endl;

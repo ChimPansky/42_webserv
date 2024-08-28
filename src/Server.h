@@ -37,7 +37,7 @@ class Server {
 
   private:
     std::string name_;
-    c_api::MasterSocket _master_sock;
+    c_api::MasterSocket master_sock_;
     std::map<int, utils::unique_ptr<ClientSession> > clients_;
     typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
 };

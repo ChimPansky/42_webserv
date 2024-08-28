@@ -10,7 +10,7 @@
 
 namespace c_api {
 
-const size_t ClientSocket::_buf_sz;
+const size_t ClientSocket::buf_sz_;
 
 ClientSocket::ClientSocket(int fd) : sockfd_(fd)
 {}
@@ -33,7 +33,7 @@ int ClientSocket::sockfd() const
 
 ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t sz) const
 {
-    ssize_t bytes_recvd = ::recv(sockfd_, (void*)buf_, std::min(sz, _buf_sz), MSG_NOSIGNAL);
+    ssize_t bytes_recvd = ::recv(sockfd_, (void*)buf_, std::min(sz, buf_sz_), MSG_NOSIGNAL);
     if (bytes_recvd > 0) {
         size_t init_sz = buf.size();
         buf.resize(init_sz + bytes_recvd);

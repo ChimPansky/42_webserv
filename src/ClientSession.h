@@ -41,12 +41,12 @@ class ClientSession {
     };
 
   private:
-    utils::unique_ptr<c_api::ClientSocket> _client_sock;
+    utils::unique_ptr<c_api::ClientSocket> client_sock_;
     std::vector<char> buf_;  // string?
-    size_t _buf_send_idx;
+    size_t buf_send_idx_;
     http::Request rq_;
     http::Response rs_;
-    bool _connection_closed;
+    bool connection_closed_;
 };
 
 #endif  // WS_CLIENT_H
