@@ -19,7 +19,7 @@ FILENAMES = \
 	c_api/EventManager.cpp \
 	c_api/MasterSocket.cpp \
 	c_api/utils.cpp \
-	Client.cpp \
+	ClientSession.cpp \
 	Config.cpp \
 	Server.cpp \
 	ServerCluster.cpp \

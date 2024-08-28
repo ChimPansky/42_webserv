@@ -1,22 +1,22 @@
-#include "Client.h"
+#include "ClientSession.h"
 
 #include <iostream>
 
 #include "c_api/EventManager.h"
 
-Client::Client(utils::unique_ptr<c_api::ClientSocket> sock)
+ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock)
     : _client_sock(sock), _buf_send_idx(0), _connection_closed(false)
 {
     c_api::EventManager::get().RegisterReadCallback(
         _client_sock->sockfd(), utils::unique_ptr<utils::ICallback>(new ClientReadCallback(*this)));
 }
 
-Client::~Client()
+ClientSession::~ClientSession()
 {
     c_api::EventManager::get().DeleteCallbacksByFd(_client_sock->sockfd());
 }
 
-bool Client::connection_closed() const
+bool ClientSession::connection_closed() const
 {
     return _connection_closed;
 }
@@ -37,7 +37,7 @@ Connection: Closed\n\r\
 </body>\n\r\
 </html>\n\r"
 
-void Client::ProcessNewData(ssize_t bytes_recvdd)
+void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
 {
     std::cout << bytes_recvdd << " bytes recvd" << std::endl;
     std::cout.write(_buf.data(), _buf.size()) << std::flush;
@@ -56,10 +56,10 @@ void Client::ProcessNewData(ssize_t bytes_recvdd)
     }
 }
 
-Client::ClientReadCallback::ClientReadCallback(Client& client) : _client(client)
+ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : _client(client)
 {}
 
-void Client::ClientReadCallback::Call(int /*fd*/)
+void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
     long bytes_recvdd = _client._client_sock->Recv(_client._buf);
@@ -72,10 +72,10 @@ void Client::ClientReadCallback::Call(int /*fd*/)
     _client.ProcessNewData(bytes_recvdd);
 }
 
-Client::ClientWriteCallback::ClientWriteCallback(Client& client) : _client(client)
+ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : _client(client)
 {}
 
-void Client::ClientWriteCallback::Call(int /*fd*/)
+void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
     ssize_t bytes_sent = _client._client_sock->Send(_client._buf, _client._buf_send_idx,

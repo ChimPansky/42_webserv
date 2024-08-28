@@ -9,35 +9,35 @@
 #include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
 
-class Client {
+class ClientSession {
   private:
-    Client(const Client&);
-    Client& operator=(const Client&);
-    Client();
+    ClientSession(const ClientSession&);
+    ClientSession& operator=(const ClientSession&);
+    ClientSession();
 
   public:
-    Client(utils::unique_ptr<c_api::ClientSocket> client_sock);
-    ~Client();
+    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock);
+    ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
     void ProcessNewData(ssize_t bytes_recvdd);
     class ClientReadCallback : public utils::ICallback {
       public:
-        ClientReadCallback(Client& client);
+        ClientReadCallback(ClientSession& client);
         // read from sock,
         virtual void Call(int fd);
 
       private:
-        Client& _client;
+        ClientSession& _client;
     };
     class ClientWriteCallback : public utils::ICallback {
       public:
-        ClientWriteCallback(Client& client);
+        ClientWriteCallback(ClientSession& client);
         // read from sock,
         virtual void Call(int fd);
 
       private:
-        Client& _client;
+        ClientSession& _client;
     };
 
   private:

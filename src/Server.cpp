@@ -34,7 +34,7 @@ void Server::MasterSocketCallback::Call(int fd)
         std::cerr << "Error accepting connection on " << _server._name << std::endl;
         return;
     }
-    _server._clients[fd] = utils::unique_ptr<Client>(new Client(client_sock));
+    _server._clients[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock));
     std::cout << "New incoming connection on " << _server._name << std::endl;
 }
 
@@ -42,7 +42,7 @@ void Server::CheckClients()
 {
     client_iterator it = _clients.begin();
     while (it != _clients.end()) {
-        Client& client = *it->second;
+        ClientSession& client = *it->second;
         if (client.connection_closed()) {
             client_iterator tmp = it;
             ++it;

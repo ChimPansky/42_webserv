@@ -6,7 +6,7 @@
 #include <map>
 #include <string>
 
-#include "Client.h"
+#include "ClientSession.h"
 #include "c_api/MasterSocket.h"
 #include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
@@ -38,8 +38,8 @@ class Server {
   private:
     std::string _name;
     c_api::MasterSocket _master_sock;
-    std::map<int, utils::unique_ptr<Client> > _clients;
-    typedef std::map<int, utils::unique_ptr<Client> >::iterator client_iterator;
+    std::map<int, utils::unique_ptr<ClientSession> > _clients;
+    typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
 };
 
 #endif  // WS_SERVER_H
