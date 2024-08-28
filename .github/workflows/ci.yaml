@@ -21,7 +21,7 @@ jobs:
       - name: Check Title Format
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '\[(BUILD|CHORE|CI|DOCS|FIX|PERF|REFACTOR|STYLE|TEST)\] \S.*'
+          pattern: '\[[A-Z]+\] \S.*'
           error: 'PR title hast to start with a commit type - for example [REFACTOR] - followed by a description".'
           excludeDescription: 'false'  # Check the entire commit message
           excludeTitle: 'false'  # Do not exclude the title
@@ -30,11 +30,11 @@ jobs:
       - name: Check Last Commit Message Format
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^(build|chore|ci|docs|fix|perf|refactor|style|test)(?:\([^\)]*\))?(?:!)?: \S.*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
-          error: 'Last Commit message must follow the format "<type>[(optional scope)][!]: <description>.". Valid types: build, chore, ci, docs, fix, style, perf, refactor, style, test.'
+          pattern: '^([a-z]+)(?:\([^\)]*\))?(?:!)?: \S.*|^Merge pull request #[0-9]+ from [\w\-]+\/[\w\-].*'
+          error: 'Commit messages must follow the format "<type>[(optional scope)][!]: <description>.". See https://stackoverflow.com/questions/8981194/changing-git-commit-message-after-push-given-that-no-one-pulled-from-remote for renames
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
-          checkAllCommitMessages: 'false' # optional: this checks all commits associated with a pull request
+          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
       - name: Check Last Commit Message Length
         uses: gsactions/commit-message-checker@v2
         with:
