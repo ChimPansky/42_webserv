@@ -1,6 +1,7 @@
 #include "ServerCluster.h"
-#include "c_api/utils.h"
+
 #include "c_api/EventManager.h"
+#include "c_api/utils.h"
 
 // testing with one
 ServerCluster::ServerCluster(const Config& /*config*/)
@@ -11,16 +12,18 @@ ServerCluster::ServerCluster(const Config& /*config*/)
 
 volatile bool ServerCluster::_run = false;
 
-void ServerCluster::Stop() {
+void ServerCluster::Stop()
+{
     _run = false;
 }
 
 // smth like
-void ServerCluster::Start(const Config& config) {
+void ServerCluster::Start(const Config& config)
+{
     // register signal for ^C, switch run on that
     _run = true;
     ServerCluster cluster(config);
-    while(_run) {
+    while (_run) {
         c_api::EventManager::get().CheckOnce();
         for (ServersIt it = cluster._servers.begin(); it != cluster._servers.end(); ++it) {
             (*it)->CheckClients();

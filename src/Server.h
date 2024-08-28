@@ -6,8 +6,8 @@
 #include <map>
 #include <string>
 
-#include "c_api/MasterSocket.h"
 #include "Client.h"
+#include "c_api/MasterSocket.h"
 #include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
 
@@ -16,6 +16,7 @@ class Server {
     Server();
     Server(const Server&);
     Server& operator=(const Server&);
+
   public:
     // create master socket, register read callback for master socket in event manager
     Server(const std::string& name, in_addr_t ip, in_port_t port);
@@ -25,6 +26,7 @@ class Server {
         MasterSocketCallback(Server& server);
         // accept, create new client, register read callback for client,
         virtual void Call(int fd);
+
       private:
         Server& _server;
     };
@@ -32,6 +34,7 @@ class Server {
     // if client timed out, rm it from map
     void CheckClients();
     const std::string& name();
+
   private:
     std::string _name;
     c_api::MasterSocket _master_sock;

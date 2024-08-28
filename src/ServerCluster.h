@@ -11,6 +11,7 @@ class ServerCluster {
   public:
     static void Start(const Config& config);
     static void Stop();
+
   private:
     ServerCluster(const Config&);
     std::vector<utils::unique_ptr<Server> > _servers;

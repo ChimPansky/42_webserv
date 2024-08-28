@@ -1,14 +1,14 @@
 #include "utils.h"
 
-#include <string>
-#include <sstream>
 #include <netinet/in.h>
+
+#include <sstream>
+#include <string>
 
 namespace c_api {
 
-// NOLINTBEGIN
-
-in_addr_t IPv4FromString(const std::string& ip_str) {
+in_addr_t IPv4FromString(const std::string& ip_str)
+{
     if (ip_str == "localhost") {
         return INADDR_LOOPBACK;
     }
@@ -16,7 +16,7 @@ in_addr_t IPv4FromString(const std::string& ip_str) {
     std::stringstream iss(ip_str);
 
     in_addr_t ipv4 = 0;
-    for(int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i) {
         in_addr_t part;
         iss >> part;
         if (iss.fail() || part > 255) {
@@ -37,16 +37,15 @@ in_addr_t IPv4FromString(const std::string& ip_str) {
     return ipv4;
 }
 
-std::string IPv4ToString(in_addr_t ipv4) {
+std::string IPv4ToString(in_addr_t ipv4)
+{
     std::stringstream ss;
-    ss << (ipv4 >> 24)
-       << '.' << ((ipv4 >> 16) % 256)
-       << '.' << ((ipv4 >> 8) % 256)
+    ss << (ipv4 >> 24)                 //
+       << '.' << ((ipv4 >> 16) % 256)  //
+       << '.' << ((ipv4 >> 8) % 256)   //
        << '.' << (ipv4 % 256);
     return ss.str();
 }
-
-// NOLINTEND
 
 }  // namespace c_api
 

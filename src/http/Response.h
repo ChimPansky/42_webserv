@@ -3,9 +3,7 @@
 
 namespace http {
 
-class Response {
-
-};
+class Response {};
 
 }  // namespace http
 

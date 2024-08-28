@@ -5,6 +5,7 @@
 class Config {
   private:
     Config();
+
   public:
     Config(const char* config_path);
 };

@@ -1,19 +1,18 @@
 #include "ClientSocket.h"
 
+#include <netinet/in.h>
+#include <unistd.h>
+
 #include <algorithm>
 #include <cstring>
-#include <unistd.h>
-#include <netinet/in.h>
-
-#include <vector>
 #include <stdexcept>
+#include <vector>
 
 namespace c_api {
 
 const size_t ClientSocket::_buf_sz;
 
-ClientSocket::ClientSocket(int fd)
-  : _sockfd(fd)
+ClientSocket::ClientSocket(int fd) : _sockfd(fd)
 {}
 
 // technically at this point socket must be unbinded
@@ -21,16 +20,19 @@ ClientSocket::ClientSocket(int fd)
 //   otherwise socket will be close but port still occupied
 //   untill kernel wont free it
 //   search more
-ClientSocket::~ClientSocket() {
-	/* shutdown(_sockfd, SHUT_RDWR); */
+ClientSocket::~ClientSocket()
+{
+    /* shutdown(_sockfd, SHUT_RDWR); */
     close(_sockfd);
 }
 
-int ClientSocket::sockfd() const {
+int ClientSocket::sockfd() const
+{
     return _sockfd;
 }
 
-ssize_t  ClientSocket::Recv(std::vector<char>& buf, size_t sz) const {
+ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t sz) const
+{
     ssize_t bytes_recvd = ::recv(_sockfd, (void*)_buf, std::min(sz, _buf_sz), MSG_NOSIGNAL);
     if (bytes_recvd > 0) {
         size_t init_sz = buf.size();
@@ -40,7 +42,8 @@ ssize_t  ClientSocket::Recv(std::vector<char>& buf, size_t sz) const {
     return bytes_recvd;
 }
 
-ssize_t  ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const {
+ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const
+{
     if (idx + sz > buf.size()) {
         throw std::runtime_error("idx is too big");
     }

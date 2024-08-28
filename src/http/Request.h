@@ -3,9 +3,7 @@
 
 namespace http {
 
-class Request {
-
-};
+class Request {};
 
 }  // namespace http
 
