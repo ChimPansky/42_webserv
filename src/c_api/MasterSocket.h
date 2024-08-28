@@ -25,7 +25,7 @@ class MasterSocket {
     utils::unique_ptr<ClientSocket> Accept() const;
 
   private:
-    int _sockfd;
+    int sockfd_;
 };
 
 }  // namespace c_api

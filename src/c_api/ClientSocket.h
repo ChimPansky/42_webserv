@@ -26,9 +26,9 @@ class ClientSocket {
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
 
   private:
-    int _sockfd;
+    int sockfd_;
     static const size_t _buf_sz = 666;
-    char _buf[_buf_sz];
+    char buf_[_buf_sz];
 };
 
 }  // namespace c_api

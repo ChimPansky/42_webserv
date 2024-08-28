@@ -40,10 +40,10 @@ class EventManager {
     static EventManager& get();
 
   private:
-    int _CheckWithSelect();
-    int _CheckWithPoll();
-    int _CheckWithEpoll();
-    static utils::unique_ptr<EventManager> _instance;
+    int CheckWithSelect_();
+    int CheckWithPoll_();
+    int CheckWithEpoll_();
+    static utils::unique_ptr<EventManager> instance_;
     MultiplexType _mx_type;
     std::map</* fd */ int, utils::unique_ptr<utils::ICallback> > _rd_sock;
     std::map</* fd */ int, utils::unique_ptr<utils::ICallback> > _wr_sock;

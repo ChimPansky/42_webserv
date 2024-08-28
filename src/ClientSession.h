@@ -28,7 +28,7 @@ class ClientSession {
         virtual void Call(int fd);
 
       private:
-        ClientSession& _client;
+        ClientSession& client_;
     };
     class ClientWriteCallback : public utils::ICallback {
       public:
@@ -37,15 +37,15 @@ class ClientSession {
         virtual void Call(int fd);
 
       private:
-        ClientSession& _client;
+        ClientSession& client_;
     };
 
   private:
     utils::unique_ptr<c_api::ClientSocket> _client_sock;
-    std::vector<char> _buf;  // string?
+    std::vector<char> buf_;  // string?
     size_t _buf_send_idx;
-    http::Request _rq;
-    http::Response _rs;
+    http::Request rq_;
+    http::Response rs_;
     bool _connection_closed;
 };
 

@@ -6,7 +6,7 @@
 
 namespace c_api {
 
-utils::unique_ptr<EventManager> EventManager::_instance(NULL);
+utils::unique_ptr<EventManager> EventManager::instance_(NULL);
 
 // private c'tor
 EventManager::EventManager(EventManager::MultiplexType mx_type) : _mx_type(mx_type)
@@ -14,29 +14,29 @@ EventManager::EventManager(EventManager::MultiplexType mx_type) : _mx_type(mx_ty
 
 void EventManager::init(EventManager::MultiplexType mx_type)
 {
-    if (EventManager::_instance) {
+    if (EventManager::instance_) {
         throw std::runtime_error("event manager was already initialized");
     }
-    EventManager::_instance.reset(new EventManager(mx_type));
+    EventManager::instance_.reset(new EventManager(mx_type));
 }
 
 EventManager& EventManager::get()
 {
-    if (!EventManager::_instance) {
+    if (!EventManager::instance_) {
         throw std::runtime_error("Event manager is not initialised");
     }
-    return (*EventManager::_instance);
+    return (*EventManager::instance_);
 }
 
 int EventManager::CheckOnce()
 {
     if (_mx_type == MT_SELECT) {
-        return _CheckWithSelect();
+        return CheckWithSelect_();
     }
-    return _CheckWithSelect();
+    return CheckWithSelect_();
 }
 
-int EventManager::_CheckWithSelect()
+int EventManager::CheckWithSelect_()
 {
     fd_set select_rd_set;
     fd_set select_wr_set;

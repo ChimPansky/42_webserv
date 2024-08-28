@@ -14,10 +14,10 @@ class ServerCluster {
 
   private:
     ServerCluster(const Config&);
-    std::vector<utils::unique_ptr<Server> > _servers;
+    std::vector<utils::unique_ptr<Server> > servers_;
     typedef std::vector<utils::unique_ptr<Server> >::const_iterator ServersIt;
     // check if volatile is necessary for static variables
-    static volatile bool _run;
+    static volatile bool run_;
 };
 
 #endif  // WS_SERVER_CLUSTER_H

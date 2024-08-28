@@ -40,54 +40,54 @@ Connection: Closed\n\r\
 void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
 {
     std::cout << bytes_recvdd << " bytes recvd" << std::endl;
-    std::cout.write(_buf.data(), _buf.size()) << std::flush;
-    if (/*request is ready*/ _buf.size() > 20) {
+    std::cout.write(buf_.data(), buf_.size()) << std::flush;
+    if (/*request is ready*/ buf_.size() > 20) {
         // if cgi run and register callbacks for cgi
         // else return static page
 
         c_api::EventManager::get().DeleteCallbacksByFd(_client_sock->sockfd(),
                                                        c_api::EventManager::CT_READ);
         _buf_send_idx = 0;
-        _buf.resize(sizeof(HTTP_RESPONSE));
-        std::memcpy(_buf.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
+        buf_.resize(sizeof(HTTP_RESPONSE));
+        std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
         c_api::EventManager::get().RegisterWriteCallback(
             _client_sock->sockfd(),
             utils::unique_ptr<utils::ICallback>(new ClientWriteCallback(*this)));
     }
 }
 
-ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : _client(client)
+ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
 {}
 
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    long bytes_recvdd = _client._client_sock->Recv(_client._buf);
+    long bytes_recvdd = client_._client_sock->Recv(client_.buf_);
     if (bytes_recvdd <= 0) {
         // close connection
-        _client._connection_closed = true;
+        client_._connection_closed = true;
         std::cout << "Connection closed" << std::endl;
         return;
     }
-    _client.ProcessNewData(bytes_recvdd);
+    client_.ProcessNewData(bytes_recvdd);
 }
 
-ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : _client(client)
+ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : client_(client)
 {}
 
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    ssize_t bytes_sent = _client._client_sock->Send(_client._buf, _client._buf_send_idx,
-                                                    _client._buf.size() - _client._buf_send_idx);
+    ssize_t bytes_sent = client_._client_sock->Send(client_.buf_, client_._buf_send_idx,
+                                                    client_.buf_.size() - client_._buf_send_idx);
     if (bytes_sent <= 0) {
         // close connection
-        _client._connection_closed = true;
+        client_._connection_closed = true;
         std::cerr << "error on send" << std::endl;
         return;
     }
-    if (_client._buf_send_idx == _client._buf.size()) {
-        _client._connection_closed = true;
-        std::cout << _client._buf_send_idx << " bytes sent, connection closed" << std::endl;
+    if (client_._buf_send_idx == client_.buf_.size()) {
+        client_._connection_closed = true;
+        std::cout << client_._buf_send_idx << " bytes sent, connection closed" << std::endl;
     }
 }

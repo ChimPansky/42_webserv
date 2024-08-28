@@ -12,7 +12,7 @@ namespace c_api {
 
 const size_t ClientSocket::_buf_sz;
 
-ClientSocket::ClientSocket(int fd) : _sockfd(fd)
+ClientSocket::ClientSocket(int fd) : sockfd_(fd)
 {}
 
 // technically at this point socket must be unbinded
@@ -22,22 +22,22 @@ ClientSocket::ClientSocket(int fd) : _sockfd(fd)
 //   search more
 ClientSocket::~ClientSocket()
 {
-    /* shutdown(_sockfd, SHUT_RDWR); */
-    close(_sockfd);
+    /* shutdown(sockfd_, SHUT_RDWR); */
+    close(sockfd_);
 }
 
 int ClientSocket::sockfd() const
 {
-    return _sockfd;
+    return sockfd_;
 }
 
 ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t sz) const
 {
-    ssize_t bytes_recvd = ::recv(_sockfd, (void*)_buf, std::min(sz, _buf_sz), MSG_NOSIGNAL);
+    ssize_t bytes_recvd = ::recv(sockfd_, (void*)buf_, std::min(sz, _buf_sz), MSG_NOSIGNAL);
     if (bytes_recvd > 0) {
         size_t init_sz = buf.size();
         buf.resize(init_sz + bytes_recvd);
-        std::memcpy(buf.data() + init_sz, _buf, bytes_recvd);
+        std::memcpy(buf.data() + init_sz, buf_, bytes_recvd);
     }
     return bytes_recvd;
 }
@@ -47,7 +47,7 @@ ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz)
     if (idx + sz > buf.size()) {
         throw std::runtime_error("idx is too big");
     }
-    ssize_t bytes_sendd = ::send(_sockfd, buf.data() + idx, sz, MSG_NOSIGNAL);
+    ssize_t bytes_sendd = ::send(sockfd_, buf.data() + idx, sz, MSG_NOSIGNAL);
     if (bytes_sendd > 0) {
         idx += bytes_sendd;
     }
