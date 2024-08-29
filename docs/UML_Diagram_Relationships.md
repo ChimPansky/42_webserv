@@ -11,9 +11,7 @@ Unified Modeling Language (UML) diagrams are a powerful tool for visualizing and
 **Example**:
 - A `Student` and a `Course`. A student enrolls in a course.
 
-```plaintext
-Student ---------------- Course
-```
+![Association](svg/uml/Association.svg)
 
 ## 2. Multiplicity in Associations
 **Definition**: Multiplicity specifies how many instances of a class can be associated with a single instance of another class.
@@ -23,9 +21,7 @@ Student ---------------- Course
 **Example**:
 - A `Teacher` can teach multiple `Courses`, but a `Course` is taught by exactly one `Teacher`.
 
-```plaintext
-Teacher 1 ---------------- 1..* Course
-```
+![Multiplicity](svg/uml/Multiplicity.svg)
 
 ## 3. Aggregation
 **Definition**: Aggregation is a special form of association that represents a "whole-part" relationship, where the part can exist independently of the whole.
@@ -35,9 +31,7 @@ Teacher 1 ---------------- 1..* Course
 **Example**:
 - A `Library` contains `Books`, but `Books` can exist independently of the `Library`.
 
-```plaintext
-Library <>---------------- Book
-```
+![Aggregation](svg/uml/Aggregation.svg)
 
 ## 4. Composition
 **Definition**: Composition is a stronger form of aggregation where the part cannot exist independently of the whole. If the whole is destroyed, the parts are destroyed as well.
@@ -47,9 +41,7 @@ Library <>---------------- Book
 **Example**:
 - A `House` contains `Rooms`. If the `House` is destroyed, the `Rooms` no longer exist.
 
-```plaintext
-House <#---------------- Room
-```
+![Composition](svg/uml/Composition.svg)
 
 ## 5. Inheritance (Generalization)
 **Definition**: Inheritance represents an "is-a" relationship between a more general superclass and a more specific subclass.
@@ -59,9 +51,7 @@ House <#---------------- Room
 **Example**:
 - A `Bird` is a type of `Animal`.
 
-```plaintext
-Animal <|---------------- Bird
-```
+![Inheritance](svg/uml/Inheritance.svg)
 
 ## 6. Dependency
 **Definition**: Dependency represents a "uses" relationship where one class depends on another to function, but it's a weaker association.
@@ -71,9 +61,7 @@ Animal <|---------------- Bird
 **Example**:
 - A `Car` depends on a `Fuel` to operate.
 
-```plaintext
-Car <.---------------- Fuel
-```
+![Dependency](svg/uml/Dependency.svg)
 
 ## 7. Realization
 **Definition**: Realization is a relationship between an interface and a class that implements that interface.
@@ -83,9 +71,7 @@ Car <.---------------- Fuel
 **Example**:
 - A `PaymentProcessor` interface is implemented by a `CreditCardProcessor` class.
 
-```plaintext
-PaymentProcessor <|..---------------- CreditCardProcessor
-```
+![Realization](svg/uml/Realization.svg)
 
 ## Summary of UML Relationships
 
