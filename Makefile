@@ -21,7 +21,6 @@ FILENAMES = \
 	c_api/utils.cpp \
 	Client.cpp \
 	Config.cpp \
-	HttpBlock.cpp \
 	LocationBlock.cpp \
 	ServerBlock.cpp \
 	Server.cpp \
