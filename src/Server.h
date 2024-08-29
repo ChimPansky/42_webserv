@@ -6,7 +6,7 @@
 #include <map>
 #include <string>
 
-#include "Client.h"
+#include "ClientSession.h"
 #include "c_api/MasterSocket.h"
 #include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
@@ -28,7 +28,7 @@ class Server {
         virtual void Call(int fd);
 
       private:
-        Server& _server;
+        Server& server_;
     };
     // if client is ready to write register wr callback,
     // if client timed out, rm it from map
@@ -36,10 +36,10 @@ class Server {
     const std::string& name();
 
   private:
-    std::string _name;
-    c_api::MasterSocket _master_sock;
-    std::map<int, utils::unique_ptr<Client> > _clients;
-    typedef std::map<int, utils::unique_ptr<Client> >::iterator client_iterator;
+    std::string name_;
+    c_api::MasterSocket master_sock_;
+    std::map<int, utils::unique_ptr<ClientSession> > clients_;
+    typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
 };
 
 #endif  // WS_SERVER_H

@@ -21,7 +21,7 @@ class MasterSocket {
     // check result for null!
 
   private:
-    int _sockfd;
+    int sockfd_;
 };
 
 }  // namespace c_api

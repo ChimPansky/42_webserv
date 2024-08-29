@@ -26,7 +26,7 @@ class EventManager {
     EventManager();
     EventManager(const EventManager&);
     EventManager& operator=(const EventManager&);
-    EventManager(MultiplexType _mx_type);
+    EventManager(MultiplexType mx_type_);
 
   public:
     // use return to indicate error, eg, callback for fd already registered?
@@ -36,17 +36,17 @@ class EventManager {
 
     // all select-poll-epoll logic goes in here
     int CheckOnce();
-    static void init(MultiplexType _mx_type);
+    static void init(MultiplexType mx_type_);
     static EventManager& get();
 
   private:
-    int _CheckWithSelect();
-    int _CheckWithPoll();
-    int _CheckWithEpoll();
-    static utils::unique_ptr<EventManager> _instance;
-    MultiplexType _mx_type;
-    std::map</* fd */ int, utils::unique_ptr<utils::ICallback> > _rd_sock;
-    std::map</* fd */ int, utils::unique_ptr<utils::ICallback> > _wr_sock;
+    int CheckWithSelect_();
+    int CheckWithPoll_();
+    int CheckWithEpoll_();
+    static utils::unique_ptr<EventManager> instance_;
+    MultiplexType mx_type_;
+    std::map</* fd */ int, utils::unique_ptr<utils::ICallback> > rd_sock_;
+    std::map</* fd */ int, utils::unique_ptr<utils::ICallback> > wr_sock_;
     typedef std::map<int, utils::unique_ptr<utils::ICallback> >::const_iterator SockMapIt;
 };
 

@@ -9,44 +9,44 @@
 #include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
 
-class Client {
+class ClientSession {
   private:
-    Client(const Client&);
-    Client& operator=(const Client&);
-    Client();
+    ClientSession(const ClientSession&);
+    ClientSession& operator=(const ClientSession&);
+    ClientSession();
 
   public:
-    Client(utils::unique_ptr<c_api::ClientSocket> client_sock);
-    ~Client();
+    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock);
+    ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
     void ProcessNewData(ssize_t bytes_recvdd);
     class ClientReadCallback : public utils::ICallback {
       public:
-        ClientReadCallback(Client& client);
+        ClientReadCallback(ClientSession& client);
         // read from sock,
         virtual void Call(int fd);
 
       private:
-        Client& _client;
+        ClientSession& client_;
     };
     class ClientWriteCallback : public utils::ICallback {
       public:
-        ClientWriteCallback(Client& client);
+        ClientWriteCallback(ClientSession& client);
         // read from sock,
         virtual void Call(int fd);
 
       private:
-        Client& _client;
+        ClientSession& client_;
     };
 
   private:
-    utils::unique_ptr<c_api::ClientSocket> _client_sock;
-    std::vector<char> _buf;  // string?
-    size_t _buf_send_idx;
-    http::Request _rq;
-    http::Response _rs;
-    bool _connection_closed;
+    utils::unique_ptr<c_api::ClientSocket> client_sock_;
+    std::vector<char> buf_;  // string?
+    size_t buf_send_idx_;
+    http::Request rq_;
+    http::Response rs_;
+    bool connection_closed_;
 };
 
 #endif  // WS_CLIENT_H

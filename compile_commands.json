@@ -92,12 +92,12 @@
       "-I./src",
       "-c",
       "-o",
-      "build/src/Client.o",
-      "src/Client.cpp"
+      "build/src/ClientSession.o",
+      "src/ClientSession.cpp"
     ],
     "directory": "/home/jcy/42/ws",
-    "file": "/home/jcy/42/ws/src/Client.cpp",
-    "output": "/home/jcy/42/ws/build/src/Client.o"
+    "file": "/home/jcy/42/ws/src/ClientSession.cpp",
+    "output": "/home/jcy/42/ws/build/src/ClientSession.o"
   },
   {
     "arguments": [
