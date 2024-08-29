@@ -11,12 +11,12 @@
 ### Incorrect Design
 In the incorrect design, the `User` class handles both user data and email sending. This violates SRP because it has more than one reason to change.
 
-![Incorrect SRP](svg/SRP_Incorrect.svg)
+![Incorrect SRP](svg/solid/SRP_Incorrect.svg)
 
 ### Correct Design
 In the correct design, the `User` class is responsible only for user data, while the `EmailService` handles email-related functionality.
 
-![Correct SRP](svg/SRP.svg)
+![Correct SRP](svg/solid/SRP.svg)
 
 ---
 
@@ -30,12 +30,12 @@ In the correct design, the `User` class is responsible only for user data, while
 ### Incorrect Design
 In the incorrect design, the `Shape` class has methods for every shape type. Adding a new shape requires modifying the existing `Shape` class, which violates OCP.
 
-![Incorrect OCP](svg/OCP_Incorrect.svg)
+![Incorrect OCP](svg/solid/OCP_Incorrect.svg)
 
 ### Correct Design
 In the correct design, the `Shape` class is abstract, and each shape (e.g., `Rectangle`, `Circle`) extends this class. New shapes can be added by creating new subclasses without modifying existing code.
 
-![Correct OCP](svg/OCP.svg)
+![Correct OCP](svg/solid/OCP.svg)
 
 ---
 
@@ -49,12 +49,12 @@ In the correct design, the `Shape` class is abstract, and each shape (e.g., `Rec
 ### Incorrect Design
 In the incorrect design, `Penguin` inherits from `Bird` but overrides a `fly` method, which makes no sense for a penguin. This violates LSP as `Penguin` cannot replace `Bird` in all contexts.
 
-![Incorrect LSP](svg/LSP_Incorrect.svg)
+![Incorrect LSP](svg/solid/LSP_Incorrect.svg)
 
 ### Correct Design
 In the correct design, the class hierarchy is adjusted so that only birds that can fly inherit from `FlyingBird`, while `Penguin` directly inherits from `Bird`. This maintains the LSP.
 
-![Correct LSP](svg/LSP.svg)
+![Correct LSP](svg/solid/LSP.svg)
 
 ---
 
@@ -68,12 +68,12 @@ In the correct design, the class hierarchy is adjusted so that only birds that c
 ### Incorrect Design
 In the incorrect design, the `Worker` interface includes both `work` and `eat` methods. A `Robot` class that implements `Worker` would be forced to implement the `eat` method, even though it doesn't need it.
 
-![Incorrect ISP](svg/ISP_Incorrect.svg)
+![Incorrect ISP](svg/solid/ISP_Incorrect.svg)
 
 ### Correct Design
 In the correct design, `Workable` and `Eatable` are separate interfaces. `Human` implements both, while `Robot` only implements `Workable`, adhering to ISP.
 
-![Correct ISP](svg/ISP.svg)
+![Correct ISP](svg/solid/ISP.svg)
 
 ---
 
@@ -87,9 +87,9 @@ In the correct design, `Workable` and `Eatable` are separate interfaces. `Human`
 ### Incorrect Design
 In the incorrect design, `UserService` directly depends on a specific implementation of `Database` (e.g., `MySQLDatabase`). Changing the database type requires changes to `UserService`, which violates DIP.
 
-![Incorrect DIP](svg/DIP_Incorrect.svg)
+![Incorrect DIP](svg/solid/DIP_Incorrect.svg)
 
 ### Correct Design
 In the correct design, `UserService` depends on an abstract `Database` interface. Different database implementations (e.g., `MySQLDatabase`, `MongoDB`) can be used without altering `UserService`.
 
-![Correct DIP](svg/DIP.svg)
+![Correct DIP](svg/solid/DIP.svg)
