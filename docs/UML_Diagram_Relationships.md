@@ -1,5 +1,5 @@
 
-# Understanding UML Diagram Relationships
+# Understanding UML Diagram Relationships (AI generated)
 
 Unified Modeling Language (UML) diagrams are a powerful tool for visualizing and designing software systems. One key aspect of UML diagrams is how they represent the relationships between different classes. Here are some of the most common relationships:
 
