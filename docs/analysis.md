@@ -21,8 +21,8 @@
 
 ## Materials (not Webserver specific)
 
-[SOLID Design principles](https://medium.com/@oleksandra_shershen/solid-principles-implementation-and-examples-in-c-99f0d7e3e868)
-[SOLID Design principles with c++ examples] (https://www.oodesign.com/design-principles/)
+[SOLID Design principles] (https://www.oodesign.com/design-principles/)
+[SOLID Design principles with c++ examples](https://medium.com/@oleksandra_shershen/solid-principles-implementation-and-examples-in-c-99f0d7e3e868)
 
 ## Examples of webserver implementations
 
