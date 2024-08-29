@@ -12,7 +12,6 @@
 [Cookies (bonus)](https://medium.com/from-the-scratch/cookies-visualized-everything-you-ever-need-to-know-about-web-cookies-c5f3b403dc65)
 
 
-## Materials
 
 [c network api in rus](https://stepik.org/lesson/12576/step/1?unit=3004): sockets, poll-select-epoll difference, nonblocking i/o
 
@@ -20,8 +19,12 @@
 
 [webserver architecture in rus](https://stepik.org/lesson/14825/step/1?unit=4174)
 
+## Materials (not Webserver specific)
 
-## Examples
+[SOLID Design principles](https://medium.com/@oleksandra_shershen/solid-principles-implementation-and-examples-in-c-99f0d7e3e868)
+[SOLID Design principles with c++ examples] (https://www.oodesign.com/design-principles/)
+
+## Examples of webserver implementations
 
 [Building a simple server with C++](https://ncona.com/2019/04/building-a-simple-server-with-cpp/)
 
@@ -32,7 +35,7 @@
 [CGI app example](https://www.tutorialspoint.com/cplusplus/cpp_web_programming.htm)
 
 
-##  (Documentation)
+## (Documentation)
 
 [RFC 2616](https://datatracker.ietf.org/doc/html/rfc2616)
 RFC (Request for Comments) is a formal document from the Internet Engineering Task Force (IETF) that provides specifications, guidelines, and protocols related to the Internet and Internet-connected systems.
