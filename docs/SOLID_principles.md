@@ -6,7 +6,7 @@
 
 **Example**:
 
-![Single Responsibility Principle](SRP.svg)
+![Single Responsibility Principle](svg/SRP.svg)
 
 ---
 
@@ -15,7 +15,7 @@
 
 **Example**:
 
-![Open/Closed Principle](OCP.svg)
+![Open/Closed Principle](svg/OCP.svg)
 
 ---
 
@@ -24,7 +24,7 @@
 
 **Example**:
 
-![Liskov Substitution Principle](LSP.svg)
+![Liskov Substitution Principle](svg/LSP.svg)
 
 ---
 
@@ -33,7 +33,7 @@
 
 **Example**:
 
-![Interface Segregation Principle](ISP.svg)
+![Interface Segregation Principle](svg/ISP.svg)
 
 ---
 
@@ -42,4 +42,4 @@
 
 **Example**:
 
-![Dependency Inversion Principle](DIP.svg)
+![Dependency Inversion Principle](svg/DIP.svg)
