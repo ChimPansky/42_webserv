@@ -3,7 +3,6 @@
 
 #include <map>
 
-#include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
 
 namespace c_api {
@@ -15,6 +14,18 @@ class EventManager {
         MT_SELECT = 0,
         MT_POLL = 1,
         MT_EPOLL = 2
+    };
+    // how to:
+    //   inherit from this class, add necessary fields with refs;
+    //   call it instead of recv/send/accept/whatever
+    //   has to be copyable cuz fuck cpp98, so no values inside, refs only
+    class ICallback {
+      public:
+        // possible returns for errcodes
+        // possible args for assert right fd
+        // consider changing to void Call()
+        virtual void Call(int fd) = 0;
+        virtual ~ICallback(){};
     };
     enum CallbackType {
         CT_READ = 1,
@@ -30,8 +41,8 @@ class EventManager {
 
   public:
     // use return to indicate error, eg, callback for fd already registered?
-    int RegisterReadCallback(int, utils::unique_ptr<utils::ICallback>);
-    int RegisterWriteCallback(int, utils::unique_ptr<utils::ICallback>);
+    int RegisterReadCallback(int, utils::unique_ptr<ICallback>);
+    int RegisterWriteCallback(int, utils::unique_ptr<ICallback>);
     void DeleteCallbacksByFd(int fd, CallbackType cb_type = CT_ANY);
 
     // all select-poll-epoll logic goes in here
@@ -39,15 +50,17 @@ class EventManager {
     static void init(MultiplexType mx_type_);
     static EventManager& get();
 
+
+
   private:
     int CheckWithSelect_();
     int CheckWithPoll_();
     int CheckWithEpoll_();
     static utils::unique_ptr<EventManager> instance_;
     MultiplexType mx_type_;
-    std::map</* fd */ int, utils::unique_ptr<utils::ICallback> > rd_sock_;
-    std::map</* fd */ int, utils::unique_ptr<utils::ICallback> > wr_sock_;
-    typedef std::map<int, utils::unique_ptr<utils::ICallback> >::const_iterator SockMapIt;
+    std::map</* fd */ int, utils::unique_ptr<ICallback> > rd_sock_;
+    std::map</* fd */ int, utils::unique_ptr<ICallback> > wr_sock_;
+    typedef std::map<int, utils::unique_ptr<ICallback> >::const_iterator SockMapIt;
 };
 
 }  // namespace c_api

@@ -8,7 +8,6 @@
 
 #include "ClientSession.h"
 #include "c_api/MasterSocket.h"
-#include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
 
 class Server {
@@ -21,7 +20,7 @@ class Server {
     // create master socket, register read callback for master socket in event manager
     Server(const std::string& name, in_addr_t ip, in_port_t port);
     ~Server();
-    class MasterSocketCallback : public utils::ICallback {
+    class MasterSocketCallback : public c_api::EventManager::ICallback {
       public:
         MasterSocketCallback(Server& server);
         // accept, create new client, register read callback for client,

@@ -4,9 +4,9 @@
 #include <vector>
 
 #include "c_api/ClientSocket.h"
+#include "c_api/EventManager.h"
 #include "http/Request.h"
 #include "http/Response.h"
-#include "utils/ICallback.h"
 #include "utils/unique_ptr.h"
 
 class ClientSession {
@@ -21,7 +21,7 @@ class ClientSession {
     bool connection_closed() const;
     bool IsRequestReady() const;
     void ProcessNewData(ssize_t bytes_recvdd);
-    class ClientReadCallback : public utils::ICallback {
+    class ClientReadCallback : public c_api::EventManager::ICallback {
       public:
         ClientReadCallback(ClientSession& client);
         // read from sock,
@@ -30,7 +30,7 @@ class ClientSession {
       private:
         ClientSession& client_;
     };
-    class ClientWriteCallback : public utils::ICallback {
+    class ClientWriteCallback : public c_api::EventManager::ICallback {
       public:
         ClientWriteCallback(ClientSession& client);
         // read from sock,
