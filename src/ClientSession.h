@@ -16,7 +16,7 @@ class ClientSession {
     ClientSession();
 
   public:
-    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock);
+    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock, int master_sock_fd);
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
@@ -42,6 +42,7 @@ class ClientSession {
 
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
+    int master_socket_fd_;  // to choose correct server later
     std::vector<char> buf_;  // string?
     size_t buf_send_idx_;
     http::Request rq_;

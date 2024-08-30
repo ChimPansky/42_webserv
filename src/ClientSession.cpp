@@ -4,8 +4,8 @@
 
 #include "c_api/EventManager.h"
 
-ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock)
-    : client_sock_(sock), buf_send_idx_(0), connection_closed_(false)
+ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
+    : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0), connection_closed_(false)
 {
     c_api::EventManager::get().RegisterReadCallback(
         client_sock_->sockfd(), utils::unique_ptr<c_api::EventManager::ICallback>(new ClientReadCallback(*this)));
