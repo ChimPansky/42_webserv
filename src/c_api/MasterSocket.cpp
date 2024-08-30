@@ -17,12 +17,10 @@ namespace {
         return sockfd;
     }
 
+    // TODO convertion from addrin to addr here is technically a UB
     void BindAndListen(int sockfd_, struct sockaddr_in& addr_in) {
-        struct sockaddr addr = {};
-        memcpy(&addr, &addr_in, sizeof(addr_in));
-
         // bind socket to ip address and port
-        if (::bind(sockfd_, &addr, sizeof(addr_in)) != 0) {
+        if (::bind(sockfd_, (struct sockaddr*)&addr_in, sizeof(addr_in)) != 0) {
             throw std::runtime_error("cannot bind master_socket to the address");
         }
 
@@ -54,8 +52,7 @@ MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock)
 
 utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
 {
-    struct sockaddr addr;
-    memset(&addr, 0, sizeof(addr));
+    struct sockaddr addr = {};
     socklen_t addr_len = 0;
     int client_fd = ::accept(sockfd_, &addr, &addr_len);
     if (client_fd < 0) {
