@@ -23,8 +23,11 @@ class MasterSocket {
     int sockfd() const;
     // check result for null!
     utils::unique_ptr<ClientSocket> Accept() const;
+    bool IsSameSockAddr(struct sockaddr&) const;
 
   private:
+    struct sockaddr sockaddr_;
+    socklen_t socklen_;
     int sockfd_;
 };
 

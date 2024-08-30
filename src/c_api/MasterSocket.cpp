@@ -17,13 +17,16 @@ MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
     int optval = 1;
     ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
-    struct sockaddr_in sa;
-    sa.sin_family = AF_INET;
-    sa.sin_port = ::htons(port);
-    sa.sin_addr.s_addr = ::htonl(ip);
+    struct sockaddr_in sa_in = {};
+    socklen_ = sizeof(sa_in);
+    sa_in.sin_family = AF_INET;
+    sa_in.sin_port = ::htons(port);
+    sa_in.sin_addr.s_addr = ::htonl(ip);
+
+    memcpy(&sockaddr_, &sa_in, socklen_);
 
     // bind socket to ip address and port
-    if (::bind(sockfd_, (struct sockaddr*)&sa, sizeof(sa)) != 0) {
+    if (::bind(sockfd_, &sockaddr_, socklen_) != 0) {
         throw std::runtime_error("cannot bind master_socket to the address");
     }
 
@@ -60,6 +63,11 @@ MasterSocket::~MasterSocket()
 int MasterSocket::sockfd() const
 {
     return sockfd_;
+}
+
+bool MasterSocket::IsSameSockAddr(struct sockaddr& addr) const
+{
+    return (memcmp(&addr, &sockaddr_, socklen_) == 0);
 }
 
 }  // namespace c_api
