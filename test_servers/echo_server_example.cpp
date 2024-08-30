@@ -1,13 +1,11 @@
-#include "MasterSocket.h"
+#include "common.h"
 #include <iostream>
 
 #include <errno.h>
 
 int main() {
     unsigned short port = 8080;
-    c_api::MasterSocket master(INADDR_LOOPBACK, port);
-
-    // ::listen(master.sockfd(), SOMAXCONN);
+    int sockfd = CreateAndBindSocket(IPv4FromString("127.0.0.1"), port);
 
     std::cout << "listening on localhost:" << port << "..." << std::endl;
     struct sockaddr addr;
@@ -15,7 +13,7 @@ int main() {
     int slave_socket_fd = -1;
 
     while (true) {
-        slave_socket_fd = accept(master.sockfd(), &addr, &addr_len);
+        slave_socket_fd = accept(sockfd, &addr, &addr_len);
         if (slave_socket_fd == -1 && errno != EAGAIN) {
             std::cout << "unexpexcted error" << std::endl;
             break;
@@ -43,4 +41,5 @@ int main() {
         close(slave_socket_fd);  // we need select to keep alive
         std::cout << "connection closed" << std::endl;
     }
+    close(sockfd);
 }

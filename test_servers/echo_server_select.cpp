@@ -2,14 +2,14 @@
 #include <string>
 #include <algorithm>
 
-#include "MasterSocket.h"
+#include "common.h"
 #include <errno.h>
 #include <iostream>
 
 int main() {
     std::string ip = "127.0.0.1";
     unsigned short port = 12346;
-    c_api::MasterSocket master(INADDR_LOOPBACK, port);
+    int sockfd = CreateAndBindSocket(INADDR_LOOPBACK, port);
     std::set<int> SlaveSockets;
 
     typedef std::set<int>::iterator set_it;
@@ -17,13 +17,13 @@ int main() {
     while (1) {
         fd_set select_rd_set;
         FD_ZERO(&select_rd_set);
-        FD_SET(master.sockfd(), &select_rd_set);
+        FD_SET(sockfd, &select_rd_set);
         for (set_it it = SlaveSockets.begin();
              it != SlaveSockets.end();
              ++it) {
             FD_SET(*it, &select_rd_set);
         }
-        int maxfd = SlaveSockets.empty() ? master.sockfd() : std::max(master.sockfd(), *SlaveSockets.rbegin());
+        int maxfd = SlaveSockets.empty() ? sockfd : std::max(sockfd, *SlaveSockets.rbegin());
 
         /* on select wait for ready fds or timeout */
         int num_of_fds = select(maxfd + 1, &select_rd_set, /* write fds */ NULL, /* err fds */ NULL, /* timeout */ NULL);
@@ -52,10 +52,11 @@ int main() {
                 }
             }
         }
-        if (FD_ISSET(master.sockfd(), &select_rd_set)) {
-            int slave = accept(master.sockfd(), 0, 0);
+        if (FD_ISSET(sockfd, &select_rd_set)) {
+            int slave = accept(sockfd, 0, 0);
             SlaveSockets.insert(slave);
             std::cout << " new connection !" << std::endl;
         }
     }
+    close(sockfd);
 }
