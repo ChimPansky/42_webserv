@@ -10,7 +10,7 @@
 
 namespace c_api {
 
-// socker binded to addr
+// IPv4 socker binded to addr
 class MasterSocket {
   private:
     MasterSocket();
@@ -19,15 +19,18 @@ class MasterSocket {
 
   public:
     MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock = true);
+    MasterSocket(const struct sockaddr_in& addr, bool set_nonblock = true);
     ~MasterSocket();
     int sockfd() const;
     // check result for null!
     utils::unique_ptr<ClientSocket> Accept() const;
-    bool IsSameSockAddr(struct sockaddr&) const;
+    bool IsSameSockAddr(struct sockaddr_in&) const;
 
   private:
-    struct sockaddr sockaddr_;
-    socklen_t socklen_;
+    static int socket(bool set_nonblock);
+
+  private:
+    struct sockaddr_in addr_in_;
     int sockfd_;
 };
 

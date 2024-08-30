@@ -1,41 +1,56 @@
 #include "MasterSocket.h"
+#include "c_api/utils.h"
 
 #include <cstring>
 #include <stdexcept>
+
+namespace {
+    int CreateSocket(bool set_nonblock) {
+        int sockfd = ::socket(/* IPv4 */ AF_INET,
+                              /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
+                              /* explicit tcp */ IPPROTO_TCP);
+        if (sockfd < 0) {
+            throw std::runtime_error("cannot create socket");
+        }
+        int optval = 1;
+        ::setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+        return sockfd;
+    }
+
+    void BindAndListen(int sockfd_, struct sockaddr_in& addr_in) {
+        struct sockaddr addr = {};
+        memcpy(&addr, &addr_in, sizeof(addr_in));
+
+        // bind socket to ip address and port
+        if (::bind(sockfd_, &addr, sizeof(addr_in)) != 0) {
+            throw std::runtime_error("cannot bind master_socket to the address");
+        }
+
+        // start listening for incoming connections, if more then SOMAXCONN are not accepted,
+        // rest will be ignored
+        if (::listen(sockfd_, SOMAXCONN) != 0) {
+            throw std::runtime_error("cannot bind master_socket");
+        }
+    }
+}
 
 namespace c_api {
 
 // REUSEADDR in case port already open in the kernel but has no associated socket
 MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
 {
-    sockfd_ = ::socket(/* IPv4 */ AF_INET,
-                       /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
-                       /* explicit tcp */ IPPROTO_TCP);
-    if (sockfd_ < 0) {
-        throw std::runtime_error("cannot create socket");
-    }
-    int optval = 1;
-    ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
-    struct sockaddr_in sa_in = {};
-    socklen_ = sizeof(sa_in);
-    sa_in.sin_family = AF_INET;
-    sa_in.sin_port = ::htons(port);
-    sa_in.sin_addr.s_addr = ::htonl(ip);
-
-    memcpy(&sockaddr_, &sa_in, socklen_);
-
-    // bind socket to ip address and port
-    if (::bind(sockfd_, &sockaddr_, socklen_) != 0) {
-        throw std::runtime_error("cannot bind master_socket to the address");
-    }
-
-    // start listening for incoming connections, if more then SOMAXCONN are not accepted, rest will
-    // be ignored
-    if (::listen(sockfd_, SOMAXCONN) != 0) {
-        throw std::runtime_error("cannot bind master_socket");
-    }
+    sockfd_ = CreateSocket(set_nonblock);
+    addr_in_ = GetIPv4SockAddr(ip, port);
+    BindAndListen(sockfd_, addr_in_);
 }
+
+MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock)
+  : addr_in_(addr)
+{
+    sockfd_ = CreateSocket(set_nonblock);
+    BindAndListen(sockfd_, addr_in_);
+}
+
 
 utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
 {
@@ -49,6 +64,7 @@ utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
     return utils::unique_ptr<ClientSocket>(new ClientSocket(client_fd));
 }
 
+
 // technically at this point socket must be unbinded
 //   probably with 'shutdown', which is not in the allowed funcs
 //   otherwise socket will be close but port still occupied
@@ -60,14 +76,16 @@ MasterSocket::~MasterSocket()
     close(sockfd_);
 }
 
+
 int MasterSocket::sockfd() const
 {
     return sockfd_;
 }
 
-bool MasterSocket::IsSameSockAddr(struct sockaddr& addr) const
+
+bool MasterSocket::IsSameSockAddr(struct sockaddr_in& addr) const
 {
-    return (memcmp(&addr, &sockaddr_, socklen_) == 0);
+    return (memcmp(&addr, &addr_in_, sizeof(addr_in_)) == 0);
 }
 
 }  // namespace c_api
