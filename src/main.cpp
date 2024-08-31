@@ -30,13 +30,8 @@ int main(int ac, char **av)
     signal(SIGINT, StopCluster);
 
     c_api::EventManager::init(c_api::EventManager::MT_SELECT);
-    try {
-        ServerCluster::Start((Config(av[1])));  // curly braces is a dream
-                           // another approach is Config::parse which returns config,
-                           // but then copy c-tor for Configrequired, as RVO is not guaranteed
-    } catch (std::exception& e) {
-
-        std::cerr << "Exception: " << e.what() << std::endl;
-    }
+    ServerCluster::Start((Config(av[1])));  // curly braces is a dream
+                        // another approach is Config::parse which returns config,
+                        // but then copy c-tor for Configrequired, as RVO is not guaranteed
     return 0;
 }
