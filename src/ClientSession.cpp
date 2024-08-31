@@ -43,7 +43,7 @@ Connection: Closed\n\r\
 void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
 {
     LOG(DEBUG) << bytes_recvdd << " bytes recvd";
-    LOG(INFO) << buf_.data();
+    LOG(DEBUG) << buf_.data();
     // std::cout.write(buf_.data(), buf_.size()) << std::flush;
     if (/*request is ready*/ buf_.size() > 20) {
         // if cgi run and register callbacks for cgi
@@ -71,7 +71,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
         // close connection
         client_.connection_closed_ = true;
 
-        LOG(DEBUG) << "No bytes received - Connection closed";
+        LOG(INFO) << "Connection closed";
         return;
     }
     client_.ProcessNewData(bytes_recvdd);
@@ -88,11 +88,11 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
     if (bytes_sent <= 0) {
         // close connection
         client_.connection_closed_ = true;
-        LOG(ERROR) << "error on send";
+        LOG(ERROR) << "error on send";  // add perror
         return;
     }
     if (client_.buf_send_idx_ == client_.buf_.size()) {
         client_.connection_closed_ = true;
-        LOG(DEBUG) << client_.buf_send_idx_ << " bytes sent, connection closed";
+        LOG(INFO) << client_.buf_send_idx_ << " bytes sent, connection closed";
     }
 }

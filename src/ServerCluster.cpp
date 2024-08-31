@@ -39,8 +39,8 @@ ServerCluster::ServerCluster(const Config& /*config*/)
                 utils::unique_ptr<c_api::EventManager::ICallback>(new MasterSocketCallback(*this)));
             sockets_[sockfd] = listener;
         }
-        LOG(DEBUG) << serv->name() << " is listening on " << c_api::IPv4ToString(it->first) << ":"
-                   << it->second << " (fd: " << sockfd << ")";
+        LOG(INFO) << serv->name() << " is listening on " << c_api::IPv4ToString(it->first) << ":"
+                  << it->second << " (fd: " << sockfd << ")";
     }
 }
 
@@ -85,14 +85,14 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
 {
     SocketsIt acceptor = cluster_.sockets_.find(fd);
     if (acceptor == cluster_.sockets_.end()) {
-        LOG(ERROR) << "no such socket: " << fd;
+        LOG(ERROR) << " this should never happen, no such socket: " << fd;
         return;
     }
     // utils::shared_ptr<Server> serv = cluster_.sockets_to_servers_[fd][0]; // Choose server
     // instead
     utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor->second->Accept();
     if (!client_sock) {
-        LOG(ERROR) << "error accepting connection on: " << fd;
+        LOG(ERROR) << "error accepting connection on: " << fd;  // add perror
         return;
     }
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
