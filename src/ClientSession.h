@@ -6,6 +6,7 @@
 #include "c_api/ClientSocket.h"
 #include "c_api/EventManager.h"
 #include "http/Request.h"
+#include "http/RequestBuilder.h"
 #include "http/Response.h"
 #include "utils/unique_ptr.h"
 
@@ -46,6 +47,7 @@ class ClientSession {
     std::vector<char> buf_;  // string?
     size_t buf_send_idx_;
     http::Request rq_;
+    http::RequestBuilder rq_builder_;
     http::Response rs_;
     bool connection_closed_;
 };
