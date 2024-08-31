@@ -1,11 +1,10 @@
-#include <ostream>
 #include <fstream>
+#include <ostream>
 
 #define LOGGER_TIME_FORMAT "%Y%m%d %H:%M:%S"
 #define LOGGER_TIME_FORMAT_MAX_LEN 25
 
-enum Severity
-{
+enum Severity {
     DEBUG = 0,
     INFO = 1,
     WARNING = 2,
@@ -16,8 +15,8 @@ enum Severity
 namespace utils {
 
 class Logger {
-  private:  // not copyable
-    Logger(const Logger&);  // = delete;
+  private:                             // not copyable
+    Logger(const Logger&);             // = delete;
     Logger& operator=(const Logger&);  // = delete;
 
   private:
@@ -27,10 +26,12 @@ class Logger {
         LogWrapper(std::ostream& os, Severity sev);
         ~LogWrapper();
         template <typename T>
-        LogWrapper& operator<<(const T& rhs) {
+        LogWrapper& operator<<(const T& rhs)
+        {
             os_ << rhs;
             return *this;
         }
+
       private:
         std::ostream& os_;
         Severity sev_;
@@ -53,6 +54,6 @@ class Logger {
 
 }  // namespace utils
 
-#define LOG(severity) utils::Logger::get().log(severity) \
-    << #severity[0] << utils::Logger::dump_time() << " " \
-    << __FILE__ << ":" << __LINE__ << " ] "
+#define LOG(severity)                                                                              \
+    utils::Logger::get().log(severity) << "[ " << #severity[0] << utils::Logger::dump_time()       \
+                                       << " " << __FILE__ << ":" << __LINE__ << " ] "

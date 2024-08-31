@@ -10,24 +10,24 @@
 // opendir, readdir and closedir
 
 #include <csignal>
-#include <iostream>
 
 #include "ServerCluster.h"
 #include "c_api/EventManager.h"
+#include "utils/logger.h"
 
 void StopCluster(int /*signum*/)
 {
     ServerCluster::Stop();
-    std::cout << " SIGINT caught, shutting down..." << std::endl;
+    LOG(INFO) << " SIGINT caught, shutting down...";
 }
 
 int main(int ac, char **av)
 {
     if (ac != 2) {
-        std::cerr << "usage: ws <path-to-config-file>" << std::endl;
+        LOG(ERROR) << "usage: ws <path-to-config-file>";
         return 1;
     }
-    signal(SIGINT, StopCluster) ;
+    signal(SIGINT, StopCluster);
 
     c_api::EventManager::init(c_api::EventManager::MT_SELECT);
 

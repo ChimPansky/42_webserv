@@ -2,8 +2,7 @@
 
 #include "c_api/EventManager.h"
 #include "c_api/utils.h"
-
-#include <iostream>
+#include "utils/logger.h"
 
 volatile bool ServerCluster::run_ = false;
 
@@ -20,7 +19,8 @@ ServerCluster::ServerCluster(const Config& /*config*/)
 
     typedef std::vector<std::pair<in_addr_t, in_port_t> >::iterator ListenersIt;
     for (ListenersIt it = listeners.begin(); it != listeners.end(); ++it) {
-        // TODO use this func in config builder and iterate over sockaddr right away instead of building it
+        // TODO use this func in config builder and iterate over sockaddr right away instead of
+        // building it
         int sockfd = -1;
         struct sockaddr_in addr = c_api::GetIPv4SockAddr(it->first, it->second);
         for (SocketsIt sock_it = sockets_.begin(); sock_it != sockets_.end(); ++sock_it) {
@@ -39,16 +39,15 @@ ServerCluster::ServerCluster(const Config& /*config*/)
                 utils::unique_ptr<c_api::EventManager::ICallback>(new MasterSocketCallback(*this)));
             sockets_[sockfd] = listener;
         }
-        std::cout << serv->name() << " is listening on " << c_api::IPv4ToString(it->first) << ":" << it->second << " (fd: "<< sockfd <<")" << std::endl;
+        LOG(DEBUG) << serv->name() << " is listening on " << c_api::IPv4ToString(it->first) << ":"
+                   << it->second << " (fd: " << sockfd << ")";
     }
 }
-
 
 void ServerCluster::Stop()
 {
     run_ = false;
 }
-
 
 // smth like
 void ServerCluster::Start(const Config& config)
@@ -61,7 +60,6 @@ void ServerCluster::Start(const Config& config)
         cluster.CheckClients();
     }
 }
-
 
 void ServerCluster::CheckClients()
 {
@@ -78,10 +76,9 @@ void ServerCluster::CheckClients()
     }
 }
 
-
-ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster) : cluster_(cluster)
+ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
+    : cluster_(cluster)
 {}
-
 
 // accept, create new client, register read callback for client,
 void ServerCluster::MasterSocketCallback::Call(int fd)
@@ -91,7 +88,8 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
         // LOG(ERROR) << "no such socket: " << fd;
         return;
     }
-    // utils::shared_ptr<Server> serv = cluster_.sockets_to_servers_[fd][0]; // Choose server instead
+    // utils::shared_ptr<Server> serv = cluster_.sockets_to_servers_[fd][0]; // Choose server
+    // instead
     utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor->second->Accept();
     if (!client_sock) {
         // LOG(ERROR) << "error accepting connection on: " << fd;
