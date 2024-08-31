@@ -23,7 +23,7 @@ Logger::LogWrapper::LogWrapper(std::ostream& os, Severity sev)
 {}
 
 
-Logger::LogWrapper::~LogWrapper() {
+Logger::LogWrapper::~LogWrapper() throw(std::runtime_error) {
     os_ << std::endl;
     if (sev_ == FATAL) {
         throw std::runtime_error("fatal error");

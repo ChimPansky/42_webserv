@@ -85,16 +85,16 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
 {
     SocketsIt acceptor = cluster_.sockets_.find(fd);
     if (acceptor == cluster_.sockets_.end()) {
-        // LOG(ERROR) << "no such socket: " << fd;
+        LOG(ERROR) << "no such socket: " << fd;
         return;
     }
     // utils::shared_ptr<Server> serv = cluster_.sockets_to_servers_[fd][0]; // Choose server
     // instead
     utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor->second->Accept();
     if (!client_sock) {
-        // LOG(ERROR) << "error accepting connection on: " << fd;
+        LOG(ERROR) << "error accepting connection on: " << fd;
         return;
     }
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
-    // LOG(INFO) << "New incoming connection on: " << fd << std::endl;
+    LOG(INFO) << "New incoming connection on: " << fd;
 }

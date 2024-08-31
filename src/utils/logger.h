@@ -24,7 +24,7 @@ class Logger {
     class LogWrapper {
       public:
         LogWrapper(std::ostream& os, Severity sev);
-        ~LogWrapper();
+        ~LogWrapper() throw(std::runtime_error);
         template <typename T>
         LogWrapper& operator<<(const T& rhs)
         {
@@ -54,6 +54,7 @@ class Logger {
 
 }  // namespace utils
 
-#define LOG(severity)                                                                              \
-    utils::Logger::get().log(severity) << "[ " << #severity[0] << utils::Logger::dump_time()       \
-                                       << " " << __FILE__ << ":" << __LINE__ << " ] "
+#define LOG(severity)                                   \
+    utils::Logger::get().log(severity)                  \
+        << #severity[0] << utils::Logger::dump_time()   \
+        << " " << __FILE__ << ":" << __LINE__ << "] "
