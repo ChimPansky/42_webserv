@@ -1,5 +1,4 @@
-#ifndef WS_UTILS_UNIQUE_PTR_H
-#define WS_UTILS_UNIQUE_PTR_H
+#pragma once
 // NOLINTBEGIN
 
 /**
@@ -181,4 +180,3 @@ inline bool operator>(const unique_ptr<T>& l, const unique_ptr<U>& r) throw()  /
 
 }  // namespace utils
 // NOLINTEND
-#endif  // WS_UTILS_UNIQUE_PTR_H
