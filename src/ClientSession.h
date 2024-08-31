@@ -46,7 +46,6 @@ class ClientSession {
     int master_socket_fd_;  // to choose correct server later
     std::vector<char> buf_;  // string?
     size_t buf_send_idx_;
-    http::Request rq_;
     http::RequestBuilder rq_builder_;
     http::Response rs_;
     bool connection_closed_;
