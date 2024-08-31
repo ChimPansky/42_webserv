@@ -39,11 +39,13 @@ Connection: Closed\n\r\
 
 void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
 {
-    std::cout << bytes_recvdd << " bytes recvd" << std::endl;
+    std::cout << "\n" << bytes_recvdd << " bytes recvd" << std::endl;
     std::cout.write(buf_.data(), buf_.size()) << std::flush;
-    if (/*request is ready*/ buf_.size() > 20) {
+    rq_builder_.ParseChunk(buf_.data(), bytes_recvdd);
+    if (rq_builder_.IsRequestReady()) {
         // if cgi run and register callbacks for cgi
         // else return static page
+        //rq_builder_.rq();
 
         c_api::EventManager::get().DeleteCallbacksByFd(client_sock_->sockfd(),
                                                        c_api::EventManager::CT_READ);

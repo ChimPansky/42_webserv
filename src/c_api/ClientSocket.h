@@ -27,7 +27,7 @@ class ClientSocket {
 
   private:
     int sockfd_;
-    static const size_t buf_sz_ = 666;
+    static const size_t buf_sz_ = 10;
     char buf_[buf_sz_];
 };
 

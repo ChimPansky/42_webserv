@@ -18,11 +18,21 @@ class RequestBuilder {
     };
 
   public:
-    RequestBuilder();
-    
-  private:
-    http::Request rq_;
+    void ParseChunk(const char* chunk, size_t chunk_size);
+    bool IsRequestReady() const;
+    const Request& rq() const;
 
+  private:
+    int chunk_counter_;
+    Request rq_;
+    ParseState parse_state_;
+    //std::string parse_buf_;
+   // size_t parse_buf_idx_;
+    void ParseMethod();
+    void ParseUri();
+    void ParseVersion();
+    void ParseHeaders();
+    void ParseBody();
 };
 
 }  // namespace http
