@@ -14,7 +14,7 @@
 #include "ServerCluster.h"
 #include "c_api/EventManager.h"
 #include "utils/logger.h"
-
+#include <iostream>
 void StopCluster(int /*signum*/)
 {
     ServerCluster::Stop();
@@ -30,10 +30,8 @@ int main(int ac, char **av)
     signal(SIGINT, StopCluster);
 
     c_api::EventManager::init(c_api::EventManager::MT_SELECT);
-
-    ServerCluster::Start(
-        (Config(av[1])));  // curly braces is a dream
-                           // another approach is Config::parse which returns config,
-                           // but then copy c-tor for Configrequired, as RVO is not guaranteed
+    ServerCluster::Start((Config(av[1])));  // curly braces is a dream
+                        // another approach is Config::parse which returns config,
+                        // but then copy c-tor for Configrequired, as RVO is not guaranteed
     return 0;
 }
