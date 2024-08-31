@@ -1,26 +1,38 @@
 #include "Config.h"
-#include <fstream>
+#include "conf_pars.h"
+#include <iostream>
+#include <vector>
 #include "ServerBlock.h"
+#include "utils/unique_ptr.h"
 
 Config::Config(const char* config_path)
   : mx_type_("select"),
-    error_log_(""),
+    error_log_path_("/logs/error.log"),
     error_log_level_("info"),
     keepalive_timeout_(65),
-    servers_()
+    client_max_body_size_(1048576),
+    listeners_(),
+    server_configs_()
 {
     std::string path(config_path);
     std::ifstream _config_file;
 
-    if (path.substr(path.find_last_of('.') + 1) != "conf") {
-        throw std::runtime_error("Invalid configuration file suffix");
+    if (path.length() < 6 || path.substr(path.find_last_of('.') + 1) != "conf") {
+        std::cerr << "Invalid configuration file extension." << std::endl;
+        return ;
     }
 
     _config_file.open(config_path);
     if (!_config_file.is_open()) {
-        throw std::runtime_error("Cannot open configuration file");
+        std::cerr << "Failed to open configuration file." << std::endl;
+        return ;
     }
-    //read and parse the configuration file
+    //config_pars::ProcessFile(_config_file);
+
+    // when server blocks are parsed:
+    for (std::vector<utils::unique_ptr<ServerBlock> >::iterator it = server_configs_.begin(); it != server_configs_.end(); it++) {
+        listeners_.push_back((*it)->listener());
+    }
     _config_file.close();
 }
 
@@ -29,9 +41,9 @@ const std::string& Config::mx_type() const
     return mx_type_;
 }
 
-const std::string&  Config::error_log() const
+const std::string&  Config::error_log_path()
 {
-    return error_log_;
+    return error_log_path_;
 }
 
 const std::string&  Config::error_log_level() const
@@ -39,22 +51,56 @@ const std::string&  Config::error_log_level() const
     return error_log_level_;
 }
 
+const std::vector<std::pair<in_addr_t, in_port_t> > Config::listeners() const
+{
+    return listeners_;
+}
+
 int Config::keepalive_timeout() const
 {
     return keepalive_timeout_;
 }
 
-const std::vector<ServerBlock>& Config::servers() const
+size_t  Config::client_max_body_size() const
 {
-    return servers_;
+    return client_max_body_size_;
+}
+
+const std::map<int, std::string>& Config::error_pages() const
+{
+    return error_pages_;
+}
+
+const std::vector<utils::unique_ptr<ServerBlock> >& Config::server_configs() const
+{
+    return server_configs_;
+}
+
+utils::unique_ptr<ServerBlock>  Config::FindServerBlock(std::pair<in_addr_t, in_port_t> listener, const std::string& server_name)
+{
+    if (!server_name.empty()) {
+        for (std::vector<utils::unique_ptr<ServerBlock> >::iterator it = server_configs_.begin(); it != server_configs_.end(); it++) {
+
+            std::vector<std::string>::const_iterator iter = std::find((*it)->server_names().begin(), (*it)->server_names().end(), server_name);
+            if (iter != (*it)->server_names().end()) {
+                if ((*it)->listener() == listener) {
+                    return *it;
+                }
+            }
+        }
+    }
+    for (std::vector<utils::unique_ptr<ServerBlock> >::iterator it = server_configs_.begin(); it != server_configs_.end(); it++) {
+        if ((*it)->listener() == listener) {
+            return *it;
+        }
+    }
+    return *server_configs_.begin();
 }
 
 const std::vector<std::string>    Config::GetTokens() {
     
     std::vector<std::string> tokens;
 
-    tokens.push_back("http");
-    tokens.push_back("server");
     tokens.push_back("error_log");
     tokens.push_back("use");
     tokens.push_back("keepalive_timeout");
@@ -67,41 +113,3 @@ const std::vector<std::string>    Config::GetTokens() {
     return tokens;
 }
 
-void    Config::processFile(std::ifstream& _config_file)
-{
-    std::string content;
-    
-    while ( std::getline(_config_file, content) ) {
-       
-    }
-    if (content.empty()) {
-        throw std::runtime_error("Empty configuration file.\n");
-    }
-    _config_file.close();
-}
-
-
-void  Config::set_mx_type(const std::string& mx_type)
-{
-     mx_type_ = mx_type;
-}
-
-void  Config::set_error_log(const std::string& error_log)
-{
-    error_log_ = error_log;
-}
-
-void  Config::set_error_log_level(const std::string& error_log_level)
-{
-    error_log_level_ = error_log_level;
-}
-
-void  Config::set_keepalive_timeout(int keepalive_timeout)
-{
-    keepalive_timeout_ = keepalive_timeout;
-}
-
-void  Config::set_servers(const std::vector<ServerBlock>& servers)
-{
-    servers_ = servers;
-}

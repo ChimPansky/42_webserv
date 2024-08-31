@@ -1,47 +1,37 @@
 #ifndef WS_SERVERBLOCK_H
 #define WS_SERVERBLOCK_H
 
-#include <list>
-
+#include <netinet/in.h>
 #include "LocationBlock.h"
 
 #include <string>
+#include <utils/unique_ptr.h>
 
 class   ServerBlock {
 
   private:
     std::string access_log_;
     std::string access_log_level_;
-    int port_;
+    std::pair<in_addr_t, in_port_t> listener_;
     std::string root_dir_;
     std::string default_file_;
-    bool dir_listing_;
-    int client_max_body_size_;
-    std::map<int, std::string> error_pages_;
+    std::string dir_listing_;
     std::vector<std::string> server_names_;
-    std::list<std::pair<std::string, LocationBlock> > locations_;
+    std::vector<std::pair</* route */std::string, utils::unique_ptr<LocationBlock> > > locations_;
 
   public:
-    ServerBlock();
+    ServerBlock(/* std::map<std::string, std::string>, std::map<std::string, std::string>::iterator */);
     const std::string&  access_log() const;
     const std::string&  access_log_level() const;
-    int port() const;
-    const std::string&  root_dir() const;
-    const std::string&  default_file() const;
-    bool dir_listing() const;
-    int client_max_body_size() const;
+    const std::pair<in_addr_t, in_port_t>&  listener() const;
+    const std::string&  root_dir(const std::string& route);
+    const std::string&  default_file(const std::string& route);
+    bool  dir_listing(const std::string& route);
     const std::map<int, std::string>& error_pages() const;
     const std::vector<std::string>& server_names();
-    const std::list<std::pair<std::string, LocationBlock> >& locations();
+    //const std::vector<std::pair<std::string, utils::unique_ptr<LocationBlock> > >& locations();
+    utils::unique_ptr<LocationBlock>  FindLocation(const std::string& route);
     static const std::vector<std::string>    GetTokens();
-    void  set_access_log(const std::string& access_log);
-    void  set_access_log_level(const std::string& access_log_level);
-    void  set_port(int port);
-    void  set_root_dir(const std::string& root_dir);
-    void  set_default_file(const std::string& default_file);
-    void  set_dir_listing(bool dir_listing);
-    void  set_client_max_body_size(int client_max_body_size);
-    void  set_error_pages(const std::map<int, std::string>& error_pages);
 };
 
 #endif  // WS_SERVERBLOCK_H
