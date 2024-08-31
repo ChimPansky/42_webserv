@@ -8,7 +8,7 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock)
     : client_sock_(sock), buf_send_idx_(0), connection_closed_(false)
 {
     c_api::EventManager::get().RegisterReadCallback(
-        client_sock_->sockfd(), utils::unique_ptr<utils::ICallback>(new ClientReadCallback(*this)));
+        client_sock_->sockfd(), utils::unique_ptr<c_api::EventManager::ICallback>(new ClientReadCallback(*this)));
 }
 
 ClientSession::~ClientSession()
@@ -52,7 +52,7 @@ void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
         std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
         c_api::EventManager::get().RegisterWriteCallback(
             client_sock_->sockfd(),
-            utils::unique_ptr<utils::ICallback>(new ClientWriteCallback(*this)));
+            utils::unique_ptr<c_api::EventManager::ICallback>(new ClientWriteCallback(*this)));
     }
 }
 

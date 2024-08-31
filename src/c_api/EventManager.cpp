@@ -73,13 +73,13 @@ int EventManager::CheckWithSelect_()
     return 0;
 }
 
-int EventManager::RegisterReadCallback(int fd, utils::unique_ptr<utils::ICallback> callback)
+int EventManager::RegisterReadCallback(int fd, utils::unique_ptr<c_api::EventManager::ICallback> callback)
 {
     rd_sock_.insert(std::make_pair(fd, callback));
     return 0;
 }
 
-int EventManager::RegisterWriteCallback(int fd, utils::unique_ptr<utils::ICallback> callback)
+int EventManager::RegisterWriteCallback(int fd, utils::unique_ptr<c_api::EventManager::ICallback> callback)
 {
     wr_sock_.insert(std::make_pair(fd, callback));
     return 0;
