@@ -48,8 +48,6 @@ class Logger {
     std::ostream* es_;
 
     static char format_buf_[LOGGER_TIME_FORMAT_MAX_LEN];
-
-    static Logger* logger;
 };
 
 }  // namespace utils

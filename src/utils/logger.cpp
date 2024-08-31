@@ -49,13 +49,10 @@ Logger::LogWrapper Logger::log(enum Severity sev) {
 }
 
 Logger& Logger::get() {
-    if(!logger) {
-        logger = new Logger;
-    }
-    return *logger;
+    static Logger logger;
+    return logger;
 }
 
-Logger* Logger::logger = NULL;
 char Logger::format_buf_[LOGGER_TIME_FORMAT_MAX_LEN] = {};
 
 // int main() {
