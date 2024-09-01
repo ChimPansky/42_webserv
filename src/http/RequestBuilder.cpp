@@ -1,5 +1,6 @@
 #include "RequestBuilder.h"
 #include <iostream>
+#include "utils/logger.h"
 
 
 namespace http {
@@ -7,7 +8,7 @@ namespace http {
 void RequestBuilder::ParseChunk(const char* chunk, size_t chunk_size)
 {
     ++chunk_counter_;
-    std::cout << "\nParsing chunk no " << chunk_counter_ << "..." << std::endl;
+    LOG(DEBUG) << "Parsing chunk no " << chunk_counter_ << "...";
     for (size_t i = 0; i < chunk_size; ++i) {
         char c = chunk[i];
         (void)c;

@@ -1,14 +1,17 @@
 #include "ClientSession.h"
 
-#include <iostream>
-
 #include "c_api/EventManager.h"
+#include "utils/logger.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
-    : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0), connection_closed_(false)
+    : client_sock_(sock),
+      master_socket_fd_(master_sock_fd),
+      buf_send_idx_(0),
+      connection_closed_(false)
 {
     c_api::EventManager::get().RegisterReadCallback(
-        client_sock_->sockfd(), utils::unique_ptr<c_api::EventManager::ICallback>(new ClientReadCallback(*this)));
+        client_sock_->sockfd(),
+        utils::unique_ptr<c_api::EventManager::ICallback>(new ClientReadCallback(*this)));
 }
 
 ClientSession::~ClientSession()
@@ -39,9 +42,10 @@ Connection: Closed\n\r\
 
 void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
 {
-    std::cout << "\n" << bytes_recvdd << " bytes recvd" << std::endl;
-    std::cout.write(buf_.data(), buf_.size()) << std::flush;
     rq_builder_.ParseChunk(buf_.data(), bytes_recvdd);
+    LOG(DEBUG) << bytes_recvdd << " bytes recvd";
+    LOG(DEBUG) << buf_.data();
+    // std::cout.write(buf_.data(), buf_.size()) << std::flush;
     if (rq_builder_.IsRequestReady()) {
         // if cgi run and register callbacks for cgi
         // else return static page
@@ -68,7 +72,8 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
     if (bytes_recvdd <= 0) {
         // close connection
         client_.connection_closed_ = true;
-        std::cout << "Connection closed" << std::endl;
+
+        LOG(INFO) << "Connection closed";
         return;
     }
     client_.ProcessNewData(bytes_recvdd);
@@ -85,11 +90,11 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
     if (bytes_sent <= 0) {
         // close connection
         client_.connection_closed_ = true;
-        std::cerr << "error on send" << std::endl;
+        LOG(ERROR) << "error on send";  // add perror
         return;
     }
     if (client_.buf_send_idx_ == client_.buf_.size()) {
         client_.connection_closed_ = true;
-        std::cout << client_.buf_send_idx_ << " bytes sent, connection closed" << std::endl;
+        LOG(INFO) << client_.buf_send_idx_ << " bytes sent, connection closed";
     }
 }
