@@ -19,6 +19,7 @@ FILENAMES = \
 	c_api/EventManager.cpp \
 	c_api/MasterSocket.cpp \
 	c_api/utils.cpp \
+	http/Request.cpp \
 	http/RequestBuilder.cpp \
 	utils/logger.cpp \
 	ClientSession.cpp \

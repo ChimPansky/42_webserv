@@ -29,6 +29,8 @@ struct Request {
     std::map<std::string, std::string> params_;
     std::string body_;
     size_t body_size_;
+
+    void Reset();
 };
 
 }  // namespace http

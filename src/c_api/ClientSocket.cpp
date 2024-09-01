@@ -7,10 +7,11 @@
 #include <cstring>
 #include <stdexcept>
 #include <vector>
+#include "utils/logger.h"
 
 namespace c_api {
 
-const size_t ClientSocket::buf_sz_;
+const size_t ClientSocket::sock_buf_sz_;
 
 ClientSocket::ClientSocket(int fd) : sockfd_(fd)
 {}
@@ -33,17 +34,22 @@ int ClientSocket::sockfd() const
 
 ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t sz) const
 {
-    ssize_t bytes_recvd = ::recv(sockfd_, (void*)buf_, std::min(sz, buf_sz_), MSG_NOSIGNAL);
+    ssize_t bytes_recvd = ::recv(sockfd_, (void*)sock_buf_, std::min(sz, sock_buf_sz_), MSG_NOSIGNAL);
     if (bytes_recvd > 0) {
         size_t init_sz = buf.size();
         buf.resize(init_sz + bytes_recvd);
-        std::memcpy(buf.data() + init_sz, buf_, bytes_recvd);
+        std::memcpy(buf.data() + init_sz, sock_buf_, bytes_recvd);
     }
     return bytes_recvd;
 }
 
 ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const
 {
+    // TODO: send in chunks (like recv)
+    LOG(DEBUG) << "Sending " << sz << " bytes";
+    LOG(DEBUG) << "idx: " << idx;
+    LOG(DEBUG) << "buf.data(): " << buf.data();
+
     if (idx + sz > buf.size()) {
         throw std::runtime_error("idx is too big");
     }

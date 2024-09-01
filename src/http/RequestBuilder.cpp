@@ -1,9 +1,15 @@
 #include "RequestBuilder.h"
-#include <iostream>
+#include <cstring>
 #include "utils/logger.h"
-
+#include <iostream>
+#include <vector>
 
 namespace http {
+
+RequestBuilder::RequestBuilder()
+{
+    Reset();
+}
 
 void RequestBuilder::ParseChunk(const char* chunk, size_t chunk_size)
 {
@@ -31,6 +37,28 @@ void RequestBuilder::ParseChunk(const char* chunk, size_t chunk_size)
                 break;
         }
     }
+    size_t buf_sz = parse_buf_.size();
+    parse_buf_.resize(buf_sz + chunk_size);
+    std::memcpy(parse_buf_.data() + buf_sz, chunk, chunk_size);
+    std::cout << "parse_buf_: " << parse_buf_.data() << std::endl;
+    if (parse_buf_.size() >= 4 &&
+        std::strncmp(parse_buf_.data() + parse_buf_.size() - 4, "\r\n\r\n", 4) == 0) {
+        is_request_ready_ = true;
+    }
+}
+
+void RequestBuilder::Reset()
+{
+    is_request_ready_ = false;
+    chunk_counter_ = 0;
+    parse_buf_.clear();
+    parse_state_ = PS_START;
+    rq_ = Request();
+}
+
+bool RequestBuilder::is_request_ready() const
+{
+    return is_request_ready_;
 }
 
 void RequestBuilder::ParseMethod()
@@ -56,11 +84,6 @@ void RequestBuilder::ParseHeaders()
 void RequestBuilder::ParseBody()
 {
     // std::cout << "Parsing Body..." << std::endl;
-}
-
-bool RequestBuilder::IsRequestReady() const
-{
-    return (chunk_counter_ > 5);
 }
 
 const Request& RequestBuilder::rq() const

@@ -5,7 +5,6 @@
 
 #include "c_api/ClientSocket.h"
 #include "c_api/EventManager.h"
-#include "http/Request.h"
 #include "http/RequestBuilder.h"
 #include "http/Response.h"
 #include "utils/unique_ptr.h"
@@ -44,8 +43,8 @@ class ClientSession {
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
     int master_socket_fd_;  // to choose correct server later
-    std::vector<char> buf_;  // string?
-    size_t buf_send_idx_;
+    std::vector<char> client_buf_;  // string?
+    size_t client_buf_idx_;
     http::RequestBuilder rq_builder_;
     http::Response rs_;
     bool connection_closed_;
