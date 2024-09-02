@@ -9,7 +9,7 @@ class   LocationBlock {
 
   private:
     std::vector<std::string> allowed_methods_;
-    std::pair</* status code */int, /* new route */std::string> return_code_;
+    std::pair</* status code */int, /* new route */std::string> redirect_;
     bool is_cgi_;
     std::vector<std::string> cgi_path_;
     std::vector<std::string> cgi_extension_;
@@ -20,7 +20,7 @@ class   LocationBlock {
   public:
     LocationBlock(/* std::map<std::string, std::string>, std::map<std::string, std::string>::iterator */);
     const std::vector<std::string>& allowed_methods() const;
-    const std::pair<int, std::string>& return_code() const;
+    const std::pair<int, std::string>& redirect() const;
     bool  is_cgi() const;
     const std::vector<std::string>& cgi_path() const;
     const std::vector<std::string>& cgi_extension() const;

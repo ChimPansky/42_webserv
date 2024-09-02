@@ -2,7 +2,7 @@
 
 LocationBlock::LocationBlock()
   : allowed_methods_(),
-    return_code_(0, ""),
+    redirect_(0, ""),
     is_cgi_(false),
     cgi_path_(),
     cgi_extension_(),
@@ -19,9 +19,9 @@ const std::vector<std::string>& LocationBlock::allowed_methods() const
     return allowed_methods_;
 }
 
-const std::pair<int, std::string>& LocationBlock::return_code() const
+const std::pair<int, std::string>& LocationBlock::redirect() const
 {
-    return return_code_;
+    return redirect_;
 }
 
 bool LocationBlock::is_cgi() const
