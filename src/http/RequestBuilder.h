@@ -31,7 +31,7 @@ class RequestBuilder {
 
   private:
     Request rq_;
-    Server& server_;
+    //Server& server_;
     bool is_request_ready_;
     int chunk_counter_;
     ParseState parse_state_;
