@@ -4,6 +4,8 @@
 #include "Request.h"
 #include <cstddef>
 #include <vector>
+
+class Server;
 namespace http {
 
 class RequestBuilder {
@@ -29,6 +31,7 @@ class RequestBuilder {
 
   private:
     Request rq_;
+    Server& server_;
     bool is_request_ready_;
     int chunk_counter_;
     ParseState parse_state_;
