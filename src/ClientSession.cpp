@@ -74,7 +74,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
         LOG(INFO) << "Connection closed";
         return;
     }
-    client_.ProcessNewData(bytes_recvdd);
+    client_.ProcessNewData();
 }
 
 ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : client_(client)
