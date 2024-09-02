@@ -42,7 +42,8 @@ Connection: Closed\n\r\
 
 void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
 {
-    rq_builder_.ParseChunk(client_buf_.data() + client_buf_.size() - bytes_recvdd, bytes_recvdd);
+    (void)bytes_recvdd;
+    rq_builder_.ParseChunk();
     // LOG(DEBUG) << "client_buf_.at(idx): " << client_buf_.at(client_buf_idx_);
     //  std::cout.write(buf_.data(), buf_.size()) << std::flush;
     if (rq_builder_.is_request_ready()) {
@@ -68,7 +69,7 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    long bytes_recvdd = client_.client_sock_->Recv(client_.client_buf_);
+    long bytes_recvdd = client_.client_sock_->Recv(client_.rq_builder_.rq_buf());
     if (bytes_recvdd <= 0) {
         // close connection
         client_.connection_closed_ = true;
@@ -76,7 +77,6 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
         LOG(INFO) << "Connection closed";
         return;
     }
-    client_.client_buf_idx_ += bytes_recvdd;
     client_.ProcessNewData(bytes_recvdd);
 }
 

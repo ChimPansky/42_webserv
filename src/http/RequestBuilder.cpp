@@ -10,13 +10,22 @@ RequestBuilder::RequestBuilder()
 {
     Reset();
 }
+const Request& RequestBuilder::rq() const
+{
+    return rq_;
+}
 
-void RequestBuilder::ParseChunk(const char* chunk, size_t chunk_size)
+std::vector<char>& RequestBuilder::rq_buf()
+{
+    return rq_buf_;
+}
+
+void RequestBuilder::ParseChunk()
 {
     ++chunk_counter_;
     LOG(DEBUG) << "Parsing chunk no " << chunk_counter_ << "...";
-    for (size_t i = 0; i < chunk_size; ++i) {
-        char c = chunk[i];
+    while (parse_idx_ < rq_buf_.size()) {
+        char c = rq_buf_[parse_idx_];
         (void)c;
         switch (parse_state_) {
             case PS_START:
@@ -36,22 +45,22 @@ void RequestBuilder::ParseChunk(const char* chunk, size_t chunk_size)
             case PS_ERROR:
                 break;
         }
+        parse_idx_++;
+        std::cout << c;
     }
-    size_t buf_sz = parse_buf_.size();
-    parse_buf_.resize(buf_sz + chunk_size);
-    std::memcpy(parse_buf_.data() + buf_sz, chunk, chunk_size);
-    std::cout << "parse_buf_: " << parse_buf_.data() << std::endl;
-    if (parse_buf_.size() >= 4 &&
-        std::strncmp(parse_buf_.data() + parse_buf_.size() - 4, "\r\n\r\n", 4) == 0) {
+    if (rq_buf_.size() >= 4 &&
+        std::strncmp(rq_buf_.data() + rq_buf_.size() - 4, "\r\n\r\n", 4) == 0) {
         is_request_ready_ = true;
     }
+    std::cout << std::endl;
 }
 
 void RequestBuilder::Reset()
 {
     is_request_ready_ = false;
     chunk_counter_ = 0;
-    parse_buf_.clear();
+    parse_idx_ = 0;
+    rq_buf_.clear();
     parse_state_ = PS_START;
     rq_ = Request();
 }
@@ -86,8 +95,4 @@ void RequestBuilder::ParseBody()
     // std::cout << "Parsing Body..." << std::endl;
 }
 
-const Request& RequestBuilder::rq() const
-{
-    return rq_;
-}
 }  // namespace http

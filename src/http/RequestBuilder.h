@@ -2,6 +2,7 @@
 #define WS_HTTP_REQUEST_BUILDER_H
 
 #include "Request.h"
+#include <cstddef>
 #include <vector>
 namespace http {
 
@@ -21,16 +22,18 @@ class RequestBuilder {
   public:
     RequestBuilder();
     void Reset();
-    void ParseChunk(const char* chunk, size_t chunk_size);
+    void ParseChunk();
     bool is_request_ready() const;
     const Request& rq() const;
+    std::vector<char>& rq_buf();
 
   private:
     Request rq_;
     bool is_request_ready_;
     int chunk_counter_;
     ParseState parse_state_;
-    std::vector<char> parse_buf_;
+    std::vector<char> rq_buf_;
+    size_t parse_idx_;
     void ParseMethod();
     void ParseUri();
     void ParseVersion();
