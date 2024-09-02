@@ -40,12 +40,9 @@ Connection: Closed\n\r\
 </body>\n\r\
 </html>\n\r"
 
-void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
+void ClientSession::ProcessNewData()
 {
-    (void)bytes_recvdd;
     rq_builder_.ParseChunk();
-    // LOG(DEBUG) << "client_buf_.at(idx): " << client_buf_.at(client_buf_idx_);
-    //  std::cout.write(buf_.data(), buf_.size()) << std::flush;
     if (rq_builder_.is_request_ready()) {
         // if cgi run and register callbacks for cgi
         // else return static page

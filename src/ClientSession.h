@@ -20,7 +20,7 @@ class ClientSession {
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
-    void ProcessNewData(ssize_t bytes_recvdd);
+    void ProcessNewData();
     class ClientReadCallback : public c_api::EventManager::ICallback {
       public:
         ClientReadCallback(ClientSession& client);
