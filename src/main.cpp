@@ -12,6 +12,8 @@
 #include <csignal>
 #include <iostream>
 
+#include "Config.h"
+#include "ConfigBuilder.h"
 #include "ServerCluster.h"
 #include "c_api/EventManager.h"
 
@@ -23,17 +25,25 @@ void StopCluster(int /*signum*/)
 
 int main(int ac, char **av)
 {
-    if (ac != 2) {
+    if (ac != 2 || !av[1]) {
         std::cerr << "usage: ws <path-to-config-file>" << std::endl;
         return 1;
     }
-    signal(SIGINT, StopCluster) ;
+    signal(SIGINT, StopCluster);
 
     c_api::EventManager::init(c_api::EventManager::MT_SELECT);
 
-    ServerCluster::Start(
-        (Config(av[1])));  // curly braces is a dream
-                           // another approach is Config::parse which returns config,
-                           // but then copy c-tor for Configrequired, as RVO is not guaranteed
+    try {
+        ConfigBuilder config_builder(av[1]);
+
+        ServerCluster::Start(
+            (config_builder
+                 .Parse()));  // curly braces is a dream
+                              // another approach is Config::parse which returns config,
+                              // but then copy c-tor for Configrequired, as RVO is not guaranteed
+    } catch (std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
     return 0;
 }

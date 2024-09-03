@@ -19,7 +19,7 @@ FILENAMES = \
 	c_api/EventManager.cpp \
 	c_api/MasterSocket.cpp \
 	c_api/utils.cpp \
-	conf_pars.cpp \
+	ConfigBuilder.cpp \
 	Client.cpp \
 	Config.cpp \
 	LocationBlock.cpp \
