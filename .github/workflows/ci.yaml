@@ -75,7 +75,9 @@ jobs:
         run: bash -x ./.github/scripts/valgrind.sh "./webserv ./conf/webserv.conf" valgr.out
   combine_compilation_test_result:
     name: Compilation Test Result
-    needs: compilation_test
+    needs:
+      - compilation_test
+      - basic_valgrind_test
     runs-on: ubuntu-latest
     steps:
       - name: Show compilation test results

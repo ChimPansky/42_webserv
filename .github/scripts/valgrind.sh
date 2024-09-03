@@ -1,3 +1,5 @@
+set -e
+
 COMMAND=$1
 LOGFILE=$2
 
@@ -33,7 +35,7 @@ if [[ $VAL_EXIT_CODE == $ERROR_EXITCODE ]]; then
 fi
 
 OPEN_FDS=$(grep "FILE DESCRIPTORS:" $LOGFILE | sed -E 's/(==[0-9]+== FILE DESCRIPTORS: ([0-9]+).*)/\2/')
-OPEN_STD_FDS=$(grep "FILE DESCRIPTORS:" valgr.out | sed -E 's/(==[0-9]+== FILE DESCRIPTORS: [0-9]+ open \(([0-9]+) std\).*)/\2/')
+OPEN_STD_FDS=$(grep "FILE DESCRIPTORS:" $LOGFILE | sed -E 's/(==[0-9]+== FILE DESCRIPTORS: [0-9]+ open \(([0-9]+) std\).*)/\2/')
 
 # +1 is valgrind log file
 if (( $OPEN_FDS != $OPEN_STD_FDS + 1 )); then
