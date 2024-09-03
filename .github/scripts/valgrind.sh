@@ -36,8 +36,8 @@ fi
 
 OPEN_FDS=$(grep "FILE DESCRIPTORS:" $LOGFILE | sed -E 's/(==[0-9]+== FILE DESCRIPTORS: ([0-9]+).*)/\2/')
 OPEN_STD_FDS=$(grep "FILE DESCRIPTORS:" $LOGFILE | sed -E 's/(==[0-9]+== FILE DESCRIPTORS: [0-9]+ open \(([0-9]+) std\).*)/\2/')
+INHERITED_FDS=$(grep -o '<inherited from parent>' $LOGFILE | wc -l)  # TODO check with children
 
-# +1 is valgrind log file
-if (( $OPEN_FDS != $OPEN_STD_FDS + 1 )); then
+if (( $OPEN_FDS != $OPEN_STD_FDS + $INHERITED_FDS )); then
     exit $ERROR_EXITCODE
 fi
