@@ -13,19 +13,17 @@ class ConfigBuilder {
     ConfigBuilder(const char* config_path);
     std::vector<setting> ProcessFile(std::ifstream& _config_file);
     setting MakePair(const std::string& line);
-    bool HandleParanthesis(setting& setting, const std::string& line);
-    // const   std::vector<std::string>  SplitLine(const std::string& line);
+    void ParseDirective(setting& parsed_setting);
+    void ParseNesting(setting& parsed_setting);
+    void PrintSettings();
     const Config& Parse();
-    void ParseDirective(setting parsed_setting);
-    void ParseNesting(setting parsed_setting);
-    void AppendNestingPath(std::string& token, std::stack<std::string> temp_stack);
 
   private:
     ConfigBuilder();
     Config config_;
     std::stack<std::string> nesting_;
     std::vector<setting> settings_;
-    std::string block_name_;
+    typedef std::pair<std::string, std::string> setting;
 };
 
 #endif  // WS_CONFIG_PARS_H

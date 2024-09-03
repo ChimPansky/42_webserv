@@ -1,6 +1,8 @@
 #include "ConfigBuilder.h"
 
-#include <stack>
+#include <iostream>
+#include <string>
+#include <vector>
 
 ConfigBuilder::ConfigBuilder(const char* config_path) : config_(), nesting_(), settings_(0)
 {
@@ -19,6 +21,21 @@ ConfigBuilder::ConfigBuilder(const char* config_path) : config_(), nesting_(), s
     _config_file.close();
 }
 
+const Config& ConfigBuilder::Parse()
+{
+    Config config(settings_);
+    config_ = config;
+
+    return config_;
+}
+
+void ConfigBuilder::PrintSettings()
+{
+    for (std::vector<setting>::iterator it = settings_.begin(); it != settings_.end(); it++) {
+        std::cout << "[" << it->first << "] : [" << it->second << "]" << std::endl;
+    }
+}
+
 std::vector<setting> ConfigBuilder::ProcessFile(std::ifstream& _config_file)
 {
     setting parsed_setting;
@@ -30,13 +47,14 @@ std::vector<setting> ConfigBuilder::ProcessFile(std::ifstream& _config_file)
             continue;
         }
         parsed_setting = MakePair(content);
-        if (content.find(';') == std::string::npos - 1) {
+        if (content.find(';') == content.size() - 1) {
             ParseDirective(parsed_setting);
-        } else if (content.find('{') == std::string::npos - 1) {
+        } else if (content.find('{') == content.size() - 1) {
             ParseNesting(parsed_setting);
             // TODO : check if duplicates override the value or are they invalid
         } else if (content == "}" && !nesting_.empty()) {
             nesting_.pop();
+            settings_.push_back(parsed_setting);
         } else {
             throw std::runtime_error("Invalid configuration file: invalid content: " + content);
         }
@@ -47,28 +65,62 @@ std::vector<setting> ConfigBuilder::ProcessFile(std::ifstream& _config_file)
     return settings_;
 }
 
-const Config& ConfigBuilder::Parse()
+void ConfigBuilder::ParseDirective(setting& parsed_setting)
 {
-    Config config(settings_);
-    config_ = config;
+    std::vector<std::string> valid_tokens;
 
-    return config_;
-}
-
-void ConfigBuilder::ParseDirective(setting parsed_setting)
-{
-    AppendNestingPath(parsed_setting.first, nesting_);
+    if (nesting_.empty()) {
+        valid_tokens = Config::GetMainTokens();
+    } else if (nesting_.top() == "http") {
+        valid_tokens = Config::GetHttpTokens();
+    } else if (nesting_.top() == "server") {
+        valid_tokens = ServerBlock::GetTokens();
+    } else if (nesting_.top() == "location") {
+        valid_tokens = LocationBlock::GetTokens();
+    } else {
+        throw std::runtime_error("Invalid configuration file: invalid nesting.");
+    }
+    if (std::find(valid_tokens.begin(), valid_tokens.end(), parsed_setting.first) ==
+        valid_tokens.end()) {
+        throw std::runtime_error("Invalid configuration file: invalid directive: " +
+                                 parsed_setting.first);
+    }
     settings_.push_back(parsed_setting);
 }
 
-void ConfigBuilder::ParseNesting(setting parsed_setting)
+void ConfigBuilder::ParseNesting(setting& parsed_setting)
 {
-    AppendNestingPath(parsed_setting.first, nesting_);
+    if (parsed_setting.second != "{" && parsed_setting.first != "location") {
+        throw std::runtime_error("Invalid configuration file: invalid content: " +
+                                 parsed_setting.second);
+    } else if (parsed_setting.first == "http") {
+        if (!nesting_.empty()) {
+            throw std::runtime_error("Invalid configuration file: http block outside main block.");
+        }
+    } else if (parsed_setting.first == "server") {
+        if (nesting_.empty() || nesting_.top() != "http") {
+            throw std::runtime_error(
+                "Invalid configuration file: server block outside http block.");
+        }
+
+    } else if (parsed_setting.first == "location") {
+        if (nesting_.empty() || nesting_.top() != "server") {
+            throw std::runtime_error(
+                "Invalid configuration file: location block outside server block.");
+        }
+    } else {
+        throw std::runtime_error("Invalid configuration file: invalid block: " +
+                                 parsed_setting.first);
+    }
+    nesting_.push(parsed_setting.first);
     settings_.push_back(parsed_setting);
 }
 
 setting ConfigBuilder::MakePair(const std::string& line)
 {
+    if (line == "}") {
+        return std::make_pair(line, "");
+    }
     size_t pos = line.find_first_of(" \t");
     if (pos == std::string::npos) {
         throw std::runtime_error("Invalid configuration file: no value specified.");
@@ -76,58 +128,9 @@ setting ConfigBuilder::MakePair(const std::string& line)
     std::string keyword = line.substr(0, pos);
 
     size_t start = line.find_first_not_of(" \t", pos);
-    size_t end = line.find_last_not_of(" \t", pos);
-    if (start == std::string::npos || end != std::string::npos - 1) {
+    if (start == std::string::npos) {
         throw std::runtime_error("Invalid configuration file: no value specified.");
     }
-    std::string value = line.substr(start, end - start);
+    std::string value = line.substr(start, line.size() - start);
     return std::make_pair(keyword, value);
 }
-
-void ConfigBuilder::AppendNestingPath(std::string& token, std::stack<std::string> temp_stack)
-{
-    std::string nesting_path;
-
-    while (!temp_stack.empty()) {
-        nesting_path += temp_stack.top() + ":";
-        temp_stack.pop();
-    }
-    if (!nesting_path.empty()) {
-        token = nesting_path + token;
-    }
-}
-
-bool ConfigBuilder::HandleParanthesis(setting& setting, const std::string& line)
-{
-    if (setting.first.find_first_of("{;") != std::string::npos) {
-        return false;
-    } else if (line.find(';') != std::string::npos &&
-               setting.second[setting.second.size() - 1] != ';') {
-        return false;
-    } else if (line.find('{') != std::string::npos) {
-        if (setting.second[setting.second.size() - 1] != '{') {
-            return false;
-        } else if (setting.first != "location" && setting.second != "{") {
-            return false;
-        } else if (setting.first != "http" && setting.first != "server" &&
-                   setting.first != "location") {
-            return false;
-        }
-    }
-    return true;
-}
-
-/*const std::vector<std::string>  SplitLine(const std::string& line)
-{
-    std::vector<std::string> setting;
-    std::istringstream ss(line);
-
-    std::string word;
-    while (ss >> word) {
-        setting.push_back(word);
-    }
-    if (setting.size() < 2) {
-        throw std::runtime_error("Invalid configuration file: setting with no value found");
-    }
-    return setting;
-}*/
