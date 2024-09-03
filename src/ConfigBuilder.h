@@ -26,7 +26,6 @@ class ConfigBuilder {
     std::stack<std::string> nesting_;
     std::vector<setting> settings_;
     std::string block_name_;
-    typedef std::pair<std::string, std::string> setting;
 };
 
 #endif  // WS_CONFIG_PARS_H
