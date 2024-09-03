@@ -72,7 +72,7 @@ jobs:
       - name: 🔨 Compile with Makefile
         run: make
       - name: Checking with valgrind
-        run: bash -x ./.github/scripts/valgrind.sh "./webserv ./conf/webserv.conf" valgr.out
+        run: bash ./.github/scripts/valgrind.sh "./webserv ./conf/webserv.conf" valgr.out
   combine_compilation_test_result:
     name: Compilation Test Result
     needs:
