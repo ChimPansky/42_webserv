@@ -74,7 +74,7 @@ ServerBlock::locations()
     return locations_.rbegin()->second;
 } */
 
-const std::vector<std::string> ServerBlock::GetServerTokens()
+const std::vector<std::string> ServerBlock::GetTokens()
 {
     std::vector<std::string> tokens;
 

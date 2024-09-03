@@ -1,9 +1,7 @@
 #include "Config.h"
 
-#include <iostream>
 #include <vector>
 
-#include "ConfigBuilder.h"
 #include "ServerBlock.h"
 #include "utils/unique_ptr.h"
 
@@ -134,7 +132,8 @@ const std::vector<utils::unique_ptr<ServerBlock> >& Config::server_configs() con
     return server_configs_;
 }
 
-utils::unique_ptr<ServerBlock> Config::FindServerSettings(std::pair<in_addr_t, in_port_t> listener)
+/* utils::unique_ptr<ServerBlock> Config::FindServerSettings(std::pair<in_addr_t, in_port_t>
+listener)
 {
     for (std::vector<utils::unique_ptr<ServerBlock> >::iterator it = server_configs_.begin();
          it != server_configs_.end(); it++) {
@@ -144,7 +143,7 @@ utils::unique_ptr<ServerBlock> Config::FindServerSettings(std::pair<in_addr_t, i
         }
     }
     return *server_configs_.end();
-}
+} */
 
 const std::vector<std::string> Config::GetMainTokens()
 {
@@ -156,7 +155,7 @@ const std::vector<std::string> Config::GetMainTokens()
     return tokens;
 }
 
-const std::vector<std::string> GetHttpTokens()
+const std::vector<std::string> Config::GetHttpTokens()
 {
     std::vector<std::string> tokens;
 

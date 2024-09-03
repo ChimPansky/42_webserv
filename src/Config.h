@@ -31,7 +31,7 @@ class Config {
     const std::string& dir_listing() const;
     const std::vector<std::pair<in_addr_t, in_port_t> > listeners() const;
     const std::vector<utils::unique_ptr<ServerBlock> >& server_configs() const;
-    utils::unique_ptr<ServerBlock> FindServerSettings(std::pair<in_addr_t, in_port_t>);
+    // utils::unique_ptr<ServerBlock> FindServerSettings(std::pair<in_addr_t, in_port_t>);
     static const std::vector<std::string> GetMainTokens();
     static const std::vector<std::string> GetHttpTokens();
     void InitConfig(std::vector<setting> settings);

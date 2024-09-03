@@ -23,7 +23,7 @@ class ServerBlock {
     const std::vector<std::string>& server_names();
     // const std::vector<std::pair<std::string, utils::unique_ptr<LocationBlock> > >& locations();
     // utils::unique_ptr<LocationBlock>  FindLocation(const std::string& route);
-    static const std::vector<std::string> GetServerTokens();
+    static const std::vector<std::string> GetTokens();
     void InitListeners() const;
     void InitLocations() const;
 
