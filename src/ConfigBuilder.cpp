@@ -1,9 +1,5 @@
 #include "ConfigBuilder.h"
 
-#include <iostream>
-#include <string>
-#include <vector>
-
 ConfigBuilder::ConfigBuilder(const char* config_path) : config_(), nesting_(), settings_(0)
 {
     std::string path(config_path);
@@ -43,7 +39,7 @@ std::vector<setting> ConfigBuilder::ProcessFile(std::ifstream& _config_file)
     std::string content;
     while (std::getline(_config_file >> std::ws, content)) {
         content.erase(content.find_last_not_of(" \t") + 1);
-        if (content.empty() || content[0] == '#') {  // TODO: handle comments after settings_
+        if (content.empty() || content[0] == '#') {  // TODO: handle comments after a setting
             continue;
         }
         parsed_setting = MakePair(content);
@@ -51,7 +47,6 @@ std::vector<setting> ConfigBuilder::ProcessFile(std::ifstream& _config_file)
             ParseDirective(parsed_setting);
         } else if (content.find('{') == content.size() - 1) {
             ParseNesting(parsed_setting);
-            // TODO : check if duplicates override the value or are they invalid
         } else if (content == "}" && !nesting_.empty()) {
             nesting_.pop();
             settings_.push_back(parsed_setting);
@@ -85,6 +80,7 @@ void ConfigBuilder::ParseDirective(setting& parsed_setting)
         throw std::runtime_error("Invalid configuration file: invalid directive: " +
                                  parsed_setting.first);
     }
+    // TODO : check if duplicates override the value or are they invalid
     settings_.push_back(parsed_setting);
 }
 

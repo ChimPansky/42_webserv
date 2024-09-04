@@ -2,6 +2,7 @@
 #define WS_CONFIG_PARS_H
 
 #include <fstream>
+#include <iostream>
 #include <stack>
 #include <string>
 #include <vector>

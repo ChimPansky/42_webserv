@@ -1,10 +1,5 @@
 #include "Config.h"
 
-#include <vector>
-
-#include "ServerBlock.h"
-#include "utils/unique_ptr.h"
-
 Config::Config()
     : mx_type_("select"),
       error_log_path_("/logs/error.log"),

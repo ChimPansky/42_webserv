@@ -1,9 +1,7 @@
 #include "ServerBlock.h"
 
-#include <string>
-
 ServerBlock::ServerBlock(std::vector<setting>)
-    : access_log_(""),
+    : access_log_path_(""),
       access_log_level_("info"),
       listeners_(),
       root_dir_(""),
@@ -13,9 +11,9 @@ ServerBlock::ServerBlock(std::vector<setting>)
       locations_()
 {}
 
-const std::string& ServerBlock::access_log() const
+const std::string& ServerBlock::access_log_path() const
 {
-    return access_log_;
+    return access_log_path_;
 }
 
 const std::string& ServerBlock::access_log_level() const
@@ -56,11 +54,10 @@ const std::vector<std::string>& ServerBlock::server_names()
     return server_names_;
 }
 
-/* const std::vector<std::pair<std::string, utils::unique_ptr<LocationBlock> > >&
-ServerBlock::locations()
+const std::map<std::string, utils::unique_ptr<LocationBlock> >& ServerBlock::locations()
 {
     return locations_;
-} */
+}
 
 /* utils::unique_ptr<LocationBlock>  ServerBlock::FindLocation(const std::string& route)
 {
