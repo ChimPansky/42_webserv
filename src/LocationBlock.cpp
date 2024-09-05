@@ -1,6 +1,6 @@
 #include "LocationBlock.h"
 
-LocationBlock::LocationBlock(const std::vector<setting>& settings)
+LocationBlock::LocationBlock(const std::vector<S>& settings)
     : allowed_methods_(),
       redirect_(301, ""),
       is_cgi_(false),
@@ -57,19 +57,4 @@ const std::string& LocationBlock::default_file() const
 const std::string& LocationBlock::dir_listing() const
 {
     return dir_listing_;
-}
-
-const std::vector<std::string> LocationBlock::GetTokens()
-{
-    std::vector<std::string> tokens;
-
-    tokens.push_back("allow_methods");
-    tokens.push_back("return");
-    tokens.push_back("cgi_path");
-    tokens.push_back("cgi_extension");
-    tokens.push_back("root");
-    tokens.push_back("index");
-    tokens.push_back("autoindex");
-
-    return tokens;
 }

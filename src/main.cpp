@@ -25,7 +25,7 @@ void StopCluster(int /*signum*/)
 
 int main(int ac, char **av)
 {
-    if (ac != 2 || !av[1]) {
+    if (ac != 2 || !av[1][0]) {
         std::cerr << "usage: ws <path-to-config-file>" << std::endl;
         return 1;
     }

@@ -12,17 +12,27 @@
 
 #include "ServerBlock.h"
 
-typedef std::vector<utils::unique_ptr<ServerBlock> >::const_iterator ServerBlockIt;
-
-// hopefully will be trivially-copyable
 class Config {
   private:
+    typedef std::pair<std::string, std::string> S;
+    Config();
     typedef void (Config::*FunctionPointer)(const std::string&);
     typedef std::map<std::string, FunctionPointer>::const_iterator MethodsIt;
     std::map<std::string, FunctionPointer> InitSettings();
+    void InitConfig(std::vector<S> settings);
+    void InitServers(const std::vector<S>& server_settings);
+    void InitMxType(const std::string& value);
+    void InitErrorLog(const std::string& value);
+    void InitKeepaliveTimeout(const std::string& value);
+    void InitClientMaxBodySize(const std::string& value);
+    void InitErrorPages(const std::string& value);
+    void InitRootDir(const std::string& value);
+    void InitDefaultFile(const std::string& value);
+    void InitDirListing(const std::string& value);
+    void InitListeners();
 
   public:
-    Config();
+    Config(std::vector<S> setiings);
     const std::string& mx_type() const;
     const std::string& error_log_path() const;
     const std::string& error_log_level() const;
@@ -34,20 +44,6 @@ class Config {
     bool dir_listing() const;
     const std::vector<std::pair<in_addr_t, in_port_t> > listeners() const;
     const std::vector<utils::unique_ptr<ServerBlock> >& server_configs() const;
-    // utils::unique_ptr<ServerBlock> FindServerSettings(std::pair<in_addr_t, in_port_t>);
-    void InitConfig(std::vector<setting> settings);
-    void InitServers(const std::vector<setting>& server_settings);
-    void InitMxType(const std::string& value);
-    void InitErrorLog(const std::string& value);
-    void InitKeepaliveTimeout(const std::string& value);
-    void InitClientMaxBodySize(const std::string& value);
-    void InitErrorPages(const std::string& value);
-    void InitRootDir(const std::string& value);
-    void InitDefaultFile(const std::string& value);
-    void InitDirListing(const std::string& value);
-    void InitListeners();
-    static const std::vector<std::string> GetMainTokens();
-    static const std::vector<std::string> GetHttpTokens();
 
   private:
     std::string mx_type_;
@@ -58,9 +54,10 @@ class Config {
     std::map</* status code */ int, /* error page path */ std::string> error_pages_;
     std::vector<std::pair<in_addr_t, in_port_t> > listeners_;
     std::vector<utils::unique_ptr<ServerBlock> > server_configs_;
+    typedef std::vector<utils::unique_ptr<ServerBlock> >::const_iterator ServerBlockIt;
     std::string root_dir_;
     std::string default_file_;
-    std::string dir_listing_;
+    bool dir_listing_;
 };
 
 #endif  // WS_CONFIG_H

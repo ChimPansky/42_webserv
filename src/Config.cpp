@@ -1,6 +1,6 @@
 #include "Config.h"
 
-Config::Config()
+Config::Config(std::vector<S> settings)
     : mx_type_("select"),
       error_log_path_("/logs/error.log"),
       error_log_level_("info"),
@@ -8,13 +8,15 @@ Config::Config()
       client_max_body_size_(1048576),  // 1MB
       root_dir_("/var"),
       default_file_("index.html"),
-      dir_listing_("off")
+      dir_listing_(false)
 {
     error_pages_[404] = "/errors/404.html";
-
+    this->InitConfig(settings);
     // temp default listeners before config parsing is ready
     listeners_.push_back(std::make_pair(c_api::IPv4FromString("localhost"), in_port_t(8081)));
     listeners_.push_back(std::make_pair(c_api::IPv4FromString("localhost"), in_port_t(8082)));
+
+    // InitListeners();
 }
 
 const std::string& Config::mx_type() const
@@ -64,10 +66,7 @@ const std::string& Config::default_file() const
 
 bool Config::dir_listing() const
 {
-    if (dir_listing_ == "on") {
-        return true;
-    }
-    return false;
+    return dir_listing_;
 }
 
 const std::vector<utils::unique_ptr<ServerBlock> >& Config::server_configs() const
@@ -75,48 +74,11 @@ const std::vector<utils::unique_ptr<ServerBlock> >& Config::server_configs() con
     return server_configs_;
 }
 
-/* utils::unique_ptr<ServerBlock> Config::FindServerSettings(std::pair<in_addr_t, in_port_t>
-listener)
-{
-    for (std::vector<utils::unique_ptr<ServerBlock> >::iterator it = server_configs_.begin();
-         it != server_configs_.end(); it++) {
-        if (std::find((*it)->listeners().begin(), (*it)->listeners().end(), listener) !=
-            (*it)->listeners().end()) {
-            return *it;
-        }
-    }
-    return *server_configs_.end();
-} */
-
-const std::vector<std::string> Config::GetMainTokens()
-{
-    std::vector<std::string> tokens;
-
-    tokens.push_back("error_log");
-    tokens.push_back("use");
-
-    return tokens;
-}
-
-const std::vector<std::string> Config::GetHttpTokens()
-{
-    std::vector<std::string> tokens;
-
-    tokens.push_back("keepalive_timeout");
-    tokens.push_back("root");
-    tokens.push_back("index");
-    tokens.push_back("autoindex");
-    tokens.push_back("client_max_body_size");
-    tokens.push_back("error_page");
-
-    return tokens;
-}
-
-void Config::InitConfig(std::vector<setting> settings)
+void Config::InitConfig(std::vector<S> settings)
 {
     std::map<std::string, FunctionPointer> setters = InitSettings();
 
-    for (std::vector<setting>::iterator it = settings.begin(); it != settings.end(); it++) {
+    for (std::vector<S>::iterator it = settings.begin(); it != settings.end(); it++) {
         if (it->first == "server") {
             InitServers(ServerBlock::ExtractBlock(it));
             continue;
@@ -128,10 +90,9 @@ void Config::InitConfig(std::vector<setting> settings)
             throw std::runtime_error("Invalid configuration file: invalid directive: " + it->first);
         }
     }
-    InitListeners();
 }
 
-void Config::InitServers(const std::vector<setting>& server_settings)
+void Config::InitServers(const std::vector<S>& server_settings)
 {
     ServerBlock* server = new ServerBlock(server_settings);
     server_configs_.push_back(utils::unique_ptr<ServerBlock>(server));
@@ -215,3 +176,16 @@ std::map<std::string, Config::FunctionPointer> Config::InitSettings()
 
     return methods;
 }
+
+/* utils::unique_ptr<ServerBlock> Config::FindServerSettings(std::pair<in_addr_t, in_port_t>
+listener)
+{
+    for (std::vector<utils::unique_ptr<ServerBlock> >::iterator it = server_configs_.begin();
+         it != server_configs_.end(); it++) {
+        if (std::find((*it)->listeners().begin(), (*it)->listeners().end(), listener) !=
+            (*it)->listeners().end()) {
+            return *it;
+        }
+    }
+    return *server_configs_.end();
+} */

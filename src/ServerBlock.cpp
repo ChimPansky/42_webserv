@@ -1,6 +1,6 @@
 #include "ServerBlock.h"
 
-ServerBlock::ServerBlock(std::vector<setting>)
+ServerBlock::ServerBlock(std::vector<S>)
     : access_log_path_("/var/log/access.log"),
       access_log_level_("info"),
       error_log_path_(""),
@@ -69,25 +69,9 @@ const std::map<std::string, utils::unique_ptr<LocationBlock> >& ServerBlock::loc
     return locations_.rbegin()->second;
 } */
 
-const std::vector<std::string> ServerBlock::GetTokens()
+std::vector<ServerBlock::S> ServerBlock::ExtractBlock(std::vector<S>::iterator& it)
 {
-    std::vector<std::string> tokens;
-
-    tokens.push_back("access_log");
-    tokens.push_back("error_log");
-    tokens.push_back("listen");
-    tokens.push_back("root");
-    tokens.push_back("index");
-    tokens.push_back("autoindex");
-    tokens.push_back("server_name");
-    tokens.push_back("location");
-
-    return tokens;
-}
-
-std::vector<setting> ServerBlock::ExtractBlock(std::vector<setting>::iterator& it)
-{
-    std::vector<setting> block_settings;
+    std::vector<S> block_settings;
     int braces_counter = 1;
 
     while (braces_counter > 0) {

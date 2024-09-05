@@ -10,20 +10,22 @@
 #include "Config.h"
 
 class ConfigBuilder {
+  private:
+    typedef std::pair<std::string, std::string> S;
+
   public:
-    ConfigBuilder(const char* config_path);
-    std::vector<setting> ProcessFile(std::ifstream& _config_file);
-    setting MakePair(const std::string& line);
-    void ParseDirective(setting& parsed_setting);
-    void ParseNesting(setting& parsed_setting);
+    ConfigBuilder(const std::string& config_path);
+    std::vector<S> ProcessFile(std::ifstream& _config_file);
+    S MakePair(const std::string& line);
+    void ParseDirective(S& parsed_setting, std::stack<std::string>& nesting_level);
+    void ParseNesting(S& parsed_setting, std::stack<std::string>& nesting_level);
     void PrintSettings();
+    static const std::vector<std::string> GetTokensByLevel(const std::string& lvl);
     const Config Parse();
 
   private:
     ConfigBuilder();
-    Config config_;
-    std::stack<std::string> nesting_;
-    std::vector<setting> settings_;
+    std::vector<S> settings_;
 };
 
 #endif  // WS_CONFIG_PARS_H

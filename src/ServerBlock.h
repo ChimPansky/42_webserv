@@ -11,12 +11,21 @@
 
 class ServerBlock {
   private:
+    typedef std::pair<std::string, std::string> S;
     typedef void (ServerBlock::*FunctionPointer)(const std::string&);
     typedef std::map<std::string, FunctionPointer>::const_iterator MethodsIt;
     std::map<std::string, FunctionPointer> InitServerSettings();
+    void InitAccessLog(const std::string& value);
+    void InitErrorLogPath(const std::string& value);
+    void InitListeners(const std::string& value);
+    void InitRootDir(const std::string& value);
+    void InitDefaultFile(const std::string& value);
+    void InitDirListing(const std::string& value);
+    void InitServerNames(const std::string& value);
+    void InitLocations(const std::string& value);
 
   public:
-    ServerBlock(std::vector<setting> settings);
+    ServerBlock(std::vector<S> settings);
     const std::string& access_log_path() const;
     const std::string& access_log_level() const;
     const std::string& error_log_path() const;
@@ -26,17 +35,7 @@ class ServerBlock {
     const std::string& dir_listing();
     const std::vector<std::string>& server_names();
     const std::map<std::string, utils::unique_ptr<LocationBlock> >& locations();
-    static const std::vector<std::string> GetTokens();
-    static std::vector<setting> ExtractBlock(std::vector<setting>::iterator& it);
-
-    void InitAccessLog(const std::string& value);
-    void InitErrorLogPath(const std::string& value);
-    void InitListeners(const std::string& value);
-    void InitRootDir(const std::string& value);
-    void InitDefaultFile(const std::string& value);
-    void InitDirListing(const std::string& value);
-    void InitServerNames(const std::string& value);
-    void InitLocations(const std::string& value);
+    static std::vector<S> ExtractBlock(std::vector<S>::iterator& it);
 
   private:
     std::string access_log_path_;
