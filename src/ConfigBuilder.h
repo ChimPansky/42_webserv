@@ -17,7 +17,7 @@ class ConfigBuilder {
     void ParseDirective(setting& parsed_setting);
     void ParseNesting(setting& parsed_setting);
     void PrintSettings();
-    const Config& Parse();
+    const Config Parse();
 
   private:
     ConfigBuilder();

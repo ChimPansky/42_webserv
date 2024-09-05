@@ -17,7 +17,7 @@ ConfigBuilder::ConfigBuilder(const char* config_path)
     _config_file.close();
 }
 
-const Config& ConfigBuilder::Parse()
+const Config ConfigBuilder::Parse()
 {
     config_.InitConfig(settings_);
     return config_;
