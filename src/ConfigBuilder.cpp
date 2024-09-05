@@ -1,6 +1,6 @@
 #include "ConfigBuilder.h"
 
-ConfigBuilder::ConfigBuilder(const char* config_path) : config_(), nesting_(), settings_(0)
+ConfigBuilder::ConfigBuilder(const char* config_path)
 {
     std::string path(config_path);
     std::ifstream _config_file;
@@ -19,9 +19,7 @@ ConfigBuilder::ConfigBuilder(const char* config_path) : config_(), nesting_(), s
 
 const Config& ConfigBuilder::Parse()
 {
-    Config config(settings_);
-    config_ = config;
-
+    config_.InitConfig(settings_);
     return config_;
 }
 
@@ -38,10 +36,13 @@ std::vector<setting> ConfigBuilder::ProcessFile(std::ifstream& _config_file)
 
     std::string content;
     while (std::getline(_config_file >> std::ws, content)) {
-        content.erase(content.find_last_not_of(" \t") + 1);
-        if (content.empty() || content[0] == '#') {  // TODO: handle comments after a setting
+        if (content.empty() || content[0] == '#') {
             continue;
         }
+        if (content.find('#') != std::string::npos) {
+            content.erase(content.find('#'));
+        }
+        content.erase(content.find_last_not_of(" \t") + 1);
         parsed_setting = MakePair(content);
         if (content.find(';') == content.size() - 1) {
             ParseDirective(parsed_setting);
@@ -81,6 +82,7 @@ void ConfigBuilder::ParseDirective(setting& parsed_setting)
                                  parsed_setting.first);
     }
     // TODO : check if duplicates override the value or are they invalid
+    parsed_setting.second.erase(parsed_setting.second.find(';'));
     settings_.push_back(parsed_setting);
 }
 

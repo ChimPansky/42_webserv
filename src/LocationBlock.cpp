@@ -2,12 +2,10 @@
 
 LocationBlock::LocationBlock(const std::vector<setting>& settings)
     : allowed_methods_(),
-      redirect_(0, ""),
+      redirect_(301, ""),
       is_cgi_(false),
-      cgi_paths_(),
-      cgi_extensions_(),
       root_dir_(""),
-      default_file_("index.html"),
+      default_file_(""),
       dir_listing_("")
 {
     allowed_methods_.push_back("GET");

@@ -9,9 +9,12 @@
 
 #include "LocationBlock.h"
 
-typedef std::pair<std::string, std::string> setting;
-
 class ServerBlock {
+  private:
+    typedef void (ServerBlock::*FunctionPointer)(const std::string&);
+    typedef std::map<std::string, FunctionPointer>::const_iterator MethodsIt;
+    std::map<std::string, FunctionPointer> InitServerSettings();
+
   public:
     ServerBlock(std::vector<setting> settings);
     const std::string& access_log_path() const;
@@ -20,12 +23,20 @@ class ServerBlock {
     const std::vector<std::pair<in_addr_t, in_port_t> >& listeners() const;
     const std::string& root_dir();
     const std::string& default_file();
-    bool dir_listing();
+    const std::string& dir_listing();
     const std::vector<std::string>& server_names();
     const std::map<std::string, utils::unique_ptr<LocationBlock> >& locations();
     static const std::vector<std::string> GetTokens();
-    void InitListeners() const;
-    void InitLocations() const;
+    static std::vector<setting> ExtractBlock(std::vector<setting>::iterator& it);
+
+    void InitAccessLog(const std::string& value);
+    void InitErrorLogPath(const std::string& value);
+    void InitListeners(const std::string& value);
+    void InitRootDir(const std::string& value);
+    void InitDefaultFile(const std::string& value);
+    void InitDirListing(const std::string& value);
+    void InitServerNames(const std::string& value);
+    void InitLocations(const std::string& value);
 
   private:
     std::string access_log_path_;

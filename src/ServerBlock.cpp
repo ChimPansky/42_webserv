@@ -1,15 +1,16 @@
 #include "ServerBlock.h"
 
 ServerBlock::ServerBlock(std::vector<setting>)
-    : access_log_path_(""),
+    : access_log_path_("/var/log/access.log"),
       access_log_level_("info"),
-      listeners_(),
+      error_log_path_(""),
       root_dir_(""),
-      default_file_("index.html"),
-      dir_listing_("off"),
-      server_names_(),
-      locations_()
-{}
+      default_file_(""),
+      dir_listing_("")
+{
+    server_names_.push_back("localhost");
+    // init server settings just like in Config
+}
 
 const std::string& ServerBlock::access_log_path() const
 {
@@ -41,12 +42,9 @@ const std::string& ServerBlock::default_file()
     return this->default_file_;
 }
 
-bool ServerBlock::dir_listing()
+const std::string& ServerBlock::dir_listing()
 {
-    if (dir_listing_ == "on") {
-        return true;
-    }
-    return false;
+    return dir_listing_;
 }
 
 const std::vector<std::string>& ServerBlock::server_names()
@@ -85,4 +83,26 @@ const std::vector<std::string> ServerBlock::GetTokens()
     tokens.push_back("location");
 
     return tokens;
+}
+
+std::vector<setting> ServerBlock::ExtractBlock(std::vector<setting>::iterator& it)
+{
+    std::vector<setting> block_settings;
+    int braces_counter = 1;
+
+    while (braces_counter > 0) {
+        it++;
+        if (it->second.find("{") != std::string::npos) {
+            braces_counter++;
+        }
+        if (it->first == "}") {
+            braces_counter--;
+            if (braces_counter == 0) {
+                break;
+            }
+        }
+        block_settings.push_back(*it);
+    }
+
+    return block_settings;
 }
