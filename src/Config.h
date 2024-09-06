@@ -43,7 +43,7 @@ class Config {
     const std::string& default_file() const;
     bool dir_listing() const;
     const std::vector<std::pair<in_addr_t, in_port_t> > listeners() const;
-    const std::vector<utils::unique_ptr<ServerBlock> >& server_configs() const;
+    const std::vector<ServerBlock>& server_configs() const;
 
   private:
     std::string mx_type_;
@@ -53,8 +53,8 @@ class Config {
     size_t client_max_body_size_;
     std::map</* status code */ int, /* error page path */ std::string> error_pages_;
     std::vector<std::pair<in_addr_t, in_port_t> > listeners_;
-    std::vector<utils::unique_ptr<ServerBlock> > server_configs_;
-    typedef std::vector<utils::unique_ptr<ServerBlock> >::const_iterator ServerBlockIt;
+    std::vector<ServerBlock> server_configs_;
+    typedef std::vector<ServerBlock>::const_iterator ServerBlockIt;
     std::string root_dir_;
     std::string default_file_;
     bool dir_listing_;

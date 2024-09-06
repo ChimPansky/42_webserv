@@ -34,7 +34,7 @@ class ServerBlock {
     const std::string& default_file();
     const std::string& dir_listing();
     const std::vector<std::string>& server_names();
-    const std::map<std::string, utils::unique_ptr<LocationBlock> >& locations();
+    const std::map<std::string, LocationBlock>& locations();
     static std::vector<S> ExtractBlock(std::vector<S>::iterator& it);
 
   private:
@@ -46,7 +46,7 @@ class ServerBlock {
     std::string default_file_;
     std::string dir_listing_;
     std::vector<std::string> server_names_;
-    std::map<std::string, utils::unique_ptr<LocationBlock> > locations_;
+    std::map<std::string, LocationBlock> locations_;
 };
 
 #endif  // WS_SERVERBLOCK_H

@@ -69,7 +69,7 @@ bool Config::dir_listing() const
     return dir_listing_;
 }
 
-const std::vector<utils::unique_ptr<ServerBlock> >& Config::server_configs() const
+const std::vector<ServerBlock>& Config::server_configs() const
 {
     return server_configs_;
 }
@@ -94,8 +94,8 @@ void Config::InitConfig(std::vector<S> settings)
 
 void Config::InitServers(const std::vector<S>& server_settings)
 {
-    ServerBlock* server = new ServerBlock(server_settings);
-    server_configs_.push_back(utils::unique_ptr<ServerBlock>(server));
+    ServerBlock server(server_settings);
+    server_configs_.push_back(server);
 }
 
 void Config::InitMxType(const std::string& value)
@@ -155,9 +155,9 @@ void Config::InitListeners()
     if (server_configs_.empty()) {
         throw std::runtime_error("Invalid configuration file: no server blocks.");
     }
-    for (std::vector<utils::unique_ptr<ServerBlock> >::iterator it = server_configs_.begin();
+    for (std::vector<ServerBlock>::iterator it = server_configs_.begin();
          it != server_configs_.end(); it++) {
-        listeners_.insert(listeners_.end(), (*it)->listeners().begin(), (*it)->listeners().end());
+        listeners_.insert(listeners_.end(), it->listeners().begin(), it->listeners().end());
     }
 }
 

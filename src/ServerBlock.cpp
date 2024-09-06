@@ -52,7 +52,7 @@ const std::vector<std::string>& ServerBlock::server_names()
     return server_names_;
 }
 
-const std::map<std::string, utils::unique_ptr<LocationBlock> >& ServerBlock::locations()
+const std::map<std::string, LocationBlock>& ServerBlock::locations()
 {
     return locations_;
 }
