@@ -7,6 +7,8 @@
 
 namespace c_api {
 
+#define EPOLL_MAX_EVENTS 64
+
 // socker binded to addr
 class EventManager {
   public:
@@ -49,8 +51,6 @@ class EventManager {
     int CheckOnce();
     static void init(MultiplexType mx_type_);
     static EventManager& get();
-
-
 
   private:
     int CheckWithSelect_();
