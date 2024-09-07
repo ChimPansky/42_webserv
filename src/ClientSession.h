@@ -1,6 +1,7 @@
 #ifndef WS_CLIENT_H
 #define WS_CLIENT_H
 
+#include <sys/types.h>
 #include <vector>
 
 #include "c_api/ClientSocket.h"
@@ -26,7 +27,8 @@ class ClientSession {
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
-    ProcessState ProcessRead();
+    ProcessState ProcessRead(ssize_t bytes_recvd); // not used now , use when building request...
+    void PrepareResponse(); // later: get this from server
     class ClientCallback : public c_api::EventManager::ICallback {
       public:
         ClientCallback(ClientSession& client);

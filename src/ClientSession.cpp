@@ -65,22 +65,30 @@ c_api::EventManager::CallbackType ClientSession::ClientCallback::callback_mode()
 void ClientSession::ClientCallback::ReadCall()
 {
     // assert fd == client_sock.fd
-    long bytes_recvdd = client_.client_sock_->Recv(client_.buf_);
-    if (bytes_recvdd <= 0) {
+    long bytes_recvd = client_.client_sock_->Recv(client_.buf_);
+    if (bytes_recvd <= 0) {
         // close connection
         client_.connection_closed_ = true;
-
         LOG(INFO) << "Connection closed";
         return;
     }
-     LOG(DEBUG) << "ClientCallback::ReadCall: " << bytes_recvdd << " bytes recvd";
-    if (client_.ProcessRead() == ClientSession::PS_DONE) {
+    LOG(DEBUG) << "ClientCallback::ReadCall: " << bytes_recvd << " bytes recvd from " << client_.client_sock_->sockfd();
+    if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
+        LOG(DEBUG) << "ClientCallback::ReadCall: switching to write_mode";
         callback_mode_ = c_api::EventManager::CT_WRITE; // switch to write mode after Request reading is finished (and processed by server)
+        client_.PrepareResponse();
     }
+}
+
+void ClientSession::PrepareResponse() {
+    buf_send_idx_ = 0;
+    buf_.resize(sizeof(HTTP_RESPONSE));
+    std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
 }
 
 void ClientSession::ClientCallback::WriteCall()
 {
+    LOG(DEBUG) << "ClientCallback::WriteCall";
         // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
                                                     client_.buf_.size() - client_.buf_send_idx_);
@@ -91,20 +99,21 @@ void ClientSession::ClientCallback::WriteCall()
         return;
     }
      if (client_.buf_send_idx_ == client_.buf_.size()) {
-        c_api::EventManager::get().DeleteCallbacksByFd(client_.client_sock_->sockfd());
-        client_.connection_closed_ = true;
         LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
+        //client_.connection_closed_ = true;
+        client_.connection_closed_ = true;
         //callback_mode_ = c_api::EventManager::CT_READ; // maybe keepalive - switch back to read mode
     }
 
 }
 
-ClientSession::ProcessState ClientSession::ProcessRead()
+ClientSession::ProcessState ClientSession::ProcessRead(ssize_t bytes_recvd)
 {
+    (void)bytes_recvd;
     LOG(DEBUG) << buf_.data();
     // std::cout.write(buf_.data(), buf_.size()) << std::flush;
     //TODO: set request is ready...
-    if (/*request is ready*/ buf_.size() > 20) {
+    if (/*request is ready*/ buf_.size() > 20 ) {
         // if cgi run and register callbacks for cgi
         // else return static page
 

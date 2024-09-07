@@ -183,11 +183,13 @@ int EventManager::CheckWithSelect_()
     FD_ZERO(&select_wr_set);
     LOG(DEBUG) << "CheckWithSelect";
     for (SockMapIt it = monitored_sockets_.begin(); it != monitored_sockets_.end(); ++it) {
-        LOG(DEBUG) << "adding to select rd set: " << it->first;
         if (it->second->callback_mode() == CT_READ) {
+            LOG(DEBUG) << "adding to select read set: " << it->first;
             FD_SET(it->first, &select_rd_set);
-        } else if (it->second->callback_mode() == CT_WRITE) {
-            FD_SET(it->first, &select_rd_set);
+        }
+        else if (it->second->callback_mode() == CT_WRITE) {
+            LOG(DEBUG) << "adding to select write set: " << it->first;
+            FD_SET(it->first, &select_wr_set);
         }
     }
     // rd_sock_ is never empty as long as at least 1 master socket exist
@@ -201,12 +203,14 @@ int EventManager::CheckWithSelect_()
     }
     // iterate over i here cuz call can change callbacks map
     for (int ready_fd = 0; ready_fd <= max_fd; ++ready_fd) {
+        LOG(DEBUG) << "CheckWithSelect-> Iterating over monitored sockets. Current fd: " << ready_fd;
         SockMapIt it;
         if ((FD_ISSET(ready_fd, &select_rd_set) || FD_ISSET(ready_fd, &select_wr_set)) &&
             ((it = monitored_sockets_.find(ready_fd)) != monitored_sockets_.end())) {
             it->second->Call(ready_fd);  // receive/send/accept/whatever
         }
     }
+    LOG(DEBUG) << "CheckWithSelect-> Done iterating over monitored sockets";
     return 0;
 }
 
@@ -219,6 +223,7 @@ int EventManager::RegisterCallback(int fd,
 
 void EventManager::DeleteCallbacksByFd(int fd)
 {
+    LOG(DEBUG) << "deleting callback for fd: " << fd;
     monitored_sockets_.erase(fd);
 }
 
