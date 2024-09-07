@@ -20,7 +20,8 @@ class EventManager {
     enum CallbackType {
         CT_READ = 1,
         CT_WRITE = 2,
-        CT_ANY = 3  // CT_ANY == CT_READ | CT_WRITE
+        CT_DELETE = 4,
+        CT_ANY = 7  // CT_ANY == CT_READ | CT_WRITE | CT_DELETE
     };
     // how to:
     //   inherit from this class, add necessary fields with refs;
@@ -33,6 +34,8 @@ class EventManager {
         // consider changing to void Call()
         virtual void Call(int fd) = 0;
         virtual CallbackType callback_mode() = 0;    // read/write
+        virtual bool added_to_multiplex() = 0;    // true when already added to select/poll/epoll fd-set
+        virtual void set_added_to_multiplex(bool) = 0;
         virtual ~ICallback(){};
     };
 

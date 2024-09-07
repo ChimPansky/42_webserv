@@ -35,10 +35,13 @@ class ClientSession {
         // read/write from/to sock,
         virtual void Call(int fd);
         virtual c_api::EventManager::CallbackType callback_mode();
+        virtual bool added_to_multiplex();
+        virtual void set_added_to_multiplex(bool);
 
       private:
         ClientSession& client_;
         c_api::EventManager::CallbackType callback_mode_;
+        bool added_to_multiplex_;
         void ReadCall();
         void WriteCall();
     };

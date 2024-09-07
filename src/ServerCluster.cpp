@@ -79,7 +79,9 @@ void ServerCluster::CheckClients()
 
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
-{}
+{
+    added_to_multiplex_ = false;
+}
 
 // accept, create new client, register read callback for client,
 void ServerCluster::MasterSocketCallback::Call(int fd)
@@ -102,4 +104,12 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
 
 c_api::EventManager::CallbackType ServerCluster::MasterSocketCallback::callback_mode() {
     return c_api::EventManager::CT_READ;    // MasterSocketCallback is always in read mode
+}
+
+bool ServerCluster::MasterSocketCallback::added_to_multiplex() {
+    return added_to_multiplex_;
+}
+
+void ServerCluster::MasterSocketCallback::set_added_to_multiplex(bool added) {
+    added_to_multiplex_ = added;
 }

@@ -2,6 +2,7 @@
 
 #include <netinet/in.h>  // select
 #include <sys/epoll.h>   // for epoll
+#include <fcntl.h>       // for fcntl
 
 #include <stdexcept>
 
@@ -50,130 +51,58 @@ int EventManager::CheckWithPoll_()
     return 1;
 }
 
-int EventManager::CheckWithEpoll_()
-{
-    LOG(ERROR) << "CheckWithEPoll not implemented";
-    return 1;
+int EventManager::CheckWithEpoll_() {
+    LOG(DEBUG) << "CheckWithEpoll";
+    struct epoll_event ev;
+    struct epoll_event events[EPOLL_MAX_EVENTS];
+    int epoll_fd = epoll_create(1); // argument just for backwards compatibility --> its ignored
+    //since Linux 2.6.8, but must be > 0 if (epoll_fd == -1) {
+    if (epoll_fd == -1) {
+        LOG(ERROR) << "epoll_create failed";
+        return 1;
+    }
+
+    for (SockMapIt it = monitored_sockets_.begin(); it != monitored_sockets_.end(); ++it) {
+        ev.data.fd = it->first;
+        ev.events = it->second->callback_mode() == CT_READ ? EPOLLIN : EPOLLOUT;
+        if (it->second->callback_mode() == CT_READ) {
+            ev.events = EPOLLIN;
+        }
+        else if (it->second->callback_mode() == CT_WRITE) {
+            ev.events = EPOLLOUT;
+        }
+        if (!it->second->added_to_multiplex()) { // fd is not in yet in epoll --> ADD
+            epoll_ctl(epoll_fd, EPOLL_CTL_ADD, it->first, &ev);
+            LOG(DEBUG) << "Adding fd << " << it->first << " to epoll for "
+            << (it->second->callback_mode() == CT_READ ? "read (EPOLLIN)" : "write (EPOLLOUT)");
+            fcntl(it->first, F_SETFL, O_NONBLOCK);
+            it->second->set_added_to_multiplex(true);
+        }
+        else if (it->second->added_to_multiplex()) { // fd is already in epoll --> either Delete or MODIFY
+            if (it->second->callback_mode() == CT_DELETE) {
+                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, &ev);
+                LOG(DEBUG) << "Deleting fd << " << it->first << " from epoll";
+                continue;
+            }
+            epoll_ctl(epoll_fd, EPOLL_CTL_MOD, it->first, &ev);
+            LOG(DEBUG) << "Modifying existing fd << " << it->first << " in epoll for "
+            << (it->second->callback_mode() == CT_READ ? "read (EPOLLIN)" : "write (EPOLLOUT)");
+        }
+    }
+    int ready_fds = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, -1);
+    if (ready_fds == -1) {
+        LOG(ERROR) << "epoll_wait unsuccessful.";
+        return 1;
+    }
+    for (int rdy_fd = 0; rdy_fd < ready_fds; rdy_fd++) {
+        SockMapIt it;
+        if ((it = monitored_sockets_.find(events[rdy_fd].data.fd)) != monitored_sockets_.end()) {
+            it->second->Call(it->first); // receive/send/accept/whatever
+        }
+    }
+    // close(epollfd); close when SIGINT?
+    return 0;
 }
-
-// int EventManager::CheckWithEpoll_() {
-//     LOG(DEBUG) << "CheckWithEpoll";
-//     struct epoll_event ev;
-//     struct epoll_event events[EPOLL_MAX_EVENTS];
-//     int epoll_fd = epoll_create(1); // argument just for backwards compatibility --> its ignored
-//     since Linux 2.6.8, but must be > 0 if (epoll_fd == -1) {
-//         LOG(ERROR) << "epoll_create failed";
-//         return 1;
-//     }
-
-//     for (SockMapIt it = rd_sock_.begin(); it != rd_sock_.end(); ++it) {
-//         LOG(DEBUG) << "adding fd << " << it->first << " to epoll";
-//         ev.events = EPOLLIN;
-//         ev.data.fd = it->first;
-//     }
-//     for (SockMapIt it = wr_sock_.begin(); it != wr_sock_.end(); ++it) {
-//         FD_SET(it->first, &select_wr_set);
-//         ev.events = EPOLLOUT;
-//         ev.data.fd = it->first;
-//     }
-//     ev.events = EPOLLIN;
-//     ev.data.fd = 0;
-//     (void)events;
-//     return 0;
-
-// -----------------------------------------------
-//     // poll (epoll_create,
-// // epoll_ctl, epoll_wait),
-
-// #include "utils.h"
-// #include "sys/epoll.h"
-// #include <cstddef>
-// #include <cstring>
-// #include <sys/types.h>
-// #include <sys/socket.h>
-// #include <netinet/in.h>
-// #include <iostream>
-// #include <fcntl.h>
-// #include <unistd.h>
-// #include <cstdio>
-
-//     ev.events = EPOLLIN;
-//     ev.data.fd = listener;
-//     epoll_ctl(epollfd, EPOLL_CTL_ADD, listener, &ev);
-//     // EPOLL_CTL_ADD: Adds a new file descriptor to the interest list.
-//     // EPOLL_CTL_MOD: Modifies an existing file descriptor in the interest list.
-//     // EPOLL_CTL_DEL: Removes a file descriptor from the interest list.
-
-//     while(1) {
-//         int nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
-//         if (nfds == -1) {
-//             std::cerr << "epoll_wait unsuccessful --> exiting..." << std::endl;
-//             return 1;
-//         }
-//         for (int rdy_fd = 0; rdy_fd < nfds; rdy_fd++) {
-//             if (events[rdy_fd].data.fd == listener) {
-//                 // rdy_fd is the server --> means we accept new client and add it to the epoll
-//                 list int client_fd = accept(listener, NULL, NULL); if (client_fd == -1) {
-//                     std::cerr << "accept unsuccessful --> exiting..." << std::endl;
-//                     return 1;
-//                 }
-//                 fcntl(client_fd, F_SETFL, O_NONBLOCK);
-//                 ev.events = EPOLLIN;
-//                 ev.data.fd = client_fd;
-//                 epoll_ctl(epollfd, EPOLL_CTL_ADD, client_fd, &ev);
-//                 // ..........................
-//             }
-//             else { // rdy_fd is a client
-//                 if (events[rdy_fd].events & EPOLLIN) { // rdy_fd is ready to read
-//                     std::cout << "reading from client: " << events[rdy_fd].data.fd << std::endl;
-//                     std::cout << "events: " << events[rdy_fd].events << std::endl;
-//                     char buffer[1024];
-//                     int bytes_read = recv(events[rdy_fd].data.fd, buffer, sizeof(buffer), 0);
-//                     if (bytes_read == -1) {
-//                         std::cerr << "recv unsuccessful --> exiting..." << std::endl;
-//                         return 1;
-//                     }
-//                     else if (bytes_read == 0) {
-//                         std::cout << "0 bytes read --> client disconnected --> DEL from epoll" <<
-//                         std::endl; epoll_ctl(epollfd, EPOLL_CTL_DEL, events[rdy_fd].data.fd,
-//                         NULL); close(events[rdy_fd].data.fd);
-//                     }
-//                     else {
-//                         std::cout << "events: " << events[rdy_fd].events << std::endl;
-//                         std::cout << bytes_read << " bytes read from " << events[rdy_fd].data.fd
-//                         << " --> assume we read the whole response "
-//                                 "register client with EPOLLOUT (events)" << std::endl;
-//                         events[rdy_fd].events |= EPOLLOUT;
-//                         std::cout << "events: " << events[rdy_fd].events << std::endl;
-//                         // send back to client
-//                         //send(events[rdy_fd].data.fd, buffer, bytes_read, 0);
-//                     }
-//                 }
-//                 if (events[rdy_fd].events & EPOLLOUT) { // rdy_fd is ready to write
-//                     std::cout << "writing to client: " << events[rdy_fd].data.fd << std::endl;
-//                     std::cout << "events: " << events[rdy_fd].events << std::endl;
-//                     int bytes_send = send(events[rdy_fd].data.fd, http_response,
-//                     http_response_len, 0); if (bytes_send == -1) {
-//                         std::cerr << "send unsuccessful --> exiting..." << std::endl;
-//                         return 1;
-//                     }
-//                     else {
-//                         std::cout << bytes_send << " bytes sent" << std::endl;
-//                         std::cout << "response has been sent to client --> remove from epoll" <<
-//                         std::endl; events[rdy_fd].events = EPOLLIN;
-//                         // epoll_ctl(epollfd, EPOLL_CTL_DEL, events[rdy_fd].data.fd, NULL);
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     close(listener);
-//     close(epollfd);
-
-//     return 0;
-// }
-// ----------------------------------------------------
-// }
 
 int EventManager::CheckWithSelect_()
 {

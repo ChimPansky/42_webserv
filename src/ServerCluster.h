@@ -20,9 +20,12 @@ class ServerCluster {
         // accept, create new client, register read callback for client,
         virtual void Call(int fd);
         virtual c_api::EventManager::CallbackType callback_mode();
+        virtual bool added_to_multiplex();
+        virtual void set_added_to_multiplex(bool);
 
       private:
         ServerCluster& cluster_;
+        bool added_to_multiplex_;
     };
 
     ServerCluster(const Config&);

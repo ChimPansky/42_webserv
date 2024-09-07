@@ -44,6 +44,7 @@ Connection: Closed\n\r\
 ClientSession::ClientCallback::ClientCallback(ClientSession& client) : client_(client)
 {
     callback_mode_ = c_api::EventManager::CT_READ;  // clients always start in read mode
+    added_to_multiplex_ = false; // will be set to true
 }
 
 void ClientSession::ClientCallback::Call(int /*fd*/)
@@ -61,6 +62,17 @@ c_api::EventManager::CallbackType ClientSession::ClientCallback::callback_mode()
 {
     return callback_mode_;
 }
+
+bool ClientSession::ClientCallback::added_to_multiplex()
+{
+    return added_to_multiplex_;
+}
+
+void ClientSession::ClientCallback::set_added_to_multiplex(bool added)
+{
+    added_to_multiplex_ = added;
+}
+
 
 void ClientSession::ClientCallback::ReadCall()
 {
@@ -100,9 +112,8 @@ void ClientSession::ClientCallback::WriteCall()
     }
      if (client_.buf_send_idx_ == client_.buf_.size()) {
         LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
-        //client_.connection_closed_ = true;
         client_.connection_closed_ = true;
-        //callback_mode_ = c_api::EventManager::CT_READ; // maybe keepalive - switch back to read mode
+        callback_mode_ = c_api::EventManager::CT_DELETE; // maybe keepalive - switch back to read mode CT_READ
     }
 
 }
