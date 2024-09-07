@@ -19,6 +19,7 @@ class ServerCluster {
         MasterSocketCallback(ServerCluster& cluster);
         // accept, create new client, register read callback for client,
         virtual void Call(int fd);
+        virtual c_api::EventManager::CallbackType callback_mode();
 
       private:
         ServerCluster& cluster_;

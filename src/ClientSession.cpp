@@ -9,9 +9,9 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
       buf_send_idx_(0),
       connection_closed_(false)
 {
-    c_api::EventManager::get().RegisterReadCallback(
+    c_api::EventManager::get().RegisterCallback(
         client_sock_->sockfd(),
-        utils::unique_ptr<c_api::EventManager::ICallback>(new ClientReadCallback(*this)));
+        utils::unique_ptr<c_api::EventManager::ICallback>(new ClientCallback(*this)));
 }
 
 ClientSession::~ClientSession()
@@ -40,30 +40,29 @@ Connection: Closed\n\r\
 </body>\n\r\
 </html>\n\r"
 
-void ClientSession::ProcessNewData(ssize_t bytes_recvdd)
-{
-    LOG(DEBUG) << bytes_recvdd << " bytes recvd";
-    LOG(DEBUG) << buf_.data();
-    // std::cout.write(buf_.data(), buf_.size()) << std::flush;
-    if (/*request is ready*/ buf_.size() > 20) {
-        // if cgi run and register callbacks for cgi
-        // else return static page
 
-        c_api::EventManager::get().DeleteCallbacksByFd(client_sock_->sockfd(),
-                                                       c_api::EventManager::CT_READ);
-        buf_send_idx_ = 0;
-        buf_.resize(sizeof(HTTP_RESPONSE));
-        std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
-        c_api::EventManager::get().RegisterWriteCallback(
-            client_sock_->sockfd(),
-            utils::unique_ptr<c_api::EventManager::ICallback>(new ClientWriteCallback(*this)));
+ClientSession::ClientCallback::ClientCallback(ClientSession& client) : client_(client)
+{
+    callback_mode_ = c_api::EventManager::CT_READ;  // clients always start in read mode
+}
+
+void ClientSession::ClientCallback::Call(int /*fd*/)
+{
+    if (callback_mode_ == c_api::EventManager::CT_READ) {
+        ReadCall();
+    }
+    else if (callback_mode_ == c_api::EventManager::CT_WRITE) {
+        WriteCall();
     }
 }
 
-ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
-{}
 
-void ClientSession::ClientReadCallback::Call(int /*fd*/)
+c_api::EventManager::CallbackType ClientSession::ClientCallback::callback_mode()
+{
+    return callback_mode_;
+}
+
+void ClientSession::ClientCallback::ReadCall()
 {
     // assert fd == client_sock.fd
     long bytes_recvdd = client_.client_sock_->Recv(client_.buf_);
@@ -74,15 +73,15 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
         LOG(INFO) << "Connection closed";
         return;
     }
-    client_.ProcessNewData(bytes_recvdd);
+     LOG(DEBUG) << "ClientCallback::ReadCall: " << bytes_recvdd << " bytes recvd";
+    if (client_.ProcessRead() == ClientSession::PS_DONE) {
+        callback_mode_ = c_api::EventManager::CT_WRITE; // switch to write mode after Request reading is finished (and processed by server)
+    }
 }
 
-ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : client_(client)
-{}
-
-void ClientSession::ClientWriteCallback::Call(int /*fd*/)
+void ClientSession::ClientCallback::WriteCall()
 {
-    // assert fd == client_sock.fd
+        // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
                                                     client_.buf_.size() - client_.buf_send_idx_);
     if (bytes_sent <= 0) {
@@ -91,8 +90,28 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
         LOG(ERROR) << "error on send";  // add perror
         return;
     }
-    if (client_.buf_send_idx_ == client_.buf_.size()) {
+     if (client_.buf_send_idx_ == client_.buf_.size()) {
+        c_api::EventManager::get().DeleteCallbacksByFd(client_.client_sock_->sockfd());
         client_.connection_closed_ = true;
-        LOG(INFO) << client_.buf_send_idx_ << " bytes sent, connection closed";
+        LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
+        //callback_mode_ = c_api::EventManager::CT_READ; // maybe keepalive - switch back to read mode
     }
+
+}
+
+ClientSession::ProcessState ClientSession::ProcessRead()
+{
+    LOG(DEBUG) << buf_.data();
+    // std::cout.write(buf_.data(), buf_.size()) << std::flush;
+    //TODO: set request is ready...
+    if (/*request is ready*/ buf_.size() > 20) {
+        // if cgi run and register callbacks for cgi
+        // else return static page
+
+        buf_send_idx_ = 0;
+        buf_.resize(sizeof(HTTP_RESPONSE));
+        std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
+        return PS_DONE;
+    }
+    return PS_ONGOING;
 }

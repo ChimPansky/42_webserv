@@ -1,5 +1,6 @@
 #include "ServerCluster.h"
 
+#include "Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/utils.h"
 #include "utils/logger.h"
@@ -34,7 +35,7 @@ ServerCluster::ServerCluster(const Config& /*config*/)
             utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
-            c_api::EventManager::get().RegisterReadCallback(
+            c_api::EventManager::get().RegisterCallback(
                 sockfd,
                 utils::unique_ptr<c_api::EventManager::ICallback>(new MasterSocketCallback(*this)));
             sockets_[sockfd] = listener;
@@ -97,4 +98,8 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     }
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
     LOG(INFO) << "New incoming connection on: " << fd;
+}
+
+c_api::EventManager::CallbackType ServerCluster::MasterSocketCallback::callback_mode() {
+    return c_api::EventManager::CT_READ;    // MasterSocketCallback is always in read mode
 }

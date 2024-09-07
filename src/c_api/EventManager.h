@@ -17,6 +17,11 @@ class EventManager {
         MT_POLL = 1,
         MT_EPOLL = 2
     };
+    enum CallbackType {
+        CT_READ = 1,
+        CT_WRITE = 2,
+        CT_ANY = 3  // CT_ANY == CT_READ | CT_WRITE
+    };
     // how to:
     //   inherit from this class, add necessary fields with refs;
     //   call it instead of recv/send/accept/whatever
@@ -27,12 +32,8 @@ class EventManager {
         // possible args for assert right fd
         // consider changing to void Call()
         virtual void Call(int fd) = 0;
+        virtual CallbackType callback_mode() = 0;    // read/write
         virtual ~ICallback(){};
-    };
-    enum CallbackType {
-        CT_READ = 1,
-        CT_WRITE = 2,
-        CT_ANY = 3  // CT_ANY == CT_READ | CT_WRITE
     };
 
   private:
@@ -43,9 +44,8 @@ class EventManager {
 
   public:
     // use return to indicate error, eg, callback for fd already registered?
-    int RegisterReadCallback(int, utils::unique_ptr<ICallback>);
-    int RegisterWriteCallback(int, utils::unique_ptr<ICallback>);
-    void DeleteCallbacksByFd(int fd, CallbackType cb_type = CT_ANY);
+    int RegisterCallback(int, utils::unique_ptr<ICallback>);
+    void DeleteCallbacksByFd(int fd);
 
     // all select-poll-epoll logic goes in here
     int CheckOnce();
@@ -58,8 +58,7 @@ class EventManager {
     int CheckWithEpoll_();
     static utils::unique_ptr<EventManager> instance_;
     MultiplexType mx_type_;
-    std::map</* fd */ int, utils::unique_ptr<ICallback> > rd_sock_;  // this contains callbacks for both: listeners (master sockets aka server socket) and clients...
-    std::map</* fd */ int, utils::unique_ptr<ICallback> > wr_sock_;
+    std::map</* fd */ int, utils::unique_ptr<ICallback> > monitored_sockets_;  // this contains callbacks for both: listeners (master sockets aka server socket) and clients...
     typedef std::map<int, utils::unique_ptr<ICallback> >::const_iterator SockMapIt;
 };
 
