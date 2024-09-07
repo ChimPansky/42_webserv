@@ -58,7 +58,7 @@ class EventManager {
     int CheckWithEpoll_();
     static utils::unique_ptr<EventManager> instance_;
     MultiplexType mx_type_;
-    std::map</* fd */ int, utils::unique_ptr<ICallback> > rd_sock_;
+    std::map</* fd */ int, utils::unique_ptr<ICallback> > rd_sock_;  // this contains callbacks for both: listeners (master sockets aka server socket) and clients...
     std::map</* fd */ int, utils::unique_ptr<ICallback> > wr_sock_;
     typedef std::map<int, utils::unique_ptr<ICallback> >::const_iterator SockMapIt;
 };

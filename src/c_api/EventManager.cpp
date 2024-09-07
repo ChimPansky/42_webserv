@@ -57,6 +57,17 @@ int EventManager::CheckWithEpoll_() {
         LOG(ERROR) << "epoll_create failed";
         return 1;
     }
+
+    for (SockMapIt it = rd_sock_.begin(); it != rd_sock_.end(); ++it) {
+        LOG(DEBUG) << "adding fd << " << it->first << " to epoll";
+        ev.events = EPOLLIN;
+        ev.data.fd = it->first;
+    }
+    for (SockMapIt it = wr_sock_.begin(); it != wr_sock_.end(); ++it) {
+        FD_SET(it->first, &select_wr_set);
+        ev.events = EPOLLOUT;
+        ev.data.fd = it->first;
+    }
     ev.events = EPOLLIN;
     ev.data.fd = 0;
     (void)events;
@@ -78,30 +89,7 @@ int EventManager::CheckWithEpoll_() {
 // #include <unistd.h>
 // #include <cstdio>
 
-// #define MAX_EVENTS 10
 
-
-// std::ostream& operator<<(std::ostream& os, const sockaddr_in& addr) {
-//     os << "sin_family: " << addr.sin_family << std::endl;
-//     os << "sin_port: " << addr.sin_port << std::endl;
-//     os << "sin_addr: " << addr.sin_addr.s_addr << std::endl;
-//     return os;
-// }
-
-// int main() {
-//     const char* ip1 = "127.0.0.1";
-//     in_port_t port1 = 5001;
-
-
-
-//     struct epoll_event ev; // master event
-//     struct epoll_event events[MAX_EVENTS]; // client events...
-//     int epollfd = epoll_create(1); // argument is ignored since Linux 2.6.8, but must be > 0
-//     if (epollfd == -1) {
-//         std::cerr << "epoll_create unsuccessful --> exiting..." << std::endl;
-//         perror(NULL);
-//         return 1;
-//     }
 //     ev.events = EPOLLIN;
 //     ev.data.fd = listener;
 //     epoll_ctl(epollfd, EPOLL_CTL_ADD, listener, &ev);
@@ -187,6 +175,7 @@ int EventManager::CheckWithSelect_()
     fd_set select_wr_set;
     FD_ZERO(&select_rd_set);
     FD_ZERO(&select_wr_set);
+    LOG(DEBUG) << "CheckWithSelect";
     for (SockMapIt it = rd_sock_.begin(); it != rd_sock_.end(); ++it) {
         LOG(DEBUG) << "adding to select rd set: " << it->first;
         FD_SET(it->first, &select_rd_set);
