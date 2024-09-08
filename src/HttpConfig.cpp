@@ -1,18 +1,14 @@
 #include "HttpConfig.h"
 
 const int HttpConfig::kDefaultKeepaliveTimeout = 65;
-
 size_t HttpConfig::kDefaultClientMaxBodySize = 1048576; // 1MB
-
 const std::string HttpConfig::kDefaultDefaultFile = "index.html";
-
 const std::string HttpConfig::kDefaultDirListing = "off";
 
-
-HttpConfig::HttpConfig(std::vector<Setting> settings)
+HttpConfig::HttpConfig(std::vector<Setting> settings, const std::vector<utils::shared_ptr<ServerConfig> >& server_configs)
+    : server_configs_(server_configs)
 {
-
-
+    (void)settings;
 }
 
 int HttpConfig::keepalive_timeout() const
@@ -45,7 +41,7 @@ const std::string& HttpConfig::dir_listing() const
     return dir_listing_;
 }
 
-const std::vector<ServerConfig>& HttpConfig::server_configs() const
+const std::vector<utils::shared_ptr<ServerConfig> >& HttpConfig::server_configs() const
 {
     return server_configs_;
 }
@@ -92,7 +88,8 @@ void HttpConfig::InitDirListing(const std::string& value)
     //  TODO
 }
 
-/* std::map<std::string, HttpConfig::FunctionPointer> HttpConfig::InitSettings() const
+bool    HttpConfig::IsValid() const
 {
-
-} */
+    //  Check if all attributes are initialized
+    return true;
+}

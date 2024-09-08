@@ -1,16 +1,16 @@
-#ifndef WS_HTTPBUILDER_H
-#define WS_HTTPBUILDER_H
+#ifndef WS_HTTPCONFIGBUILDER_H
+#define WS_HTTPCONFIGBUILDER_H
 
-#include "IConfigBuilder.h"
+#include "AConfigBuilder.h"
 
-class   HttpBuilder : public IConfigBuilder {
+class   HttpConfigBuilder : public AConfigBuilder {
 
-    virtual std::vector<std::string>  GetTokensByLvl(const std::string& token) const = 0;
+    virtual const std::vector<std::string>  GetTokensByLvl() const;
   
   public:
-    ~HttpBuilder();
-    static utils::unique_ptr<IConfigBuilder>  GetBuilderByLvl(NestingLevel lvl);
-    virtual utils::unique_ptr<IConfig>  Parse() const;
+    HttpConfigBuilder(std::ifstream& config_file, const std::string& lvl_descrt);
+    ~HttpConfigBuilder();
+    virtual utils::shared_ptr<IConfig>  Parse();
 };
 
-#endif  // WS_HTTPBUILDER_H
+#endif  // WS_HTTPCONFIGBUILDER_H

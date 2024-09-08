@@ -1,16 +1,16 @@
-#ifndef WS_LOCATIONBUILDER_H
-#define WS_LOCATIONBUILDER_H
+#ifndef WS_LOCATIONCONFIGBUILDER_H
+#define WS_LOCATIONCONFIGBUILDER_H
 
-#include "IConfigBuilder.h"
+#include "AConfigBuilder.h"
 
-class   LocationBuilder : public IConfigBuilder {
+class   LocationConfigBuilder : public AConfigBuilder {
 
-    virtual std::vector<std::string>  GetTokensByLvl(const std::string& token) const = 0;
+    virtual const std::vector<std::string>  GetTokensByLvl() const;
   
   public:
-    ~LocationBuilder();
-    static utils::unique_ptr<IConfigBuilder>  GetBuilderByLvl(NestingLevel lvl);
-    virtual utils::unique_ptr<IConfig>  Parse() const;
+    LocationConfigBuilder(std::ifstream& config_file, const std::string& lvl_descrt);
+    ~LocationConfigBuilder();
+    virtual utils::shared_ptr<IConfig>  Parse();
 };
 
-#endif  // WS_LOCATIONBUILDER_H
+#endif  // WS_LOCATIONCONFIGBUILDER_H

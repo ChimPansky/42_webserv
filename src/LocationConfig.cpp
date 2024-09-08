@@ -1,58 +1,59 @@
-LocationBlock::LocationBlock(const std::vector<S>& settings)
-    : allowed_methods_(),
-      redirect_(301, ""),
-      is_cgi_(false),
-      root_dir_(""),
-      default_file_(""),
-      dir_listing_("")
+#include "LocationConfig.h"
+
+LocationConfig::LocationConfig(const std::vector<Setting>& settings, const std::string& lvl_descrt)
 {
-    allowed_methods_.push_back("GET");
-    allowed_methods_.push_back("POST");
     // parse values from the map
     (void)settings;
+    (void)lvl_descrt;
 }
 
-const std::string& LocationBlock::route() const
+const std::string& LocationConfig::route() const
 {
     return route_;
 }
 
-const std::vector<std::string>& LocationBlock::allowed_methods() const
+const std::vector<std::string>& LocationConfig::allowed_methods() const
 {
     return allowed_methods_;
 }
 
-const std::pair<int, std::string>& LocationBlock::redirect() const
+const std::pair<int, std::string>& LocationConfig::redirect() const
 {
     return redirect_;
 }
 
-bool LocationBlock::is_cgi() const
+bool LocationConfig::is_cgi() const
 {
     return is_cgi_;
 }
 
-const std::vector<std::string>& LocationBlock::cgi_paths() const
+const std::vector<std::string>& LocationConfig::cgi_paths() const
 {
     return cgi_paths_;
 }
 
-const std::vector<std::string>& LocationBlock::cgi_extensions() const
+const std::vector<std::string>& LocationConfig::cgi_extensions() const
 {
     return cgi_extensions_;
 }
 
-const std::string& LocationBlock::root_dir()
+const std::string& LocationConfig::root_dir()
 {
     return root_dir_;
 }
 
-const std::string& LocationBlock::default_file() const
+const std::string& LocationConfig::default_file() const
 {
     return default_file_;
 }
 
-const std::string& LocationBlock::dir_listing() const
+const std::string& LocationConfig::dir_listing() const
 {
     return dir_listing_;
+}
+
+bool    LocationConfig::IsValid() const
+{
+    //  Check if all attributes are initialized
+    return true;
 }

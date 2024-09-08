@@ -4,7 +4,6 @@
 #include "IConfig.h"
 
 #include <netinet/in.h>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -20,9 +19,10 @@ class   LocationConfig : public IConfig {
     void InitRootDir(const std::string& value);
     void InitDefaultFile(const std::string& value);
     void InitDirListing(const std::string& value);
+    virtual bool  IsValid() const;
 
   public:
-    LocationConfig(const std::vector<Setting>& settings);
+    LocationConfig(const std::vector<Setting>& settings, const std::string& lvl_descrt);
     const std::string& route() const;
     const std::vector<std::string>& allowed_methods() const;
     const std::pair<int, std::string>& redirect() const;

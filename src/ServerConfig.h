@@ -7,7 +7,6 @@
 class   ServerConfig : public IConfig {
 
   private:
-    ServerConfig();
     typedef std::pair<std::string, std::string> Setting;
     void InitAccessLog(const std::string& value);
     void InitErrorLogPath(const std::string& value);
@@ -17,9 +16,10 @@ class   ServerConfig : public IConfig {
     void InitDirListing(const std::string& value);
     void InitServerNames(const std::string& value);
     void InitLocations(const std::string& value);
+    virtual bool  IsValid() const;
 
   public:
-    ServerConfig(std::vector<Setting> settings);
+    ServerConfig(std::vector<Setting> settings, const std::vector<utils::shared_ptr<LocationConfig> >& location_configs);
     ~ServerConfig();
     const std::string& access_log_path() const;
     const std::string& access_log_level() const;

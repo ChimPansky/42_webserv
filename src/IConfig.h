@@ -6,11 +6,11 @@
 
 class   IConfig {
 
+    virtual bool  IsValid() const = 0; // if even needed
   public:
     virtual ~IConfig();
     typedef std::pair<std::string, std::string> Setting;
     typedef void (IConfig::*FunctionPointer)(const std::string&);
-    virtual std::map<std::string, FunctionPointer> InitSettings() const = 0;
     typedef std::map<std::string, FunctionPointer>::const_iterator MethodsIt;
 };
 

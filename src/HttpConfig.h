@@ -9,7 +9,6 @@
 class   HttpConfig : public IConfig {
 
   private:
-    HttpConfig();
     static const int kDefaultKeepaliveTimeout;
     static size_t kDefaultClientMaxBodySize;
     static const std::map<int, std::string> kDefaultErrorPages;
@@ -24,9 +23,10 @@ class   HttpConfig : public IConfig {
     void InitDefaultFile(const std::string& value);
     void InitDirListing(const std::string& value);
     void InitServers(const std::vector<Setting>& server_settings);
+    virtual bool  IsValid() const;
 
   public:
-    HttpConfig(std::vector<Setting> settings);
+    HttpConfig(std::vector<Setting> settings, const std::vector<utils::shared_ptr<ServerConfig> >& server_configs);
     ~HttpConfig();
     int keepalive_timeout() const;
     size_t client_max_body_size() const;
@@ -34,14 +34,14 @@ class   HttpConfig : public IConfig {
     const std::string& root_dir() const;
     const std::string& default_file() const;
     const std::string& dir_listing() const;
-    const std::vector<ServerConfig>&  server_configs() const;
+    const std::vector<utils::shared_ptr<ServerConfig> >&  server_configs() const;
 
   private:
     int keepalive_timeout_;
     size_t client_max_body_size_;
     std::map</* status code */ int, /* error page path */ std::string> error_pages_;
-    std::vector<ServerConfig> server_configs_;
-    typedef std::vector<ServerConfig>::const_iterator ServerConfigIt;
+    std::vector<utils::shared_ptr<ServerConfig> > server_configs_;
+    typedef std::vector<utils::shared_ptr<ServerConfig> >::const_iterator ServerConfigIt;
     std::string root_dir_;
     std::string default_file_;
     std::string dir_listing_;

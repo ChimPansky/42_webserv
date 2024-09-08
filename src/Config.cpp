@@ -1,19 +1,15 @@
 #include "Config.h"
+#include <iostream>
 
 const std::string Config::kDefaultMxType = "select";
 const std::string Config::kDefaultErrorLogPath = "/logs/error.log";
 const std::string Config::kDefaultErrorLogLevel = "info";
 
-Config::Config(std::vector<Setting> settings)
+Config::Config(std::vector<Setting> settings, utils::shared_ptr<HttpConfig> http_config)
+    : http_config_(http_config)
 {
-    for (auto& setting : settings) {
-        auto it = InitSettings().find(setting.first);
-        if (it != InitSettings().end()) {
-            (this->*(it->second))(setting.second);
-        } else {
-            throw std::runtime_error("Invalid configuration file: unknown setting: " + setting.first);
-        }
-    }
+    (void)settings;
+    //  Go through settings and init attributes
 }
 
 const std::string& Config::mx_type() const
@@ -48,7 +44,8 @@ void Config::InitErrorLog(const std::string& value)
     //  TODO
 }
 
-std::map<std::string, Config::FunctionPointer> Config::InitSettings()
+bool    Config::IsValid() const
 {
-
+    //  Check if all attributes are initialized
+    return true;
 }
