@@ -43,22 +43,22 @@ Connection: Closed\n\r\
 
 ClientSession::ClientCallback::ClientCallback(ClientSession& client) : client_(client)
 {
-    callback_mode_ = c_api::EventManager::CT_READ;  // clients always start in read mode
-    added_to_multiplex_ = false; // will be set to true
+    callback_mode_ = c_api::EventManager::CM_READ;  // clients always start in read mode
+    added_to_multiplex_ = false; // will be set to true once it is added to epoll
 }
 
 void ClientSession::ClientCallback::Call(int /*fd*/)
 {
-    if (callback_mode_ == c_api::EventManager::CT_READ) {
+    if (callback_mode_ == c_api::EventManager::CM_READ) {
         ReadCall();
     }
-    else if (callback_mode_ == c_api::EventManager::CT_WRITE) {
+    else if (callback_mode_ == c_api::EventManager::CM_WRITE) {
         WriteCall();
     }
 }
 
 
-c_api::EventManager::CallbackType ClientSession::ClientCallback::callback_mode()
+c_api::EventManager::CallbackMode ClientSession::ClientCallback::callback_mode()
 {
     return callback_mode_;
 }
@@ -87,12 +87,13 @@ void ClientSession::ClientCallback::ReadCall()
     LOG(DEBUG) << "ClientCallback::ReadCall: " << bytes_recvd << " bytes recvd from " << client_.client_sock_->sockfd();
     if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
         LOG(DEBUG) << "ClientCallback::ReadCall: switching to write_mode";
-        callback_mode_ = c_api::EventManager::CT_WRITE; // switch to write mode after Request reading is finished (and processed by server)
+        callback_mode_ = c_api::EventManager::CM_WRITE; // switch to write mode after Request reading is finished (and processed by server)
         client_.PrepareResponse();
     }
 }
 
 void ClientSession::PrepareResponse() {
+    LOG(DEBUG) << "ClientSession::PrepareResponse";
     buf_send_idx_ = 0;
     buf_.resize(sizeof(HTTP_RESPONSE));
     std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
@@ -113,25 +114,25 @@ void ClientSession::ClientCallback::WriteCall()
      if (client_.buf_send_idx_ == client_.buf_.size()) {
         LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
         client_.connection_closed_ = true;
-        callback_mode_ = c_api::EventManager::CT_DELETE; // maybe keepalive - switch back to read mode CT_READ
+        callback_mode_ = c_api::EventManager::CM_DELETE; // maybe keepalive - switch back to read mode CM_READ
     }
 
 }
 
-ClientSession::ProcessState ClientSession::ProcessRead(ssize_t bytes_recvd)
-{
-    (void)bytes_recvd;
-    LOG(DEBUG) << buf_.data();
-    // std::cout.write(buf_.data(), buf_.size()) << std::flush;
-    //TODO: set request is ready...
-    if (/*request is ready*/ buf_.size() > 20 ) {
-        // if cgi run and register callbacks for cgi
-        // else return static page
+// ClientSession::ProcessState ClientSession::ProcessRead(ssize_t bytes_recvd)
+// {
+//     (void)bytes_recvd;
+//     LOG(DEBUG) << buf_.data();
+//     // std::cout.write(buf_.data(), buf_.size()) << std::flush;
+//     //TODO: set request is ready...
+//     if (/*request is ready*/ buf_.size() > 20 ) {
+//         // if cgi run and register callbacks for cgi
+//         // else return static page
 
-        buf_send_idx_ = 0;
-        buf_.resize(sizeof(HTTP_RESPONSE));
-        std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
-        return PS_DONE;
-    }
-    return PS_ONGOING;
-}
+//         buf_send_idx_ = 0;
+//         buf_.resize(sizeof(HTTP_RESPONSE));
+//         std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
+//         return PS_DONE;
+//     }
+//     return PS_ONGOING;
+// }

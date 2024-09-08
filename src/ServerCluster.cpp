@@ -48,6 +48,10 @@ ServerCluster::ServerCluster(const Config& /*config*/)
 void ServerCluster::Stop()
 {
     run_ = false;
+    if (c_api::EventManager::get().epoll_fd() != -1) {
+        LOG(DEBUG) << "Closing epoll fd: " << c_api::EventManager::get().epoll_fd();
+        close(c_api::EventManager::get().epoll_fd());
+    }
 }
 
 // smth like
@@ -102,8 +106,8 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     LOG(INFO) << "New incoming connection on: " << fd;
 }
 
-c_api::EventManager::CallbackType ServerCluster::MasterSocketCallback::callback_mode() {
-    return c_api::EventManager::CT_READ;    // MasterSocketCallback is always in read mode
+c_api::EventManager::CallbackMode ServerCluster::MasterSocketCallback::callback_mode() {
+    return c_api::EventManager::CM_READ;    // MasterSocketCallback is always in read mode
 }
 
 bool ServerCluster::MasterSocketCallback::added_to_multiplex() {

@@ -15,11 +15,10 @@
 #include "ServerCluster.h"
 #include "c_api/EventManager.h"
 #include "utils/logger.h"
-#include <iostream>
 void StopCluster(int /*signum*/)
 {
-    ServerCluster::Stop();
     LOG(INFO) << " SIGINT caught, shutting down...";
+    ServerCluster::Stop();
 }
 
 int main(int ac, char **av)
