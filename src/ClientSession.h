@@ -1,6 +1,7 @@
 #ifndef WS_CLIENT_H
 #define WS_CLIENT_H
 
+#include <sys/types.h>
 #include <vector>
 
 #include "c_api/ClientSocket.h"
@@ -10,6 +11,12 @@
 #include "utils/unique_ptr.h"
 
 class ClientSession {
+  public:
+    enum ProcessState {
+        PS_ONGOING,
+        PS_DONE
+    };
+
   private:
     ClientSession(const ClientSession&);
     ClientSession& operator=(const ClientSession&);
@@ -20,24 +27,23 @@ class ClientSession {
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
-    void ProcessNewData();
-    class ClientReadCallback : public c_api::EventManager::ICallback {
+    ProcessState ProcessRead(ssize_t bytes_recvd); // not used now , use when building request...
+    void PrepareResponse(); // later: get this from server
+    class ClientCallback : public c_api::EventManager::ICallback {
       public:
-        ClientReadCallback(ClientSession& client);
-        // read from sock,
+        ClientCallback(ClientSession& client);
+        // read/write from/to sock,
         virtual void Call(int fd);
+        virtual c_api::EventManager::CallbackMode callback_mode();
+        virtual bool added_to_multiplex();
+        virtual void set_added_to_multiplex(bool);
 
       private:
         ClientSession& client_;
-    };
-    class ClientWriteCallback : public c_api::EventManager::ICallback {
-      public:
-        ClientWriteCallback(ClientSession& client);
-        // read from sock,
-        virtual void Call(int fd);
-
-      private:
-        ClientSession& client_;
+        c_api::EventManager::CallbackMode callback_mode_;
+        bool added_to_multiplex_;
+        void ReadCall();
+        void WriteCall();
     };
 
   private:

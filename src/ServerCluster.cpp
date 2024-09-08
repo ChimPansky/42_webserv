@@ -1,5 +1,6 @@
 #include "ServerCluster.h"
 
+#include "Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/utils.h"
 #include "utils/logger.h"
@@ -34,7 +35,7 @@ ServerCluster::ServerCluster(const Config& /*config*/)
             utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
-            c_api::EventManager::get().RegisterReadCallback(
+            c_api::EventManager::get().RegisterCallback(
                 sockfd,
                 utils::unique_ptr<c_api::EventManager::ICallback>(new MasterSocketCallback(*this)));
             sockets_[sockfd] = listener;
@@ -47,6 +48,10 @@ ServerCluster::ServerCluster(const Config& /*config*/)
 void ServerCluster::Stop()
 {
     run_ = false;
+    if (c_api::EventManager::get().epoll_fd() != -1) {
+        LOG(DEBUG) << "Closing epoll fd: " << c_api::EventManager::get().epoll_fd();
+        close(c_api::EventManager::get().epoll_fd());
+    }
 }
 
 // smth like
@@ -78,7 +83,9 @@ void ServerCluster::CheckClients()
 
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
-{}
+{
+    added_to_multiplex_ = false;
+}
 
 // accept, create new client, register read callback for client,
 void ServerCluster::MasterSocketCallback::Call(int fd)
@@ -97,4 +104,16 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     }
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
     LOG(INFO) << "New incoming connection on: " << fd;
+}
+
+c_api::EventManager::CallbackMode ServerCluster::MasterSocketCallback::callback_mode() {
+    return c_api::EventManager::CM_READ;    // MasterSocketCallback is always in read mode
+}
+
+bool ServerCluster::MasterSocketCallback::added_to_multiplex() {
+    return added_to_multiplex_;
+}
+
+void ServerCluster::MasterSocketCallback::set_added_to_multiplex(bool added) {
+    added_to_multiplex_ = added;
 }
