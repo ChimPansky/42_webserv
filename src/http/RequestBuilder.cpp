@@ -15,17 +15,12 @@ const Request& RequestBuilder::rq() const
     return rq_;
 }
 
-std::vector<char>& RequestBuilder::rq_buf()
-{
-    return rq_buf_;
-}
-
-void RequestBuilder::ParseChunk()
+void RequestBuilder::ParseNext(const std::vector<char>& buf)
 {
     ++chunk_counter_;
     LOG(DEBUG) << "Parsing chunk no " << chunk_counter_ << "...";
-    while (parse_idx_ < rq_buf_.size()) {
-        char c = rq_buf_[parse_idx_];
+    while (parse_idx_ < buf.size()) {
+        char c = buf[parse_idx_];
         (void)c;
         switch (parse_state_) {
             case PS_START:
@@ -48,26 +43,27 @@ void RequestBuilder::ParseChunk()
         parse_idx_++;
         std::cout << c;
     }
-    if (rq_buf_.size() >= 4 &&
-        std::strncmp(rq_buf_.data() + rq_buf_.size() - 4, "\r\n\r\n", 4) == 0) {
-        is_request_ready_ = true;
+    if (buf.size() >= 4 &&
+        std::strncmp(buf.data() + buf.size() - 4, "\r\n\r\n", 4) == 0) {
+        eof_reached_ = true;
     }
     std::cout << std::endl;
 }
 
 void RequestBuilder::Reset()
 {
-    is_request_ready_ = false;
+    eof_reached_ = false;
     chunk_counter_ = 0;
     parse_idx_ = 0;
-    rq_buf_.clear();
     parse_state_ = PS_START;
     rq_ = Request();
 }
 
-bool RequestBuilder::is_request_ready() const
+// ready for response if request has been successfully read until end (eof_reached == false) or a problem has occured during parsing (check request.status_code)
+bool RequestBuilder::is_ready_for_response() const
 {
-    return is_request_ready_;
+    LOG(DEBUG) << "RequestBuilder::is_request_ready: " << (eof_reached_ || rq_.status_code_ != 0);
+    return (eof_reached_ || rq_.status_code_ != 0);
 }
 
 void RequestBuilder::ParseMethod()

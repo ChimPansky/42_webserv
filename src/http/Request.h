@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 namespace http {
 enum Method {
@@ -27,8 +28,9 @@ struct Request {
     std::string accept_;
     std::map<std::string, std::string> headers_;
     std::map<std::string, std::string> params_;
-    std::string body_;
+    std::vector<char> body_;
     size_t body_size_;
+    int status_code_;
 
     void Reset();
 };

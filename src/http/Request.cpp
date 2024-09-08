@@ -14,7 +14,7 @@ void Request::Reset()
     params_.clear();
     body_.clear();
     body_size_ = 0;
+    status_code_ = 0;
 }
 
 }  // namespace http
-

@@ -59,7 +59,6 @@ int EventManager::CheckWithPoll_()
 }
 
 int EventManager::CheckWithEpoll_() {
-    LOG(DEBUG) << "\n\n---CheckWithEpoll---";
     struct epoll_event ev;
     struct epoll_event events[EPOLL_MAX_EVENTS];
 
@@ -68,14 +67,8 @@ int EventManager::CheckWithEpoll_() {
         if (epoll_fd_ == -1) {
             LOG(ERROR) << "epoll_create failed";
         }
-        else {
-            LOG(DEBUG) << "epoll_create successul --> epoll_fd: " << epoll_fd_;
-        }
     }
 
-    LOG(DEBUG) << "\n   Iterating over map of monitored sockets which contains \n"
-        "   both listeners (aka master sockets aka server sockets) AND \n"
-        "   clientsockets (aka communication channel between client and server):";
     for (SockMapIt it = monitored_sockets_.begin(); it != monitored_sockets_.end(); ++it) {
         ev.data.fd = it->first;
         ev.events = it->second->callback_mode() == CM_READ ? EPOLLIN : EPOLLOUT;
@@ -104,20 +97,11 @@ int EventManager::CheckWithEpoll_() {
             epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, it->first, &ev);
         }
     }
-    LOG(DEBUG) << "\n   Done iterating over map of monitored sockets and updating epoll events\n"
-        "   --> now call epoll_wait, which will wait for a monitored socket to become available\n"
-        "   for reading/writing (e.g. a new request is sent by a client). If any becomes available\n"
-        "   then we get back an array of epoll_events, which are structs that contain \n"
-        "   an fd and which event(s) its ready for (EPOLLIN/EPOLLOUT)\n";
     int ready_fds = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, -1);
     if (ready_fds == -1) {
         LOG(ERROR) << "epoll_wait unsuccessful.";
         return 1;
     }
-    LOG(DEBUG) << "\n   epoll_wait successful --> " << ready_fds << " fd(s) are ready for read/write --> iterate over them:\n"
-    "   For each fd check if it is in our map of monitored sockets and if yes,\n"
-    "   then call its callback ICallBack::Call() (in the callback it will be decided\n"
-    "   whether to read or write according to ICallBack::callback_mode CM_READ/CM_WRITE)\n";;
     for (int rdy_fd = 0; rdy_fd < ready_fds; rdy_fd++) {
         SockMapIt it;
         if ((it = monitored_sockets_.find(events[rdy_fd].data.fd)) != monitored_sockets_.end()) {

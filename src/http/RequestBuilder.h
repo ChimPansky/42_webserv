@@ -24,18 +24,16 @@ class RequestBuilder {
   public:
     RequestBuilder();
     void Reset();
-    void ParseChunk();
-    bool is_request_ready() const;
+    void ParseNext(const std::vector<char>& buf);
+    bool is_ready_for_response() const;
     const Request& rq() const;
-    std::vector<char>& rq_buf();
 
   private:
     Request rq_;
     //Server& server_;
-    bool is_request_ready_;
+    bool eof_reached_;
     int chunk_counter_;
     ParseState parse_state_;
-    std::vector<char> rq_buf_;
     size_t parse_idx_;
     void ParseMethod();
     void ParseUri();

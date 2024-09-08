@@ -6,7 +6,7 @@
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
     : client_sock_(sock),
       master_socket_fd_(master_sock_fd),
-      client_buf_idx_(0),
+      send_idx_(0),
       connection_closed_(false)
 {
     c_api::EventManager::get().RegisterCallback(
@@ -85,17 +85,20 @@ void ClientSession::ClientCallback::ReadCall()
         return;
     }
     LOG(DEBUG) << "ClientCallback::ReadCall: " << bytes_recvd << " bytes recvd from " << client_.client_sock_->sockfd();
-    if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->sock_buf_sz()) {
+    client_.rq_builder_.ParseNext(client_.client_buf_);
+    if (client_.rq_builder_.is_ready_for_response() || static_cast<size_t>(bytes_recvd) < client_.client_sock_->sock_buf_sz()) {
         LOG(DEBUG) << "ClientCallback::ReadCall: switching to write_mode";
         callback_mode_ = c_api::EventManager::CM_WRITE; // switch to write mode after Request reading is finished (and processed by server)
+        // todo: pick server and process request
         client_.PrepareResponse();
     }
 }
 
 void ClientSession::PrepareResponse() {
     LOG(DEBUG) << "ClientSession::PrepareResponse";
-    client_buf_idx_ = 0;
+    client_buf_.clear();
     client_buf_.resize(sizeof(HTTP_RESPONSE));
+    send_idx_ = 0;
     std::memcpy(client_buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
 }
 
@@ -103,16 +106,16 @@ void ClientSession::ClientCallback::WriteCall()
 {
     LOG(DEBUG) << "ClientCallback::WriteCall";
         // assert fd == client_sock.fd
-    ssize_t bytes_sent = client_.client_sock_->Send(client_.client_buf_, client_.client_buf_idx_,
-                                                    client_.client_buf_.size() - client_.client_buf_idx_);
+    ssize_t bytes_sent = client_.client_sock_->Send(client_.client_buf_, client_.send_idx_,
+                                                    client_.client_buf_.size() - client_.send_idx_);
     if (bytes_sent <= 0) {
         // close connection
         client_.connection_closed_ = true;
         LOG(ERROR) << "error on send";  // add perror
         return;
     }
-     if (client_.client_buf_idx_ == client_.client_buf_.size()) {
-        LOG(INFO) << client_.client_buf_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
+     if (client_.send_idx_ == client_.client_buf_.size()) {
+        LOG(INFO) << client_.send_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
         client_.connection_closed_ = true;
         callback_mode_ = c_api::EventManager::CM_DELETE; // maybe keepalive - switch back to read mode CM_READ
     }
