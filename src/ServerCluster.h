@@ -14,12 +14,11 @@ class ServerCluster {
     static void Stop();
 
   private:
-    class MasterSocketCallback : public c_api::EventManager::ICallback {
+    class MasterSocketCallback : public c_api::ICallback {
       public:
         MasterSocketCallback(ServerCluster& cluster);
         // accept, create new client, register read callback for client,
         virtual void Call(int fd);
-        virtual c_api::EventManager::CallbackMode callback_mode();
         virtual bool added_to_multiplex();
         virtual void set_added_to_multiplex(bool);
 
