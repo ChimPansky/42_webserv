@@ -19,9 +19,7 @@ class ConfigParser  {
     ConfigParser(std::ifstream& ifs, const std::string& lvl, const std::string& lvl_descrt = "");
     typedef std::pair<std::string, std::string>  Setting;
     Setting MakePair(const std::string& line);
-    
-    // NestingLevel    GetNestingByToken(const std::string& token);
-
+  
   // public:
     // static utils::unique_ptr<ConfigParser>  GetBuilderByLvl(NestingLevel, std::ifstream&, const std::string&);
 
@@ -39,6 +37,22 @@ class ConfigParser  {
         }
       }
       return res;
+    }
+
+    static const std::vector<ConfigParser>& FindNesting(const std::string& key) {
+      if (nested_configs_.empty()) {
+        throw std::runtime_error("Invalid configuration file: no " + key + " block.");
+      } else if ("http" == key && nested_configs_.size() == 1 && "http" == nested_configs_[0].lvl()) {
+        return nested_configs_;
+      } else if ("server" == key || "location" == key) {
+        for (std::vector<ConfigParser>::const_iterator it = nested_configs_.begin(); it != nested_configs_.end(); ++it) {
+          if (key != it->lvl()) {
+            throw std::runtime_error("Invalid configuration file: invalid block.");
+          }
+        }
+        return nested_configs_;
+      }
+      throw std::runtime_error("Invalid configuration file: multiple " + key + " blocks.");
     }
 
   private:

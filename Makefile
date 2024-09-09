@@ -20,7 +20,6 @@ FILENAMES = \
 	c_api/MasterSocket.cpp \
 	c_api/utils.cpp \
 	config/ConfigParser.cpp \
-	config/ConfigBuilder.cpp \
 	config/Config.cpp \
 	config/HttpConfig.cpp \
 	config/ServerConfig.cpp \
