@@ -1,29 +1,33 @@
 #ifndef WS_CONFIG_CONFIGBUILDER_H
 #define WS_CONFIG_CONFIGBUILDER_H
 
-#include <map>
-#include <string>
 #include "Config.h"
 #include "ConfigParser.h"
-#include "../utils.h/logger.h"
+
+#include <unistd.h>
 
 typedef c_api::EventManager::MultiplexType MxType;
 
 template <class ConfigType>
 class   ConfigBuilder {
-    static ConfigType Build(const std::vector<ConfigParser>& f);
-    static bool IsKeyAllowed(const std::string& key);
-    static bool IsNestedAllowed(const std::string& nested_name);
+
+    private:
+        static bool IsKeyAllowed(const std::string& key);
+        static bool IsNestedAllowed(const std::string& nested_name);
+    public:
+        static ConfigType Build(const ConfigParser& f);
 };
+
 
 template <>
 class ConfigBuilder<Config> {
 
-    static const MxType kDefaultMxType = MxType::MT_SELECT;
-    static const std::string kDefaultErrorLogPath = "/logs/error.log";
-    static const std::string kDefaultErrorLogLevel = "info";
+    private:
+        static const MxType kDefaultMxType = c_api::EventManager::MT_SELECT;
+        static const std::string kDefaultErrorLogPath;
+        static const Severity kDefaultErrorLogLevel = INFO;
 
-    static MxType BuildMxType(const std::vector<const std::string&>& vals) {
+    static MxType BuildMxType(const std::vector<std::string>& vals) {
         if (vals.empty()) {
             return kDefaultMxType;
         }
@@ -32,30 +36,25 @@ class ConfigBuilder<Config> {
 
     static MxType ParseMxType(const std::string& val) {
         if (val == "epoll") {
-            return MxType::MT_EPOLL;
+            return c_api::EventManager::MT_EPOLL;
         } else if (val == "select") {
-            return MxType::MT_SELECT;
+            return c_api::EventManager::MT_SELECT;
         } else if (val == "poll") {
-            return MxType::MT_POLL;
-        } else {
-            throw std::runtime_error("Invalid configuration file: invalid mx_type: " + val);
+            return c_api::EventManager::MT_POLL;
         }
+        throw std::runtime_error("Invalid configuration file: invalid mx_type: " + val);
     }
 
-    static const std::string& BuildErrorLog(const std::vector<const std::string&>& vals, bool is_level) {
-        if (val.empty()) {
-            if (is_level) {
-                return kDefaultErrorLogLevel;
-            }
+    static const std::string& BuildErrorLogPath(const std::vector<std::string>& vals) {
+
+        if (vals.empty()) {
             return kDefaultErrorLogPath;
         }
-        std::vector<std::string>    val_elements = SplitLine(vals[0]);
+        std::vector<std::string>    val_elements = SplitLine(vals[0]); // config utils
         if (val_elements.size() != 2) {
             throw std::runtime_error("Invalid configuration file: invalid error_log: " + vals[0]);
-        } else if (is_level) {
-            return ParseErrorLogLevel(val_elements[1]);
         }
-        return ParseErrorLogPath(val_elements[1]);
+        return ParseErrorLogPath(val_elements[0]);
     }
 
     static const std::string& ParseErrorLogPath(const std::string& val) {
@@ -66,18 +65,30 @@ class ConfigBuilder<Config> {
         return val;
     }
 
+    static Severity BuildErrorLogLevel(const std::vector<std::string>& vals) {
+
+        if (vals.empty()) {
+            return kDefaultErrorLogLevel;
+        }
+        std::vector<std::string>    val_elements = SplitLine(vals[0]); // config utils
+        if (val_elements.size() != 2) {
+            throw std::runtime_error("Invalid configuration file: invalid error_log: " + vals[0]);
+        }
+        return ParseErrorLogLevel(val_elements[1]);
+    }
+
     static Severity   ParseErrorLogLevel(const std::string& val) {
     
         if (val == "debug") {
-            return Severity::DEBUG;
+            return DEBUG;
         } else if (val == "info") {
-            return Severity::INFO;
+            return INFO;
         } else if (val == "warning") {
-            return Severity::WARNING;
+            return WARNING;
         } else if (val == "error") {
-            return Severity::ERROR;
+            return ERROR;
         } else if (val == "fatal") {
-            return Severity::FATAL;
+            return FATAL;
         } else {
             throw std::runtime_error("Invalid configuration file: invalid error_log level: " + val);
         }
@@ -100,30 +111,22 @@ class ConfigBuilder<Config> {
         return key == "use" || key == "error_log" || key == "http";
     }
 
-    static Config Build(const ConfigParser& f) {
+    public:
+        static Config Build(const ConfigParser& f) {
+            MxType mx_type = BuildMxType(f.FindSetting("use"));
+            std::string error_log_path = BuildErrorLogPath(f.FindSetting("error_log"));
+            Severity error_log_level = BuildErrorLogLevel(f.FindSetting("error_log"));
+            HttpConfig http_conf = ConfigBuilder<HttpConfig>::Build(f.FindNesting("http", 0));
 
-        MxType mx_type = BuildMxType(f.FindSettings("use"));
-        std::string error_log_path = BuildErrorLog(f.FindSetting("error_log"), false);
-        Severity error_log_level = BuildErrorLog(f.FindSetting("error_log"), true);
-        HttpConfig http_conf = ConfigBuilder<HttpConfig>::Build(f.FindNesting("http")[0]);
-
-        for (std::vector<ConfigParser::Setting>::const_iterator it = f.settings().begin(); it != f.settings().end(); ++it) {
-            if (!IsKeyAllowed(it->first)) {
-                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
+            for (std::map<std::string, std::string>::const_iterator it = f.settings().begin(); it != f.settings().end(); ++it) {
+                if (!IsKeyAllowed(it->first)) {
+                    throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
+                }
             }
+            return Config(mx_type, error_log_path, error_log_level, http_conf);
         }
-        return Config(mx_type, error_log_path, error_log_level, http_conf);
-    }
 };
 
+const std::string ConfigBuilder<Config>::kDefaultErrorLogPath = "/log/error.log";
+
 #endif  // WS_CONFIG_CONFIGBUILDER_H
-
-/*main {
-    Parser parser(file_name, "", "");
-
-    ConfigBuilder config_builder(parser);
-
-    Config = config_builder.Build();
-
-    Server(config);
-}*/

@@ -3,7 +3,7 @@
 
 #include "HttpConfig.h"
 #include "c_api/EventManager.h"
-#include "../utils/logger.h"
+#include "utils/logger.h"
 
 class Config {
 
@@ -12,7 +12,7 @@ class Config {
     const std::string&  InitErrorLogPath(const std::string& value);
 
   public:
-    Config(MxType mx_type, const std::string& error_log_path, const std::string& error_log_level, const HttpConfig& http_config);
+    Config(MxType mx_type, const std::string& error_log_path, Severity error_log_level, const HttpConfig& http_config);
     MxType mx_type() const;
     const std::string& error_log_path() const;
     Severity  error_log_level() const;

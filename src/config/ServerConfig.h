@@ -3,6 +3,8 @@
 
 #include "LocationConfig.h"
 
+#include <map>
+
 class   ServerConfig {
 
   private:

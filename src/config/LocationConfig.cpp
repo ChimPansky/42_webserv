@@ -1,10 +1,18 @@
 #include "LocationConfig.h"
 
-LocationConfig::LocationConfig(const std::vector<Setting>& settings, const std::string& lvl_descrt)
+LocationConfig::LocationConfig(const std::string& route, const std::vector<std::string>& allowed_methods,
+    const std::pair<int, std::string>& redirect, const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,
+    const std::string& root_dir, const std::string& default_file, const std::string& dir_listing)
+  : route_(route),
+    allowed_methods_(allowed_methods),
+    redirect_(redirect),
+    is_cgi_(!cgi_paths.empty() || !cgi_extensions.empty()),
+    cgi_paths_(cgi_paths),
+    cgi_extensions_(cgi_extensions),
+    root_dir_(root_dir),
+    default_file_(default_file),
+    dir_listing_(dir_listing)
 {
-    // parse values from the map
-    (void)settings;
-    (void)lvl_descrt;
 }
 
 const std::string& LocationConfig::route() const

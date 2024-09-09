@@ -1,17 +1,12 @@
-#ifndef WS_PARSED_CONFIG_FILE_H
-#define WS_PARSED_CONFIG_FILE_H
+#ifndef WS_CONFIG_CONFIG_PARSER_H
+#define WS_CONFIG_CONFIG_PARSER_H
 
 #include <fstream>
 #include <string>
 #include <map>
 #include <vector>
 
-enum NestingLevel {
-  NS_GLOBAL,
-  NS_HTTP,
-  NS_SERVER,
-  NS_LOCATION
-};
+#include "Config.h"
 
 class ConfigParser  {
 
@@ -19,49 +14,19 @@ class ConfigParser  {
     ConfigParser(std::ifstream& ifs, const std::string& lvl, const std::string& lvl_descrt = "");
     typedef std::pair<std::string, std::string>  Setting;
     Setting MakePair(const std::string& line);
-  
-  // public:
-    // static utils::unique_ptr<ConfigParser>  GetBuilderByLvl(NestingLevel, std::ifstream&, const std::string&);
-
-    const std::string& lvl() const {return lvl_;}
-    const std::string& lvl_descr() const {return lvl_descr_;}
-    const std::multimap<std::string, std::string>& settings() const {return settings_;}
-    const std::vector<ConfigParser>& nested_configs() const {return nested_configs_;}
-    static ConfigParser MakeParser(const std::string& config_path);
-
-    std::vector<const std::string&> FindSettings(const std::string& key) {
-      std::vector<const std::string&> res;
-      for (std::multimap<std::string, std::string>::const_iterator it = settings_.begin(); it != settings_.end(); ++it) {
-        if (it->first == key) {
-          res.push_back(it->second);
-        }
-      }
-      return res;
-    }
-
-    static const std::vector<ConfigParser>& FindNesting(const std::string& key) {
-      if (nested_configs_.empty()) {
-        throw std::runtime_error("Invalid configuration file: no " + key + " block.");
-      } else if ("http" == key && nested_configs_.size() == 1 && "http" == nested_configs_[0].lvl()) {
-        return nested_configs_;
-      } else if ("server" == key || "location" == key) {
-        for (std::vector<ConfigParser>::const_iterator it = nested_configs_.begin(); it != nested_configs_.end(); ++it) {
-          if (key != it->lvl()) {
-            throw std::runtime_error("Invalid configuration file: invalid block.");
-          }
-        }
-        return nested_configs_;
-      }
-      throw std::runtime_error("Invalid configuration file: multiple " + key + " blocks.");
-    }
+    const std::string& lvl() const;
+    const std::string& lvl_descr() const;
+    const std::multimap<std::string, std::string>& settings() const;
+    const std::vector<ConfigParser>& nested_configs() const;
+    std::vector<std::string>  FindSetting(const std::string& key) const;
+    const ConfigParser& FindNesting(const std::string& key, int idx) const;
+    static const Config GetConfig(const std::string& config_path);
 
   private:
     std::string     lvl_;
     std::string     lvl_descr_;
     std::multimap<std::string, std::string>    settings_;
     std::vector<ConfigParser> nested_configs_;
-    // typedef std::vector<Setting>::const_iterator SettingIt;
-    // typedef std::vector<ConfigParser>::const_iterator NestedConfigIt;
 };
 
-#endif  // WS_PARSED_CONFIG_FILE_H
+#endif  // WS_CONFIG_CONFIG_PARSER_H
