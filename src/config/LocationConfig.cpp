@@ -51,9 +51,3 @@ const std::string& LocationConfig::dir_listing() const
 {
     return dir_listing_;
 }
-
-bool    LocationConfig::IsValid() const
-{
-    //  Check if all attributes are initialized
-    return true;
-}
