@@ -15,10 +15,15 @@ const Request& RequestBuilder::rq() const
     return rq_;
 }
 
-void RequestBuilder::ParseNext(const std::vector<char>& buf)
+void RequestBuilder::ParseNext(const std::vector<char>& input, size_t input_sz)
 {
+    (void)sz;
     ++chunk_counter_;
     LOG(DEBUG) << "Parsing chunk no " << chunk_counter_ << "...";
+    for (size_t i = 0; i < input_sz; i++) {
+        parse_buf_.push_back(input[i]);
+
+    }
     while (parse_idx_ < buf.size()) {
         char c = buf[parse_idx_];
         (void)c;

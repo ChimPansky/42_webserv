@@ -24,7 +24,7 @@ class RequestBuilder {
   public:
     RequestBuilder();
     void Reset();
-    void ParseNext(const std::vector<char>& buf);
+    void ParseNext(const std::vector<char>& input, size_t input_sz);
     bool is_ready_for_response() const;
     const Request& rq() const;
 
@@ -32,6 +32,8 @@ class RequestBuilder {
     Request rq_;
     //Server& server_;
     bool eof_reached_;
+
+    std::vector<char> parse_buf_;
     int chunk_counter_;
     ParseState parse_state_;
     size_t parse_idx_;

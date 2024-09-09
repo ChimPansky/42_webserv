@@ -77,7 +77,7 @@ void ClientSession::ClientCallback::set_added_to_multiplex(bool added)
 void ClientSession::ClientCallback::ReadCall()
 {
     // assert fd == client_sock.fd
-    long bytes_recvd = client_.client_sock_->Recv(client_.client_buf_);
+    ssize_t bytes_recvd = client_.client_sock_->Recv(client_.client_buf_);
     if (bytes_recvd <= 0) {
         // close connection
         client_.connection_closed_ = true;
@@ -85,7 +85,7 @@ void ClientSession::ClientCallback::ReadCall()
         return;
     }
     LOG(DEBUG) << "ClientCallback::ReadCall: " << bytes_recvd << " bytes recvd from " << client_.client_sock_->sockfd();
-    client_.rq_builder_.ParseNext(client_.client_buf_);
+    client_.rq_builder_.ParseNext(client_.client_buf_, bytes_recvd);
     if (client_.rq_builder_.is_ready_for_response() || static_cast<size_t>(bytes_recvd) < client_.client_sock_->sock_buf_sz()) {
         LOG(DEBUG) << "ClientCallback::ReadCall: switching to write_mode";
         callback_mode_ = c_api::EventManager::CM_WRITE; // switch to write mode after Request reading is finished (and processed by server)
