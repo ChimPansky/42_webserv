@@ -37,7 +37,8 @@ ServerCluster::ServerCluster(const Config& /*config*/)
             sockets_to_servers_[sockfd].push_back(serv);
             c_api::EventManager::get().RegisterCallback(
                 sockfd,
-                utils::unique_ptr<c_api::EventManager::ICallback>(new MasterSocketCallback(*this)));
+                c_api::CM_READ,
+                utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this)));
             sockets_[sockfd] = listener;
         }
         LOG(INFO) << serv->name() << " is listening on " << c_api::IPv4ToString(it->first) << ":"
@@ -48,15 +49,12 @@ ServerCluster::ServerCluster(const Config& /*config*/)
 void ServerCluster::Stop()
 {
     run_ = false;
-    if (c_api::EventManager::get().epoll_fd() != -1) {
-        LOG(DEBUG) << "Closing epoll fd: " << c_api::EventManager::get().epoll_fd();
-        close(c_api::EventManager::get().epoll_fd());
-    }
 }
 
 // smth like
 void ServerCluster::Start(const Config& config)
 {
+    c_api::EventManager::init(c_api::MT_EPOLL);
     // register signal for ^C, switch run on that
     run_ = true;
     ServerCluster cluster(config);
@@ -84,6 +82,7 @@ void ServerCluster::CheckClients()
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
 {
+    callback_mode_ = c_api::CM_READ;
     added_to_multiplex_ = false;
 }
 
@@ -104,10 +103,6 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     }
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
     LOG(INFO) << "New incoming connection on: " << fd;
-}
-
-c_api::EventManager::CallbackMode ServerCluster::MasterSocketCallback::callback_mode() {
-    return c_api::EventManager::CM_READ;    // MasterSocketCallback is always in read mode
 }
 
 bool ServerCluster::MasterSocketCallback::added_to_multiplex() {

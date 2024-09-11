@@ -15,6 +15,9 @@ IFLAGS = -I./$(SOURCE_DIR)
 LDFLAGS =
 
 FILENAMES = \
+	c_api/multiplexers/EpollMultiplexer.cpp \
+	c_api/multiplexers/IMultiplexer.cpp \
+	c_api/multiplexers/SelectMultiplexer.cpp \
 	c_api/ClientSocket.cpp \
 	c_api/EventManager.cpp \
 	c_api/MasterSocket.cpp \

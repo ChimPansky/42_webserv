@@ -11,7 +11,8 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
 {
     c_api::EventManager::get().RegisterCallback(
         client_sock_->sockfd(),
-        utils::unique_ptr<c_api::EventManager::ICallback>(new ClientCallback(*this)));
+        c_api::CM_READ,
+        utils::unique_ptr<c_api::ICallback>(new ClientCallback(*this)));
 }
 
 ClientSession::~ClientSession()
@@ -43,24 +44,18 @@ Connection: Closed\n\r\
 
 ClientSession::ClientCallback::ClientCallback(ClientSession& client) : client_(client)
 {
-    callback_mode_ = c_api::EventManager::CM_READ;  // clients always start in read mode
+    callback_mode_ = c_api::CM_READ;  // clients always start in read mode
     added_to_multiplex_ = false; // will be set to true once it is added to epoll
 }
 
 void ClientSession::ClientCallback::Call(int /*fd*/)
 {
-    if (callback_mode_ == c_api::EventManager::CM_READ) {
+    if (callback_mode_ == c_api::CM_READ) {
         ReadCall();
     }
-    else if (callback_mode_ == c_api::EventManager::CM_WRITE) {
+    else if (callback_mode_ == c_api::CM_WRITE) {
         WriteCall();
     }
-}
-
-
-c_api::EventManager::CallbackMode ClientSession::ClientCallback::callback_mode()
-{
-    return callback_mode_;
 }
 
 bool ClientSession::ClientCallback::added_to_multiplex()
@@ -87,7 +82,7 @@ void ClientSession::ClientCallback::ReadCall()
     LOG(DEBUG) << "ClientCallback::ReadCall: " << bytes_recvd << " bytes recvd from " << client_.client_sock_->sockfd();
     if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
         LOG(DEBUG) << "ClientCallback::ReadCall: switching to write_mode";
-        callback_mode_ = c_api::EventManager::CM_WRITE; // switch to write mode after Request reading is finished (and processed by server)
+        callback_mode_ = c_api::CM_WRITE; // switch to write mode after Request reading is finished (and processed by server)
         client_.PrepareResponse();
     }
 }
@@ -114,7 +109,7 @@ void ClientSession::ClientCallback::WriteCall()
      if (client_.buf_send_idx_ == client_.buf_.size()) {
         LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
         client_.connection_closed_ = true;
-        callback_mode_ = c_api::EventManager::CM_DELETE; // maybe keepalive - switch back to read mode CM_READ
+        callback_mode_ = c_api::CM_DELETE; // maybe keepalive - switch back to read mode CM_READ
     }
 
 }
