@@ -13,7 +13,7 @@ class EpollMultiplexer : public IMultiplexer {
     ~EpollMultiplexer();
     virtual int RegisterFd(int fd, CallbackMode);
     virtual void ReleaseFd(int fd);
-    virtual int CheckOnce(const FdToCallbackMap&);
+    virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
   private:
     int epoll_fd_;
 };

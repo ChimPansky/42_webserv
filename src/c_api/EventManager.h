@@ -30,7 +30,8 @@ class EventManager {
     int CheckWithEpoll_();
     static utils::unique_ptr<EventManager> instance_;
     utils::unique_ptr<IMultiplexer> multiplexer_;
-    FdToCallbackMap monitored_sockets_;  // this contains callbacks for both: listeners (master sockets aka server socket) and clients...
+    FdToCallbackMap rd_sockets_;  // this contains callbacks for both: listeners (master sockets aka server socket) and clients...
+    FdToCallbackMap wr_sockets_;  // this contains callbacks for  clients only (master sockets only listen/read for new clients who want to connect)
 };
 
 }  // namespace c_api

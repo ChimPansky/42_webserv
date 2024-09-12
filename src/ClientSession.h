@@ -36,10 +36,12 @@ class ClientSession {
         virtual void Call(int fd);
         virtual bool added_to_multiplex();
         virtual void set_added_to_multiplex(bool);
+        virtual c_api::CallbackMode callback_mode(); // read/write/delete
 
       private:
         ClientSession& client_;
         bool added_to_multiplex_;
+        c_api::CallbackMode callback_mode_;
         void ReadCall();
         void WriteCall();
     };

@@ -30,7 +30,7 @@ EventManager& EventManager::get()
 
 int EventManager::CheckOnce()
 {
-    return multiplexer_->CheckOnce(monitored_sockets_);
+    return multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
 }
 
 
@@ -38,13 +38,22 @@ int EventManager::RegisterCallback(int fd,
                                    CallbackMode mode,
                                    utils::unique_ptr<c_api::ICallback> callback)
 {
-    monitored_sockets_.insert(std::make_pair(fd, callback));  // TODO adapt fo cb modes. why insert and not monitored_sockets_[fd] = callback?
+    if (mode == CM_READ) {
+        rd_sockets_[fd] = callback;
+    }
+    else if (mode == CM_WRITE) {
+        wr_sockets_[fd] = callback;
+    }
+    else {
+        LOG(FATAL) << "Unknown callback mode";
+    }
     return multiplexer_->RegisterFd(fd, mode);
 }
 
 void EventManager::DeleteCallbacksByFd(int fd)
 {
-    monitored_sockets_.erase(fd);  // TODO adapt for modes
+    rd_sockets_.erase(fd);
+    wr_sockets_.erase(fd);
     multiplexer_->ReleaseFd(fd);
 }
 

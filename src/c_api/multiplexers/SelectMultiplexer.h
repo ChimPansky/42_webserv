@@ -8,7 +8,7 @@ namespace c_api {
 class SelectMultiplexer : public IMultiplexer {
     virtual int RegisterFd(int, CallbackMode) { return 0; };
     virtual void ReleaseFd(int) {}
-    virtual int CheckOnce(const FdToCallbackMap&);
+    virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
 };
 
 }  // namespace c_api

@@ -68,6 +68,10 @@ void ClientSession::ClientCallback::set_added_to_multiplex(bool added)
     added_to_multiplex_ = added;
 }
 
+c_api::CallbackMode ClientSession::ClientCallback::callback_mode() {
+    return callback_mode_;
+}
+
 
 void ClientSession::ClientCallback::ReadCall()
 {

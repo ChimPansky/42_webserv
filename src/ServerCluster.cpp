@@ -54,7 +54,7 @@ void ServerCluster::Stop()
 // smth like
 void ServerCluster::Start(const Config& config)
 {
-    c_api::EventManager::init(c_api::MT_EPOLL);
+    c_api::EventManager::init(c_api::MT_SELECT);
     // register signal for ^C, switch run on that
     run_ = true;
     ServerCluster cluster(config);
@@ -82,7 +82,6 @@ void ServerCluster::CheckClients()
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
 {
-    callback_mode_ = c_api::CM_READ;
     added_to_multiplex_ = false;
 }
 
