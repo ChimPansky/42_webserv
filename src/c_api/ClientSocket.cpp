@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "utils/logger.h"
+
 namespace c_api {
 
 const size_t ClientSocket::buf_sz_;
@@ -44,6 +46,7 @@ ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t sz) const
 
 ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const
 {
+    LOG(DEBUG) << "ClientSocket::Send";
     if (idx + sz > buf.size()) {
         throw std::runtime_error("idx is too big");
     }

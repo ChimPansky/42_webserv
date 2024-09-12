@@ -40,6 +40,12 @@ void EpollMultiplexer::ReleaseFd(int fd) {
     epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL);
 }
 
+int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets) {
+    (void)wr_sockets;
+    (void)rd_sockets;
+    return 0;
+}
+
 // int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets) {
 //     LOG(DEBUG) << "\n\n---CheckWithEpoll---";
 //     LOG(DEBUG) << "\n   Iterating over map of monitored sockets which contains \n"

@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+#include "multiplexers/IMultiplexer.h"
 #include "utils/logger.h"
 
 namespace c_api {
@@ -26,6 +27,11 @@ EventManager& EventManager::get()
         throw std::runtime_error("Event manager is not initialised");
     }
     return (*EventManager::instance_);
+}
+
+utils::shared_ptr<IMultiplexer> EventManager::multiplexer() const
+{
+    return multiplexer_;
 }
 
 int EventManager::CheckOnce()

@@ -1,7 +1,7 @@
 #ifndef WS_C_API_MULTIPLEXERS_I_MULTIPLEXER_H
 #define WS_C_API_MULTIPLEXERS_I_MULTIPLEXER_H
 
-#include "utils/unique_ptr.h"
+#include "utils/shared_ptr.h"
 #include "ICallback.h"
 
 namespace c_api {
@@ -20,7 +20,7 @@ class IMultiplexer {
     virtual void ReleaseFd(int fd) = 0;
 };
 
-utils::unique_ptr<IMultiplexer> GetMultiplexer(MultiplexType mx_type);
+utils::shared_ptr<IMultiplexer> GetMultiplexer(MultiplexType mx_type);
 
 }  // namespace c_api
 

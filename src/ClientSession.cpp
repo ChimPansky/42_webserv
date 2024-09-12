@@ -2,6 +2,7 @@
 
 #include "c_api/EventManager.h"
 #include "utils/logger.h"
+#include "utils/unique_ptr.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
     : client_sock_(sock),
@@ -44,6 +45,7 @@ Connection: Closed\n\r\
 
 ClientSession::ClientCallback::ClientCallback(ClientSession& client) : client_(client)
 {
+    LOG(DEBUG) << "ClientCallback::ClientCallback";
     callback_mode_ = c_api::CM_READ;  // clients always start in read mode
     added_to_multiplex_ = false; // will be set to true once it is added to epoll
 }
@@ -86,7 +88,14 @@ void ClientSession::ClientCallback::ReadCall()
     LOG(DEBUG) << "ClientCallback::ReadCall: " << bytes_recvd << " bytes recvd from " << client_.client_sock_->sockfd();
     if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
         LOG(DEBUG) << "ClientCallback::ReadCall: switching to write_mode";
-        callback_mode_ = c_api::CM_WRITE; // switch to write mode after Request reading is finished (and processed by server)
+
+        c_api::EventManager::get().DeleteCallbacksByFd(client_.client_sock_->sockfd());
+
+        LOG(DEBUG) << "ClientCallback::ReadCall: before RegisterCallback";
+
+        c_api::EventManager::get().RegisterCallback(client_.client_sock_->sockfd(), c_api::CM_WRITE, utils::unique_ptr<c_api::ICallback>(new ClientCallback(client_)));
+
+        LOG(DEBUG) << "ClientCallback::ReadCall: after RegisterCallback";
         client_.PrepareResponse();
     }
 }
