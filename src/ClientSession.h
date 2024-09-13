@@ -31,16 +31,13 @@ class ClientSession {
     void PrepareResponse(); // later: get this from server
     class ClientCallback : public c_api::ICallback {
       public:
-        ClientCallback(ClientSession& client);
+        ClientCallback(ClientSession& client, c_api::CallbackMode mode);
         // read/write from/to sock,
         virtual void Call(int fd);
-        virtual bool added_to_multiplex();
-        virtual void set_added_to_multiplex(bool);
         virtual c_api::CallbackMode callback_mode(); // read/write/delete
 
       private:
         ClientSession& client_;
-        bool added_to_multiplex_;
         c_api::CallbackMode callback_mode_;
         void ReadCall();
         void WriteCall();

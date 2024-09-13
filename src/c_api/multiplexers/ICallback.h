@@ -25,8 +25,6 @@ class ICallback {
     // possible args for assert right fd
     // consider changing to void Call()
     virtual void Call(int fd) = 0;
-    virtual bool added_to_multiplex() = 0;       // true when already added to select/poll/epoll fd-set
-    virtual void set_added_to_multiplex(bool) = 0;
     virtual ~ICallback() {};
 };
 

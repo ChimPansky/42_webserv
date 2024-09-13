@@ -37,9 +37,11 @@ int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCa
         LOG(DEBUG) << "CheckWithSelect-> Iterating over monitored sockets. Current fd: " << ready_fd;
         FdToCallbackMapIt it;
         if (FD_ISSET(ready_fd, &select_rd_set) && ((it = rd_sockets.find(ready_fd)) != rd_sockets.end())) {
+            LOG(DEBUG) << "CheckWithSelect-> Calling read callback for fd: " << ready_fd;
             it->second->Call(ready_fd);
         }
         if (FD_ISSET(ready_fd, &select_wr_set) && ((it = wr_sockets.find(ready_fd)) != wr_sockets.end())) {
+            LOG(DEBUG) << "CheckWithSelect-> Calling write callback for fd: " << ready_fd;
             it->second->Call(ready_fd);
         }
     }

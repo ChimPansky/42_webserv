@@ -54,12 +54,13 @@ void ServerCluster::Stop()
 // smth like
 void ServerCluster::Start(const Config& config)
 {
-    c_api::EventManager::init(c_api::MT_SELECT);
+    c_api::EventManager::init(c_api::MT_EPOLL);
     // register signal for ^C, switch run on that
     run_ = true;
     ServerCluster cluster(config);
     while (run_) {
         c_api::EventManager::get().CheckOnce();
+        c_api::EventManager::get().DeleteFinishedCallbacks();
         cluster.CheckClients();
     }
 }
@@ -81,9 +82,7 @@ void ServerCluster::CheckClients()
 
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
-{
-    added_to_multiplex_ = false;
-}
+{}
 
 // accept, create new client, register read callback for client,
 void ServerCluster::MasterSocketCallback::Call(int fd)
@@ -102,12 +101,4 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     }
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
     LOG(INFO) << "New incoming connection on: " << fd;
-}
-
-bool ServerCluster::MasterSocketCallback::added_to_multiplex() {
-    return added_to_multiplex_;
-}
-
-void ServerCluster::MasterSocketCallback::set_added_to_multiplex(bool added) {
-    added_to_multiplex_ = added;
 }

@@ -56,11 +56,21 @@ int EventManager::RegisterCallback(int fd,
     return multiplexer_->RegisterFd(fd, mode);
 }
 
-void EventManager::DeleteCallbacksByFd(int fd)
-{
-    rd_sockets_.erase(fd);
-    wr_sockets_.erase(fd);
-    multiplexer_->ReleaseFd(fd);
+void EventManager::MarkCallbackForDeletion(int fd, CallbackMode mode) {
+    fds_to_delete_.push_back(std::make_pair(fd, mode));
+}
+
+void EventManager::DeleteFinishedCallbacks() {
+    for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
+        if (fds_to_delete_[i].second == CM_READ) {
+            rd_sockets_.erase(fds_to_delete_[i].first);
+        }
+        else if (fds_to_delete_[i].second == CM_WRITE) {
+            wr_sockets_.erase(fds_to_delete_[i].first);
+        }
+        multiplexer_->ReleaseFd(fds_to_delete_[i].first);
+    }
+    fds_to_delete_.clear();
 }
 
 }  // namespace c_api
