@@ -5,23 +5,15 @@
 #include <cstddef>
 #include <string>
 
+namespace config {
 class   HttpConfig {
 
   private:
-    static const int kDefaultKeepaliveTimeout;
-    static size_t kDefaultClientMaxBodySize;
-    static const std::map<int, std::string> kDefaultErrorPages; // ?
-    static const std::string kDefaultRootDir;
-    static const std::string kDefaultDefaultFile;
-    static const std::string kDefaultDirListing;
-    typedef std::pair<std::string, std::string> Setting;
-    int InitKeepaliveTimeout(const std::string& value);
-    size_t  InitClientMaxBodySize(const std::string& value);
-    const std::map<int, std::string>  InitErrorPages(const std::string& value);
+    int InitKeepaliveTimeout(int value);
+    size_t  InitClientMaxBodySize(size_t value, const std::string& unit);
+    std::map<int, std::string>  InitErrorPages(const std::map<int, std::string>& value);
     const std::string&  InitRootDir(const std::string& value);
     const std::string&  InitDefaultFile(const std::string& value);
-    const std::string&  InitDirListing(const std::string& value);
-    const std::vector<ServerConfig>&  InitServers(const std::vector<Setting>& server_settings);
 
   public:
     HttpConfig(int keepalive_timeout, size_t client_max_body_size, const std::map<int, std::string>& error_pages,
@@ -44,5 +36,7 @@ class   HttpConfig {
     std::string default_file_;
     std::string dir_listing_;
 };
+
+}  // namespace config
 
 #endif  // WS_HTTPCONFIG_H

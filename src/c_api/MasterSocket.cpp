@@ -3,12 +3,17 @@
 
 #include <cstring>
 #include <stdexcept>
+#include <fcntl.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 namespace {
     int CreateSocket(bool set_nonblock) {
-        int sockfd = ::socket(/* IPv4 */ AF_INET,
-                              /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
-                              /* explicit tcp */ IPPROTO_TCP);
+        (void)set_nonblock;
+        int sockfd = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        // int sockfd = ::socket(/* IPv4 */ AF_INET,
+        //                       /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
+        //                       /* explicit tcp */ IPPROTO_TCP);
         if (sockfd < 0) {
             throw std::runtime_error("cannot create socket");
         }

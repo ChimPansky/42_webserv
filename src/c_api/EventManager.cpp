@@ -1,6 +1,7 @@
 #include "EventManager.h"
 
 #include <netinet/in.h>  // select
+#include <sys/select.h>
 
 #include <stdexcept>
 

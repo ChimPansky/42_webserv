@@ -1,5 +1,7 @@
 #include "ConfigBuilder.h"
 
+namespace config {
+
 ConfigParser::ConfigParser(std::ifstream& ifs, const std::string& lvl, const std::string& lvl_descr)
     : lvl_(lvl),
       lvl_descr_(lvl_descr)
@@ -17,12 +19,12 @@ ConfigParser::ConfigParser(std::ifstream& ifs, const std::string& lvl, const std
             if (content.empty()) {
                 throw std::invalid_argument("Empty setting.");
             }
-            settings_.insert(MakePair(content));
+            settings_.insert(config::MakePair(content));
         } else if (last_char == '{') {
             if (content.empty()) {
                 throw std::invalid_argument("Empty block.");
             }
-            Setting setting = MakePair(content);
+            Setting setting = config::MakePair(content);
             nested_configs_.push_back(ConfigParser(ifs, setting.first, setting.second));
         } else if (last_char == '}' && !lvl_.empty()) {
             if (!content.empty()) {
@@ -36,6 +38,11 @@ ConfigParser::ConfigParser(std::ifstream& ifs, const std::string& lvl, const std
     if (!lvl_.empty()) {
         throw std::invalid_argument("Invalid config file.");
     }
+}
+
+const std::string& ConfigParser::lvl() const
+{
+    return lvl_;
 }
 
 const std::string& ConfigParser::lvl_descr() const
@@ -78,31 +85,4 @@ const ConfigParser&    ConfigParser::FindNesting(const std::string& key, int idx
     throw std::runtime_error("Invalid configuration file: multiple " + key + " blocks.");
 }
 
-ConfigParser::Setting ConfigParser::MakePair(const std::string& line)
-{
-    size_t  pos = line.find_first_of(" \t");
-    if (pos == std::string::npos) {
-        throw std::invalid_argument("Invalid configuration file: no value specified.");
-    }
-
-    size_t  start = line.find_first_not_of(" \t", pos);
-    if (start == std::string::npos) {
-        throw std::invalid_argument("Invalid configuration file: no value specified.");
-    }
-    return std::make_pair(line.substr(0, pos), line.substr(start, line.size() - start));
-}
-
-const Config    ConfigParser::GetConfig(const std::string& config_path) // maybe do all three: parse, build and return valid Config
-{
-    if (config_path.length() < 6 || (config_path.find_last_of('.') != std::string::npos && config_path.substr(config_path.find_last_of('.')) != ".conf")) {
-        throw std::invalid_argument("Invalid config file suffix.");
-    }
-
-    std::ifstream   config_file(config_path.c_str());
-    if (!config_file.is_open()) {
-        throw std::invalid_argument("Couldn't open config file.");
-    }
-    ConfigParser    parser(config_file, "", "");
-
-    return ConfigBuilder<Config>::Build(parser); 
-}
+}  // namespace config

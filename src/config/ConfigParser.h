@@ -8,19 +8,18 @@
 
 #include "Config.h"
 
+namespace config {
 class ConfigParser  {
 
   public:
     ConfigParser(std::ifstream& ifs, const std::string& lvl, const std::string& lvl_descrt = "");
     typedef std::pair<std::string, std::string>  Setting;
-    Setting MakePair(const std::string& line);
     const std::string& lvl() const;
     const std::string& lvl_descr() const;
     const std::multimap<std::string, std::string>& settings() const;
     const std::vector<ConfigParser>& nested_configs() const;
     std::vector<std::string>  FindSetting(const std::string& key) const;
     const ConfigParser& FindNesting(const std::string& key, int idx) const;
-    static const Config GetConfig(const std::string& config_path);
 
   private:
     std::string     lvl_;
@@ -28,5 +27,7 @@ class ConfigParser  {
     std::multimap<std::string, std::string>    settings_;
     std::vector<ConfigParser> nested_configs_;
 };
+
+}  // namespace config
 
 #endif  // WS_CONFIG_CONFIG_PARSER_H

@@ -3,8 +3,8 @@
 
 #include "HttpConfig.h"
 #include "c_api/EventManager.h"
-#include "utils/logger.h"
 
+namespace config {
 class Config {
 
   private:
@@ -16,6 +16,7 @@ class Config {
     MxType mx_type() const;
     const std::string& error_log_path() const;
     Severity  error_log_level() const;
+    static const Config GetConfig(const std::string& config_path);
 
   private:
     MxType  mx_type_;
@@ -23,5 +24,7 @@ class Config {
     Severity  error_log_level_;
     HttpConfig  http_config_;
 };
+
+}  // namespace config
 
 #endif  // WS_CONFIG_CONFIG_H

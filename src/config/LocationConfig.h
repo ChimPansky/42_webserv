@@ -1,22 +1,25 @@
 #ifndef WS_LOCATIONCONFIG_H
 #define WS_LOCATIONCONFIG_H
 
+#include "utils/logger.h"
+#include "config/utils.h"
+
 #include <netinet/in.h>
 #include <string>
+#include <unistd.h>
 #include <vector>
+
+namespace config {
 
 class   LocationConfig {
 
   private:
     const std::string&  InitRoute(const std::string& value);
-    const std::vector<std::string>& InitAllowedMethods(const std::string& value);
-    const std::pair<int, std::string>&  InitRedirect(const std::string& value);
-    bool  InitCgi();
-    const std::vector<std::string>& InitCgiPaths(const std::string& value);
-    const std::vector<std::string>& InitCgiExtensions(const std::string& value);
+    std::pair<int, std::string>  InitRedirect(const std::pair<int, std::string>& value);
+    std::vector<std::string> InitCgiPaths(const std::vector<std::string>& value);
+    std::vector<std::string> InitCgiExtensions(const std::vector<std::string>& value);
     const std::string&  InitRootDir(const std::string& value);
     const std::string&  InitDefaultFile(const std::string& value);
-    const std::string&  InitDirListing(const std::string& value);
 
   public:
     LocationConfig(const std::string& route, const std::vector<std::string>& allowed_methods,
@@ -43,5 +46,7 @@ class   LocationConfig {
     std::string default_file_;
     std::string dir_listing_;
 };
+
+}  // namespace config
 
 #endif  // WS_LOCATIONCONFIG_H
