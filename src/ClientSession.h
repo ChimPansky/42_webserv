@@ -29,18 +29,23 @@ class ClientSession {
     bool IsRequestReady() const;
     ProcessState ProcessRead(ssize_t bytes_recvd); // not used now , use when building request...
     void PrepareResponse(); // later: get this from server
-    class ClientCallback : public c_api::ICallback {
+    class ClientReadCallback : public c_api::ICallback {
       public:
-        ClientCallback(ClientSession& client, c_api::CallbackMode mode);
-        // read/write from/to sock,
-        virtual void Call(int fd);
-        virtual c_api::CallbackMode callback_mode(); // read/write/delete
+        ClientReadCallback(ClientSession& client);
+        // Server reads from client socket,
+        virtual void Call(int);
 
       private:
         ClientSession& client_;
-        c_api::CallbackMode callback_mode_;
-        void ReadCall();
-        void WriteCall();
+    };
+    class ClientWriteCallback : public c_api::ICallback {
+      public:
+        ClientWriteCallback(ClientSession& client);
+        // Server writes to client socket,
+        virtual void Call(int);
+
+      private:
+        ClientSession& client_;
     };
 
   private:
