@@ -11,8 +11,9 @@ class EpollMultiplexer : public IMultiplexer {
   public:
     EpollMultiplexer();
     ~EpollMultiplexer();
-    virtual int RegisterFd(int fd, CallbackMode);
-    virtual void ReleaseFd(int fd);
+    virtual int InsertFd(int, CallbackMode);
+    virtual int UpdateFd(int, CallbackMode);
+    virtual void DeleteFd(int);
     virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
   private:
     int epoll_fd_;

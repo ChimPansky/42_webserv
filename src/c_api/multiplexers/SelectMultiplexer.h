@@ -6,8 +6,9 @@
 namespace c_api {
 
 class SelectMultiplexer : public IMultiplexer {
-    virtual int RegisterFd(int, CallbackMode);
-    virtual void ReleaseFd(int);
+    virtual int InsertFd(int, CallbackMode);
+    virtual int UpdateFd(int, CallbackMode);
+    virtual void DeleteFd(int);
     virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
 };
 

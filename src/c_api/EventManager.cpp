@@ -39,21 +39,25 @@ int EventManager::CheckOnce()
     return multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
 }
 
-
 int EventManager::RegisterCallback(int fd,
                                    CallbackMode mode,
                                    utils::unique_ptr<c_api::ICallback> callback)
 {
-    if (mode == CM_READ) {
-        rd_sockets_[fd] = callback;
-    }
-    else if (mode == CM_WRITE) {
-        wr_sockets_[fd] = callback;
+    if (rd_sockets_.find(fd) != rd_sockets_.end() || wr_sockets_.find(fd) != wr_sockets_.end()) {
+        multiplexer_->UpdateFd(fd, mode);
     }
     else {
-        LOG(FATAL) << "Unknown callback mode";
+        multiplexer_->InsertFd(fd, mode);
     }
-    return multiplexer_->RegisterFd(fd, mode);
+    if (mode & CM_READ) {
+        rd_sockets_[fd] = callback;
+    }
+    if (mode & CM_WRITE) {
+        wr_sockets_[fd] = callback;
+    }
+    if (!(mode & CM_READ) && !(mode & CM_WRITE))
+        LOG(FATAL) << "Unknown callback mode";
+    return 1;
 }
 
 void EventManager::MarkCallbackForDeletion(int fd, CallbackMode mode) {
@@ -68,7 +72,7 @@ void EventManager::DeleteFinishedCallbacks() {
         else if (fds_to_delete_[i].second == CM_WRITE) {
             wr_sockets_.erase(fds_to_delete_[i].first);
         }
-        multiplexer_->ReleaseFd(fds_to_delete_[i].first);
+        multiplexer_->DeleteFd(fds_to_delete_[i].first);
     }
     fds_to_delete_.clear();
 }

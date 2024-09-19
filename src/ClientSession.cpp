@@ -97,7 +97,7 @@ void ClientSession::ClientWriteCallback::Call(int)
         LOG(ERROR) << "error on send";  // add perror
         return;
     }
-     if (client_.buf_send_idx_ == client_.buf_.size()) {
+    if (client_.buf_send_idx_ == client_.buf_.size()) {
         LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
         client_.connection_closed_ = true;
         //callback_mode_ = c_api::CM_DELETE; // maybe keepalive - switch back to read mode CM_READ

@@ -9,8 +9,7 @@ namespace c_api {
 enum CallbackMode {  // rename o use O_WRITE?
     CM_READ = 1,
     CM_WRITE = 2,
-    CM_DELETE = 4,  // ?
-    CM_ANY = CM_READ | CM_WRITE | CM_DELETE
+    CM_READWRITE = CM_READ | CM_WRITE
 };
 
 // how to:

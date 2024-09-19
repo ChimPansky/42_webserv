@@ -49,11 +49,15 @@ int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCa
     return 0;
 }
 
-int SelectMultiplexer::RegisterFd(int, CallbackMode) {
+int SelectMultiplexer::InsertFd(int, CallbackMode) {
     return 0;
 }
 
-void SelectMultiplexer::ReleaseFd(int) {
+int SelectMultiplexer::UpdateFd(int, CallbackMode) {
+    return 0;
+}
+
+void SelectMultiplexer::DeleteFd(int) {
 }
 
 }  // namespace c_api
