@@ -7,7 +7,7 @@
 namespace config {
 class Config {
 
-  private:
+private:
     typedef c_api::EventManager::MultiplexType MxType;
     const std::string&  InitErrorLogPath(const std::string& value);
 
@@ -17,6 +17,9 @@ class Config {
     const std::string& error_log_path() const;
     Severity  error_log_level() const;
     static const Config GetConfig(const std::string& config_path);
+    static const MxType kDefaultMxType;
+    static const std::string kDefaultErrorLogPath;
+    static const Severity kDefaultErrorLogLevel;
 
   private:
     MxType  mx_type_;

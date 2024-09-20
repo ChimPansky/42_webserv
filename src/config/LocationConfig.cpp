@@ -1,6 +1,10 @@
 #include "LocationConfig.h"
+#include <iostream>
 
 namespace config {
+
+const std::string LocationConfig::kDefaultRedirectPath = "/new_location";
+const int LocationConfig::kDefaultRedirectCode = 301;
 
 LocationConfig::LocationConfig(const std::string& route, const std::vector<std::string>& allowed_methods,
     const std::pair<int, std::string>& redirect, const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,

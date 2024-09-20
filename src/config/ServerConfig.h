@@ -3,8 +3,6 @@
 
 #include "LocationConfig.h"
 
-#include <map>
-
 namespace config {
 
 class   ServerConfig {
@@ -31,6 +29,9 @@ class   ServerConfig {
     const std::string& dir_listing();
     const std::vector<std::string>& server_names();
     const std::vector<LocationConfig>& locations();
+    static const Severity kDefaultAccessLogLevel;
+    static const std::string kDefaultErrorLogPath;
+    static  const std::string kDefaultAccessLogPath;
 
   private:
     std::string access_log_path_;

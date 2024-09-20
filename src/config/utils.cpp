@@ -1,4 +1,5 @@
 #include "config/utils.h"
+#include <iostream>
 
 namespace config {
 
@@ -19,19 +20,18 @@ std::pair<std::string, std::string> MakePair(const std::string& line)
 {
     size_t  pos = line.find_first_of(" \t");
     if (pos == std::string::npos) {
-        throw std::invalid_argument("Invalid configuration file: no value specified.");
+        return std::make_pair(line, "");
     }
-
     size_t  start = line.find_first_not_of(" \t", pos);
     if (start == std::string::npos) {
-        throw std::invalid_argument("Invalid configuration file: no value specified.");
+        return std::make_pair(line.substr(0, pos), "");
     }
     return std::make_pair(line.substr(0, pos), line.substr(start, line.size() - start));
 }
 
 bool    CheckFileExtension(const std::string& file, const std::string& extention)
 {
-    return file.length() <= extention.length() || (file.find_last_of('.') != std::string::npos && file.substr(file.find_last_of('.')) != extention);
+    return file.length() > extention.length() || (file.find_last_of('.') != std::string::npos && file.substr(file.find_last_of('.')) == extention);
 }
 
 } // namespace config

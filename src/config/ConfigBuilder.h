@@ -6,6 +6,7 @@
 #include "config/utils.h"
 #include "c_api/utils.h"
 #include <cstring>
+#include <iostream>
 
 #include <unistd.h>
 
@@ -27,9 +28,6 @@ template <>
 class ConfigBuilder<LocationConfig> {
 
     private:
-
-        static const int kDefaultRedirectCode = 301;
-        static const std::string kDefaultRedirectPath;
 
         static const std::string&    BuildRoute(const std::vector<std::string>& vals)
         {
@@ -82,7 +80,7 @@ class ConfigBuilder<LocationConfig> {
         static std::pair<int, std::string> BuildRedirect(const std::vector<std::string>& vals)
         {
             if (vals.empty()) {
-                return std::make_pair(kDefaultRedirectCode, kDefaultRedirectPath);
+                return std::make_pair(LocationConfig::kDefaultRedirectCode, LocationConfig::kDefaultRedirectPath);
             }
             std::vector<std::string>    val_elements = config::SplitLine(vals[0]);
             return ParseRedirect(val_elements);
@@ -137,11 +135,11 @@ class ConfigBuilder<LocationConfig> {
             return vals;
         }
 
-        static const std::string& BuildRootDir(const std::vector<std::string>& vals)
+        static const std::string    BuildRootDir(const std::vector<std::string>& vals)
         {
-            // if (vals.empty()) {
-            //     return ""; // take one from the server or http
-            // }
+            if (vals.empty()) {
+                return std::string(); // take one from the server or http
+            }
             return ParseRootDir(vals[0]);
         }
 
@@ -153,11 +151,11 @@ class ConfigBuilder<LocationConfig> {
             return val;
         }
 
-        static const std::string& BuildDefaultFile(const std::vector<std::string>& vals)
+        static const std::string BuildDefaultFile(const std::vector<std::string>& vals)
         {
-            // if (vals.empty()) {
-            //     return "";
-            // }
+            if (vals.empty()) {
+                return std::string();
+            }
             return ParseDefaultFile(vals[0]);
         }
 
@@ -169,11 +167,11 @@ class ConfigBuilder<LocationConfig> {
             return vals;
         }
 
-        static const std::string& BuildDirListing(const std::vector<std::string>& vals)
+        static const std::string BuildDirListing(const std::vector<std::string>& vals)
         {
-            // if (vals.empty()) {
-            //     return "";
-            // }
+            if (vals.empty()) {
+                return std::string();
+            }
             return ParseDirListing(vals[0]);
         }
 
@@ -213,17 +211,11 @@ class ConfigBuilder<LocationConfig> {
 
 };
 
-const std::string ConfigBuilder<LocationConfig>::kDefaultRedirectPath = "/new_location";
-
 template <>
 class ConfigBuilder<ServerConfig> {
 
 
     private:
-
-        static const Severity kDefaultAccessLogLevel = INFO;
-        static const std::string kDefaultErrorLogPath;
-        static  const std::string kDefaultAccessLogPath;
 
         static const std::string& ParseAccessLogPath(const std::string& vals)
         {
@@ -236,7 +228,7 @@ class ConfigBuilder<ServerConfig> {
         static const std::string& BuildAccessLogPath(const std::vector<std::string>& vals)
         {
             if (vals.empty()) {
-                return kDefaultAccessLogPath;
+                return ServerConfig::kDefaultAccessLogPath;
             }
             std::vector<std::string>    val_elements = config::SplitLine(vals[0]);
             if (val_elements.size() != 2) {
@@ -248,7 +240,7 @@ class ConfigBuilder<ServerConfig> {
         static Severity BuildAccessLogLevel(const std::vector<std::string>& vals)
         {
             if (vals.empty()) {
-                return kDefaultAccessLogLevel;
+                return ServerConfig::kDefaultAccessLogLevel;
             }
             std::vector<std::string>    val_elements = config::SplitLine(vals[0]);
             if (val_elements.size() != 2) {
@@ -269,14 +261,16 @@ class ConfigBuilder<ServerConfig> {
                 return ERROR;
             } else if (val == "fatal") {
                 return FATAL;
+            } else if (val == "") {
+                return ServerConfig::kDefaultAccessLogLevel;
             }
-            throw std::runtime_error("Invalid configuration file: invalid error_log level: " + val);
+            throw std::runtime_error("Invalid configuration file: invalid access_log level: " + val);
         }
 
         static const std::string& BuildErrorLogPath(const std::vector<std::string>& vals)
         {
             if (vals.empty()) {
-                return kDefaultErrorLogPath;
+                return ServerConfig::kDefaultErrorLogPath;
             }
             return ParseErrorLogPath(vals[0]);
         }
@@ -340,11 +334,11 @@ class ConfigBuilder<ServerConfig> {
             return server_names;
         }
 
-        static const std::string& BuildRootDir(const std::vector<std::string>& vals)
+        static const std::string BuildRootDir(const std::vector<std::string>& vals)
         {
-            // if (vals.empty()) {
-            //     return "";
-            // }
+            if (vals.empty()) {
+                return std::string();
+            }
             return ParseRootDir(vals[0]);
         }
 
@@ -356,11 +350,11 @@ class ConfigBuilder<ServerConfig> {
             return val;
         }
 
-        static const std::string& BuildDefaultFile(const std::vector<std::string>& vals)
+        static const std::string BuildDefaultFile(const std::vector<std::string>& vals)
         {
-            // if (vals.empty()) {
-            //     return "";
-            // }
+            if (vals.empty()) {
+                return std::string();
+            }
             return ParseDefaultFile(vals[0]);
         }
 
@@ -374,9 +368,9 @@ class ConfigBuilder<ServerConfig> {
 
         static const std::string& BuildDirListing(const std::vector<std::string>& vals)
         {
-            // if (vals.empty()) {
-            //     return "";
-            // }
+            if (vals.empty()) {
+                return vals[0];
+            }
             return ParseDirListing(vals[0]);
         }
 
@@ -424,95 +418,87 @@ class ConfigBuilder<ServerConfig> {
             }
 };
 
-const std::string ConfigBuilder<ServerConfig>::kDefaultAccessLogPath = "/log/access.log";
-const std::string ConfigBuilder<ServerConfig>::kDefaultErrorLogPath = "/log/error.log";
-
 template <>
 class ConfigBuilder<HttpConfig> {
 
     private:
-
-        static const int kDefaultKeepaliveTimeout;
-        static size_t kDefaultClientMaxBodySize;
-        static const std::string kDefaultDefaultFile;
-        static const std::string kDefaultDirListing;
 
         static bool IsKeyAllowed(const std::string& key) {
             return key == "keepalive_timeout" || key == "client_max_body_size" || key == "error_page" 
                     || key == "root" || key == "index" || key == "autoindex" || key == "server";
         }
 
-    static int BuildKeepAliveTimeout(const std::vector<std::string>& vals)
-    {
-        if (vals.empty()) {
-            return kDefaultKeepaliveTimeout;
-        }
-        return ParseKeepAliveTimeout(vals[0]);
-    }
-
-    static int ParseKeepAliveTimeout(const std::string& vals)
-    {
-        int res = std::stoi(vals);
-        if (res < 0 || res > 2147483647) {
-            throw std::runtime_error("Invalid configuration file: invalid keepalive_timeout value.");
-        }
-        return res;
-    }
-
-    static size_t BuildClientMaxBodySize(const std::vector<std::string>& vals)
-    {
-        if (vals.empty()) {
-            return kDefaultClientMaxBodySize;
-        }
-        return ParseClientMaxBodySize(vals[0]);
-    }
-
-    static size_t ParseClientMaxBodySize(const std::string& val)
-    {
-        int res = std::stoi(val);
-        if (res < 0 || res > 2147483647) {
-            throw std::runtime_error("Invalid configuration file: invalid keepalive_timeout value.");
-        }
-        return res;
-    }
-
-    static std::map<int, std::string> BuildErrorPages(const std::vector<std::string>& vals)
-    {
-        if (vals.empty()) {
-            return std::map<int, std::string>();
-        }
-        return ParseErrorPages(vals);
-    }
-
-    static std::map<int, std::string> ParseErrorPages(const std::vector<std::string>& vals)
-    {
-        std::map<int, std::string> error_pages;
-        for (size_t i = 0; i < vals.size(); i++) {
-            std::vector<std::string>    val_elements = config::SplitLine(vals[i]);
-            if (val_elements.size() != 2) {
-                throw std::runtime_error("Invalid configuration file: invalid error_page: " + vals[i]);
+        static int BuildKeepAliveTimeout(const std::vector<std::string>& vals)
+        {
+            if (vals.empty()) {
+                return HttpConfig::kDefaultKeepaliveTimeout;
             }
-            int res = std::stoi(val_elements[0]); //check for overflow
-            error_pages[res] = val_elements[1];
+            return ParseKeepAliveTimeout(vals[0]);
         }
-        return error_pages;
-    }
 
-    static const std::string& BuildRootDir(const std::vector<std::string>& vals)
-    {
-        // if (vals.empty()) {
-        //     return "";
-        // }
-        return ParseRootDir(vals[0]);
-    }
-
-    static const std::string& ParseRootDir(const std::string& val)
-    {
-        if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-            throw std::runtime_error("Invalid configuration file: index file doesn't exist: " + val);
+        static int ParseKeepAliveTimeout(const std::string& vals)
+        {
+            int res = std::stoi(vals);
+            if (res < 0 || res > 2147483647) {
+                throw std::runtime_error("Invalid configuration file: invalid keepalive_timeout value.");
+            }
+            return res;
         }
-        return val;
-    }
+
+        static size_t BuildClientMaxBodySize(const std::vector<std::string>& vals)
+        {
+            if (vals.empty()) {
+                return HttpConfig::kDefaultClientMaxBodySize;
+            }
+            return ParseClientMaxBodySize(vals[0]);
+        }
+
+        static size_t ParseClientMaxBodySize(const std::string& val)
+        {
+            int res = std::stoi(val);
+            if (res < 0 || res > 2147483647) {
+                throw std::runtime_error("Invalid configuration file: invalid keepalive_timeout value.");
+            }
+            return res;
+        }
+
+        static std::map<int, std::string> BuildErrorPages(const std::vector<std::string>& vals)
+        {
+            if (vals.empty()) {
+                return std::map<int, std::string>();
+            }
+            return ParseErrorPages(vals);
+        }
+
+        static std::map<int, std::string> ParseErrorPages(const std::vector<std::string>& vals)
+        {
+            std::map<int, std::string> error_pages;
+            for (size_t i = 0; i < vals.size(); i++) {
+                std::vector<std::string>    val_elements = config::SplitLine(vals[i]);
+                if (val_elements.size() < 2) {
+                    throw std::runtime_error("Invalid configuration file: invalid error_page: " + vals[i]);
+                }
+                int res = std::stoi(val_elements[0]); //check for overflow
+                error_pages[res] = val_elements[1];
+            }
+            return error_pages;
+        }
+
+        static const std::string& BuildRootDir(const std::vector<std::string>& vals)
+        {
+            if (vals.empty()) {
+                return vals[0];
+            }
+            return ParseRootDir(vals[0]);
+        }
+
+        static const std::string& ParseRootDir(const std::string& val)
+        {
+            if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
+                throw std::runtime_error("Invalid configuration file: index file doesn't exist: " + val);
+            }
+            return val;
+        }
 
     static const std::string& BuildDefaultFile(const std::vector<std::string>& vals)
     {
@@ -562,6 +548,7 @@ class ConfigBuilder<HttpConfig> {
             size_t client_max_body_size = BuildClientMaxBodySize(f.FindSetting("client_max_body_size"));
             std::map<int, std::string> error_pages = BuildErrorPages(f.FindSetting("error_page"));
             std::string root_dir = BuildRootDir(f.FindSetting("root"));
+                        std::cout << "where is it?" << std::endl;
             std::string default_file = BuildDefaultFile(f.FindSetting("index"));
             std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"));
             std::vector<ServerConfig> server_configs = BuildServerConfigs(f);
@@ -570,94 +557,86 @@ class ConfigBuilder<HttpConfig> {
                     throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
                 }
             }
-            
             return HttpConfig(keepalive_timeout, client_max_body_size, error_pages, root_dir, default_file, dir_listing, server_configs);
         }
 };
-
-const int ConfigBuilder<HttpConfig>::kDefaultKeepaliveTimeout = 65;
-size_t ConfigBuilder<HttpConfig>::kDefaultClientMaxBodySize = 1048576;
-const std::string ConfigBuilder<HttpConfig>::kDefaultDefaultFile = "index.html";
-const std::string ConfigBuilder<HttpConfig>::kDefaultDirListing = "off";
 
 template <>
 class ConfigBuilder<Config> {
 
     private:
-        static const MxType kDefaultMxType = c_api::EventManager::MT_SELECT;
-        static const std::string kDefaultErrorLogPath;
-        static const Severity kDefaultErrorLogLevel = INFO;
 
-    static MxType BuildMxType(const std::vector<std::string>& vals) {
-        if (vals.empty()) {
-            return kDefaultMxType;
+        static MxType BuildMxType(const std::vector<std::string>& vals) {
+            if (vals.empty()) {
+                return Config::kDefaultMxType;
+            }
+            return ParseMxType(vals[0]);
         }
-        return ParseMxType(vals[0]);
-    }
 
-    static MxType ParseMxType(const std::string& val) {
-        if (val == "epoll") {
-            return c_api::EventManager::MT_EPOLL;
-        } else if (val == "select") {
-            return c_api::EventManager::MT_SELECT;
-        } else if (val == "poll") {
-            return c_api::EventManager::MT_POLL;
+        static MxType ParseMxType(const std::string& val) {
+            if (val == "epoll") {
+                return c_api::EventManager::MT_EPOLL;
+            } else if (val == "select") {
+                return c_api::EventManager::MT_SELECT;
+            } else if (val == "poll") {
+                return c_api::EventManager::MT_POLL;
+            }
+            throw std::runtime_error("Invalid configuration file: invalid mx_type: " + val);
         }
-        throw std::runtime_error("Invalid configuration file: invalid mx_type: " + val);
-    }
 
-    static const std::string& BuildErrorLogPath(const std::vector<std::string>& vals) {
+        static const std::string& BuildErrorLogPath(const std::vector<std::string>& vals) {
 
-        if (vals.empty()) {
-            return kDefaultErrorLogPath;
+            if (vals.empty()) {
+                return Config::kDefaultErrorLogPath;
+            }
+            std::vector<std::string>    val_elements = config::SplitLine(vals[0]);
+            if (val_elements.size() != 3) {
+                throw std::runtime_error("Invalid configuration file: invalid error_log: " + vals[0]);
+            }
+            return ParseErrorLogPath(val_elements[0]);
         }
-        std::vector<std::string>    val_elements = config::SplitLine(vals[0]);
-        if (val_elements.size() != 2) {
-            throw std::runtime_error("Invalid configuration file: invalid error_log: " + vals[0]);
-        }
-        return ParseErrorLogPath(val_elements[0]);
-    }
 
-    static const std::string& ParseErrorLogPath(const std::string& val) {
+        static const std::string& ParseErrorLogPath(const std::string& val) {
+            
+            // if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
+            //     throw std::runtime_error("Invalid configuration file: error_log file doesn't exist: " + val);
+            // }
+            return val;
+        }
+
+        static Severity BuildErrorLogLevel(const std::vector<std::string>& vals) {
+
+            if (vals.empty()) {
+                return Config::kDefaultErrorLogLevel;
+            }
+            std::vector<std::string>    val_elements = config::SplitLine(vals[0]);
+            if (val_elements.size() != 3) {
+                throw std::runtime_error("Invalid configuration file: invalid error_log: " + vals[0]);
+            }
+            return ParseErrorLogLevel(val_elements[1]);
+        }
+
+        static Severity   ParseErrorLogLevel(const std::string& val) {
         
-        if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-            throw std::runtime_error("Invalid configuration file: error_log file doesn't exist: " + val);
-        }
-        return val;
-    }
-
-    static Severity BuildErrorLogLevel(const std::vector<std::string>& vals) {
-
-        if (vals.empty()) {
-            return kDefaultErrorLogLevel;
-        }
-        std::vector<std::string>    val_elements = config::SplitLine(vals[0]);
-        if (val_elements.size() != 2) {
-            throw std::runtime_error("Invalid configuration file: invalid error_log: " + vals[0]);
-        }
-        return ParseErrorLogLevel(val_elements[1]);
-    }
-
-    static Severity   ParseErrorLogLevel(const std::string& val) {
-    
-        if (val == "debug") {
-            return DEBUG;
-        } else if (val == "info") {
-            return INFO;
-        } else if (val == "warning") {
-            return WARNING;
-        } else if (val == "error") {
-            return ERROR;
-        } else if (val == "fatal") {
-            return FATAL;
-        } else {
+            if (val == "debug") {
+                return DEBUG;
+            } else if (val == "info") {
+                return INFO;
+            } else if (val == "warning") {
+                return WARNING;
+            } else if (val == "error") {
+                return ERROR;
+            } else if (val == "fatal") {
+                return FATAL;
+            } else if (val.empty()) {
+                return Config::kDefaultErrorLogLevel;
+            }
             throw std::runtime_error("Invalid configuration file: invalid error_log level: " + val);
         }
-    }
 
-    static bool IsKeyAllowed(const std::string& key) {
-        return key == "use" || key == "error_log" || key == "http";
-    }
+        static bool IsKeyAllowed(const std::string& key) {
+            return key == "use" || key == "error_log" || key == "http";
+        }
 
     public:
 
@@ -667,7 +646,6 @@ class ConfigBuilder<Config> {
             std::string error_log_path = BuildErrorLogPath(f.FindSetting("error_log"));
             Severity error_log_level = BuildErrorLogLevel(f.FindSetting("error_log"));
             HttpConfig http_conf = ConfigBuilder<HttpConfig>::Build(f.FindNesting("http", 0));
-
             for (std::map<std::string, std::string>::const_iterator it = f.settings().begin(); it != f.settings().end(); ++it) {
                 if (!IsKeyAllowed(it->first)) {
                     throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
@@ -676,8 +654,6 @@ class ConfigBuilder<Config> {
             return Config(mx_type, error_log_path, error_log_level, http_conf);
         }
 };
-
-const std::string ConfigBuilder<Config>::kDefaultErrorLogPath = "/log/error.log";
 
 }  // namespace config
 

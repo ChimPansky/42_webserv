@@ -4,6 +4,7 @@
 #include "ServerConfig.h"
 #include <cstddef>
 #include <string>
+#include <map>
 
 namespace config {
 class   HttpConfig {
@@ -26,6 +27,11 @@ class   HttpConfig {
     const std::string& default_file() const;
     const std::string& dir_listing() const;
     const std::vector<ServerConfig>&  server_configs() const;
+    static const int kDefaultKeepaliveTimeout;
+    static size_t kDefaultClientMaxBodySize;
+    static const std::string kDefaultDefaultFile;
+    static const std::string kDefaultDirListing;
+    
 
   private:
     int keepalive_timeout_;

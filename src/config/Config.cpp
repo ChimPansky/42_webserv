@@ -1,8 +1,11 @@
 #include "Config.h"
 #include "ConfigBuilder.h"
 #include "ConfigParser.h"
-
 namespace config {
+
+const MxType Config::kDefaultMxType = c_api::EventManager::MT_SELECT;
+const std::string Config::kDefaultErrorLogPath = "/log/error.log";
+const Severity Config::kDefaultErrorLogLevel = INFO;
 
 Config::Config(MxType mx_type, const std::string& error_log_path, Severity error_log_level, const HttpConfig& http_config)
   : mx_type_(mx_type),
@@ -29,10 +32,8 @@ Severity Config::error_log_level() const
 
 const std::string& Config::InitErrorLogPath(const std::string& value)
 {
-    if (value.length() < 5 || (value.find_last_of('.') != std::string::npos && value.substr(value.find_last_of('.')) != ".log")) {
+    if (config::CheckFileExtension(value, ".log")) {
         throw std::runtime_error("Invalid log file suffix.");
-    } else if (access(value.c_str(), F_OK | R_OK | W_OK) == -1) {
-        throw std::runtime_error("Invalid configuration file: invalid path to the error log file" + value);
     }
     return value;
 }
@@ -47,8 +48,8 @@ const Config    Config::GetConfig(const std::string& config_path)
     if (!config_file.is_open()) {
         throw std::invalid_argument("Couldn't open config file.");
     }
-    ConfigParser    parser(config_file, "", "");
 
+    ConfigParser    parser(config_file, "", "");
     return ConfigBuilder<Config>::Build(parser); 
 }
 

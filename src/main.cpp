@@ -15,8 +15,7 @@
 #include "c_api/EventManager.h"
 
 #include "ServerCluster.h"
-#include "config/ConfigParser.h"
-#include <iostream>
+#include "config/Config.h"
 
 void StopCluster(int /*signum*/)
 {

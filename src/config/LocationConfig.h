@@ -34,6 +34,8 @@ class   LocationConfig {
     const std::string& root_dir();
     const std::string& default_file() const;
     const std::string& dir_listing() const;
+    static const int kDefaultRedirectCode;
+    static const std::string kDefaultRedirectPath;
 
   private:
     std::string route_;

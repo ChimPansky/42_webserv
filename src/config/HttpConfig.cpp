@@ -2,6 +2,11 @@
 
 namespace config {
 
+const int HttpConfig::kDefaultKeepaliveTimeout = 65;
+size_t HttpConfig::kDefaultClientMaxBodySize = 1048576;
+const std::string HttpConfig::kDefaultDefaultFile = "index.html";
+const std::string HttpConfig::kDefaultDirListing = "off";
+
 HttpConfig::HttpConfig(int keepalive_timeout, size_t client_max_body_size, const std::map<int, std::string>& error_pages,
             const std::string& root_dir, const std::string& default_file, const std::string& dir_listing,
             const std::vector<ServerConfig>& server_configs)

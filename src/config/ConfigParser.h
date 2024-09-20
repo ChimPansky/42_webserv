@@ -6,8 +6,6 @@
 #include <map>
 #include <vector>
 
-#include "Config.h"
-
 namespace config {
 class ConfigParser  {
 
@@ -22,9 +20,9 @@ class ConfigParser  {
     const ConfigParser& FindNesting(const std::string& key, int idx) const;
 
   private:
-    std::string     lvl_;
-    std::string     lvl_descr_;
-    std::multimap<std::string, std::string>    settings_;
+    std::string lvl_;
+    std::string lvl_descr_;
+    std::multimap<std::string, std::string> settings_;
     std::vector<ConfigParser> nested_configs_;
 };
 
