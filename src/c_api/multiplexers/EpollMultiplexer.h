@@ -11,11 +11,11 @@ class EpollMultiplexer : public IMultiplexer {
   public:
     EpollMultiplexer();
     ~EpollMultiplexer();
-    virtual int RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
+    int RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
                            const FdToCallbackMap& wr_sockets);
-    virtual int UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
+    int UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
                              const FdToCallbackMap& wr_sockets);
-    virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
+    int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
 
   private:
     int epoll_fd_;

@@ -97,26 +97,25 @@ int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
     LOG(DEBUG)
         << "\n   epoll_wait successful --> " << ready_fds
         << " fd(s) are ready for read/write --> iterate over them:\n"
-           "   For each fd check if it is in our map of monitored sockets and if yes,\n"
-           "   then call its callback ICallBack::Call() (in the callback it will be decided\n"
-           "   whether to read or write according to ICallBack::callback_mode CT_READ/CT_WRITE)\n";
+           "   For each fd check if it is in our map of read or write sockets and if yes,\n"
+           "   then call its callback \n";
     ;
     for (int rdy_fd = 0; rdy_fd < ready_fds; rdy_fd++) {
         struct epoll_event& ev = events[rdy_fd];
-        if (ev.events & EPOLLIN) {  // TODO
+        if (ev.events & EPOLLIN) {
             FdToCallbackMapIt it = rd_sockets.find(ev.data.fd);
             if (it != rd_sockets.end()) {
                 LOG(DEBUG) << "Fd " << it->first
-                           << " is ready for read/write --> call its callback";
-                it->second->Call(it->first);  // receive/send/accept/whatever
+                           << " is ready for read/receive --> call its callback";
+                it->second->Call(it->first);  // receive
             }
         }
-        if (ev.events & EPOLLIN) {
+        if (ev.events & EPOLLOUT) {
             FdToCallbackMapIt it = wr_sockets.find(ev.data.fd);
             if (it != wr_sockets.end()) {
                 LOG(DEBUG) << "Fd " << it->first
-                           << " is ready for read/write --> call its callback";
-                it->second->Call(it->first);  // receive/send/accept/whatever
+                           << " is ready for write/send --> call its callback";
+                it->second->Call(it->first);  // send
             }
         }
     }
