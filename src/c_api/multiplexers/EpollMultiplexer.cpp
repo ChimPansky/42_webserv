@@ -20,13 +20,19 @@ EpollMultiplexer::~EpollMultiplexer() {
     close(epoll_fd_);
 }
 
-int EpollMultiplexer::InsertFd(int fd, CallbackMode mode) {
-    LOG(DEBUG) << "\n   Fd " << fd << " is not registered in epoll yet --> ADD to epoll with event: "
-                << (mode == CM_READ ? "read (EPOLLIN)" : "write (EPOLLOUT)");
+int EpollMultiplexer::RegisterFd(int fd, CallbackMode mode, const FdToCallbackMap& rd_sockets,
+                           const FdToCallbackMap& wr_sockets) {
+    LOG(DEBUG) << "\n   RegisterFd " << fd << " for: "
+                << (mode == CM_READ ? "read (EPOLLIN)" : mode == CM_WRITE ? "write (EPOLLOUT" : "read/write (EPOLLIN/EPOLLOUT)");
     struct epoll_event ev = {};
-    ev.events = (((mode & CM_READ) ? (int)EPOLLIN : 0) | ((mode & CM_WRITE) ? (int)EPOLLOUT : 0));
     ev.data.fd = fd;
-    int res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
+    ev.events = (((mode & CM_READ) ? (int)EPOLLIN : 0) | ((mode & CM_WRITE) ? (int)EPOLLOUT : 0));
+    if (rd_sockets.find(fd) != rd_sockets.end() || wr_sockets.find(fd) != wr_sockets.end()) {
+        LOG(DEBUG) << "\n Fd is already registered --> use EPOLL_CTL_MOD";
+        return epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+    }
+    LOG(DEBUG) << "\n Fd is already registered --> use EPOLL_CTL_ADD";
+    int res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
     if (res != 0) {
         return res;
     }
@@ -34,19 +40,34 @@ int EpollMultiplexer::InsertFd(int fd, CallbackMode mode) {
     return res;
 }
 
-int EpollMultiplexer::UpdateFd(int fd, CallbackMode mode) {
-    LOG(DEBUG) << "\n   Fd " << fd << " is already registered in epoll --> MODify (update) its event to: "
-                << (mode == CM_READ ? "read (EPOLLIN)" : "write (EPOLLOUT)");
-    struct epoll_event ev = {};
-    ev.events = (((mode & CM_READ) ? (int)EPOLLIN : 0) | ((mode & CM_WRITE) ? (int)EPOLLOUT : 0));
-    ev.data.fd = fd;
-    return epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+
+int EpollMultiplexer::UnregisterFd(int fd, CallbackMode mode, const FdToCallbackMap& rd_sockets,
+                           const FdToCallbackMap& wr_sockets) {
+                            // TODOOOOOOOOOOOO (convert mode to events...)
+    LOG(DEBUG) << "\n   UnregisterFd " << fd << "; events: " << mode << " been marked for deletion \n"
+                "(means he has already sent a request and received a response --> DELETE it from epoll";
+    int new_events = GetRegisteredEvents(fd, rd_sockets, wr_sockets) & ~mode;
+    int res = 0;
+    if (new_events == 0) {
+        res = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL);
+    } else {
+        struct epoll_event ev = {};
+        ev.data.fd = fd;
+        ev.events = new_events;
+        res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+    }
+    return res;
 }
 
-void EpollMultiplexer::DeleteFd(int fd) {
-    LOG(DEBUG) << "\n   Fd " << fd << " has been marked for deletion \n"
-                "(means he has already sent a request and received a response --> DELETE it from epoll";
-    epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL);
+int EpollMultiplexer::GetRegisteredEvents(int fd, const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets) {
+    int reg_events = 0;
+    if (rd_sockets.find(fd) != rd_sockets.end()) {
+        reg_events |= EPOLLIN;
+    }
+    if (wr_sockets.find(fd) != wr_sockets.end()) {
+        reg_events |= EPOLLOUT;
+    }
+    return reg_events
 }
 
 int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets) {

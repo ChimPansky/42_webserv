@@ -11,12 +11,14 @@ class EpollMultiplexer : public IMultiplexer {
   public:
     EpollMultiplexer();
     ~EpollMultiplexer();
-    virtual int InsertFd(int, CallbackMode);
-    virtual int UpdateFd(int, CallbackMode);
-    virtual void DeleteFd(int);
+    virtual int RegisterFd(int fd, CallbackMode mode, const FdToCallbackMap& rd_sockets,
+                           const FdToCallbackMap& wr_sockets);
+    virtual int UnregisterFd(int fd, CallbackMode mode, const FdToCallbackMap& rd_sockets,
+                            const FdToCallbackMap& wr_sockets);
     virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
   private:
     int epoll_fd_;
+    int GetRegisteredEvents(int fd, const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
 };
 
 }  // namespace c_api
