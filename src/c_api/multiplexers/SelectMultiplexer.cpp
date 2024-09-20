@@ -6,7 +6,9 @@
 
 namespace c_api {
 
-int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets) {
+int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
+                                 const FdToCallbackMap& wr_sockets)
+{
     fd_set select_rd_set;
     fd_set select_wr_set;
     FD_ZERO(&select_rd_set);
@@ -34,13 +36,16 @@ int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCa
     }
     // iterate over i here cuz call can change callbacks map
     for (int ready_fd = 0; ready_fd <= max_fd; ++ready_fd) {
-        LOG(DEBUG) << "CheckWithSelect-> Iterating over monitored sockets. Current fd: " << ready_fd;
+        LOG(DEBUG) << "CheckWithSelect-> Iterating over monitored sockets. Current fd: "
+                   << ready_fd;
         FdToCallbackMapIt it;
-        if (FD_ISSET(ready_fd, &select_rd_set) && ((it = rd_sockets.find(ready_fd)) != rd_sockets.end())) {
+        if (FD_ISSET(ready_fd, &select_rd_set) &&
+            ((it = rd_sockets.find(ready_fd)) != rd_sockets.end())) {
             LOG(DEBUG) << "CheckWithSelect-> Calling read callback for fd: " << ready_fd;
             it->second->Call(it->first);
         }
-        if (FD_ISSET(ready_fd, &select_wr_set) && ((it = wr_sockets.find(ready_fd)) != wr_sockets.end())) {
+        if (FD_ISSET(ready_fd, &select_wr_set) &&
+            ((it = wr_sockets.find(ready_fd)) != wr_sockets.end())) {
             LOG(DEBUG) << "CheckWithSelect-> Calling write callback for fd: " << ready_fd;
             it->second->Call(it->first);
         }
@@ -49,15 +54,15 @@ int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCa
     return 0;
 }
 
-int SelectMultiplexer::InsertFd(int, CallbackMode) {
+int SelectMultiplexer::RegisterFd(int, CallbackType, const FdToCallbackMap&, const FdToCallbackMap&)
+{
     return 0;
 }
 
-int SelectMultiplexer::UpdateFd(int, CallbackMode) {
+int SelectMultiplexer::UnregisterFd(int, CallbackType, const FdToCallbackMap&,
+                                    const FdToCallbackMap&)
+{
     return 0;
-}
-
-void SelectMultiplexer::DeleteFd(int) {
 }
 
 }  // namespace c_api

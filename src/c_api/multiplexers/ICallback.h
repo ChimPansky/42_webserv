@@ -1,15 +1,17 @@
 #ifndef WS_C_API_MULTIPLEXERS_I_CALLBACK_H
 #define WS_C_API_MULTIPLEXERS_I_CALLBACK_H
 
-#include "utils/unique_ptr.h"
+#include <sys/epoll.h>
+
 #include <map>
 
+#include "utils/unique_ptr.h"
 namespace c_api {
 
-enum CallbackMode {  // rename o use O_WRITE?
-    CM_READ = 1,
-    CM_WRITE = 2,
-    CM_READWRITE = CM_READ | CM_WRITE
+enum CallbackType {
+    CT_READ = EPOLLIN,
+    CT_WRITE = EPOLLOUT,
+    CT_READWRITE = CT_READ | CT_WRITE
 };
 
 // how to:
@@ -18,7 +20,6 @@ enum CallbackMode {  // rename o use O_WRITE?
 //   has to be copyable cuz fuck cpp98, so no values inside, refs only
 class ICallback {
   protected:
-
   public:
     // possible returns for errcodes
     // possible args for assert right fd
@@ -29,7 +30,6 @@ class ICallback {
 
 typedef std::map<int /*fd*/, utils::unique_ptr<ICallback> > FdToCallbackMap;
 typedef FdToCallbackMap::const_iterator FdToCallbackMapIt;
-
 
 }  // namespace c_api
 

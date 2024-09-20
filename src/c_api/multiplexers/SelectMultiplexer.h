@@ -6,10 +6,11 @@
 namespace c_api {
 
 class SelectMultiplexer : public IMultiplexer {
-    virtual int InsertFd(int, CallbackMode);
-    virtual int UpdateFd(int, CallbackMode);
-    virtual void DeleteFd(int);
-    virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
+    int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
+    int RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
+                   const FdToCallbackMap& wr_sockets);
+    int UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
+                     const FdToCallbackMap& wr_sockets);
 };
 
 }  // namespace c_api

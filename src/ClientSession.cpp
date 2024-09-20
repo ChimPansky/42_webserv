@@ -6,20 +6,18 @@
 #include "utils/unique_ptr.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
-    : client_sock_(sock),
-      master_socket_fd_(master_sock_fd),
-      buf_send_idx_(0),
+    : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0),
       connection_closed_(false)
 {
     c_api::EventManager::get().RegisterCallback(
-        client_sock_->sockfd(),
-        c_api::CM_READ,
+        client_sock_->sockfd(), c_api::CT_READ,
         utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this)));
 }
 
 ClientSession::~ClientSession()
 {
-    // c_api::EventManager::get().DeleteCallbacksByFd(client_sock_->sockfd()); // TODO: delete all callbacks for this fd
+    // c_api::EventManager::get().DeleteCallbacksByFd(client_sock_->sockfd()); // TODO: delete all
+    // callbacks for this fd
 }
 
 bool ClientSession::connection_closed() const
@@ -28,7 +26,7 @@ bool ClientSession::connection_closed() const
 }
 
 #include <cstring>
-#define HTTP_RESPONSE                                                                              \
+#define HTTP_RESPONSE \
     "HTTP/1.1 200 OK\r\n\
 Date: Mon, 27 Jul 2009 12:28:53 GMT\n\r\
 Server: ft_webserv\n\r\
@@ -43,7 +41,8 @@ Connection: Closed\n\r\
 </body>\n\r\
 </html>\n\r"
 
-void ClientSession::PrepareResponse() {
+void ClientSession::PrepareResponse()
+{
     LOG(DEBUG) << "ClientSession::PrepareResponse";
     buf_send_idx_ = 0;
     buf_.resize(sizeof(HTTP_RESPONSE));
@@ -65,20 +64,22 @@ void ClientSession::ClientReadCallback::Call(int)
         LOG(INFO) << "Connection closed";
         return;
     }
-    LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from " << client_.client_sock_->sockfd();
+    LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
+               << client_.client_sock_->sockfd();
     if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
         LOG(DEBUG) << "ClientReadCallback::Call: switching to write_mode";
 
-        c_api::EventManager::get().MarkCallbackForDeletion(client_.client_sock_->sockfd(), c_api::CM_READ);
+        c_api::EventManager::get().MarkCallbackForDeletion(client_.client_sock_->sockfd(),
+                                                           c_api::CT_READ);
         LOG(DEBUG) << "ClientReadCallback::Call: before RegisterCallback";
-        c_api::EventManager::get().RegisterCallback(client_.client_sock_->sockfd(), c_api::CM_WRITE, utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_)));
-
+        c_api::EventManager::get().RegisterCallback(
+            client_.client_sock_->sockfd(), c_api::CT_WRITE,
+            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_)));
 
         LOG(DEBUG) << "ClientCallback::ReadCall: after RegisterCallback";
         client_.PrepareResponse();
     }
 }
-
 
 ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : client_(client)
 {
@@ -88,7 +89,7 @@ ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) :
 void ClientSession::ClientWriteCallback::Call(int)
 {
     LOG(DEBUG) << "ClientWriteCallback::Call";
-        // assert fd == client_sock.fd
+    // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
                                                     client_.buf_.size() - client_.buf_send_idx_);
     if (bytes_sent <= 0) {
@@ -98,12 +99,14 @@ void ClientSession::ClientWriteCallback::Call(int)
         return;
     }
     if (client_.buf_send_idx_ == client_.buf_.size()) {
-        LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection (later: check keepalive and mb wait for next request)";
+        LOG(INFO) << client_.buf_send_idx_
+                  << " bytes sent, close connection (later: check keepalive and mb wait for next "
+                     "request)";
         client_.connection_closed_ = true;
-        //callback_mode_ = c_api::CM_DELETE; // maybe keepalive - switch back to read mode CM_READ
-        c_api::EventManager::get().MarkCallbackForDeletion(client_.client_sock_->sockfd(), c_api::CM_WRITE);
+        // callback_mode_ = c_api::CM_DELETE; // maybe keepalive - switch back to read type CT_READ
+        c_api::EventManager::get().MarkCallbackForDeletion(client_.client_sock_->sockfd(),
+                                                           c_api::CT_WRITE);
     }
-
 }
 
 // ClientSession::ProcessState ClientSession::ProcessRead(ssize_t bytes_recvd)

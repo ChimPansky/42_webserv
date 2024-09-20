@@ -14,12 +14,12 @@ enum MultiplexType {
 
 class IMultiplexer {
   public:
-    virtual ~IMultiplexer(){};
+    virtual ~IMultiplexer() {};
     virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets) = 0;
-    virtual int RegisterFd(int fd, CallbackMode mode, const FdToCallbackMap& rd_sockets,
+    virtual int RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
                            const FdToCallbackMap& wr_sockets) = 0;
-    virtual int UnregisterFd(int fd, CallbackMode mode, const FdToCallbackMap& rd_sockets,
-                            const FdToCallbackMap& wr_sockets) = 0;
+    virtual int UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
+                             const FdToCallbackMap& wr_sockets) = 0;
 };
 
 utils::shared_ptr<IMultiplexer> GetMultiplexer(MultiplexType mx_type);

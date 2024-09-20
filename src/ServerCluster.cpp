@@ -36,8 +36,7 @@ ServerCluster::ServerCluster(const Config& /*config*/)
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
             c_api::EventManager::get().RegisterCallback(
-                sockfd,
-                c_api::CM_READ,
+                sockfd, c_api::CT_READ,
                 utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this)));
             sockets_[sockfd] = listener;
         }
@@ -60,7 +59,7 @@ void ServerCluster::Start(const Config& config)
     ServerCluster cluster(config);
     while (run_) {
         c_api::EventManager::get().CheckOnce();
-        c_api::EventManager::get().DeleteFinishedCallbacks();
+        c_api::EventManager::get().DeleteMarkedCallbacks();
         cluster.CheckClients();
     }
 }

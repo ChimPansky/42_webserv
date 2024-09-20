@@ -39,40 +39,40 @@ int EventManager::CheckOnce()
     return multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
 }
 
-int EventManager::RegisterCallback(int fd,
-                                   CallbackMode mode,
+int EventManager::RegisterCallback(int fd, CallbackType type,
                                    utils::unique_ptr<c_api::ICallback> callback)
 {
-    if (rd_sockets_.find(fd) != rd_sockets_.end() || wr_sockets_.find(fd) != wr_sockets_.end()) {
-        multiplexer_->UpdateFd(fd, mode);
+    if (!(type & CT_READ) && !(type & CT_WRITE)) {
+        LOG(FATAL) << "Unknown callback type";
+        return 1;
     }
-    else {
-        multiplexer_->InsertFd(fd, mode);
+    if (multiplexer_->RegisterFd(fd, type, rd_sockets_, wr_sockets_) != 0) {
+        return 1;
     }
-    if (mode & CM_READ) {
+    if (type & CT_READ) {
         rd_sockets_[fd] = callback;
     }
-    if (mode & CM_WRITE) {
+    if (type & CT_WRITE) {
         wr_sockets_[fd] = callback;
     }
-    if (!(mode & CM_READ) && !(mode & CM_WRITE))
-        LOG(FATAL) << "Unknown callback mode";
-    return 1;
+    return 0;
 }
 
-void EventManager::MarkCallbackForDeletion(int fd, CallbackMode mode) {
-    fds_to_delete_.push_back(std::make_pair(fd, mode));
+void EventManager::MarkCallbackForDeletion(int fd, CallbackType type)
+{
+    fds_to_delete_.push_back(std::make_pair(fd, type));
 }
 
-void EventManager::DeleteFinishedCallbacks() {
+void EventManager::DeleteMarkedCallbacks()
+{
     for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
-        if (fds_to_delete_[i].second == CM_READ) {
+        if (fds_to_delete_[i].second == CT_READ) {
             rd_sockets_.erase(fds_to_delete_[i].first);
-        }
-        else if (fds_to_delete_[i].second == CM_WRITE) {
+            multiplexer_->UnregisterFd(fds_to_delete_[i].first, CT_READ, rd_sockets_, wr_sockets_);
+        } else if (fds_to_delete_[i].second == CT_WRITE) {
             wr_sockets_.erase(fds_to_delete_[i].first);
+            multiplexer_->UnregisterFd(fds_to_delete_[i].first, CT_WRITE, rd_sockets_, wr_sockets_);
         }
-        multiplexer_->DeleteFd(fds_to_delete_[i].first);
     }
     fds_to_delete_.clear();
 }
