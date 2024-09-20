@@ -1,6 +1,8 @@
 #ifndef WS_CONFIG_CONFIG_PARSER_H
 #define WS_CONFIG_CONFIG_PARSER_H
 
+#include <config/utils.h>
+
 #include <fstream>
 #include <map>
 #include <string>
@@ -16,7 +18,7 @@ class ConfigParser {
     const std::multimap<std::string, std::string>& settings() const;
     const std::vector<ConfigParser>& nested_configs() const;
     std::vector<std::string> FindSetting(const std::string& key) const;
-    const ConfigParser& FindNesting(const std::string& key, int idx) const;
+    const std::vector<ConfigParser>& FindNesting(const std::string& key) const;
 
   private:
     std::string lvl_;

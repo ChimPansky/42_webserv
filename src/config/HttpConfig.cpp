@@ -4,17 +4,13 @@ namespace config {
 
 const int HttpConfig::kDefaultKeepaliveTimeout = 65;
 size_t HttpConfig::kDefaultClientMaxBodySize = 1048576;
-const std::string HttpConfig::kDefaultDefaultFile = "index.html";
-const std::string HttpConfig::kDefaultDirListing = "off";
 
 HttpConfig::HttpConfig(int keepalive_timeout, size_t client_max_body_size,
-                       const std::map<int, std::string>& error_pages, const std::string& root_dir,
-                       const std::string& default_file, const std::string& dir_listing,
+                       const std::map<int, std::string>& error_pages,
                        const std::vector<ServerConfig>& server_configs)
     : keepalive_timeout_(InitKeepaliveTimeout(keepalive_timeout)),
       client_max_body_size_(InitClientMaxBodySize(client_max_body_size, "MB")),
-      error_pages_(InitErrorPages(error_pages)), server_configs_(server_configs),
-      root_dir_(root_dir), default_file_(default_file), dir_listing_(dir_listing)
+      error_pages_(InitErrorPages(error_pages)), server_configs_(server_configs)
 {}
 
 int HttpConfig::keepalive_timeout() const
@@ -30,21 +26,6 @@ size_t HttpConfig::client_max_body_size() const
 const std::map<int, std::string>& HttpConfig::error_pages() const
 {
     return error_pages_;
-}
-
-const std::string& HttpConfig::root_dir() const
-{
-    return root_dir_;
-}
-
-const std::string& HttpConfig::default_file() const
-{
-    return default_file_;
-}
-
-const std::string& HttpConfig::dir_listing() const
-{
-    return dir_listing_;
 }
 
 const std::vector<ServerConfig>& HttpConfig::server_configs() const

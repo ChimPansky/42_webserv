@@ -2,7 +2,7 @@
 
 #include <climits>
 #include <cstdlib>
-#include <iostream>
+#include <stdexcept>
 #include <string>
 
 namespace config {
@@ -12,8 +12,11 @@ std::vector<std::string> SplitLine(const std::string& line)
     std::vector<std::string> elements;
     size_t start = 0;
     size_t end = 0;
-    while (end != std::string::npos) {
+    while (start < line.size()) {
         end = line.find(' ', start);
+        if (end == std::string::npos) {
+            end = line.size();
+        }
         elements.push_back(line.substr(start, end - start));
         start = end + 1;
     }

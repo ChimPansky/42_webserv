@@ -273,15 +273,15 @@ class ConfigBuilder<ServerConfig> {
         throw std::runtime_error("Invalid configuration file: invalid access_log level: " + val);
     }
 
-    static const std::string& BuildErrorLogPath(const std::vector<std::string>& vals)
+    static std::string BuildErrorLogPath(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return ServerConfig::kDefaultErrorLogPath;
+            return std::string();
         }
         return ParseErrorLogPath(vals[0]);
     }
 
-    static const std::string& ParseErrorLogPath(const std::string& val)
+    static std::string ParseErrorLogPath(const std::string& val)
     {
         if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
             throw std::runtime_error("Invalid configuration file: error_log file doesn't exist: " +
@@ -393,12 +393,12 @@ class ConfigBuilder<ServerConfig> {
         throw std::runtime_error("Invalid configuration file: invalid autoindex value: " + vals);
     }
 
-    static std::vector<LocationConfig> BuildLocationConfigs(const ConfigParser& f)
+    static std::vector<LocationConfig> BuildLocationConfigs(
+        const std::vector<ConfigParser>& nested_configs)
     {
         std::vector<LocationConfig> server_configs;
-        for (size_t i = 0; i < f.nested_configs().size(); i++) {
-            server_configs.push_back(
-                ConfigBuilder<LocationConfig>::Build(f.FindNesting("location", i)));
+        for (size_t i = 0; i < nested_configs.size(); i++) {
+            server_configs.push_back(ConfigBuilder<LocationConfig>::Build(nested_configs[i]));
         }
         return server_configs;
     }
@@ -422,7 +422,8 @@ class ConfigBuilder<ServerConfig> {
         std::string root_dir = BuildRootDir(f.FindSetting("root"));
         std::string default_file = BuildDefaultFile(f.FindSetting("index"));
         std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"));
-        std::vector<LocationConfig> location_configs = BuildLocationConfigs(f);  // map or vector
+        std::vector<LocationConfig> location_configs =
+            BuildLocationConfigs(f.FindNesting("location"));  // map or vector
 
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
@@ -430,8 +431,8 @@ class ConfigBuilder<ServerConfig> {
                 throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
             }
         }
-        return ServerConfig(access_log_path, access_log_level, error_log_path, listeners, root_dir,
-                            default_file, dir_listing, server_names, location_configs);
+        return ServerConfig(access_log_path, access_log_level, error_log_path, listeners,
+                            server_names, location_configs);
     }
 };
 
@@ -481,14 +482,20 @@ class ConfigBuilder<HttpConfig> {
     static std::map<int, std::string> ParseErrorPages(const std::vector<std::string>& vals)
     {
         std::map<int, std::string> error_pages;
+
         for (size_t i = 0; i < vals.size(); i++) {
             std::vector<std::string> val_elements = config::SplitLine(vals[i]);
             if (val_elements.size() < 2) {
                 throw std::runtime_error("Invalid configuration file: invalid error_page: " +
                                          vals[i]);
             }
-            int res = config::StrToInt(val_elements[0]);  // check for overflow
-            error_pages[res] = val_elements[1];
+            int res = config::StrToInt(val_elements[0]);
+            // if (access(val_elements[val_elements.size() - 1].c_str(), F_OK | R_OK) == -1) {
+            //     throw std::runtime_error("Invalid configuration file: error page doesn't exist: "
+            //     +
+            //                              val_elements[val_elements.size() - 1]);
+            // }
+            error_pages[res] = val_elements[val_elements.size() - 1];
         }
         return error_pages;
     }
@@ -543,12 +550,12 @@ class ConfigBuilder<HttpConfig> {
         throw std::runtime_error("Invalid configuration file: invalid autoindex value: " + vals);
     }
 
-    static std::vector<ServerConfig> BuildServerConfigs(const ConfigParser& f)
+    static std::vector<ServerConfig> BuildServerConfigs(
+        const std::vector<ConfigParser>& nested_configs)
     {
         std::vector<ServerConfig> server_configs;
-        for (size_t i = 0; i < f.nested_configs().size(); i++) {
-            server_configs.push_back(
-                ConfigBuilder<ServerConfig>::Build(f.FindNesting("server", i)));
+        for (size_t i = 0; i < nested_configs.size(); i++) {
+            server_configs.push_back(ConfigBuilder<ServerConfig>::Build(nested_configs[i]));
         }
         return server_configs;
     }
@@ -562,15 +569,14 @@ class ConfigBuilder<HttpConfig> {
         std::string root_dir = BuildRootDir(f.FindSetting("root"));
         std::string default_file = BuildDefaultFile(f.FindSetting("index"));
         std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"));
-        std::vector<ServerConfig> server_configs = BuildServerConfigs(f);
+        std::vector<ServerConfig> server_configs = BuildServerConfigs(f.FindNesting("server"));
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
             if (!IsKeyAllowed(it->first)) {
                 throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
             }
         }
-        return HttpConfig(keepalive_timeout, client_max_body_size, error_pages, root_dir,
-                          default_file, dir_listing, server_configs);
+        return HttpConfig(keepalive_timeout, client_max_body_size, error_pages, server_configs);
     }
 };
 
@@ -603,18 +609,15 @@ class ConfigBuilder<Config> {
             return Config::kDefaultErrorLogPath;
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
-        if (val_elements.size() != 3) {
-            throw std::runtime_error("Invalid configuration file: invalid error_log: " + vals[0]);
+        if (val_elements.size() < 2) {
+            throw std::runtime_error("Invalid configuration file: invalid error_log setting: " +
+                                     vals[0]);
         }
         return ParseErrorLogPath(val_elements[0]);
     }
 
     static std::string ParseErrorLogPath(const std::string& val)
     {
-        // if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: error_log file doesn't exist: "
-        //     + val);
-        // }
         return val;
     }
 
@@ -623,10 +626,7 @@ class ConfigBuilder<Config> {
         if (vals.empty()) {
             return Config::kDefaultErrorLogLevel;
         }
-        std::vector<std::string> val_elements = config::SplitLine(vals[0]);
-        if (val_elements.size() != 3) {
-            throw std::runtime_error("Invalid configuration file: invalid error_log: " + vals[0]);
-        }
+        std::vector<std::string> val_elements = config::SplitLine(vals[0]);  // check split line
         return ParseErrorLogLevel(val_elements[1]);
     }
 
@@ -659,7 +659,7 @@ class ConfigBuilder<Config> {
         MxType mx_type = BuildMxType(f.FindSetting("use"));
         std::string error_log_path = BuildErrorLogPath(f.FindSetting("error_log"));
         Severity error_log_level = BuildErrorLogLevel(f.FindSetting("error_log"));
-        HttpConfig http_conf = ConfigBuilder<HttpConfig>::Build(f.FindNesting("http", 0));
+        HttpConfig http_conf = ConfigBuilder<HttpConfig>::Build(f.FindNesting("http")[0]);
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
             if (!IsKeyAllowed(it->first)) {

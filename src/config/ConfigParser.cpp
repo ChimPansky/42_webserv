@@ -1,4 +1,4 @@
-#include "ConfigBuilder.h"
+#include "ConfigParser.h"
 
 namespace config {
 
@@ -71,17 +71,19 @@ std::vector<std::string> ConfigParser::FindSetting(const std::string& key) const
     return res;
 }
 
-const ConfigParser& ConfigParser::FindNesting(const std::string& key, int idx) const
+const std::vector<ConfigParser>& ConfigParser::FindNesting(const std::string& key) const
 {
     if (nested_configs_.empty()) {
         throw std::runtime_error("Invalid configuration file: no " + key + " block.");
     } else if ("http" == key && nested_configs_.size() == 1 && "http" == nested_configs_[0].lvl()) {
-        return nested_configs_[idx];
+        return nested_configs_;
     } else if ("server" == key || "location" == key) {
-        if (key != nested_configs_[0].lvl()) {
-            throw std::runtime_error("Invalid configuration file: invalid block.");
+        for (size_t i = 0; i < nested_configs_.size(); i++) {
+            if (key != nested_configs_[i].lvl()) {
+                throw std::runtime_error("Invalid configuration file: invalid block.");
+            }
         }
-        return nested_configs_[idx];
+        return nested_configs_;
     }
     throw std::runtime_error("Invalid configuration file: multiple " + key + " blocks.");
 }
