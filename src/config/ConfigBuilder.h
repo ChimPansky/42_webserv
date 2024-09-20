@@ -57,9 +57,9 @@ class ConfigBuilder<LocationConfig> {
     {
         std::vector<std::string> allowed_methods;
         allowed_methods.push_back("GET");
-        allowed_methods.push_back("POST");
+        allowed_methods.push_back("POST"); 
         if (vals.empty()) {
-            return allowed_methods;
+            return allowed_methods; // if setting is empty - use default allowed_methods
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         return ParseAllowedMethods(val_elements);
@@ -129,7 +129,7 @@ class ConfigBuilder<LocationConfig> {
     static const std::vector<std::string>& ParseCgiExtensions(const std::vector<std::string>& vals)
     {
         for (size_t i = 0; i < vals.size(); i++) {
-            if (vals[i] == ".py" || vals[i] != ".php") {
+            if (vals[i] != ".py" && vals[i] != ".php") {
                 throw std::runtime_error("Invalid configuration file: invalid cgi_extension: " +
                                          vals[i]);
             }
@@ -317,7 +317,7 @@ class ConfigBuilder<ServerConfig> {
             port = config::StrToInt(val.substr(colon_pos + 1));
         }
 
-        if (!(port > 0 && port <= 65535)) {
+        if (!(port > 0 && port <= 65535)) { // checking for valid port should be in a ServerConfig method
             throw std::runtime_error("Invalid configuration file: invalid port: " + val);
         }
         return std::make_pair(addr, port);
