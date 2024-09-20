@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "c_api/multiplexers/IMultiplexer.h"
+#include "multiplexers/IMultiplexer.h"
 #include "multiplexers/ICallback.h"
 #include "utils/shared_ptr.h"
 #include "utils/unique_ptr.h"

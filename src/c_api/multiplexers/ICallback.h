@@ -4,8 +4,8 @@
 #include <sys/epoll.h>
 
 #include <map>
-
 #include "utils/unique_ptr.h"
+
 namespace c_api {
 
 enum CallbackType {
