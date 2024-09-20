@@ -1,24 +1,23 @@
 #ifndef WS_HTTPCONFIG_H
 #define WS_HTTPCONFIG_H
 
-#include "ServerConfig.h"
 #include <cstddef>
-#include <string>
 #include <map>
+#include <string>
+
+#include "ServerConfig.h"
 
 namespace config {
-class   HttpConfig {
-
+class HttpConfig {
   private:
     int InitKeepaliveTimeout(int value);
-    size_t  InitClientMaxBodySize(size_t value, const std::string& unit);
-    std::map<int, std::string>  InitErrorPages(const std::map<int, std::string>& value);
-    const std::string&  InitRootDir(const std::string& value);
-    const std::string&  InitDefaultFile(const std::string& value);
+    size_t InitClientMaxBodySize(size_t value, const std::string& unit);
+    std::map<int, std::string> InitErrorPages(const std::map<int, std::string>& value);
 
   public:
-    HttpConfig(int keepalive_timeout, size_t client_max_body_size, const std::map<int, std::string>& error_pages,
-               const std::string& root_dir, const std::string& default_file, const std::string& dir_listing,
+    HttpConfig(int keepalive_timeout, size_t client_max_body_size,
+               const std::map<int, std::string>& error_pages, const std::string& root_dir,
+               const std::string& default_file, const std::string& dir_listing,
                const std::vector<ServerConfig>& server_configs);
     int keepalive_timeout() const;
     size_t client_max_body_size() const;
@@ -26,12 +25,11 @@ class   HttpConfig {
     const std::string& root_dir() const;
     const std::string& default_file() const;
     const std::string& dir_listing() const;
-    const std::vector<ServerConfig>&  server_configs() const;
+    const std::vector<ServerConfig>& server_configs() const;
     static const int kDefaultKeepaliveTimeout;
     static size_t kDefaultClientMaxBodySize;
     static const std::string kDefaultDefaultFile;
     static const std::string kDefaultDirListing;
-    
 
   private:
     int keepalive_timeout_;

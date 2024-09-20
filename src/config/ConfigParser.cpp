@@ -3,17 +3,17 @@
 namespace config {
 
 ConfigParser::ConfigParser(std::ifstream& ifs, const std::string& lvl, const std::string& lvl_descr)
-    : lvl_(lvl),
-      lvl_descr_(lvl_descr)
+    : lvl_(lvl), lvl_descr_(lvl_descr)
 {
     std::string content;
     while (std::getline(ifs >> std::ws, content)) {
         if (content.empty() || content[0] == '#') {
             continue;
         }
-        char    last_char = *content.rbegin();  // TEST
-        content.erase(content.find_last_not_of(" \t" + std::string(1, last_char)) + 1); // utils function trim
-        
+        char last_char = *content.rbegin();  // TEST
+        content.erase(content.find_last_not_of(" \t" + std::string(1, last_char)) +
+                      1);  // utils function trim
+
         // TEST and improve
         if (last_char == ';') {
             if (content.empty()) {
@@ -59,10 +59,11 @@ const std::vector<ConfigParser>& ConfigParser::nested_configs() const
     return nested_configs_;
 }
 
-std::vector<std::string> ConfigParser::FindSetting(const std::string& key) const {
-
+std::vector<std::string> ConfigParser::FindSetting(const std::string& key) const
+{
     std::vector<std::string> res;
-    for (std::multimap<std::string, std::string>::const_iterator it = settings_.begin(); it != settings_.end(); ++it) {
+    for (std::multimap<std::string, std::string>::const_iterator it = settings_.begin();
+         it != settings_.end(); ++it) {
         if (it->first == key) {
             res.push_back(it->second);
         }
@@ -70,8 +71,8 @@ std::vector<std::string> ConfigParser::FindSetting(const std::string& key) const
     return res;
 }
 
-const ConfigParser&    ConfigParser::FindNesting(const std::string& key, int idx) const {
-
+const ConfigParser& ConfigParser::FindNesting(const std::string& key, int idx) const
+{
     if (nested_configs_.empty()) {
         throw std::runtime_error("Invalid configuration file: no " + key + " block.");
     } else if ("http" == key && nested_configs_.size() == 1 && "http" == nested_configs_[0].lvl()) {
