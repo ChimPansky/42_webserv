@@ -11,8 +11,8 @@ namespace config {
 class HttpConfig {
   private:
     int InitKeepaliveTimeout(int value);
-    size_t InitClientMaxBodySize(size_t value, const std::string& unit);
-    std::map<int, std::string> InitErrorPages(const std::map<int, std::string>& value);
+    size_t InitClientMaxBodySize(size_t value);
+    const std::map<int, std::string>& InitErrorPages(const std::map<int, std::string>& value);
 
   public:
     HttpConfig(int keepalive_timeout, size_t client_max_body_size,
@@ -23,7 +23,7 @@ class HttpConfig {
     const std::map<int, std::string>& error_pages() const;
     const std::vector<ServerConfig>& server_configs() const;
     static const int kDefaultKeepaliveTimeout;
-    static size_t kDefaultClientMaxBodySize;
+    static const size_t kDefaultClientMaxBodySize;
     // default error pages?
 
     void Print() const;

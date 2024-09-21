@@ -1,7 +1,10 @@
 #include "config/utils.h"
 
 #include <climits>
+#include <cstddef>
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -17,7 +20,9 @@ std::vector<std::string> SplitLine(const std::string& line)
         if (end == std::string::npos) {
             end = line.size();
         }
-        elements.push_back(line.substr(start, end - start));
+        if (!line.substr(start, end - start).empty()) {
+            elements.push_back(line.substr(start, end - start));
+        }
         start = end + 1;
     }
     return elements;
@@ -46,11 +51,36 @@ int StrToInt(const std::string& str)
 {
     long value = std::atol(str.c_str());
 
-    // Check for underflow and overflow
     if (value < INT_MIN || value > INT_MAX) {
         throw std::runtime_error("Integer conversion out of range");
     }
     return static_cast<int>(value);
+}
+
+size_t StrToUnsignedInt(const std::string& str)
+{
+    if (str.find_first_not_of("0123456789") != std::string::npos) {
+        throw std::runtime_error("Nonnumeric characters in string");
+    }
+    long value = std::atol(str.c_str());
+
+    if (value < 0 || value > UINT_MAX) {
+        throw std::runtime_error("Negative value cannot be converted to unsigned int");
+    }
+    return static_cast<size_t>(value);
+}
+
+bool ValidPath(const std::string& val)
+{
+    if (val.empty() || val.find("/") != 0) {
+        return false;
+    }
+
+    std::ofstream file(val.c_str(), std::ios::out);
+    if (!file.is_open()) {
+        return false;
+    }
+    return true;
 }
 
 }  // namespace config

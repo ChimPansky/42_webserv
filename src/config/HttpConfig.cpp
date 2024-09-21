@@ -3,13 +3,13 @@
 namespace config {
 
 const int HttpConfig::kDefaultKeepaliveTimeout = 65;
-size_t HttpConfig::kDefaultClientMaxBodySize = 1048576;
+const size_t HttpConfig::kDefaultClientMaxBodySize = 1048576;
 
 HttpConfig::HttpConfig(int keepalive_timeout, size_t client_max_body_size,
                        const std::map<int, std::string>& error_pages,
                        const std::vector<ServerConfig>& server_configs)
     : keepalive_timeout_(InitKeepaliveTimeout(keepalive_timeout)),
-      client_max_body_size_(InitClientMaxBodySize(client_max_body_size, "MB")),
+      client_max_body_size_(InitClientMaxBodySize(client_max_body_size)),
       error_pages_(InitErrorPages(error_pages)), server_configs_(server_configs)
 {}
 
@@ -41,30 +41,33 @@ int HttpConfig::InitKeepaliveTimeout(int value)
     return value;
 }
 
-size_t HttpConfig::InitClientMaxBodySize(size_t value, const std::string& unit)
+size_t HttpConfig::InitClientMaxBodySize(size_t value)
 {
-    (void)unit;
-    //  TODO
-
-    // Setting size to 0 disables checking of client request body size.
+    if (value < 1 || value > 1073741824) {
+        throw std::runtime_error("Invalid configuration file: invalid client_max_body_size value.");
+    }
     // minimum size is 1 byte, maximum size is 1GB
     return value;
 }
 
-std::map<int, std::string> HttpConfig::InitErrorPages(const std::map<int, std::string>& value)
+const std::map<int, std::string>& HttpConfig::InitErrorPages(
+    const std::map<int, std::string>& value)
 {
-    (void)value;
-    //  TODO
-    return std::map<int, std::string>();
+    typedef std::map<int, std::string>::const_iterator ErrorPagesIt;
+    for (ErrorPagesIt it = value.begin(); it != value.end(); ++it) {
+        if (it->first < 400 || it->first > 599) {
+            throw std::runtime_error("Invalid configuration file: invalid error_page status code.");
+        }
+    }
+    return value;
 }
-
 // const std::string&  HttpConfig::InitDefaultFile(const std::string& value)
 // {
 //     return value;
 // }
 
-
-void config::HttpConfig::Print() const {
+void config::HttpConfig::Print() const
+{
     LOG(DEBUG) << "\n";
     LOG(DEBUG) << "--HTTP configuration: --";
     LOG(DEBUG) << "Keepalive timeout: " << keepalive_timeout_;

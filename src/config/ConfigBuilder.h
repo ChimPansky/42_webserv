@@ -3,7 +3,9 @@
 
 #include <unistd.h>
 
+#include <iostream>
 #include <string>
+#include <utility>
 
 #include "Config.h"
 #include "ConfigParser.h"
@@ -59,7 +61,7 @@ class ConfigBuilder<LocationConfig> {
             std::vector<std::string> allowed_methods;
             allowed_methods.push_back("GET");
             allowed_methods.push_back("POST");
-            return allowed_methods; // if setting is empty - use default allowed_methods
+            return allowed_methods;  // if setting is empty - use default allowed_methods
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         return ParseAllowedMethods(val_elements);
@@ -317,7 +319,8 @@ class ConfigBuilder<ServerConfig> {
             port = config::StrToInt(val.substr(colon_pos + 1));
         }
 
-        // if (!(port > 0 && port <= 65535)) { // checking for valid port should be in a ServerConfig method
+        // if (!(port > 0 && port <= 65535)) { // checking for valid port should be in a
+        // ServerConfig method
         //     throw std::runtime_error("Invalid configuration file: invalid port: " + val);
         // }
         return std::make_pair(addr, port);
@@ -442,7 +445,7 @@ class ConfigBuilder<HttpConfig> {
     static bool IsKeyAllowed(const std::string& key)
     {
         return key == "keepalive_timeout" || key == "client_max_body_size" || key == "error_page" ||
-               key == "root" || key == "index" || key == "autoindex" || key == "server";
+               key == "root" || key == "index" || key == "autoindex";
     }
 
     static int BuildKeepAliveTimeout(const std::vector<std::string>& vals)
@@ -463,12 +466,33 @@ class ConfigBuilder<HttpConfig> {
         if (vals.empty()) {
             return HttpConfig::kDefaultClientMaxBodySize;
         }
-        return ParseClientMaxBodySize(vals[0]);
+        std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+        if (val_elements.size() == 1) {
+            return ParseClientMaxBodySize(val_elements[0]);
+        } else if (val_elements.size() == 2) {
+            return ParseClientMaxBodySize(val_elements[0]) *
+                   ParseClientMaxBodySizeUnit(val_elements[1]);
+        }
+        throw std::runtime_error("Invalid configuration file: invalid client_max_body_size: " +
+                                 vals[0]);
     }
 
     static size_t ParseClientMaxBodySize(const std::string& val)
     {
-        return config::StrToInt(val);
+        return config::StrToUnsignedInt(val);
+    }
+
+    static size_t ParseClientMaxBodySizeUnit(const std::string& val)
+    {
+        if (val == "KB") {
+            return 1024;
+        } else if (val == "MB") {
+            return 1024 * 1024;
+        } else if (val == "GB") {
+            return 1024 * 1024 * 1024;
+        }
+        throw std::runtime_error("Invalid configuration file: invalid client_max_body_size unit: " +
+                                 val);
     }
 
     static std::map<int, std::string> BuildErrorPages(const std::vector<std::string>& vals)
@@ -489,13 +513,16 @@ class ConfigBuilder<HttpConfig> {
                 throw std::runtime_error("Invalid configuration file: invalid error_page: " +
                                          vals[i]);
             }
-            int res = config::StrToInt(val_elements[0]);
+            for (size_t j = 0; j < val_elements.size() - 1; j++) {
+                if (j != val_elements.size() - 1) {
+                    error_pages[StrToInt(val_elements[j])] = val_elements[val_elements.size() - 1];
+                }
+            }
             // if (access(val_elements[val_elements.size() - 1].c_str(), F_OK | R_OK) == -1) {
             //     throw std::runtime_error("Invalid configuration file: error page doesn't exist: "
-            //     +
-            //                              val_elements[val_elements.size() - 1]);
+            //     // check if error page exists
+            //     + val_elements[val_elements.size() - 1]);
             // }
-            error_pages[res] = val_elements[val_elements.size() - 1];
         }
         return error_pages;
     }
@@ -603,35 +630,34 @@ class ConfigBuilder<Config> {
         throw std::runtime_error("Invalid configuration file: invalid mx_type: " + val);
     }
 
-    static std::string BuildErrorLogPath(const std::vector<std::string>& vals)
+    static std::pair<std::string, Severity> BuildErrorLog(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return Config::kDefaultErrorLogPath;
+            return std::make_pair(Config::kDefaultErrorLogPath, Config::kDefaultErrorLogLevel);
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
-        if (val_elements.size() < 2) {
-            throw std::runtime_error("Invalid configuration file: invalid error_log setting: " +
-                                     vals[0]);
+        if (val_elements.size() == 1) {
+            return std::make_pair(ParseErrorLogPath(val_elements[0]),
+                                  Config::kDefaultErrorLogLevel);
+        } else if (val_elements.size() == 2) {
+            return std::make_pair(ParseErrorLogPath(val_elements[0]),
+                                  ParseErrorLogLevel(val_elements[1]));
         }
-        return ParseErrorLogPath(val_elements[0]);
+        throw std::runtime_error("Invalid configuration file: invalid error_log setting: " +
+                                 vals[0]);
     }
 
     static std::string ParseErrorLogPath(const std::string& val)
     {
+        /* if (!config::ValidPath(val)) {
+            throw std::runtime_error("Invalid configuration file: invalid error_log path: " + val);
+        } */ // check for valid path
         return val;
-    }
-
-    static Severity BuildErrorLogLevel(const std::vector<std::string>& vals)
-    {
-        if (vals.empty()) {
-            return Config::kDefaultErrorLogLevel;
-        }
-        std::vector<std::string> val_elements = config::SplitLine(vals[0]);  // check split line
-        return ParseErrorLogLevel(val_elements[1]);
     }
 
     static Severity ParseErrorLogLevel(const std::string& val)
     {
+        std::cout << "val: " << val << std::endl;
         if (val == "debug") {
             return DEBUG;
         } else if (val == "info") {
@@ -650,15 +676,14 @@ class ConfigBuilder<Config> {
 
     static bool IsKeyAllowed(const std::string& key)
     {
-        return key == "use" || key == "error_log" || key == "http";
+        return key == "use" || key == "error_log";
     }
 
   public:
     static Config Build(const ConfigParser& f)
     {
         MxType mx_type = BuildMxType(f.FindSetting("use"));
-        std::string error_log_path = BuildErrorLogPath(f.FindSetting("error_log"));
-        Severity error_log_level = BuildErrorLogLevel(f.FindSetting("error_log"));
+        std::pair<std::string, Severity> error_log = BuildErrorLog(f.FindSetting("error_log"));
         HttpConfig http_conf = ConfigBuilder<HttpConfig>::Build(f.FindNesting("http")[0]);
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
@@ -666,7 +691,7 @@ class ConfigBuilder<Config> {
                 throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
             }
         }
-        return Config(mx_type, error_log_path, error_log_level, http_conf);
+        return Config(mx_type, error_log, http_conf);
     }
 };
 

@@ -11,7 +11,7 @@ class Config {
     const std::string& InitErrorLogPath(const std::string& value);
 
   public:
-    Config(MxType mx_type, const std::string& error_log_path, Severity error_log_level,
+    Config(MxType mx_type, const std::pair<std::string, Severity>& error_log,
            const HttpConfig& http_config);
     MxType mx_type() const;
     const std::string& error_log_path() const;
