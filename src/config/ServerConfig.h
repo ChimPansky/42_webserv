@@ -27,6 +27,8 @@ class ServerConfig {
     static const Severity kDefaultAccessLogLevel;
     static const std::string kDefaultAccessLogPath;
 
+    void Print() const;
+
   private:
     std::string access_log_path_;
     Severity access_log_level_;

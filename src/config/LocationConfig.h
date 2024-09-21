@@ -38,6 +38,8 @@ class LocationConfig {
     static const std::string kDefaultIndexFile;
     static const std::string kDefaultDirListing;
 
+    void Print() const;
+
   private:
     std::string route_;
     std::vector<std::string> allowed_methods_;

@@ -57,7 +57,7 @@ class ConfigBuilder<LocationConfig> {
     {
         std::vector<std::string> allowed_methods;
         allowed_methods.push_back("GET");
-        allowed_methods.push_back("POST"); 
+        allowed_methods.push_back("POST");
         if (vals.empty()) {
             return allowed_methods; // if setting is empty - use default allowed_methods
         }
@@ -317,9 +317,9 @@ class ConfigBuilder<ServerConfig> {
             port = config::StrToInt(val.substr(colon_pos + 1));
         }
 
-        if (!(port > 0 && port <= 65535)) { // checking for valid port should be in a ServerConfig method
-            throw std::runtime_error("Invalid configuration file: invalid port: " + val);
-        }
+        // if (!(port > 0 && port <= 65535)) { // checking for valid port should be in a ServerConfig method
+        //     throw std::runtime_error("Invalid configuration file: invalid port: " + val);
+        // }
         return std::make_pair(addr, port);
     }
 

@@ -63,4 +63,19 @@ std::map<int, std::string> HttpConfig::InitErrorPages(const std::map<int, std::s
 //     return value;
 // }
 
+
+void config::HttpConfig::Print() const {
+    LOG(DEBUG) << "\n";
+    LOG(DEBUG) << "--HTTP configuration: --";
+    LOG(DEBUG) << "Keepalive timeout: " << keepalive_timeout_;
+    LOG(DEBUG) << "Client max body size: " << client_max_body_size_;
+    LOG(DEBUG) << "Error pages: TODO";
+    for (std::map<int, std::string>::const_iterator it = error_pages_.begin();
+         it != error_pages_.end(); ++it) {
+        LOG(DEBUG) << "  " << it->first << " -> " << it->second;
+    }
+    for (size_t i = 0; i < server_configs_.size(); i++) {
+        server_configs_[i].Print();
+    }
+}
 }  // namespace config

@@ -52,4 +52,12 @@ const Config Config::GetConfig(const std::string& config_path)
     return ConfigBuilder<Config>::Build(parser);
 }
 
+void Config::Print() const {
+    LOG(DEBUG) << "--Configuration: --";
+    LOG(DEBUG) << "Multiplex type: " << mx_type_;
+    LOG(DEBUG) << "Error log path: " << error_log_path_;
+    LOG(DEBUG) << "Error log level: " << error_log_level_;
+    http_config_.Print();
+}
+
 }  // namespace config

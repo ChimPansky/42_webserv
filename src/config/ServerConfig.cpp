@@ -77,4 +77,23 @@ std::vector<std::string> ServerConfig::InitServerNames(const std::vector<std::st
     return std::vector<std::string>();
 }
 
+
+void ServerConfig::Print() const {
+    LOG(DEBUG) << "\n";
+    LOG(DEBUG) << "--Server configuration: --";
+    LOG(DEBUG) << "Access log path: " << access_log_path_;
+    LOG(DEBUG) << "Access log level: " << access_log_level_;
+    LOG(DEBUG) << "Error log path: " << error_log_path_;
+    LOG(DEBUG) << "Listeners: ";
+    for (size_t i = 0; i < listeners_.size(); i++) {
+        LOG(DEBUG) << "  " << listeners_[i].first << ":" << listeners_[i].second;
+    }
+    LOG(DEBUG) << "Server names: TODO";
+    for (size_t i = 0; i < server_names_.size(); i++) {
+        LOG(DEBUG) << "  " << server_names_[i];
+    }
+    for (size_t i = 0; i < locations_.size(); i++) {
+        locations_[i].Print();
+    }
+}
 }  // namespace config

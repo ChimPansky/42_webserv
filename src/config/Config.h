@@ -21,6 +21,8 @@ class Config {
     static const std::string kDefaultErrorLogPath;
     static const Severity kDefaultErrorLogLevel;
 
+    void Print() const;
+
   private:
     MxType mx_type_;
     std::string error_log_path_;

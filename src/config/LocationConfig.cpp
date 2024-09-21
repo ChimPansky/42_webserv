@@ -88,4 +88,27 @@ std::vector<std::string> LocationConfig::InitCgiExtensions(const std::vector<std
     return std::vector<std::string>();
 }
 
+void LocationConfig::Print() const {
+    LOG(DEBUG) << "\n";
+    LOG(DEBUG) << "--Location configuration: --";
+    LOG(DEBUG) << "Route: " << route_;
+    LOG(DEBUG) << "Allowed methods: ";
+    for (size_t i = 0; i < allowed_methods_.size(); i++) {
+        LOG(DEBUG) << "  " << allowed_methods_[i];
+    }
+    LOG(DEBUG) << "Redirect: " << redirect_.first << " " << redirect_.second;
+    LOG(DEBUG) << "CGI: " << (is_cgi_ ? "enabled" : "disabled");
+    LOG(DEBUG) << "CGI paths: ";
+    for (size_t i = 0; i < cgi_paths_.size(); i++) {
+        LOG(DEBUG) << "  " << cgi_paths_[i];
+    }
+    LOG(DEBUG) << "CGI extensions: ";
+    for (size_t i = 0; i < cgi_extensions_.size(); i++) {
+        LOG(DEBUG) << "  " << cgi_extensions_[i];
+    }
+    LOG(DEBUG) << "Root directory: " << root_dir_;
+    LOG(DEBUG) << "Default file: " << default_file_;
+    LOG(DEBUG) << "Directory listing: " << dir_listing_;
+}
+
 }  // namespace config

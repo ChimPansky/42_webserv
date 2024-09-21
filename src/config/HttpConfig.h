@@ -26,6 +26,8 @@ class HttpConfig {
     static size_t kDefaultClientMaxBodySize;
     // default error pages?
 
+    void Print() const;
+
   private:
     int keepalive_timeout_;
     size_t client_max_body_size_;
