@@ -28,14 +28,13 @@ class EventManager {
     int CheckOnce();
     static void init(MultiplexType mx_type_);
     static EventManager& get();
-    utils::shared_ptr<IMultiplexer> multiplexer() const;
 
   private:
     int CheckWithSelect_();
     int CheckWithPoll_();
     int CheckWithEpoll_();
     static utils::unique_ptr<EventManager> instance_;
-    utils::shared_ptr<IMultiplexer> multiplexer_;
+    utils::unique_ptr<IMultiplexer> multiplexer_;
     FdToCallbackMap rd_sockets_;  // this contains callbacks for both: listeners (master sockets aka
                                   // server socket) and clients...
     FdToCallbackMap wr_sockets_;  // this contains callbacks for  clients only (master sockets only

@@ -9,9 +9,14 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
     : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0),
       connection_closed_(false)
 {
-    c_api::EventManager::get().RegisterCallback(
+    if (c_api::EventManager::get().RegisterCallback(
         client_sock_->sockfd(), c_api::CT_READ,
-        utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this)));
+        utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
+            LOG(ERROR) << "Could not register read callback for client: " << client_sock_->sockfd()
+                << ". Closing connection...";
+            connection_closed_ = true;
+            return ;
+        }
 }
 
 ClientSession::~ClientSession()
@@ -72,10 +77,14 @@ void ClientSession::ClientReadCallback::Call(int)
         c_api::EventManager::get().MarkCallbackForDeletion(client_.client_sock_->sockfd(),
                                                            c_api::CT_READ);
         LOG(DEBUG) << "ClientReadCallback::Call: before RegisterCallback";
-        c_api::EventManager::get().RegisterCallback(
+        if (c_api::EventManager::get().RegisterCallback(
             client_.client_sock_->sockfd(), c_api::CT_WRITE,
-            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_)));
-
+            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
+                LOG(ERROR) << "Could not register write callback for client: "
+                    << client_.client_sock_->sockfd() << ". Closing connection...";
+                client_.connection_closed_ = true;
+                return ;
+            }
         LOG(DEBUG) << "ClientCallback::ReadCall: after RegisterCallback";
         client_.PrepareResponse();
     }

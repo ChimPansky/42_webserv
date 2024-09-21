@@ -35,9 +35,13 @@ ServerCluster::ServerCluster(const Config& /*config*/)
             utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
-            c_api::EventManager::get().RegisterCallback(
+            if (c_api::EventManager::get().RegisterCallback(
                 sockfd, c_api::CT_READ,
-                utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this)));
+                utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
+                LOG(ERROR) << "Could not register callback for listener: " << sockfd << ". Exiting...";
+                Stop();
+                return;
+            }
             sockets_[sockfd] = listener;
         }
         LOG(INFO) << serv->name() << " is listening on " << c_api::IPv4ToString(it->first) << ":"
@@ -98,6 +102,6 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
         LOG(ERROR) << "error accepting connection on: " << fd;  // add perror
         return;
     }
-    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
     LOG(INFO) << "New incoming connection on: " << fd;
+    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
 }

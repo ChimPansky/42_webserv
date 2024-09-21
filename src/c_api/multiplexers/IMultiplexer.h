@@ -22,7 +22,7 @@ class IMultiplexer {
                              const FdToCallbackMap& wr_sockets) = 0;
 };
 
-utils::shared_ptr<IMultiplexer> GetMultiplexer(MultiplexType mx_type);
+utils::unique_ptr<IMultiplexer> GetMultiplexer(MultiplexType mx_type);
 
 }  // namespace c_api
 

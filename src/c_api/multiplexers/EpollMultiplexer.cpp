@@ -34,18 +34,20 @@ int EpollMultiplexer::RegisterFd(int fd, CallbackType type, const FdToCallbackMa
     ev.data.fd = fd;
     ev.events = type;
 
+    int res = 0;
     if (rd_sockets.find(fd) != rd_sockets.end() || wr_sockets.find(fd) != wr_sockets.end()) {
         LOG(DEBUG) << "\n Fd is already registered --> use EPOLL_CTL_MOD";
-        return epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+        res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+    } else {
+        LOG(DEBUG) << "\n Fd is not yet registered --> use EPOLL_CTL_ADD";
+        res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
     }
-    LOG(DEBUG) << "\n Fd is not yet registered --> use EPOLL_CTL_ADD";
-    int res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
     if (res != 0) {
-        return res;
+        LOG(ERROR) << "Could not register FD " << fd << " in epoll";
     }
+    return res;
     // fcntl(fd, F_SETFL, O_NONBLOCK);  // not allowed as per subject... figure out how to do it
     // without...
-    return res;
 }
 
 int EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
@@ -55,7 +57,7 @@ int EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallback
     int new_events = GetEventType(fd, rd_sockets, wr_sockets) & ~type;
     int res = 0;
     if (new_events == 0) {
-        res = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL);
+        res = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, -25, NULL);
         LOG(DEBUG) << "UnregisterFd " << fd << "; Use EPOLL_CTL_DEL";
     } else {
         struct epoll_event ev = {};
@@ -63,6 +65,9 @@ int EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallback
         ev.events = new_events;
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
         LOG(DEBUG) << "UnregisterFd " << fd << "; Use EPOLL_CTL_MOD with " << new_events;
+    }
+    if (res != 0) {
+        LOG(ERROR) << "epoll_ctl failed: " << fd;
     }
     return res;
 }

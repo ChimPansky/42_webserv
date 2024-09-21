@@ -29,11 +29,6 @@ EventManager& EventManager::get()
     return (*EventManager::instance_);
 }
 
-utils::shared_ptr<IMultiplexer> EventManager::multiplexer() const
-{
-    return multiplexer_;
-}
-
 int EventManager::CheckOnce()
 {
     return multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
@@ -67,11 +62,17 @@ void EventManager::DeleteMarkedCallbacks()
 {
     for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
         if (fds_to_delete_[i].second == CT_READ) {
+            if (multiplexer_->UnregisterFd(fds_to_delete_[i].first, CT_READ, rd_sockets_, wr_sockets_) != 0) {
+                LOG(ERROR) << "Could not unregister read callback for fd: " << fds_to_delete_[i].first;
+                continue;
+            }
             rd_sockets_.erase(fds_to_delete_[i].first);
-            multiplexer_->UnregisterFd(fds_to_delete_[i].first, CT_READ, rd_sockets_, wr_sockets_);
         } else if (fds_to_delete_[i].second == CT_WRITE) {
+            if (multiplexer_->UnregisterFd(fds_to_delete_[i].first, CT_WRITE, rd_sockets_, wr_sockets_) != 0) {
+                LOG(ERROR) << "Could not unregister write callback for fd: " << fds_to_delete_[i].first;
+                continue;
+            }
             wr_sockets_.erase(fds_to_delete_[i].first);
-            multiplexer_->UnregisterFd(fds_to_delete_[i].first, CT_WRITE, rd_sockets_, wr_sockets_);
         }
     }
     fds_to_delete_.clear();
