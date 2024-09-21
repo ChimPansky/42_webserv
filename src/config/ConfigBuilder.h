@@ -55,10 +55,10 @@ class ConfigBuilder<LocationConfig> {
 
     static std::vector<std::string> BuildAllowedMethods(const std::vector<std::string>& vals)
     {
-        std::vector<std::string> allowed_methods;
-        allowed_methods.push_back("GET");
-        allowed_methods.push_back("POST");
         if (vals.empty()) {
+            std::vector<std::string> allowed_methods;
+            allowed_methods.push_back("GET");
+            allowed_methods.push_back("POST");
             return allowed_methods; // if setting is empty - use default allowed_methods
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
