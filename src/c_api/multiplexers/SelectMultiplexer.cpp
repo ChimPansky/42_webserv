@@ -13,13 +13,10 @@ int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
     fd_set select_wr_set;
     FD_ZERO(&select_rd_set);
     FD_ZERO(&select_wr_set);
-    LOG(DEBUG) << "CheckWithSelect";
     for (FdToCallbackMapIt it = rd_sockets.begin(); it != rd_sockets.end(); ++it) {
-        LOG(DEBUG) << "adding to select read set: " << it->first;
         FD_SET(it->first, &select_rd_set);
     }
     for (FdToCallbackMapIt it = wr_sockets.begin(); it != wr_sockets.end(); ++it) {
-        LOG(DEBUG) << "adding to select write set: " << it->first;
         FD_SET(it->first, &select_wr_set);
     }
     int max_fd = rd_sockets.rbegin()->first;
@@ -36,20 +33,15 @@ int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
     }
     // iterate over i here cuz call can change callbacks map
     for (int ready_fd = 0; ready_fd <= max_fd; ++ready_fd) {
-        LOG(DEBUG) << "CheckWithSelect-> Iterating over monitored sockets. Current fd: "
-                   << ready_fd;
         FdToCallbackMapIt it = rd_sockets.find(ready_fd);
         if (FD_ISSET(ready_fd, &select_rd_set) && it != rd_sockets.end()) {
-            LOG(DEBUG) << "CheckWithSelect-> Calling read callback for fd: " << ready_fd;
             it->second->Call(it->first);
         }
         it = wr_sockets.find(ready_fd);
         if (FD_ISSET(ready_fd, &select_wr_set) && it != wr_sockets.end()) {
-            LOG(DEBUG) << "CheckWithSelect-> Calling write callback for fd: " << ready_fd;
             it->second->Call(it->first);
         }
     }
-    LOG(DEBUG) << "CheckWithSelect-> Done iterating over monitored sockets";
     return 0;
 }
 

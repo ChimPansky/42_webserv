@@ -21,7 +21,6 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
 
 ClientSession::~ClientSession()
 {
-    LOG(DEBUG) << "ClientSession::~ClientSession";
     c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READWRITE);
 }
 
@@ -48,23 +47,19 @@ Connection: Closed\n\r\
 
 void ClientSession::PrepareResponse()
 {
-    LOG(DEBUG) << "ClientSession::PrepareResponse";
     buf_send_idx_ = 0;
     buf_.resize(sizeof(HTTP_RESPONSE));
     std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
 }
 
 ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
-{
-    LOG(DEBUG) << "ClientReadCallback::Constructor";
-}
+{}
 
 void ClientSession::ClientReadCallback::Call(int)
 {
     // assert fd == client_sock.fd
     long bytes_recvd = client_.client_sock_->Recv(client_.buf_);
     if (bytes_recvd <= 0) {
-        // close connection
         client_.connection_closed_ = true;
         LOG(INFO) << "Connection closed";
         return;
@@ -72,8 +67,6 @@ void ClientSession::ClientReadCallback::Call(int)
     LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
                << client_.client_sock_->sockfd();
     if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
-        LOG(DEBUG) << "ClientReadCallback::Call: switching to write_mode";
-
         c_api::EventManager::get().MarkCallbackForDeletion(client_.client_sock_->sockfd(),
                                                            c_api::CT_READ);
         if (c_api::EventManager::get().RegisterCallback(
@@ -84,34 +77,28 @@ void ClientSession::ClientReadCallback::Call(int)
                 client_.connection_closed_ = true;
                 return ;
             }
-        LOG(DEBUG) << "ClientCallback::ReadCall: after RegisterCallback";
         client_.PrepareResponse();
     }
 }
 
 ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : client_(client)
 {
-    LOG(DEBUG) << "ClientWriteCallback::Constructor";
 }
 
 void ClientSession::ClientWriteCallback::Call(int)
 {
-    LOG(DEBUG) << "ClientWriteCallback::Call";
     // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
                                                     client_.buf_.size() - client_.buf_send_idx_);
-    if (1 || bytes_sent <= 0) {
-        // close connection
+    if (bytes_sent <= 0) {
         client_.connection_closed_ = true;
         LOG(ERROR) << "error on send";  // add perror
         return;
     }
     if (client_.buf_send_idx_ == client_.buf_.size()) {
         LOG(INFO) << client_.buf_send_idx_
-                  << " bytes sent, close connection (later: check keepalive and mb wait for next "
-                     "request)";
-        client_.connection_closed_ = true;
-        // callback_mode_ = c_api::CM_DELETE; // maybe keepalive - switch back to read type CT_READ
+                  << " bytes sent, close connection";
+        client_.connection_closed_ = true; // maybe keepalive - register readcallback
         c_api::EventManager::get().MarkCallbackForDeletion(client_.client_sock_->sockfd(),
                                                            c_api::CT_WRITE);
     }

@@ -12,9 +12,9 @@ class EpollMultiplexer : public IMultiplexer {
     EpollMultiplexer();
     ~EpollMultiplexer();
     int RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                           const FdToCallbackMap& wr_sockets);
+                   const FdToCallbackMap& wr_sockets);
     int UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                             const FdToCallbackMap& wr_sockets);
+                     const FdToCallbackMap& wr_sockets);
     int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
 
   private:
