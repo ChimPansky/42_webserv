@@ -53,27 +53,42 @@ int EventManager::RegisterCallback(int fd, CallbackType type,
     return 0;
 }
 
+void EventManager::DeleteCallback(int fd, CallbackType type)
+{
+    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
+        LOG(DEBUG) << "Deleting read callback for fd: " << fd;
+        if (multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_) != 0) {
+            LOG(ERROR) << "Could not unregister read callback for fd: " << fd;
+        }
+        LOG(DEBUG) << "Erasing fd " << fd << " from rd_sockets_";
+        rd_sockets_.erase(fd);
+    }
+    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
+        LOG(DEBUG) << "Deleting write callback for fd: " << fd;
+        if (multiplexer_->UnregisterFd(fd, CT_WRITE, rd_sockets_, wr_sockets_) != 0) {
+            LOG(ERROR) << "Could not unregister write callback for fd: " << fd;
+        }
+        LOG(DEBUG) << "Erasing fd " << fd << " from wr_sockets_";
+        wr_sockets_.erase(fd);
+   }
+}
+
 void EventManager::MarkCallbackForDeletion(int fd, CallbackType type)
 {
-    fds_to_delete_.push_back(std::make_pair(fd, type));
+    LOG(DEBUG) << "Marking fd: " << fd << " for deletion (type: " << type << ")";
+    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
+        fds_to_delete_.push_back(std::make_pair(fd, CT_READ));
+    }
+    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
+        fds_to_delete_.push_back(std::make_pair(fd, CT_WRITE));
+    }
 }
 
 void EventManager::DeleteMarkedCallbacks()
 {
+    LOG(DEBUG) << "EventManager::DeleteMarkedCallbacks";
     for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
-        if (fds_to_delete_[i].second == CT_READ) {
-            if (multiplexer_->UnregisterFd(fds_to_delete_[i].first, CT_READ, rd_sockets_, wr_sockets_) != 0) {
-                LOG(ERROR) << "Could not unregister read callback for fd: " << fds_to_delete_[i].first;
-                continue;
-            }
-            rd_sockets_.erase(fds_to_delete_[i].first);
-        } else if (fds_to_delete_[i].second == CT_WRITE) {
-            if (multiplexer_->UnregisterFd(fds_to_delete_[i].first, CT_WRITE, rd_sockets_, wr_sockets_) != 0) {
-                LOG(ERROR) << "Could not unregister write callback for fd: " << fds_to_delete_[i].first;
-                continue;
-            }
-            wr_sockets_.erase(fds_to_delete_[i].first);
-        }
+        DeleteCallback(fds_to_delete_[i].first, fds_to_delete_[i].second);
     }
     fds_to_delete_.clear();
 }

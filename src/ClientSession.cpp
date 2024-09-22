@@ -13,7 +13,7 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
         client_sock_->sockfd(), c_api::CT_READ,
         utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
             LOG(ERROR) << "Could not register read callback for client: " << client_sock_->sockfd()
-                << ". Closing connection...";
+                << ". Closing client connection...";
             connection_closed_ = true;
             return ;
         }
@@ -21,8 +21,8 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
 
 ClientSession::~ClientSession()
 {
-    // c_api::EventManager::get().DeleteCallbacksByFd(client_sock_->sockfd()); // TODO: delete all
-    // callbacks for this fd
+    LOG(DEBUG) << "ClientSession::~ClientSession";
+    c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READWRITE);
 }
 
 bool ClientSession::connection_closed() const
@@ -76,7 +76,6 @@ void ClientSession::ClientReadCallback::Call(int)
 
         c_api::EventManager::get().MarkCallbackForDeletion(client_.client_sock_->sockfd(),
                                                            c_api::CT_READ);
-        LOG(DEBUG) << "ClientReadCallback::Call: before RegisterCallback";
         if (c_api::EventManager::get().RegisterCallback(
             client_.client_sock_->sockfd(), c_api::CT_WRITE,
             utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
@@ -101,7 +100,7 @@ void ClientSession::ClientWriteCallback::Call(int)
     // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
                                                     client_.buf_.size() - client_.buf_send_idx_);
-    if (bytes_sent <= 0) {
+    if (1 || bytes_sent <= 0) {
         // close connection
         client_.connection_closed_ = true;
         LOG(ERROR) << "error on send";  // add perror

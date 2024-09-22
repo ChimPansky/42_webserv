@@ -6,6 +6,8 @@
 
 #include "utils/logger.h"
 
+#include <stdio.h> // for perror
+
 namespace c_api {
 
 EpollMultiplexer::EpollMultiplexer()
@@ -36,14 +38,15 @@ int EpollMultiplexer::RegisterFd(int fd, CallbackType type, const FdToCallbackMa
 
     int res = 0;
     if (rd_sockets.find(fd) != rd_sockets.end() || wr_sockets.find(fd) != wr_sockets.end()) {
-        LOG(DEBUG) << "\n Fd is already registered --> use EPOLL_CTL_MOD";
+        LOG(DEBUG) << "\n Fd " << fd << " is already registered --> use EPOLL_CTL_MOD";
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
     } else {
-        LOG(DEBUG) << "\n Fd is not yet registered --> use EPOLL_CTL_ADD";
+        LOG(DEBUG) << "\n Fd " << fd << " is not yet registered --> use EPOLL_CTL_ADD";
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
     }
     if (res != 0) {
         LOG(ERROR) << "Could not register FD " << fd << " in epoll";
+        perror(NULL);
     }
     return res;
     // fcntl(fd, F_SETFL, O_NONBLOCK);  // not allowed as per subject... figure out how to do it
@@ -57,7 +60,7 @@ int EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallback
     int new_events = GetEventType(fd, rd_sockets, wr_sockets) & ~type;
     int res = 0;
     if (new_events == 0) {
-        res = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, -25, NULL);
+        res = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL);
         LOG(DEBUG) << "UnregisterFd " << fd << "; Use EPOLL_CTL_DEL";
     } else {
         struct epoll_event ev = {};
@@ -68,6 +71,7 @@ int EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallback
     }
     if (res != 0) {
         LOG(ERROR) << "epoll_ctl failed: " << fd;
+        perror(NULL);
     }
     return res;
 }
@@ -89,9 +93,6 @@ int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
                                 const FdToCallbackMap& wr_sockets)
 {
     LOG(DEBUG) << "\n\n---CheckWithEpoll---";
-    LOG(DEBUG) << "\n   Iterating over map of monitored sockets which contains \n"
-                  "   both listeners (aka master sockets aka server sockets) AND \n"
-                  "   clientsockets (aka communication channel between client and server):";
     struct epoll_event events[EPOLL_MAX_EVENTS];
     LOG(DEBUG) << "\nEPOLL_WAIT...";
     int ready_fds = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, -1);
@@ -99,12 +100,7 @@ int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
         LOG(ERROR) << "epoll_wait unsuccessful.";
         return 1;
     }
-    LOG(DEBUG)
-        << "\n   epoll_wait successful --> " << ready_fds
-        << " fd(s) are ready for read/write --> iterate over them:\n"
-           "   For each fd check if it is in our map of read or write sockets and if yes,\n"
-           "   then call its callback \n";
-    ;
+    LOG(DEBUG) << "\n   epoll_wait successful; " << ready_fds << " fd(s) are ready for read/write";
     for (int rdy_fd = 0; rdy_fd < ready_fds; rdy_fd++) {
         struct epoll_event& ev = events[rdy_fd];
         if (ev.events & EPOLLIN) {

@@ -21,6 +21,7 @@ class EventManager {
   public:
     // use return to indicate error, eg, callback for fd already registered?
     int RegisterCallback(int fd, CallbackType type, utils::unique_ptr<ICallback>);
+    void DeleteCallback(int fd, CallbackType type);
     void MarkCallbackForDeletion(int fd, CallbackType type);
     void DeleteMarkedCallbacks();
 
