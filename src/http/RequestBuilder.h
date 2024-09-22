@@ -11,7 +11,6 @@ namespace http {
 class RequestBuilder {
   private:
     enum ParseState {
-        PS_START,
         PS_METHOD,
         PS_URI,
         PS_VERSION,
@@ -24,7 +23,7 @@ class RequestBuilder {
   public:
     RequestBuilder();
     void Reset();
-    void ParseNext(const std::vector<char>& input, size_t input_sz);
+    void ParseNext(const char* input, size_t input_sz);
     bool is_ready_for_response() const;
     const Request& rq() const;
 
@@ -42,6 +41,8 @@ class RequestBuilder {
     void ParseVersion();
     void ParseHeaders();
     void ParseBody();
+    void CheckIfRequestIsComplete();
+    void ResetParseBuf();
 };
 
 }  // namespace http

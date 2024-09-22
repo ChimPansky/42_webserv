@@ -32,15 +32,9 @@ int ClientSocket::sockfd() const
     return sockfd_;
 }
 
-ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t sz) const
+ssize_t ClientSocket::Recv(char* buf, size_t sz) const
 {
-    ssize_t bytes_recvd = ::recv(sockfd_, (void*)sock_buf_, std::min(sz, sock_buf_sz_), MSG_NOSIGNAL);
-    if (bytes_recvd > 0) {
-        if (bytes_recvd > static_cast<ssize_t>(buf.size())) {
-            buf.resize(bytes_recvd);
-        }
-        std::memcpy(buf.data(), sock_buf_, bytes_recvd);
-    }
+    ssize_t bytes_recvd = ::recv(sockfd_, (void*)buf, std::min(sz, sock_buf_sz_), MSG_NOSIGNAL);
     return bytes_recvd;
 }
 
@@ -56,6 +50,10 @@ ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz)
         idx += bytes_sendd;
     }
     return bytes_sendd;
+}
+
+char* ClientSocket::sock_buf() {
+    return sock_buf_;
 }
 
 size_t ClientSocket::sock_buf_sz() const {

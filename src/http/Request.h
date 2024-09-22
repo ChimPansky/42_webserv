@@ -7,11 +7,13 @@
 
 namespace http {
 enum Method {
+    HTTP_NO_METHOD,
     HTTP_GET,
     HTTP_POST,
     HTTP_DELETE
 };
 enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
+    HTTP_NO_VERSION,
     HTTP_0_9,
     HTTP_1_0,
     HTTP_1_1,
@@ -21,8 +23,8 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
 
 struct Request {
     Method method;
-    Version version;
     std::string uri_; // todo: change to struct/class
+    Version version;
     std::string host_;
     std::string user_agent_;
     std::string accept_;
@@ -33,6 +35,7 @@ struct Request {
     int status_code_;
 
     void Reset();
+    void Print() const;
 };
 
 }  // namespace http
