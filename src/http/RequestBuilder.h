@@ -14,7 +14,8 @@ class RequestBuilder {
         PS_METHOD,
         PS_URI,
         PS_VERSION,
-        PS_HEADERS,
+        PS_HEADER_KEY,
+        PS_HEADER_VALUE,
         PS_BODY,
         PS_END,
         PS_ERROR
@@ -36,13 +37,17 @@ class RequestBuilder {
     int chunk_counter_;
     ParseState parse_state_;
     size_t parse_idx_;
-    void ParseMethod();
-    void ParseUri();
-    void ParseVersion();
-    void ParseHeaders();
-    void ParseBody();
-    void CheckIfRequestIsComplete();
-    void ResetParseBuf();
+    std::string header_key_;
+    void ParseMethod_();
+    void ParseUri_();
+    void ParseVersion_();
+    void ParseHeaderKey_();
+    void ParseHeaderValue_();
+    void ParseBody_();
+
+    void CheckIfRequestIsComplete_();
+    void ResetParseBuf_();
+    bool LineIsEmpty_();
 };
 
 }  // namespace http
