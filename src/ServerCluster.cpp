@@ -17,6 +17,7 @@ ServerCluster::ServerCluster(const Config& /*config*/)
 
     utils::shared_ptr<Server> serv(new Server("Sserv"));  // constructor of server block
     servers_.push_back(serv);
+    c_api::EventManager::init(c_api::MT_EPOLL);
 
     typedef std::vector<std::pair<in_addr_t, in_port_t> >::iterator ListenersIt;
     for (ListenersIt it = listeners.begin(); it != listeners.end(); ++it) {
@@ -38,9 +39,7 @@ ServerCluster::ServerCluster(const Config& /*config*/)
             if (c_api::EventManager::get().RegisterCallback(
                 sockfd, c_api::CT_READ,
                 utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
-                LOG(ERROR) << "Could not register callback for listener: " << sockfd << ". Exiting...";
-                Stop();
-                return;
+                LOG(FATAL) << "Could not register callback for listener: " << sockfd;
             }
             sockets_[sockfd] = listener;
         }
@@ -57,13 +56,11 @@ void ServerCluster::Stop()
 // smth like
 void ServerCluster::Start(const Config& config)
 {
-    c_api::EventManager::init(c_api::MT_EPOLL);
     // register signal for ^C, switch run on that
     run_ = true;
     ServerCluster cluster(config);
     while (run_) {
         c_api::EventManager::get().CheckOnce();
-        c_api::EventManager::get().DeleteMarkedCallbacks();
         cluster.CheckClients();
     }
 }

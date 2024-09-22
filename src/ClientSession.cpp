@@ -55,7 +55,7 @@ void ClientSession::PrepareResponse()
 ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
 {}
 
-void ClientSession::ClientReadCallback::Call(int)
+void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
     long bytes_recvd = client_.client_sock_->Recv(client_.buf_);
@@ -85,7 +85,7 @@ ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) :
 {
 }
 
-void ClientSession::ClientWriteCallback::Call(int)
+void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
@@ -103,21 +103,3 @@ void ClientSession::ClientWriteCallback::Call(int)
                                                            c_api::CT_WRITE);
     }
 }
-
-// ClientSession::ProcessState ClientSession::ProcessRead(ssize_t bytes_recvd)
-// {
-//     (void)bytes_recvd;
-//     LOG(DEBUG) << buf_.data();
-//     // std::cout.write(buf_.data(), buf_.size()) << std::flush;
-//     //TODO: set request is ready...
-//     if (/*request is ready*/ buf_.size() > 20 ) {
-//         // if cgi run and register callbacks for cgi
-//         // else return static page
-
-//         buf_send_idx_ = 0;
-//         buf_.resize(sizeof(HTTP_RESPONSE));
-//         std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
-//         return PS_DONE;
-//     }
-//     return PS_ONGOING;
-// }

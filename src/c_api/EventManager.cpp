@@ -31,7 +31,9 @@ EventManager& EventManager::get()
 
 int EventManager::CheckOnce()
 {
-    return multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
+    int res = multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
+    DeleteMarkedCallbacks_();
+    return res;
 }
 
 int EventManager::RegisterCallback(int fd, CallbackType type,
@@ -79,7 +81,7 @@ void EventManager::MarkCallbackForDeletion(int fd, CallbackType type)
     }
 }
 
-void EventManager::DeleteMarkedCallbacks()
+void EventManager::DeleteMarkedCallbacks_()
 {
     for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
         DeleteCallback(fds_to_delete_[i].first, fds_to_delete_[i].second);

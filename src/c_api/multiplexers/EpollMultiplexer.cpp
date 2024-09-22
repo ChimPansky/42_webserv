@@ -10,8 +10,7 @@ namespace c_api {
 
 EpollMultiplexer::EpollMultiplexer()
 {
-    epoll_fd_ = epoll_create(
-        1);  // argument just for backwards compatibility --> it has no effect, but must be > 0
+    epoll_fd_ = epoll_create(/*deprecated arg, must be gt 0*/ 1);
     if (epoll_fd_ == -1) {
         LOG(FATAL) << "epoll_create failed";
     }

@@ -5,7 +5,6 @@
 
 #include "multiplexers/IMultiplexer.h"
 #include "multiplexers/ICallback.h"
-#include "utils/shared_ptr.h"
 #include "utils/unique_ptr.h"
 
 namespace c_api {
@@ -21,9 +20,8 @@ class EventManager {
   public:
     // use return to indicate error, eg, callback for fd already registered?
     int RegisterCallback(int fd, CallbackType type, utils::unique_ptr<ICallback>);
-    void DeleteCallback(int fd, CallbackType type);
     void MarkCallbackForDeletion(int fd, CallbackType type);
-    void DeleteMarkedCallbacks();
+    void DeleteCallback(int fd, CallbackType type);
 
     // all select-poll-epoll logic goes in here
     int CheckOnce();
@@ -34,6 +32,7 @@ class EventManager {
     int CheckWithSelect_();
     int CheckWithPoll_();
     int CheckWithEpoll_();
+    void DeleteMarkedCallbacks_();
     static utils::unique_ptr<EventManager> instance_;
     utils::unique_ptr<IMultiplexer> multiplexer_;
     FdToCallbackMap rd_sockets_;  // this contains callbacks for both: listeners (master sockets aka
