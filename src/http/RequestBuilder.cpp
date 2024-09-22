@@ -17,15 +17,15 @@ const Request& RequestBuilder::rq() const
 
 void RequestBuilder::ParseNext(const std::vector<char>& input, size_t input_sz)
 {
-    (void)sz;
+    (void)input_sz;
     ++chunk_counter_;
     LOG(DEBUG) << "Parsing chunk no " << chunk_counter_ << "...";
     for (size_t i = 0; i < input_sz; i++) {
         parse_buf_.push_back(input[i]);
 
     }
-    while (parse_idx_ < buf.size()) {
-        char c = buf[parse_idx_];
+    while (parse_idx_ < input.size()) {
+        char c = input[parse_idx_];
         (void)c;
         switch (parse_state_) {
             case PS_START:
@@ -48,8 +48,8 @@ void RequestBuilder::ParseNext(const std::vector<char>& input, size_t input_sz)
         parse_idx_++;
         std::cout << c;
     }
-    if (buf.size() >= 4 &&
-        std::strncmp(buf.data() + buf.size() - 4, "\r\n\r\n", 4) == 0) {
+    if (input.size() >= 4 &&
+        std::strncmp(input.data() + input.size() - 4, "\r\n\r\n", 4) == 0) {
         eof_reached_ = true;
     }
     std::cout << std::endl;

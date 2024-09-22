@@ -1,24 +1,19 @@
 #include "EventManager.h"
 
-#include <netinet/in.h>  // select
-#include <sys/epoll.h>   // for epoll
-#include <fcntl.h>       // for fcntl
-
 #include <stdexcept>
 
-#include "../utils/logger.h"
+#include "multiplexers/IMultiplexer.h"
+#include "utils/logger.h"
 
 namespace c_api {
 
 utils::unique_ptr<EventManager> EventManager::instance_(NULL);
 
-int EventManager::epoll_fd_ = -1;
-
 // private c'tor
-EventManager::EventManager(EventManager::MultiplexType mx_type) : mx_type_(mx_type)
+EventManager::EventManager(MultiplexType mx_type) : multiplexer_(GetMultiplexer(mx_type))
 {}
 
-void EventManager::init(EventManager::MultiplexType mx_type)
+void EventManager::init(MultiplexType mx_type)
 {
     if (EventManager::instance_) {
         throw std::runtime_error("event manager was already initialized");
@@ -34,134 +29,62 @@ EventManager& EventManager::get()
     return (*EventManager::instance_);
 }
 
-int EventManager::epoll_fd()
-{
-    return epoll_fd_;
-}
-
 int EventManager::CheckOnce()
 {
-    switch (mx_type_) {
-        case MT_SELECT:
-            return CheckWithSelect_();
-        case MT_POLL:
-            return CheckWithPoll_();
-        case MT_EPOLL:
-            return CheckWithEpoll_();
-    }
-    return 1;
+    return multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
 }
 
-int EventManager::CheckWithPoll_()
+int EventManager::RegisterCallback(int fd, CallbackType type,
+                                   utils::unique_ptr<c_api::ICallback> callback)
 {
-    LOG(ERROR) << "CheckWithPoll not implemented";
-    return 1;
-}
-
-int EventManager::CheckWithEpoll_() {
-    struct epoll_event ev;
-    struct epoll_event events[EPOLL_MAX_EVENTS];
-
-    if (epoll_fd_ == -1) { // first loop iteration --> create epoll fd
-        epoll_fd_ = epoll_create(1); // argument just for backwards compatibility --> it has no effect, but must be > 0
-        if (epoll_fd_ == -1) {
-            LOG(ERROR) << "epoll_create failed";
-        }
-    }
-
-    for (SockMapIt it = monitored_sockets_.begin(); it != monitored_sockets_.end(); ++it) {
-        ev.data.fd = it->first;
-        ev.events = it->second->callback_mode() == CM_READ ? EPOLLIN : EPOLLOUT;
-        if (it->second->callback_mode() == CM_READ) {
-            ev.events = EPOLLIN;
-        }
-        else if (it->second->callback_mode() == CM_WRITE) {
-            ev.events = EPOLLOUT;
-        }
-        if (!it->second->added_to_multiplex()) { // fd is not in yet in epoll --> ADD
-            LOG(DEBUG) << "\n   Fd " << it->first << " is not registered in epoll yet --> ADD to epoll with event: "
-                << (it->second->callback_mode() == CM_READ ? "read (EPOLLIN)" : "write (EPOLLOUT)");
-            epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, it->first, &ev);
-            fcntl(it->first, F_SETFL, O_NONBLOCK);
-            it->second->set_added_to_multiplex(true);
-        }
-        else if (it->second->added_to_multiplex()) { // fd is already in epoll --> either Delete or MODIFY
-            if (it->second->callback_mode() == CM_DELETE) {
-                LOG(DEBUG) << "\n   Fd " << it->first << " has been marked for deletion \n"
-                "(means he has already sent a request and received a response --> DELETE it from epoll";
-                epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, it->first, &ev);
-                continue;
-            }
-            LOG(DEBUG) << "\n   Fd " << it->first << " is already registered in epoll --> MODify (update) its event to: "
-            << (it->second->callback_mode() == CM_READ ? "read (EPOLLIN)" : "write (EPOLLOUT)");
-            epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, it->first, &ev);
-        }
-    }
-    int ready_fds = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, -1);
-    if (ready_fds == -1) {
-        LOG(ERROR) << "epoll_wait unsuccessful.";
+    if (!(type & CT_READ) && !(type & CT_WRITE)) {
+        LOG(FATAL) << "Unknown callback type";
         return 1;
     }
-    for (int rdy_fd = 0; rdy_fd < ready_fds; rdy_fd++) {
-        SockMapIt it;
-        if ((it = monitored_sockets_.find(events[rdy_fd].data.fd)) != monitored_sockets_.end()) {
-            LOG(DEBUG) << "Fd " << it->first << " is ready for read/write --> call its callback";
-            it->second->Call(it->first); // receive/send/accept/whatever
-        }
-    }
-    return 0;
-}
-
-int EventManager::CheckWithSelect_()
-{
-    fd_set select_rd_set;
-    fd_set select_wr_set;
-    FD_ZERO(&select_rd_set);
-    FD_ZERO(&select_wr_set);
-    LOG(DEBUG) << "CheckWithSelect";
-    for (SockMapIt it = monitored_sockets_.begin(); it != monitored_sockets_.end(); ++it) {
-        if (it->second->callback_mode() == CM_READ) {
-            LOG(DEBUG) << "adding to select read set: " << it->first;
-            FD_SET(it->first, &select_rd_set);
-        }
-        else if (it->second->callback_mode() == CM_WRITE) {
-            LOG(DEBUG) << "adding to select write set: " << it->first;
-            FD_SET(it->first, &select_wr_set);
-        }
-    }
-    // rd_sock_ is never empty as long as at least 1 master socket exist
-    int max_fd = monitored_sockets_.rbegin()->first;
-    struct timeval timeout = {10, 0};
-    int num_of_fds =
-        select(max_fd + 1, &select_rd_set, &select_wr_set, /* err fds */ NULL, &timeout);
-    if (num_of_fds < 0) {
-        // select errors or empty set, return error code?
+    if (multiplexer_->RegisterFd(fd, type, rd_sockets_, wr_sockets_) != 0) {
         return 1;
     }
-    // iterate over i here cuz call can change callbacks map
-    for (int ready_fd = 0; ready_fd <= max_fd; ++ready_fd) {
-        LOG(DEBUG) << "CheckWithSelect-> Iterating over monitored sockets. Current fd: " << ready_fd;
-        SockMapIt it;
-        if ((FD_ISSET(ready_fd, &select_rd_set) || FD_ISSET(ready_fd, &select_wr_set)) &&
-            ((it = monitored_sockets_.find(ready_fd)) != monitored_sockets_.end())) {
-            it->second->Call(ready_fd);  // receive/send/accept/whatever
-        }
+    if (type & CT_READ) {
+        rd_sockets_[fd] = callback;
     }
-    LOG(DEBUG) << "CheckWithSelect-> Done iterating over monitored sockets";
+    if (type & CT_WRITE) {
+        wr_sockets_[fd] = callback;
+    }
     return 0;
 }
 
-int EventManager::RegisterCallback(int fd,
-                                   utils::unique_ptr<c_api::EventManager::ICallback> callback)
+void EventManager::DeleteCallback(int fd, CallbackType type)
 {
-    monitored_sockets_.insert(std::make_pair(fd, callback));
-    return 0;
+    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
+        if (multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_) != 0) {
+            LOG(ERROR) << "Could not unregister read callback for fd: " << fd;
+        }
+        rd_sockets_.erase(fd);
+    }
+    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
+        if (multiplexer_->UnregisterFd(fd, CT_WRITE, rd_sockets_, wr_sockets_) != 0) {
+            LOG(ERROR) << "Could not unregister write callback for fd: " << fd;
+        }
+        wr_sockets_.erase(fd);
+    }
 }
 
-void EventManager::DeleteCallbacksByFd(int fd)
+void EventManager::MarkCallbackForDeletion(int fd, CallbackType type)
 {
-    LOG(DEBUG) << "deleting callback for fd: " << fd;
-    monitored_sockets_.erase(fd);
+    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
+        fds_to_delete_.push_back(std::make_pair(fd, CT_READ));
+    }
+    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
+        fds_to_delete_.push_back(std::make_pair(fd, CT_WRITE));
+    }
+}
+
+void EventManager::DeleteMarkedCallbacks()
+{
+    for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
+        DeleteCallback(fds_to_delete_[i].first, fds_to_delete_[i].second);
+    }
+    fds_to_delete_.clear();
 }
 
 }  // namespace c_api

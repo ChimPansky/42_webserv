@@ -12,6 +12,66 @@
       "-I./src",
       "-c",
       "-o",
+      "build/src/c_api/multiplexers/EpollMultiplexer.o",
+      "src/c_api/multiplexers/EpollMultiplexer.cpp"
+    ],
+    "directory": "/home/jcy/42/ws",
+    "file": "/home/jcy/42/ws/src/c_api/multiplexers/EpollMultiplexer.cpp",
+    "output": "/home/jcy/42/ws/build/src/c_api/multiplexers/EpollMultiplexer.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-Wpedantic",
+      "-std=c++98",
+      "-g",
+      "-Og",
+      "-I./src",
+      "-c",
+      "-o",
+      "build/src/c_api/multiplexers/IMultiplexer.o",
+      "src/c_api/multiplexers/IMultiplexer.cpp"
+    ],
+    "directory": "/home/jcy/42/ws",
+    "file": "/home/jcy/42/ws/src/c_api/multiplexers/IMultiplexer.cpp",
+    "output": "/home/jcy/42/ws/build/src/c_api/multiplexers/IMultiplexer.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-Wpedantic",
+      "-std=c++98",
+      "-g",
+      "-Og",
+      "-I./src",
+      "-c",
+      "-o",
+      "build/src/c_api/multiplexers/SelectMultiplexer.o",
+      "src/c_api/multiplexers/SelectMultiplexer.cpp"
+    ],
+    "directory": "/home/jcy/42/ws",
+    "file": "/home/jcy/42/ws/src/c_api/multiplexers/SelectMultiplexer.cpp",
+    "output": "/home/jcy/42/ws/build/src/c_api/multiplexers/SelectMultiplexer.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-Wpedantic",
+      "-std=c++98",
+      "-g",
+      "-Og",
+      "-I./src",
+      "-c",
+      "-o",
       "build/src/c_api/ClientSocket.o",
       "src/c_api/ClientSocket.cpp"
     ],
@@ -78,6 +138,26 @@
     "directory": "/home/jcy/42/ws",
     "file": "/home/jcy/42/ws/src/c_api/utils.cpp",
     "output": "/home/jcy/42/ws/build/src/c_api/utils.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-Wpedantic",
+      "-std=c++98",
+      "-g",
+      "-Og",
+      "-I./src",
+      "-c",
+      "-o",
+      "build/src/utils/logger.o",
+      "src/utils/logger.cpp"
+    ],
+    "directory": "/home/jcy/42/ws",
+    "file": "/home/jcy/42/ws/src/utils/logger.cpp",
+    "output": "/home/jcy/42/ws/build/src/utils/logger.o"
   },
   {
     "arguments": [

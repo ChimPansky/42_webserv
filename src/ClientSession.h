@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "c_api/ClientSocket.h"
-#include "c_api/EventManager.h"
 #include "http/RequestBuilder.h"
+#include "c_api/multiplexers/ICallback.h"
 #include "http/Response.h"
 #include "utils/unique_ptr.h"
 
@@ -29,21 +29,23 @@ class ClientSession {
     bool IsRequestReady() const;
     ProcessState ProcessRead(ssize_t bytes_recvd); // not used now , use when building request...
     void PrepareResponse(); // later: get this from server
-    class ClientCallback : public c_api::EventManager::ICallback {
+    class ClientReadCallback : public c_api::ICallback {
       public:
-        ClientCallback(ClientSession& client);
-        // read/write from/to sock,
-        virtual void Call(int fd);
-        virtual c_api::EventManager::CallbackMode callback_mode();
-        virtual bool added_to_multiplex();
-        virtual void set_added_to_multiplex(bool);
+        ClientReadCallback(ClientSession& client);
+        // Server reads from client socket,
+        virtual void Call(int);
 
       private:
         ClientSession& client_;
-        c_api::EventManager::CallbackMode callback_mode_;
-        bool added_to_multiplex_;
-        void ReadCall();
-        void WriteCall();
+    };
+    class ClientWriteCallback : public c_api::ICallback {
+      public:
+        ClientWriteCallback(ClientSession& client);
+        // Server writes to client socket,
+        virtual void Call(int);
+
+      private:
+        ClientSession& client_;
     };
 
   private:

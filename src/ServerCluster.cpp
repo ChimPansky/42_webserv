@@ -13,7 +13,7 @@ ServerCluster::ServerCluster(const Config& /*config*/)
     std::vector<std::pair<in_addr_t, in_port_t> > listeners;
 
     listeners.push_back(std::make_pair(c_api::IPv4FromString("localhost"), in_port_t(8081)));
-    listeners.push_back(std::make_pair(c_api::IPv4FromString("10.12.1.10"), in_port_t(6463)));
+    listeners.push_back(std::make_pair(c_api::IPv4FromString("127.0.0.1"), in_port_t(8082)));
 
     utils::shared_ptr<Server> serv(new Server("Sserv"));  // constructor of server block
     servers_.push_back(serv);
@@ -35,9 +35,13 @@ ServerCluster::ServerCluster(const Config& /*config*/)
             utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
-            c_api::EventManager::get().RegisterCallback(
-                sockfd,
-                utils::unique_ptr<c_api::EventManager::ICallback>(new MasterSocketCallback(*this)));
+            if (c_api::EventManager::get().RegisterCallback(
+                sockfd, c_api::CT_READ,
+                utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
+                LOG(ERROR) << "Could not register callback for listener: " << sockfd << ". Exiting...";
+                Stop();
+                return;
+            }
             sockets_[sockfd] = listener;
         }
         LOG(INFO) << serv->name() << " is listening on " << c_api::IPv4ToString(it->first) << ":"
@@ -48,20 +52,18 @@ ServerCluster::ServerCluster(const Config& /*config*/)
 void ServerCluster::Stop()
 {
     run_ = false;
-    if (c_api::EventManager::get().epoll_fd() != -1) {
-        LOG(DEBUG) << "Closing epoll fd: " << c_api::EventManager::get().epoll_fd();
-        close(c_api::EventManager::get().epoll_fd());
-    }
 }
 
 // smth like
 void ServerCluster::Start(const Config& config)
 {
+    c_api::EventManager::init(c_api::MT_EPOLL);
     // register signal for ^C, switch run on that
     run_ = true;
     ServerCluster cluster(config);
     while (run_) {
         c_api::EventManager::get().CheckOnce();
+        c_api::EventManager::get().DeleteMarkedCallbacks();
         cluster.CheckClients();
     }
 }
@@ -83,9 +85,7 @@ void ServerCluster::CheckClients()
 
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
-{
-    added_to_multiplex_ = false;
-}
+{}
 
 // accept, create new client, register read callback for client,
 void ServerCluster::MasterSocketCallback::Call(int fd)
@@ -102,18 +102,6 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
         LOG(ERROR) << "error accepting connection on: " << fd;  // add perror
         return;
     }
-    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
     LOG(INFO) << "New incoming connection on: " << fd;
-}
-
-c_api::EventManager::CallbackMode ServerCluster::MasterSocketCallback::callback_mode() {
-    return c_api::EventManager::CM_READ;    // MasterSocketCallback is always in read mode
-}
-
-bool ServerCluster::MasterSocketCallback::added_to_multiplex() {
-    return added_to_multiplex_;
-}
-
-void ServerCluster::MasterSocketCallback::set_added_to_multiplex(bool added) {
-    added_to_multiplex_ = added;
+    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
 }
