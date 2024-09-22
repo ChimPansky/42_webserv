@@ -32,7 +32,6 @@ class ClientSession {
     class ClientReadCallback : public c_api::ICallback {
       public:
         ClientReadCallback(ClientSession& client);
-        // Server reads from client socket,
         virtual void Call(int);
 
       private:
@@ -41,7 +40,6 @@ class ClientSession {
     class ClientWriteCallback : public c_api::ICallback {
       public:
         ClientWriteCallback(ClientSession& client);
-        // Server writes to client socket,
         virtual void Call(int);
 
       private:

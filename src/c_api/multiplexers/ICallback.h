@@ -1,16 +1,14 @@
 #ifndef WS_C_API_MULTIPLEXERS_I_CALLBACK_H
 #define WS_C_API_MULTIPLEXERS_I_CALLBACK_H
 
-#include <sys/epoll.h>
-
 #include <map>
 #include "utils/unique_ptr.h"
 
 namespace c_api {
 
 enum CallbackType {
-    CT_READ = EPOLLIN,
-    CT_WRITE = EPOLLOUT,
+    CT_READ = 0x001,
+    CT_WRITE = 0x004,
     CT_READWRITE = CT_READ | CT_WRITE
 };
 
