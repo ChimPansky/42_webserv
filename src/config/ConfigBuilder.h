@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 
+#include <cstddef>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -468,28 +469,25 @@ class ConfigBuilder<HttpConfig> {
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
-            return ParseClientMaxBodySize(val_elements[0]);
+            return ParseClientMaxBodySize(val_elements[0], "");
         } else if (val_elements.size() == 2) {
-            return ParseClientMaxBodySize(val_elements[0]) *
-                   ParseClientMaxBodySizeUnit(val_elements[1]);
+            return ParseClientMaxBodySize(val_elements[0], val_elements[1]);
         }
         throw std::runtime_error("Invalid configuration file: invalid client_max_body_size: " +
                                  vals[0]);
     }
 
-    static size_t ParseClientMaxBodySize(const std::string& val)
+    static size_t ParseClientMaxBodySize(const std::string& val, const std::string& unit)
     {
-        return config::StrToUnsignedInt(val);
-    }
-
-    static size_t ParseClientMaxBodySizeUnit(const std::string& val)
-    {
-        if (val == "KB") {
-            return 1024;
-        } else if (val == "MB") {
-            return 1024 * 1024;
-        } else if (val == "GB") {
-            return 1024 * 1024 * 1024;
+        size_t  nb = config::StrToInt(val);
+        if (unit == "KB") {
+            return nb << 10; 
+        } else if (unit == "MB") {
+            return nb << 20;
+        } else if (unit == "GB") {
+            return nb << 30;
+        } else if (unit.empty()) {
+            return nb;
         }
         throw std::runtime_error("Invalid configuration file: invalid client_max_body_size unit: " +
                                  val);

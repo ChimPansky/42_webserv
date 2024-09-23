@@ -49,7 +49,7 @@ const std::vector<LocationConfig>& ServerConfig::locations()
 
 const std::string& ServerConfig::InitAccessLog(const std::string& value)
 {
-    if (!config::CheckFileExtension(value, ".log") && !value.empty()) {
+    if (!value.empty() && !config::CheckFileExtension(value, ".log")) {
         throw std::runtime_error("Invalid log file suffix.");
     }
     return value;
@@ -57,7 +57,7 @@ const std::string& ServerConfig::InitAccessLog(const std::string& value)
 
 const std::string& ServerConfig::InitErrorLogPath(const std::string& value)
 {
-    if (!config::CheckFileExtension(value, ".log") && !value.empty()) {
+    if (!value.empty() && !config::CheckFileExtension(value, ".log")) {
         throw std::runtime_error("Invalid log file suffix.");
     }
     return value;

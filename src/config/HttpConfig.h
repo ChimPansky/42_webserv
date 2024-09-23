@@ -24,7 +24,6 @@ class HttpConfig {
     const std::vector<ServerConfig>& server_configs() const;
     static const int kDefaultKeepaliveTimeout;
     static const size_t kDefaultClientMaxBodySize;
-    // default error pages?
 
     void Print() const;
 

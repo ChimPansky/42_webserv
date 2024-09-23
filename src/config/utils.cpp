@@ -43,7 +43,7 @@ std::pair<std::string, std::string> MakePair(const std::string& line)
 
 bool CheckFileExtension(const std::string& file, const std::string& extention)
 {
-    return file.length() > extention.length() || (file.find_last_of('.') != std::string::npos &&
+    return file.length() > extention.length() && (file.find_last_of('.') != std::string::npos &&
                                                   file.substr(file.find_last_of('.')) == extention);
 }
 
