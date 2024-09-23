@@ -49,7 +49,7 @@ const Config Config::GetConfig(const std::string& config_path)
     }
 
     ConfigParser parser(config_file, "", "");
-    return ConfigBuilder<Config>::Build(parser);
+    return ConfigBuilder<Config>::Build(parser, "", "", "");
 }
 
 void Config::Print() const

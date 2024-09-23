@@ -4,6 +4,7 @@ namespace config {
 
 const std::string LocationConfig::kDefaultRedirectPath = "/new_location";
 const int LocationConfig::kDefaultRedirectCode = 301;
+const std::string LocationConfig::kDefaultRootDir = "/docs";
 const std::string LocationConfig::kDefaultIndexFile = "index.html";
 const std::string LocationConfig::kDefaultDirListing = "off";
 
