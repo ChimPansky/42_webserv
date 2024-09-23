@@ -31,7 +31,12 @@ EventManager& EventManager::get()
 
 int EventManager::CheckOnce()
 {
-    return multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
+    int res = multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
+    for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
+        ClearCallback_(fds_to_delete_[i].first, fds_to_delete_[i].second);
+    }
+    fds_to_delete_.clear();
+    return res;
 }
 
 int EventManager::RegisterCallback(int fd, CallbackType type,
@@ -56,6 +61,15 @@ int EventManager::RegisterCallback(int fd, CallbackType type,
 void EventManager::DeleteCallback(int fd, CallbackType type)
 {
     if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
+        fds_to_delete_.push_back(std::make_pair(fd, CT_READ));
+    }
+    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
+        fds_to_delete_.push_back(std::make_pair(fd, CT_WRITE));
+    }
+}
+void EventManager::ClearCallback_(int fd, CallbackType type)
+{
+    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
         if (multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_) != 0) {
             LOG(ERROR) << "Could not unregister read callback for fd: " << fd;
         }
@@ -69,22 +83,5 @@ void EventManager::DeleteCallback(int fd, CallbackType type)
     }
 }
 
-void EventManager::MarkCallbackForDeletion(int fd, CallbackType type)
-{
-    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
-        fds_to_delete_.push_back(std::make_pair(fd, CT_READ));
-    }
-    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
-        fds_to_delete_.push_back(std::make_pair(fd, CT_WRITE));
-    }
-}
-
-void EventManager::DeleteMarkedCallbacks()
-{
-    for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
-        DeleteCallback(fds_to_delete_[i].first, fds_to_delete_[i].second);
-    }
-    fds_to_delete_.clear();
-}
 
 }  // namespace c_api

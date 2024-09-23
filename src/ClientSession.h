@@ -11,12 +11,6 @@
 #include "utils/unique_ptr.h"
 
 class ClientSession {
-  public:
-    enum ProcessState {
-        PS_ONGOING,
-        PS_DONE
-    };
-
   private:
     ClientSession(const ClientSession&);
     ClientSession& operator=(const ClientSession&);
@@ -27,12 +21,11 @@ class ClientSession {
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
-    ProcessState ProcessRead(ssize_t bytes_recvd); // not used now , use when building request...
+    void CloseConnection();
     void PrepareResponse(); // later: get this from server
     class ClientReadCallback : public c_api::ICallback {
       public:
         ClientReadCallback(ClientSession& client);
-        // Server reads from client socket,
         virtual void Call(int);
 
       private:
@@ -41,7 +34,6 @@ class ClientSession {
     class ClientWriteCallback : public c_api::ICallback {
       public:
         ClientWriteCallback(ClientSession& client);
-        // Server writes to client socket,
         virtual void Call(int);
 
       private:

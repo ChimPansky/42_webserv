@@ -28,6 +28,7 @@ class ClientSocket {
     size_t sock_buf_sz() const;
     static const size_t sock_buf_sz_ = 10;
 
+
   private:
     int sockfd_;
     char sock_buf_[sock_buf_sz_];
