@@ -150,10 +150,10 @@ class ConfigBuilder<LocationConfig> {
 
     static const std::string& ParseRootDir(const std::string& val)
     {
-        // if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
-        //     val);
-        // }
+        if (!IsDirectory(val)) {
+            throw std::runtime_error("Invalid configuration file: root directory doesn't exist: " +
+            val);
+        }
         return val;
     }
 
@@ -357,10 +357,10 @@ class ConfigBuilder<ServerConfig> {
 
     static const std::string& ParseRootDir(const std::string& val)
     {
-        // if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: root dir doesn't exist: " +
-        //     val);
-        // }
+        if (!IsDirectory(val)) {
+            throw std::runtime_error("Invalid configuration file: root directory doesn't exist: " +
+            val);
+        }
         return val;
     }
 
@@ -535,10 +535,10 @@ class ConfigBuilder<HttpConfig> {
 
     static std::string ParseRootDir(const std::string& val)
     {
-        // if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: root dir doesn't exist: " +
-        //     val);
-        // }
+        if (!IsDirectory(val)) {
+            throw std::runtime_error("Invalid configuration file: root directory doesn't exist: " +
+            val);
+        }
         return val;
     }
 
@@ -655,7 +655,6 @@ class ConfigBuilder<Config> {
 
     static Severity ParseErrorLogLevel(const std::string& val)
     {
-        std::cout << "val: " << val << std::endl;
         if (val == "debug") {
             return DEBUG;
         } else if (val == "info") {

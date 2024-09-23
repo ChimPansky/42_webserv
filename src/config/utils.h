@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <dirent.h>
 
 namespace config {
 
@@ -12,6 +13,7 @@ bool CheckFileExtension(const std::string& file, const std::string& extention);
 int StrToInt(const std::string& str);
 size_t StrToUnsignedInt(const std::string& str);
 bool ValidPath(const std::string& val);
+bool    IsDirectory(const std::string &path);
 
 }  // namespace config
 
