@@ -27,6 +27,7 @@ class ClientSession {
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
+    void CloseConnection();
     ProcessState ProcessRead(ssize_t bytes_recvd); // not used now , use when building request...
     void PrepareResponse(); // later: get this from server
     class ClientReadCallback : public c_api::ICallback {
