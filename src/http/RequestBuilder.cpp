@@ -23,7 +23,7 @@ void RequestBuilder::ParseNext(const char* input, size_t input_sz) {
         char c = input[i];
         parse_buf_.push_back(c);
         parse_buf_len_++;
-        PrintParseBuf_();
+        // PrintParseBuf_();
         bool state_changed = false;
         switch (parse_state_) {
             case PS_METHOD:
@@ -55,10 +55,9 @@ void RequestBuilder::ParseNext(const char* input, size_t input_sz) {
                 break;
             case PS_ERROR:
                 break;
-            if (state_changed) {
-                LOG(DEBUG) << "\nSTATE CHANGED!!\n";
-                ResetParseBuf_();
-            }
+        }
+        if (state_changed) {
+            ResetParseBuf_();
         }
     }
     if ((input_sz == 0) || (input_sz >= 4 && std::strncmp(input + input_sz - 4, "\r\n\r\n", 4) == 0)) {
