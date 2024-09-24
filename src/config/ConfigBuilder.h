@@ -14,7 +14,7 @@
 
 namespace config {
 
-typedef c_api::EventManager::MultiplexType MxType;
+typedef c_api::MultiplexType MxType;
 
 template <class ConfigType>
 class ConfigBuilder {
@@ -633,11 +633,11 @@ class ConfigBuilder<Config> {
     static MxType ParseMxType(const std::string& val)
     {
         if (val == "epoll") {
-            return c_api::EventManager::MT_EPOLL;
+            return c_api::MT_EPOLL;
         } else if (val == "select") {
-            return c_api::EventManager::MT_SELECT;
+            return c_api::MT_SELECT;
         } else if (val == "poll") {
-            return c_api::EventManager::MT_POLL;
+            return c_api::MT_POLL;
         }
         throw std::runtime_error("Invalid configuration file: invalid mx_type: " + val);
     }

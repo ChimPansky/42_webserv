@@ -1,7 +1,5 @@
 #include "EventManager.h"
 
-#include <netinet/in.h>  // select
-
 #include <stdexcept>
 
 #include "multiplexers/IMultiplexer.h"

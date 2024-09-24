@@ -4,7 +4,7 @@
 #include "ConfigParser.h"
 namespace config {
 
-const MxType Config::kDefaultMxType = c_api::EventManager::MT_SELECT;
+const MxType Config::kDefaultMxType = c_api::MT_SELECT;
 const std::string Config::kDefaultErrorLogPath = "/log/error.log";
 const Severity Config::kDefaultErrorLogLevel = INFO;
 

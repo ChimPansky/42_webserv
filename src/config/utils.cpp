@@ -92,7 +92,7 @@ bool    IsDirectory(const std::string &path) {
         dir = opendir(path.c_str());
     }
     
-    if (dir != nullptr) {
+    if (dir) {
         closedir(dir);
         return true;
     } else {
