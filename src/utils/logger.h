@@ -1,3 +1,6 @@
+#ifndef WS_UTILS_LOGGER_H
+#define WS_UTILS_LOGGER_H
+
 #include <fstream>
 #include <ostream>
 
@@ -56,3 +59,5 @@ class Logger {
     utils::Logger::get().log(severity)                  \
         << #severity[0] << utils::Logger::dump_time()   \
         << " " << __FILE__ << ":" << __LINE__ << "] "
+
+#endif  // WS_UTILS_LOGGER_H
