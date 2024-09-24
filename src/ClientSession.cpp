@@ -6,7 +6,7 @@
 #include "utils/unique_ptr.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
-    : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0),
+    : client_sock_(sock), master_socket_fd_(master_sock_fd), send_idx_(0),
       connection_closed_(false)
 {
     if (c_api::EventManager::get().RegisterCallback(
@@ -50,7 +50,7 @@ Connection: Closed\n\r\
 
 void ClientSession::PrepareResponse()
 {
-    buf_send_idx_ = 0;
+    send_idx_ = 0;
     buf_.resize(sizeof(HTTP_RESPONSE));
     std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
 }
@@ -61,7 +61,7 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    long bytes_recvd = client_.client_sock_->Recv(client_.buf_);
+    ssize_t bytes_recvd = client_.client_sock_->Recv(client_.client_sock_->sock_buf(), client_.client_sock_->sock_buf_sz());
     if (bytes_recvd <= 0) {
         LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
         client_.CloseConnection();
@@ -69,7 +69,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
     }
     LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
                << client_.client_sock_->sockfd();
-    if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
+    if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->sock_buf_sz()) {
         c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(),
                                                            c_api::CT_READ);
         if (c_api::EventManager::get().RegisterCallback(
@@ -91,16 +91,15 @@ ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) :
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
-                                                    client_.buf_.size() - client_.buf_send_idx_);
+    ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.send_idx_,
+                                                    client_.buf_.size() - client_.send_idx_);
     if (bytes_sent <= 0) {
         LOG(ERROR) << "error on send";  // add perror
         client_.CloseConnection();
         return;
     }
-    if (client_.buf_send_idx_ == client_.buf_.size()) {
-        LOG(INFO) << client_.buf_send_idx_
-                  << " bytes sent, close connection";
+    if (client_.send_idx_ == client_.buf_.size()) {
+        LOG(INFO) << client_.send_idx_ << " bytes sent, close connection";
         client_.CloseConnection();
     }
 }

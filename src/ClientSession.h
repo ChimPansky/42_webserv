@@ -43,8 +43,8 @@ class ClientSession {
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
     int master_socket_fd_;  // to choose correct server later
-    std::vector<char> buf_;  // string?
-    size_t buf_send_idx_;
+    std::vector<char> buf_;  // not used for receiving, but used for sending
+    size_t send_idx_;
     http::Request rq_;
     http::Response rs_;
     bool connection_closed_;
