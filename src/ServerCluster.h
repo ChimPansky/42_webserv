@@ -35,8 +35,8 @@ class ServerCluster {
     std::map<int /*fd*/, std::vector<utils::shared_ptr<Server> > > sockets_to_servers_;
 
     // Clients
-    std::map<int, utils::unique_ptr<ClientSession> > clients_;
-    typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
+    std::map<int, utils::shared_ptr<ClientSession> > clients_;
+    typedef std::map<int, utils::shared_ptr<ClientSession> >::iterator client_iterator;
     // if client is ready to write register wr callback,
     // if client timed out, rm it from map
     void CheckClients();

@@ -1,5 +1,6 @@
 #include "ServerCluster.h"
 
+#include "ClientSession.h"
 #include "Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/utils.h"
@@ -69,8 +70,8 @@ void ServerCluster::CheckClients()
 {
     client_iterator it = clients_.begin();
     while (it != clients_.end()) {
-        ClientSession& client = *it->second;
-        if (client.connection_closed()) {
+        utils::shared_ptr<ClientSession> client = it->second;
+        if (client->connection_closed()) {
             client_iterator tmp = it;
             ++it;
             clients_.erase(tmp);
@@ -100,5 +101,5 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
         return;
     }
     LOG(INFO) << "New incoming connection on: " << fd;
-    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
+    cluster_.clients_[fd] = utils::shared_ptr<ClientSession>(new ClientSession(client_sock, fd));
 }
