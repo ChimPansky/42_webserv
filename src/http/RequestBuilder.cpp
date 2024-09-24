@@ -18,7 +18,7 @@ const Request& RequestBuilder::rq() const {
 
 void RequestBuilder::ParseNext(const char* input, size_t input_sz) {
     ++chunk_counter_;
-    LOG(DEBUG) << "Parsing chunk no " << chunk_counter_ << "...";
+    LOG(DEBUG) << "Parsing chunk no " << chunk_counter_ << "; bytes_received: " << input_sz;
     for (size_t i = 0; i < input_sz && parse_state_ != PS_ERROR; i++) {
         char c = input[i];
         parse_buf_.push_back(c);
@@ -110,7 +110,7 @@ RequestBuilder::ParseState RequestBuilder::ParseUri_() {
     LOG(DEBUG) << "Parsing URI..." << "parse_buf_[" << parse_buf_len_ << "]: " << parse_buf_[parse_buf_len_ - 1];
 
     if (parse_buf_len_ > 0 && parse_buf_[parse_buf_len_ - 1] == ' ') {
-        rq_.uri_ = std::string(parse_buf_.data(), parse_buf_len_ - 2);
+        rq_.uri_ = std::string(parse_buf_.data(), parse_buf_len_ - 1);
         return PS_VERSION;
     }
     return PS_URI;
@@ -118,9 +118,8 @@ RequestBuilder::ParseState RequestBuilder::ParseUri_() {
 
 RequestBuilder::ParseState RequestBuilder::ParseVersion_() {
     LOG(DEBUG) << "Parsing Version..." << "char: " << parse_buf_[parse_buf_len_ - 1];
-    if (parse_buf_len_ == 10) {
-        LOG(DEBUG) << "parse_buf_: " << std::string( parse_buf_.data(), 10 );
-    }
+    LOG(DEBUG) << "parse_buf_len: " << parse_buf_len_;
+    PrintParseBuf_();
     if (parse_buf_len_ == 10 && std::strncmp(parse_buf_.data(), "HTTP/0.9\r\n", 10) == 0) {
         rq_.version = HTTP_0_9;
         return PS_HEADER_KEY;
@@ -208,13 +207,14 @@ void RequestBuilder::ResetParseBuf_() {
     parse_buf_.clear();
     parse_buf_len_ = 0;
     LOG(DEBUG) << "ParseBuf after reset: ";
-    //PrintParseBuf_();
 }
 
 void RequestBuilder::PrintParseBuf_() const {
+    std::cout << "PrintParseBuf(): ";
     for (size_t i = 0; i < parse_buf_.size(); i++) {
-        LOG(DEBUG) << "ParseBuf[" << i << "]: " << parse_buf_[i];
+        std::cout << parse_buf_[i];
     }
+    std::cout << std::endl;
 }
 
 bool RequestBuilder::LineIsEmpty_() const {
