@@ -14,7 +14,7 @@ class ServerCluster {
     static void Stop();
 
   private:
-    class MasterSocketCallback : public c_api::EventManager::ICallback {
+    class MasterSocketCallback : public c_api::ICallback {
       public:
         MasterSocketCallback(ServerCluster& cluster);
         // accept, create new client, register read callback for client,

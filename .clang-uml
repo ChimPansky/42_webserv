@@ -9,3 +9,4 @@ diagrams:
       namespaces:
         - std
         - uptr
+        - utils

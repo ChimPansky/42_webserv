@@ -1,5 +1,6 @@
 #include "ServerCluster.h"
 
+#include "Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/utils.h"
 
@@ -16,6 +17,7 @@ ServerCluster::ServerCluster(const config::Config& config/*config*/)
 
     utils::shared_ptr<Server> serv(new Server("Sserv"));  // constructor of server block
     servers_.push_back(serv);
+    c_api::EventManager::init(c_api::MT_EPOLL);
 
     typedef std::vector<std::pair<in_addr_t, in_port_t> >::iterator ListenersIt;
     for (ListenersIt it = listeners.begin(); it != listeners.end(); ++it) {
@@ -34,9 +36,11 @@ ServerCluster::ServerCluster(const config::Config& config/*config*/)
             utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
-            c_api::EventManager::get().RegisterReadCallback(
-                sockfd,
-                utils::unique_ptr<c_api::EventManager::ICallback>(new MasterSocketCallback(*this)));
+            if (c_api::EventManager::get().RegisterCallback(
+                sockfd, c_api::CT_READ,
+                utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
+                LOG(FATAL) << "Could not register callback for listener: " << sockfd;
+            }
             sockets_[sockfd] = listener;
         }
         LOG(INFO) << serv->name() << " is listening on " << c_api::IPv4ToString(it->first) << ":"
@@ -95,6 +99,6 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
         LOG(ERROR) << "error accepting connection on: " << fd;  // add perror
         return;
     }
-    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
     LOG(INFO) << "New incoming connection on: " << fd;
+    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
 }

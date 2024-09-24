@@ -1,10 +1,11 @@
 #ifndef WS_CLIENT_H
 #define WS_CLIENT_H
 
+#include <sys/types.h>
 #include <vector>
 
 #include "c_api/ClientSocket.h"
-#include "c_api/EventManager.h"
+#include "c_api/multiplexers/ICallback.h"
 #include "http/Request.h"
 #include "http/Response.h"
 #include "utils/unique_ptr.h"
@@ -20,21 +21,20 @@ class ClientSession {
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
-    void ProcessNewData(ssize_t bytes_recvdd);
-    class ClientReadCallback : public c_api::EventManager::ICallback {
+    void CloseConnection();
+    void PrepareResponse(); // later: get this from server
+    class ClientReadCallback : public c_api::ICallback {
       public:
         ClientReadCallback(ClientSession& client);
-        // read from sock,
-        virtual void Call(int fd);
+        virtual void Call(int);
 
       private:
         ClientSession& client_;
     };
-    class ClientWriteCallback : public c_api::EventManager::ICallback {
+    class ClientWriteCallback : public c_api::ICallback {
       public:
         ClientWriteCallback(ClientSession& client);
-        // read from sock,
-        virtual void Call(int fd);
+        virtual void Call(int);
 
       private:
         ClientSession& client_;
