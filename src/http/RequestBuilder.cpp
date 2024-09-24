@@ -154,6 +154,7 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_() {
     LOG(DEBUG) << "Parsing Header-Key...";
     char c = parse_buf_[parse_buf_len_ - 1];
     if (LineIsEmpty_()) {
+        LOG(DEBUG) << "--EMPTY LINE-- switching to PS_BODY";
         return PS_BODY;
     }
     if (c == ':') {
@@ -165,7 +166,7 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_() {
             return PS_HEADER_SEP;
         }
     }
-    else if (!(std::isalnum(c) || (parse_buf_len_ > 0 && c == '-'))) {
+    else if (!(std::isalnum(c) || (parse_buf_len_ > 0 && c == '-')) && c != '\r') {
         rq_.status_code_ = 400;
         LOG(DEBUG) << "Request-Header can only contain alphanumeric chars and '-'";
     }
@@ -236,7 +237,7 @@ void RequestBuilder::PrintParseBuf_() const {
 }
 
 bool RequestBuilder::LineIsEmpty_() const {
-    if (parse_buf_len_ == 2 && parse_buf_[0] == 'r' && parse_buf_[1] == '\n') {
+    if (parse_buf_len_ == 2 && parse_buf_[0] == '\r' && parse_buf_[1] == '\n') {
         return true;
     }
     return false;
