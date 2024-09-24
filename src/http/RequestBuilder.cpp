@@ -80,7 +80,7 @@ void RequestBuilder::Reset() {
 }
 
 // ready for response if request has been successfully read until end (eof_reached == false) or a problem has occured during parsing (check request.status_code)
-bool RequestBuilder::is_ready_for_response() const {
+bool RequestBuilder::IsReadyForResponse() const {
     LOG(DEBUG) << "RequestBuilder::is_request_ready: " << (eof_reached_ || rq_.status_code_ != 0);
     return (eof_reached_ || rq_.status_code_ != 0);
 }

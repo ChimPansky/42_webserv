@@ -24,7 +24,7 @@ class RequestBuilder {
     RequestBuilder();
     void Reset();
     void ParseNext(const char* input, size_t input_sz);
-    bool is_ready_for_response() const;
+    bool IsReadyForResponse() const;
     const Request& rq() const;
 
   private:
