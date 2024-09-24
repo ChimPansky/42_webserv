@@ -89,7 +89,8 @@ std::vector<std::string> LocationConfig::InitCgiExtensions(const std::vector<std
     return std::vector<std::string>();
 }
 
-void LocationConfig::Print() const {
+void LocationConfig::Print() const
+{
     LOG(DEBUG) << "\n";
     LOG(DEBUG) << "--Location configuration: --";
     LOG(DEBUG) << "Route: " << route_;

@@ -1,10 +1,10 @@
 #ifndef WS_C_API_MASTER_SOCKET_H
 #define WS_C_API_MASTER_SOCKET_H
 
+#include <fcntl.h>
 #include <netinet/in.h>  // sockaddr_in
 #include <sys/socket.h>  // socket, bind
 #include <unistd.h>      // close
-#include <fcntl.h>
 
 #include "ClientSocket.h"
 #include "utils/unique_ptr.h"

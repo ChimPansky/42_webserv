@@ -2,7 +2,7 @@
 #define WS_CONFIG_CONFIG_H
 
 #include "HttpConfig.h"
-#include "c_api/EventManager.h"
+#include "c_api/multiplexers/IMultiplexer.h"
 
 namespace config {
 class Config {

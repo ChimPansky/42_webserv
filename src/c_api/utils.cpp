@@ -1,8 +1,8 @@
 #include "utils.h"
 
-#include <cstring>
 #include <netinet/in.h>
 
+#include <cstring>
 #include <sstream>
 #include <string>
 
@@ -48,13 +48,14 @@ std::string IPv4ToString(in_addr_t ipv4)
     return ss.str();
 }
 
-struct sockaddr_in GetIPv4SockAddr(in_addr_t ip, in_port_t port) {
+struct sockaddr_in GetIPv4SockAddr(in_addr_t ip, in_port_t port)
+{
     struct sockaddr_in addr_in = {};
     (void)ip;
     (void)port;
     addr_in.sin_family = AF_INET;
-    //addr_in.sin_addr.s_addr = ::htonl(ip);
-    //addr_in.sin_port = ::htons(port);
+    // addr_in.sin_addr.s_addr = ::htonl(ip);
+    // addr_in.sin_port = ::htons(port);
     return addr_in;
 }
 

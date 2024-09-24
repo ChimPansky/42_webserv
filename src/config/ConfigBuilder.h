@@ -23,7 +23,9 @@ class ConfigBuilder {
     static bool IsNestingAllowed(const std::string& nested_name);
 
   public:
-    static ConfigType Build(const ConfigParser& f, const std::string& inherited_root, const std::string& inherited_index, const std::string& inherited_autoindex);
+    static ConfigType Build(const ConfigParser& f, const std::string& inherited_root,
+                            const std::string& inherited_index,
+                            const std::string& inherited_autoindex);
 };
 
 template <>
@@ -139,7 +141,8 @@ class ConfigBuilder<LocationConfig> {
         return vals;
     }
 
-    static const std::string BuildRootDir(const std::vector<std::string>& vals, const std::string& inherited_root)
+    static const std::string BuildRootDir(const std::vector<std::string>& vals,
+                                          const std::string& inherited_root)
     {
         if (vals.empty() && inherited_root.empty()) {
             return LocationConfig::kDefaultRootDir;
@@ -153,12 +156,13 @@ class ConfigBuilder<LocationConfig> {
     {
         if (!IsDirectory(val)) {
             throw std::runtime_error("Invalid configuration file: root directory doesn't exist: " +
-            val);
+                                     val);
         }
         return val;
     }
 
-    static const std::string BuildDefaultFile(const std::vector<std::string>& vals, const std::string& inherited_index)
+    static const std::string BuildDefaultFile(const std::vector<std::string>& vals,
+                                              const std::string& inherited_index)
     {
         if (vals.empty() && inherited_index.empty()) {
             return LocationConfig::kDefaultIndexFile;
@@ -177,7 +181,8 @@ class ConfigBuilder<LocationConfig> {
         return vals;
     }
 
-    static const std::string BuildDirListing(const std::vector<std::string>& vals, const std::string& inherited_autoindex)
+    static const std::string BuildDirListing(const std::vector<std::string>& vals,
+                                             const std::string& inherited_autoindex)
     {
         if (vals.empty() && inherited_autoindex.empty()) {
             return LocationConfig::kDefaultDirListing;
@@ -202,7 +207,9 @@ class ConfigBuilder<LocationConfig> {
     }
 
   public:
-    static LocationConfig Build(const ConfigParser& f, const std::string& inherited_root, const std::string& inherited_index, const std::string& inherited_autoindex)
+    static LocationConfig Build(const ConfigParser& f, const std::string& inherited_root,
+                                const std::string& inherited_index,
+                                const std::string& inherited_autoindex)
     {
         std::string route = BuildRoute(f.lvl_descr());
         std::vector<std::string> allowed_methods =
@@ -352,7 +359,8 @@ class ConfigBuilder<ServerConfig> {
         return server_names;
     }
 
-    static const std::string BuildRootDir(const std::vector<std::string>& vals, const std::string& inherited_root)
+    static const std::string BuildRootDir(const std::vector<std::string>& vals,
+                                          const std::string& inherited_root)
     {
         if (vals.empty() && inherited_root.empty()) {
             return std::string();
@@ -366,12 +374,13 @@ class ConfigBuilder<ServerConfig> {
     {
         if (!IsDirectory(val)) {
             throw std::runtime_error("Invalid configuration file: root directory doesn't exist: " +
-            val);
+                                     val);
         }
         return val;
     }
 
-    static const std::string BuildDefaultFile(const std::vector<std::string>& vals, const std::string& inherited_index)
+    static const std::string BuildDefaultFile(const std::vector<std::string>& vals,
+                                              const std::string& inherited_index)
     {
         if (vals.empty() && inherited_index.empty()) {
             return std::string();
@@ -390,7 +399,8 @@ class ConfigBuilder<ServerConfig> {
         return val;
     }
 
-    static const std::string BuildDirListing(const std::vector<std::string>& vals, const std::string& inherited_autoindex)
+    static const std::string BuildDirListing(const std::vector<std::string>& vals,
+                                             const std::string& inherited_autoindex)
     {
         if (vals.empty() && inherited_autoindex.empty()) {
             return std::string();
@@ -409,11 +419,13 @@ class ConfigBuilder<ServerConfig> {
     }
 
     static std::vector<LocationConfig> BuildLocationConfigs(
-        const std::vector<ConfigParser>& nested_configs, const std::string& inherited_root, const std::string& inherited_index, const std::string& inherited_autoindex)
+        const std::vector<ConfigParser>& nested_configs, const std::string& inherited_root,
+        const std::string& inherited_index, const std::string& inherited_autoindex)
     {
         std::vector<LocationConfig> server_configs;
         for (size_t i = 0; i < nested_configs.size(); i++) {
-            server_configs.push_back(ConfigBuilder<LocationConfig>::Build(nested_configs[i], inherited_root, inherited_index, inherited_autoindex));
+            server_configs.push_back(ConfigBuilder<LocationConfig>::Build(
+                nested_configs[i], inherited_root, inherited_index, inherited_autoindex));
         }
         return server_configs;
     }
@@ -426,7 +438,9 @@ class ConfigBuilder<ServerConfig> {
     }
 
   public:
-    static ServerConfig Build(const ConfigParser& f, const std::string& inherited_root, const std::string& inherited_index, const std::string& inherited_autoindex)
+    static ServerConfig Build(const ConfigParser& f, const std::string& inherited_root,
+                              const std::string& inherited_index,
+                              const std::string& inherited_autoindex)
     {
         std::string access_log_path = BuildAccessLogPath(f.FindSetting("access_log"));
         Severity access_log_level = BuildAccessLogLevel(f.FindSetting("access_log"));
@@ -437,8 +451,8 @@ class ConfigBuilder<ServerConfig> {
         std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_root);
         std::string default_file = BuildDefaultFile(f.FindSetting("index"), inherited_index);
         std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_autoindex);
-        std::vector<LocationConfig> location_configs =
-            BuildLocationConfigs(f.FindNesting("location"), root_dir, default_file, dir_listing);  // map or vector
+        std::vector<LocationConfig> location_configs = BuildLocationConfigs(
+            f.FindNesting("location"), root_dir, default_file, dir_listing);  // map or vector
 
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
@@ -490,9 +504,9 @@ class ConfigBuilder<HttpConfig> {
 
     static size_t ParseClientMaxBodySize(const std::string& val, const std::string& unit)
     {
-        size_t  nb = config::StrToInt(val);
+        size_t nb = config::StrToInt(val);
         if (unit == "KB") {
-            return nb << 10; 
+            return nb << 10;
         } else if (unit == "MB") {
             return nb << 20;
         } else if (unit == "GB") {
@@ -548,7 +562,7 @@ class ConfigBuilder<HttpConfig> {
     {
         if (!IsDirectory(val)) {
             throw std::runtime_error("Invalid configuration file: root directory doesn't exist: " +
-            val);
+                                     val);
         }
         return val;
     }
@@ -587,20 +601,25 @@ class ConfigBuilder<HttpConfig> {
     }
 
     static std::vector<ServerConfig> BuildServerConfigs(
-        const std::vector<ConfigParser>& nested_configs, const std::string& inherited_root, const std::string& inherited_index, const std::string& inherited_autoindex)
+        const std::vector<ConfigParser>& nested_configs, const std::string& inherited_root,
+        const std::string& inherited_index, const std::string& inherited_autoindex)
     {
         std::vector<ServerConfig> server_configs;
         for (size_t i = 0; i < nested_configs.size(); i++) {
-            server_configs.push_back(ConfigBuilder<ServerConfig>::Build(nested_configs[i], inherited_root, inherited_index, inherited_autoindex));
+            server_configs.push_back(ConfigBuilder<ServerConfig>::Build(
+                nested_configs[i], inherited_root, inherited_index, inherited_autoindex));
         }
         return server_configs;
     }
 
   public:
-    static HttpConfig Build(const ConfigParser& f, const std::string& inherited_root, const std::string& inherited_index, const std::string& inherited_autoindex)
+    static HttpConfig Build(const ConfigParser& f, const std::string& inherited_root,
+                            const std::string& inherited_index,
+                            const std::string& inherited_autoindex)
     {
         if (!inherited_root.empty() || !inherited_index.empty() || !inherited_autoindex.empty()) {
-            throw std::runtime_error("Invalid configuration file: invalid settings for http block.");
+            throw std::runtime_error(
+                "Invalid configuration file: invalid settings for http block.");
         }
         int keepalive_timeout = BuildKeepAliveTimeout(f.FindSetting("keepalive_timeout"));
         size_t client_max_body_size = BuildClientMaxBodySize(f.FindSetting("client_max_body_size"));
@@ -608,7 +627,8 @@ class ConfigBuilder<HttpConfig> {
         std::string root_dir = BuildRootDir(f.FindSetting("root"));
         std::string default_file = BuildDefaultFile(f.FindSetting("index"));
         std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"));
-        std::vector<ServerConfig> server_configs = BuildServerConfigs(f.FindNesting("server"), root_dir, default_file, dir_listing);
+        std::vector<ServerConfig> server_configs =
+            BuildServerConfigs(f.FindNesting("server"), root_dir, default_file, dir_listing);
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
             if (!IsKeyAllowed(it->first)) {
@@ -691,14 +711,17 @@ class ConfigBuilder<Config> {
     }
 
   public:
-    static Config Build(const ConfigParser& f, const std::string& inherited_root, const std::string& inherited_index, const std::string& inherited_autoindex)
+    static Config Build(const ConfigParser& f, const std::string& inherited_root,
+                        const std::string& inherited_index, const std::string& inherited_autoindex)
     {
         if (!inherited_root.empty() || !inherited_index.empty() || !inherited_autoindex.empty()) {
-            throw std::runtime_error("Invalid configuration file: invalid settings for main block.");
+            throw std::runtime_error(
+                "Invalid configuration file: invalid settings for main block.");
         }
         MxType mx_type = BuildMxType(f.FindSetting("use"));
         std::pair<std::string, Severity> error_log = BuildErrorLog(f.FindSetting("error_log"));
-        HttpConfig http_conf = ConfigBuilder<HttpConfig>::Build(f.FindNesting("http")[0], "", "", "");
+        HttpConfig http_conf =
+            ConfigBuilder<HttpConfig>::Build(f.FindNesting("http")[0], "", "", "");
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
             if (!IsKeyAllowed(it->first)) {

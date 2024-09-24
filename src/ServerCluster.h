@@ -3,10 +3,10 @@
 
 #include <vector>
 
-#include "config/Config.h"
 #include "Server.h"
-#include "utils/unique_ptr.h"
+#include "config/Config.h"
 #include "utils/shared_ptr.h"
+#include "utils/unique_ptr.h"
 
 class ServerCluster {
   public:

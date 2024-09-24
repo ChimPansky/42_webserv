@@ -77,8 +77,8 @@ std::vector<std::string> ServerConfig::InitServerNames(const std::vector<std::st
     return std::vector<std::string>();
 }
 
-
-void ServerConfig::Print() const {
+void ServerConfig::Print() const
+{
     LOG(DEBUG) << "\n";
     LOG(DEBUG) << "--Server configuration: --";
     LOG(DEBUG) << "Access log path: " << access_log_path_;

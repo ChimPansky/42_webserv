@@ -7,7 +7,7 @@
 volatile bool ServerCluster::run_ = false;
 
 // testing with one
-ServerCluster::ServerCluster(const config::Config& config/*config*/)
+ServerCluster::ServerCluster(const config::Config& config /*config*/)
 {
     config.Print();
     std::vector<std::pair<in_addr_t, in_port_t> > listeners;
@@ -37,8 +37,8 @@ ServerCluster::ServerCluster(const config::Config& config/*config*/)
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
             if (c_api::EventManager::get().RegisterCallback(
-                sockfd, c_api::CT_READ,
-                utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
+                    sockfd, c_api::CT_READ,
+                    utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
                 LOG(FATAL) << "Could not register callback for listener: " << sockfd;
             }
             sockets_[sockfd] = listener;
