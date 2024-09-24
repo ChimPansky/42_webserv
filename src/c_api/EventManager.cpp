@@ -1,18 +1,19 @@
 #include "EventManager.h"
 
-#include <netinet/in.h>  // select
-
 #include <stdexcept>
+
+#include "multiplexers/IMultiplexer.h"
+#include "utils/logger.h"
 
 namespace c_api {
 
 utils::unique_ptr<EventManager> EventManager::instance_(NULL);
 
 // private c'tor
-EventManager::EventManager(EventManager::MultiplexType mx_type) : mx_type_(mx_type)
+EventManager::EventManager(MultiplexType mx_type) : multiplexer_(GetMultiplexer(mx_type))
 {}
 
-void EventManager::init(EventManager::MultiplexType mx_type)
+void EventManager::init(MultiplexType mx_type)
 {
     if (EventManager::instance_) {
         throw std::runtime_error("event manager was already initialized");
@@ -30,69 +31,57 @@ EventManager& EventManager::get()
 
 int EventManager::CheckOnce()
 {
-    if (mx_type_ == MT_SELECT) {
-        return CheckWithSelect_();
+    int res = multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
+    for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
+        ClearCallback_(fds_to_delete_[i].first, fds_to_delete_[i].second);
     }
-    return CheckWithSelect_();
+    fds_to_delete_.clear();
+    return res;
 }
 
-int EventManager::CheckWithSelect_()
+int EventManager::RegisterCallback(int fd, CallbackType type,
+                                   utils::unique_ptr<c_api::ICallback> callback)
 {
-    fd_set select_rd_set;
-    fd_set select_wr_set;
-    FD_ZERO(&select_rd_set);
-    FD_ZERO(&select_wr_set);
-    for (SockMapIt it = rd_sock_.begin(); it != rd_sock_.end(); ++it) {
-        FD_SET(it->first, &select_rd_set);
-    }
-    for (SockMapIt it = wr_sock_.begin(); it != wr_sock_.end(); ++it) {
-        FD_SET(it->first, &select_wr_set);
-    }
-    // rd_sock_ is never empty as long as at least 1 master socket exist
-    int max_fd = rd_sock_.rbegin()->first;
-    if (!wr_sock_.empty()) {
-        max_fd = std::max(wr_sock_.rbegin()->first, max_fd);
-    }
-    struct timeval timeout = {10, 0};
-    int num_of_fds =
-        select(max_fd + 1, &select_rd_set, &select_wr_set, /* err fds */ NULL, &timeout);
-    if (num_of_fds < 0) {
-        // select errors or empty set, return error code?
+    if (!(type & CT_READ) && !(type & CT_WRITE)) {
+        LOG(FATAL) << "Unknown callback type";
         return 1;
     }
-    // iterate over i here cuz call can change callbacks map
-    for (int i = 0; i <= max_fd; ++i) {
-        SockMapIt it;
-        if (FD_ISSET(i, &select_rd_set) && ((it = rd_sock_.find(i)) != rd_sock_.end())) {
-            it->second->Call(i);
-        }
-        if (FD_ISSET(i, &select_wr_set) && ((it = wr_sock_.find(i)) != wr_sock_.end())) {
-            it->second->Call(i);
-        }
+    if (multiplexer_->RegisterFd(fd, type, rd_sockets_, wr_sockets_) != 0) {
+        return 1;
     }
-    return 0;
-}
-
-int EventManager::RegisterReadCallback(int fd, utils::unique_ptr<c_api::EventManager::ICallback> callback)
-{
-    rd_sock_.insert(std::make_pair(fd, callback));
-    return 0;
-}
-
-int EventManager::RegisterWriteCallback(int fd, utils::unique_ptr<c_api::EventManager::ICallback> callback)
-{
-    wr_sock_.insert(std::make_pair(fd, callback));
-    return 0;
-}
-
-void EventManager::DeleteCallbacksByFd(int fd, CallbackType type)
-{
     if (type & CT_READ) {
-        rd_sock_.erase(fd);
+        rd_sockets_[fd] = callback;
     }
     if (type & CT_WRITE) {
-        wr_sock_.erase(fd);
+        wr_sockets_[fd] = callback;
+    }
+    return 0;
+}
+
+void EventManager::DeleteCallback(int fd, CallbackType type)
+{
+    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
+        fds_to_delete_.push_back(std::make_pair(fd, CT_READ));
+    }
+    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
+        fds_to_delete_.push_back(std::make_pair(fd, CT_WRITE));
     }
 }
+void EventManager::ClearCallback_(int fd, CallbackType type)
+{
+    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
+        if (multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_) != 0) {
+            LOG(ERROR) << "Could not unregister read callback for fd: " << fd;
+        }
+        rd_sockets_.erase(fd);
+    }
+    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
+        if (multiplexer_->UnregisterFd(fd, CT_WRITE, rd_sockets_, wr_sockets_) != 0) {
+            LOG(ERROR) << "Could not unregister write callback for fd: " << fd;
+        }
+        wr_sockets_.erase(fd);
+    }
+}
+
 
 }  // namespace c_api
