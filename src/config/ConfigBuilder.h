@@ -174,10 +174,10 @@ class ConfigBuilder<LocationConfig> {
 
     static const std::string& ParseDefaultFile(const std::string& vals)
     {
-        // if (access(vals.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
-        //     vals);
-        // }
+        if (access(vals.c_str(), F_OK | R_OK) == -1) {
+            throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
+            vals);
+        }
         return vals;
     }
 
@@ -237,14 +237,6 @@ class ConfigBuilder<LocationConfig> {
 template <>
 class ConfigBuilder<ServerConfig> {
   private:
-    static const std::string& ParseAccessLogPath(const std::string& vals)
-    {
-        // if (access(vals.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: access log doesn't exist: " +
-        //     vals);
-        // }
-        return vals;
-    }
 
     static std::string BuildAccessLogPath(const std::vector<std::string>& vals)
     {
@@ -256,6 +248,15 @@ class ConfigBuilder<ServerConfig> {
             throw std::runtime_error("Invalid configuration file: invalid access_log: " + vals[0]);
         }
         return ParseAccessLogPath(val_elements[0]);
+    }
+
+    static const std::string& ParseAccessLogPath(const std::string& vals)
+    {
+        // if (access(vals.c_str(), F_OK | R_OK | W_OK) == -1) {
+        //     throw std::runtime_error("Invalid configuration file: access log doesn't exist: " +
+        //     vals);
+        // }
+        return vals;
     }
 
     static Severity BuildAccessLogLevel(const std::vector<std::string>& vals)
@@ -291,7 +292,7 @@ class ConfigBuilder<ServerConfig> {
     static std::string BuildErrorLogPath(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return std::string();
+            return ServerConfig::kDefaultErrorLogPath;
         }
         return ParseErrorLogPath(vals[0]);
     }
@@ -325,24 +326,19 @@ class ConfigBuilder<ServerConfig> {
 
         if (val.find(':') == std::string::npos) {
             addr = c_api::IPv4FromString("localhost");
-            port = config::StrToInt(val);
+            port = config::StrToInPortT(val);
         } else {
             size_t colon_pos = val.find(':');
             addr = c_api::IPv4FromString(val.substr(0, colon_pos));
-            port = config::StrToInt(val.substr(colon_pos + 1));
+            port = config::StrToInPortT(val.substr(colon_pos + 1));
         }
-
-        // if (!(port > 0 && port <= 65535)) { // checking for valid port should be in a
-        // ServerConfig method
-        //     throw std::runtime_error("Invalid configuration file: invalid port: " + val);
-        // }
         return std::make_pair(addr, port);
     }
 
     static std::vector<std::string> BuildServerNames(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return std::vector<std::string>();  // can it be empty?
+            return std::vector<std::string>();
         }
         return ParseServerNames(vals[0]);
     }
@@ -390,13 +386,13 @@ class ConfigBuilder<ServerConfig> {
         return ParseDefaultFile(vals[0]);
     }
 
-    static const std::string& ParseDefaultFile(const std::string& val)
+    static const std::string& ParseDefaultFile(const std::string& vals)
     {
-        // if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
-        //     val);
-        // }
-        return val;
+        if (access(vals.c_str(), F_OK | R_OK) == -1) {
+            throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
+            vals);
+        }
+        return vals;
     }
 
     static const std::string BuildDirListing(const std::vector<std::string>& vals,
@@ -535,17 +531,14 @@ class ConfigBuilder<HttpConfig> {
             if (val_elements.size() < 2) {
                 throw std::runtime_error("Invalid configuration file: invalid error_page: " +
                                          vals[i]);
+            } else if (access(val_elements[val_elements.size() - 1].c_str(), F_OK | R_OK) == -1) {
+                throw std::runtime_error("Invalid configuration file: error page doesn't exist: " + val_elements[val_elements.size() - 1]);
             }
             for (size_t j = 0; j < val_elements.size() - 1; j++) {
                 if (j != val_elements.size() - 1) {
                     error_pages[StrToInt(val_elements[j])] = val_elements[val_elements.size() - 1];
                 }
             }
-            // if (access(val_elements[val_elements.size() - 1].c_str(), F_OK | R_OK) == -1) {
-            //     throw std::runtime_error("Invalid configuration file: error page doesn't exist: "
-            //     // check if error page exists
-            //     + val_elements[val_elements.size() - 1]);
-            // }
         }
         return error_pages;
     }
@@ -575,12 +568,12 @@ class ConfigBuilder<HttpConfig> {
         return ParseDefaultFile(vals[0]);
     }
 
-    static std::string ParseDefaultFile(const std::string& val)
+    static const std::string& ParseDefaultFile(const std::string& val)
     {
-        // if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
-        //     val);
-        // }
+        if (access(val.c_str(), F_OK | R_OK) == -1) {
+            throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
+            val);
+        }
         return val;
     }
 

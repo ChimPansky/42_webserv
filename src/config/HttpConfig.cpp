@@ -45,10 +45,9 @@ int HttpConfig::InitKeepaliveTimeout(int value)
 
 size_t HttpConfig::InitClientMaxBodySize(size_t value)
 {
-    if (value < 1 || value > 1073741824) {
+    if (value < 1 || value > 1073741824) {     // minimum size is 1 byte, maximum size is 1GB
         throw std::runtime_error("Invalid configuration file: invalid client_max_body_size value.");
     }
-    // minimum size is 1 byte, maximum size is 1GB
     return value;
 }
 
@@ -72,7 +71,7 @@ void config::HttpConfig::Print() const
     LOG(DEBUG) << "--HTTP configuration: --";
     LOG(DEBUG) << "Keepalive timeout: " << keepalive_timeout_;
     LOG(DEBUG) << "Client max body size: " << client_max_body_size_;
-    LOG(DEBUG) << "Error pages: TODO";
+    LOG(DEBUG) << "Error pages:";
     for (std::map<int, std::string>::const_iterator it = error_pages_.begin();
          it != error_pages_.end(); ++it) {
         LOG(DEBUG) << "  " << it->first << " -> " << it->second;

@@ -26,6 +26,7 @@ class ServerConfig {
     const std::vector<LocationConfig>& locations();
     static const Severity kDefaultAccessLogLevel;
     static const std::string kDefaultAccessLogPath;
+    static const std::string kDefaultErrorLogPath;
 
     void Print() const;
 

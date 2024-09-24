@@ -1,4 +1,5 @@
 #include "LocationConfig.h"
+#include "utils.h"
 
 namespace config {
 
@@ -18,7 +19,7 @@ LocationConfig::LocationConfig(const std::string& route,
     : route_(InitRoute(route)), allowed_methods_(allowed_methods),
       redirect_(InitRedirect(redirect)), is_cgi_(!cgi_paths.empty() || !cgi_extensions.empty()),
       cgi_paths_(InitCgiPaths(cgi_paths)), cgi_extensions_(InitCgiExtensions(cgi_extensions)),
-      root_dir_(root_dir), default_file_(default_file), dir_listing_(dir_listing)
+      root_dir_(root_dir), default_file_(InitDefaultFile(default_file)), dir_listing_(dir_listing)
 {}
 
 const std::string& LocationConfig::route() const
@@ -69,6 +70,14 @@ const std::string& LocationConfig::dir_listing() const
 const std::string& LocationConfig::InitRoute(const std::string& value)
 {
     // To Do
+    return value;
+}
+
+const std::string&  LocationConfig::InitDefaultFile(const std::string& value)
+{
+    if (!CheckFileExtension(value, ".html")) {
+        throw std::runtime_error("Invalid configuration file: invalid index file suffix.");
+    }
     return value;
 }
 

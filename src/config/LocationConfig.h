@@ -14,6 +14,7 @@ namespace config {
 class LocationConfig {
   private:
     const std::string& InitRoute(const std::string& value);
+    const std::string& InitDefaultFile(const std::string& value);
     std::pair<int, std::string> InitRedirect(const std::pair<int, std::string>& value);
     std::vector<std::string> InitCgiPaths(const std::vector<std::string>& value);
     std::vector<std::string> InitCgiExtensions(const std::vector<std::string>& value);

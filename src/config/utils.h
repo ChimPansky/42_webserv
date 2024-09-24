@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <netdb.h>
 
 namespace config {
 
@@ -13,6 +14,7 @@ std::pair<std::string, std::string> MakePair(const std::string& line);
 bool CheckFileExtension(const std::string& file, const std::string& extention);
 int StrToInt(const std::string& str);
 size_t StrToUnsignedInt(const std::string& str);
+in_port_t   StrToInPortT(const std::string& str);
 bool ValidPath(const std::string& val);
 bool IsDirectory(const std::string& path);
 
