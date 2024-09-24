@@ -15,6 +15,7 @@ class RequestBuilder {
         PS_URI,
         PS_VERSION,
         PS_HEADER_KEY,
+        PS_HEADER_SEP,
         PS_HEADER_VALUE,
         PS_BODY,
         PS_END,
@@ -41,6 +42,7 @@ class RequestBuilder {
     ParseState ParseUri_();
     ParseState ParseVersion_();
     ParseState ParseHeaderKey_();
+    ParseState ParseHeaderSep_();
     ParseState ParseHeaderValue_();
     ParseState ParseBody_();
 

@@ -22,8 +22,9 @@ void RequestBuilder::ParseNext(const char* input, size_t input_sz) {
     for (size_t i = 0; i < input_sz && parse_state_ != PS_ERROR; i++) {
         char c = input[i];
         parse_buf_.push_back(c);
+        parse_buf_.size();
         parse_buf_len_++;
-        // PrintParseBuf_();
+        PrintParseBuf_();
         bool state_changed = false;
         switch (parse_state_) {
             case PS_METHOD:
@@ -41,6 +42,10 @@ void RequestBuilder::ParseNext(const char* input, size_t input_sz) {
             case PS_HEADER_KEY:
                 parse_state_ = ParseHeaderKey_();
                 state_changed = (parse_state_ != PS_HEADER_KEY ? true : false);
+                break;
+            case PS_HEADER_SEP:
+                parse_state_ = ParseHeaderSep_();
+                state_changed = (parse_state_ != PS_HEADER_SEP ? true : false);
                 break;
             case PS_HEADER_VALUE:
                 parse_state_ = ParseHeaderValue_();
@@ -118,8 +123,6 @@ RequestBuilder::ParseState RequestBuilder::ParseUri_() {
 
 RequestBuilder::ParseState RequestBuilder::ParseVersion_() {
     LOG(DEBUG) << "Parsing Version..." << "char: " << parse_buf_[parse_buf_len_ - 1];
-    LOG(DEBUG) << "parse_buf_len: " << parse_buf_len_;
-    PrintParseBuf_();
     if (parse_buf_len_ == 10 && std::strncmp(parse_buf_.data(), "HTTP/0.9\r\n", 10) == 0) {
         rq_.version = HTTP_0_9;
         return PS_HEADER_KEY;
@@ -159,7 +162,7 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_() {
         }
         else {
             header_key_ = std::string(parse_buf_.data(), parse_buf_len_ - 1);
-            return PS_HEADER_VALUE;
+            return PS_HEADER_SEP;
         }
     }
     else if (!(std::isalnum(c) || (parse_buf_len_ > 0 && c == '-'))) {
@@ -173,20 +176,27 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_() {
     return PS_HEADER_KEY;
 }
 
+RequestBuilder::ParseState RequestBuilder::ParseHeaderSep_() {
+    LOG(DEBUG) << "Parsing Header-Separator...";
+    char c = parse_buf_[parse_buf_len_ - 1];
+    if (std::isspace(c)) {
+        return PS_HEADER_SEP;
+    }
+    return PS_HEADER_VALUE;
+}
+
 RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_() {
     LOG(DEBUG) << "Parsing Header-Value...";
     char c = parse_buf_[parse_buf_len_ - 1];
-    if (std::isspace(c)) {
-        return PS_HEADER_VALUE;
+    if (parse_buf_len_ > 3 && std::strncmp(parse_buf_.data() + parse_buf_len_ - 2, "\r\n", 2) == 0) {
+        PrintParseBuf_();
+        rq_.headers_[header_key_] = std::string(parse_buf_.data(), parse_buf_len_ - 2);
+        return PS_HEADER_KEY;
     }
-    if (!std::isprint(c)) {
+    if (!std::isprint(c) && c != '\r') {
         rq_.status_code_ = 400;
         LOG(DEBUG) << "Request-Header value is invalid";
         return PS_ERROR;
-    }
-    if (parse_buf_len_ > 3 && std::strncmp(parse_buf_.data() + parse_buf_len_ - 3, "\r\n", 2) == 0) {
-        rq_.headers_[header_key_] = std::string(parse_buf_.data(), parse_buf_len_ - 3);
-        return PS_HEADER_KEY;
     }
     return PS_HEADER_VALUE;
 }
@@ -197,6 +207,7 @@ RequestBuilder::ParseState RequestBuilder::ParseBody_() {
 }
 
 void RequestBuilder::CheckIfRequestIsComplete_() {
+    // TODO: check if at any point "\r\n\r\n" is found in parse_buf_ (beware of the case when it is split between two chunks)
     if (parse_state_ != PS_END) {
         rq_.status_code_ = 400;
     }
@@ -204,21 +215,28 @@ void RequestBuilder::CheckIfRequestIsComplete_() {
 
 void RequestBuilder::ResetParseBuf_() {
     LOG(DEBUG) << "RequestBuilder::ResetParseBuf";
-    parse_buf_.clear();
-    parse_buf_len_ = 0;
-    LOG(DEBUG) << "ParseBuf after reset: ";
+    if (parse_state_ == PS_HEADER_VALUE) {
+        char beginning_of_header_value = parse_buf_[parse_buf_len_ - 1];
+        parse_buf_.clear();
+        parse_buf_.push_back(beginning_of_header_value);
+        parse_buf_len_ = 1;
+    }
+    else {
+        parse_buf_.clear();
+        parse_buf_len_ = 0;
+    }
 }
 
 void RequestBuilder::PrintParseBuf_() const {
-    std::cout << "PrintParseBuf(): ";
+    std::cout << "PrintParseBuf(): Len: " << parse_buf_len_ << "; Content: |";
     for (size_t i = 0; i < parse_buf_.size(); i++) {
         std::cout << parse_buf_[i];
     }
-    std::cout << std::endl;
+    std::cout << "|" << std::endl;
 }
 
 bool RequestBuilder::LineIsEmpty_() const {
-    if (parse_buf_len_ == 1 && parse_buf_[0] == 'r' && parse_buf_[1] == '\n') {
+    if (parse_buf_len_ == 2 && parse_buf_[0] == 'r' && parse_buf_[1] == '\n') {
         return true;
     }
     return false;
