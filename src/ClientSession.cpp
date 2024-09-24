@@ -55,52 +55,54 @@ void ClientSession::PrepareResponse()
     std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
 }
 
-ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
+ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client)
+    : client_(utils::shared_ptr<ClientSession>(&client))
 {}
 
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    long bytes_recvd = client_.client_sock_->Recv(client_.buf_);
+    long bytes_recvd = client_->client_sock_->Recv(client_->buf_);
     if (bytes_recvd <= 0) {
-        LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
-        client_.CloseConnection();
+        LOG(ERROR) << "Could not read from client: " << client_->client_sock_->sockfd();
+        client_->CloseConnection();
         return;
     }
     LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
-               << client_.client_sock_->sockfd();
-    if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
-        c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(),
+               << client_->client_sock_->sockfd();
+    if (static_cast<size_t>(bytes_recvd) < client_->client_sock_->buf_sz()) {
+        c_api::EventManager::get().DeleteCallback(client_->client_sock_->sockfd(),
                                                            c_api::CT_READ);
         if (c_api::EventManager::get().RegisterCallback(
-            client_.client_sock_->sockfd(), c_api::CT_WRITE,
-            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
+            client_->client_sock_->sockfd(), c_api::CT_WRITE,
+            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*client_))) != 0) {
                 LOG(ERROR) << "Could not register write callback for client: "
-                    << client_.client_sock_->sockfd();
-                client_.CloseConnection();
+                    << client_->client_sock_->sockfd();
+                client_->CloseConnection();
                 return ;
             }
-        client_.PrepareResponse();
+        client_->PrepareResponse();
     }
 }
 
-ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : client_(client)
+ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client)
+    : client_(utils::shared_ptr<ClientSession>(&client))
 {
 }
 
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
-                                                    client_.buf_.size() - client_.buf_send_idx_);
+    ssize_t bytes_sent = client_->client_sock_->Send(client_->buf_, client_->buf_send_idx_,
+                                                    client_->buf_.size() - client_->buf_send_idx_);
     if (bytes_sent <= 0) {
         LOG(ERROR) << "error on send";  // add perror
-        client_.CloseConnection();
+        client_->CloseConnection();
         return;
     }
-    if (client_.buf_send_idx_ == client_.buf_.size()) {
-        LOG(INFO) << client_.buf_send_idx_
+    if (client_->buf_send_idx_ == client_->buf_.size()) {
+        LOG(INFO) << client_->buf_send_idx_
                   << " bytes sent, close connection";
-        client_.CloseConnection();
+        client_->CloseConnection();
     }
 }

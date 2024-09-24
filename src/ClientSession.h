@@ -9,6 +9,7 @@
 #include "http/Request.h"
 #include "http/Response.h"
 #include "utils/unique_ptr.h"
+#include "utils/shared_ptr.h"
 
 class ClientSession {
   private:
@@ -29,7 +30,7 @@ class ClientSession {
         virtual void Call(int);
 
       private:
-        ClientSession& client_;
+        utils::shared_ptr<ClientSession> client_;
     };
     class ClientWriteCallback : public c_api::ICallback {
       public:
@@ -37,7 +38,7 @@ class ClientSession {
         virtual void Call(int);
 
       private:
-        ClientSession& client_;
+        utils::shared_ptr<ClientSession> client_;
     };
 
   private:
