@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <cstddef>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -19,12 +20,11 @@ template <class ConfigType>
 class ConfigBuilder {
   private:
     static bool IsKeyAllowed(const std::string& key);
-    static bool IsNestingAllowed(const std::string& nested_name);
 
   public:
     static ConfigType Build(const ConfigParser& f, const std::string& inherited_root,
-                            const std::string& inherited_index,
-                            const std::string& inherited_autoindex);
+                            const std::string& inherited_def_file,
+                            const std::string& inherited_redirect);
 };
 
 template <>
@@ -49,9 +49,9 @@ class ConfigBuilder<LocationConfig> {
             route = vals[0];
         } else if (vals[0] == "=" || vals[0] == "^~") {
             priority = vals[0];
-            route = vals[1]; //+ set priorities
+            route = vals[1];
         }
-        if (IsDirectory(route)) {
+        if (route == "/" || (IsDirectory(route) && route[route.size() - 1] == '/')) {
             return std::make_pair(route, priority);
         }
         throw std::runtime_error("Invalid configuration file: invalid route: " +
@@ -96,7 +96,7 @@ class ConfigBuilder<LocationConfig> {
             throw std::runtime_error("Invalid configuration file: redirection status code is invalid.");
         }
         int code = config::StrToInt(vals[0]);
-        if (!ValidPath(vals[1]) && !IsDirectory(vals[1])) {
+        if (vals[1][0] != '/' || ((access(vals[1].substr(1).c_str(), F_OK | R_OK) == -1) && !IsDirectory(vals[1]))) {
             throw std::runtime_error("Invalid configuration file: redirection file/directory doesn't exist: " +
             vals[1]);
         }
@@ -167,12 +167,12 @@ class ConfigBuilder<LocationConfig> {
     }
 
     static const std::string BuildDefaultFile(const std::vector<std::string>& vals,
-                                              const std::string& inherited_index)
+                                              const std::string& inherited_def_file)
     {
-        if (vals.empty() && inherited_index.empty()) {
+        if (vals.empty() && inherited_def_file.empty()) {
             return LocationConfig::kDefaultIndexFile;
         } else if (vals.empty()) {
-            return inherited_index;
+            return inherited_def_file;
         }
         return ParseDefaultFile(vals[0]);
     }
@@ -187,12 +187,12 @@ class ConfigBuilder<LocationConfig> {
     }
 
     static const std::string BuildDirListing(const std::vector<std::string>& vals,
-                                             const std::string& inherited_autoindex)
+                                             const std::string& inherited_redirect)
     {
-        if (vals.empty() && inherited_autoindex.empty()) {
+        if (vals.empty() && inherited_redirect.empty()) {
             return LocationConfig::kDefaultDirListing;
         } else if (vals.empty()) {
-            return inherited_autoindex;
+            return inherited_redirect;
         }
         return ParseDirListing(vals[0]);
     }
@@ -213,8 +213,8 @@ class ConfigBuilder<LocationConfig> {
 
   public:
     static LocationConfig Build(const ConfigParser& f, const std::string& inherited_root,
-                                const std::string& inherited_index,
-                                const std::string& inherited_autoindex)
+                                const std::string& inherited_def_file,
+                                const std::string& inherited_redirect)
     {
         std::pair<std::string, std::string> route = BuildRoute(f.lvl_descr());
         std::vector<std::string> allowed_methods =
@@ -224,8 +224,8 @@ class ConfigBuilder<LocationConfig> {
         std::vector<std::string> cgi_extensions =
             BuildCgiExtensions(f.FindSetting("cgi_extension"));
         std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_root);
-        std::string default_file = BuildDefaultFile(f.FindSetting("index"), inherited_index);
-        std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_autoindex);
+        std::string default_file = BuildDefaultFile(f.FindSetting("index"), inherited_def_file);
+        std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_redirect);
 
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
@@ -305,7 +305,7 @@ class ConfigBuilder<ServerConfig> {
         const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            throw std::runtime_error("Invalid configuration file: no port specified.");
+            throw std::runtime_error("Invalid configuration file: listen setting isn't specified.");
         }
         std::vector<std::pair<in_addr_t, in_port_t> > listeners;
         for (size_t i = 0; i < vals.size(); i++) {
@@ -335,19 +335,63 @@ class ConfigBuilder<ServerConfig> {
         if (vals.empty()) {
             return std::vector<std::string>();
         }
-        return ParseServerNames(vals[0]);
+        return ParseServerNames(vals);
     }
 
-    static std::vector<std::string> ParseServerNames(const std::string& vals)
+    static std::vector<std::string> ParseServerNames(const std::vector<std::string>& vals)
     {
-        std::vector<std::string> server_names = config::SplitLine(vals);
-        for (size_t i = 0; i < server_names.size(); i++) {
-            if (server_names[i].empty()) {
-                throw std::runtime_error("Invalid configuration file: invalid server_name: " +
-                                         vals);
+        std::vector<std::string> server_names;
+    
+        for (size_t i = 0; i < vals.size(); i++) {
+            std::vector<std::string> val_elements = config::SplitLine(vals[i]);
+            if (!val_elements.empty()) {
+                for (size_t j = 0; j < val_elements.size(); j++) {
+                    if (val_elements[j] == "\"\"") {
+                        j++;
+                    } else {
+                        server_names.push_back(ParseServerName(val_elements[j]));
+                    }
+                }
             }
-        }  // check for possible server names
+        }
         return server_names;
+    }
+
+    static bool IsValidComponent(const std::string& label) {
+    
+        if (label.empty() || label[0] == '-' || label[label.size() - 1] == '-') {
+            return false;
+        }
+        for (size_t i = 0; i < label.size(); ++i) {
+            if (!std::isalnum(label[i]) && label[i] != '-') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static const std::string& ParseServerName(const std::string& val)
+    {
+        if (val.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.*") != std::string::npos)
+            throw std::runtime_error("Invalid server name: invalid characters in server name");
+
+        size_t wildcardPos = val.find('*');
+        if (wildcardPos != std::string::npos && wildcardPos != 0 && wildcardPos != val.size() - 1)
+            throw std::runtime_error("Invalid server name: Wildcard '*' must be at the start or end");
+
+        size_t start = 0;
+        size_t dotPos = 0;
+        while ((dotPos = val.find('.', start)) != std::string::npos) {
+            if (!(start == 0 && val.substr(start, dotPos - start) == "*")) {
+                if (!IsValidComponent(val.substr(start, dotPos - start)))
+                    throw std::runtime_error("Invalid server name: invalid domain label");
+            }
+            start = dotPos + 1;
+        }
+        if (val.substr(start) != "*" && !IsValidComponent(val.substr(start)))
+            throw std::runtime_error("Invalid server name: invalid domain label");
+
+        return val;
     }
 
     static const std::string BuildRootDir(const std::vector<std::string>& vals,
@@ -371,12 +415,12 @@ class ConfigBuilder<ServerConfig> {
     }
 
     static const std::string BuildDefaultFile(const std::vector<std::string>& vals,
-                                              const std::string& inherited_index)
+                                              const std::string& inherited_def_file)
     {
-        if (vals.empty() && inherited_index.empty()) {
+        if (vals.empty() && inherited_def_file.empty()) {
             return std::string();
         } else if (vals.empty()) {
-            return inherited_index;
+            return inherited_def_file;
         }
         return ParseDefaultFile(vals[0]);
     }
@@ -391,12 +435,12 @@ class ConfigBuilder<ServerConfig> {
     }
 
     static const std::string BuildDirListing(const std::vector<std::string>& vals,
-                                             const std::string& inherited_autoindex)
+                                             const std::string& inherited_redirect)
     {
-        if (vals.empty() && inherited_autoindex.empty()) {
+        if (vals.empty() && inherited_redirect.empty()) {
             return std::string();
         } else if (vals.empty()) {
-            return inherited_autoindex;
+            return inherited_redirect;
         }
         return ParseDirListing(vals[0]);
     }
@@ -411,12 +455,12 @@ class ConfigBuilder<ServerConfig> {
 
     static std::vector<LocationConfig> BuildLocationConfigs(
         const std::vector<ConfigParser>& nested_configs, const std::string& inherited_root,
-        const std::string& inherited_index, const std::string& inherited_autoindex)
+        const std::string& inherited_def_file, const std::string& inherited_redirect)
     {
         std::vector<LocationConfig> server_configs;
         for (size_t i = 0; i < nested_configs.size(); i++) {
             server_configs.push_back(ConfigBuilder<LocationConfig>::Build(
-                nested_configs[i], inherited_root, inherited_index, inherited_autoindex));
+                nested_configs[i], inherited_root, inherited_def_file, inherited_redirect));
         }
         return server_configs;
     }
@@ -430,8 +474,8 @@ class ConfigBuilder<ServerConfig> {
 
   public:
     static ServerConfig Build(const ConfigParser& f, const std::string& inherited_root,
-                              const std::string& inherited_index,
-                              const std::string& inherited_autoindex)
+                              const std::string& inherited_def_file,
+                              const std::string& inherited_redirect)
     {
         std::pair<std::string, Severity> access_log = BuildAccessLog(f.FindSetting("access_log"));
         std::string error_log_path = BuildErrorLogPath(f.FindSetting("error_log"));
@@ -439,8 +483,8 @@ class ConfigBuilder<ServerConfig> {
             BuildListeners(f.FindSetting("listen"));
         std::vector<std::string> server_names = BuildServerNames(f.FindSetting("server_name"));
         std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_root);
-        std::string default_file = BuildDefaultFile(f.FindSetting("index"), inherited_index);
-        std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_autoindex);
+        std::string default_file = BuildDefaultFile(f.FindSetting("index"), inherited_def_file);
+        std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_redirect);
         std::vector<LocationConfig> location_configs = BuildLocationConfigs(
             f.FindNesting("location"), root_dir, default_file, dir_listing);  // map or vector
 
@@ -589,22 +633,22 @@ class ConfigBuilder<HttpConfig> {
 
     static std::vector<ServerConfig> BuildServerConfigs(
         const std::vector<ConfigParser>& nested_configs, const std::string& inherited_root,
-        const std::string& inherited_index, const std::string& inherited_autoindex)
+        const std::string& inherited_def_file, const std::string& inherited_redirect)
     {
         std::vector<ServerConfig> server_configs;
         for (size_t i = 0; i < nested_configs.size(); i++) {
             server_configs.push_back(ConfigBuilder<ServerConfig>::Build(
-                nested_configs[i], inherited_root, inherited_index, inherited_autoindex));
+                nested_configs[i], inherited_root, inherited_def_file, inherited_redirect));
         }
         return server_configs;
     }
 
   public:
     static HttpConfig Build(const ConfigParser& f, const std::string& inherited_root,
-                            const std::string& inherited_index,
-                            const std::string& inherited_autoindex)
+                            const std::string& inherited_def_file,
+                            const std::string& inherited_redirect)
     {
-        if (!inherited_root.empty() || !inherited_index.empty() || !inherited_autoindex.empty()) {
+        if (!inherited_root.empty() || !inherited_def_file.empty() || !inherited_redirect.empty()) {
             throw std::runtime_error(
                 "Invalid configuration file: invalid settings for http block.");
         }
@@ -699,9 +743,9 @@ class ConfigBuilder<Config> {
 
   public:
     static Config Build(const ConfigParser& f, const std::string& inherited_root,
-                        const std::string& inherited_index, const std::string& inherited_autoindex)
+                        const std::string& inherited_def_file, const std::string& inherited_redirect)
     {
-        if (!inherited_root.empty() || !inherited_index.empty() || !inherited_autoindex.empty()) {
+        if (!inherited_root.empty() || !inherited_def_file.empty() || !inherited_redirect.empty()) {
             throw std::runtime_error(
                 "Invalid configuration file: invalid settings for main block.");
         }

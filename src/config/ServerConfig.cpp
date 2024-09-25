@@ -15,7 +15,7 @@ ServerConfig::ServerConfig(const std::pair<std::string, Severity>& access_log,
                            const std::vector<LocationConfig>& locations)
     : access_log_path_(InitAccessLog(access_log.first)), access_log_level_(access_log.second),
       error_log_path_(InitErrorLogPath(error_log_path)), listeners_(listeners),
-      server_names_(InitServerNames(server_names)), locations_(locations)
+      server_names_(server_names), locations_(locations)
 {}
 
 const std::string& ServerConfig::access_log_path() const
@@ -64,13 +64,6 @@ const std::string& ServerConfig::InitErrorLogPath(const std::string& value)
     return value;
 }
 
-std::vector<std::string> ServerConfig::InitServerNames(const std::vector<std::string>& value)
-{
-    (void)value;
-    // TO DO
-    return std::vector<std::string>();
-}
-
 void ServerConfig::Print() const
 {
     LOG(DEBUG) << "\n";
@@ -82,7 +75,7 @@ void ServerConfig::Print() const
     for (size_t i = 0; i < listeners_.size(); i++) {
         LOG(DEBUG) << "  " << listeners_[i].first << ":" << listeners_[i].second;
     }
-    LOG(DEBUG) << "Server names: TODO";
+    LOG(DEBUG) << "Server names:";
     for (size_t i = 0; i < server_names_.size(); i++) {
         LOG(DEBUG) << "  " << server_names_[i];
     }

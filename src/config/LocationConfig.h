@@ -27,7 +27,6 @@ class LocationConfig {
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
                    const std::string& default_file, const std::string& dir_listing);
-    const std::pair<std::string, LocationConfig::LocationPriority>  InitRoute(const std::pair<std::string, std::string>& value);
     const std::pair<std::string, LocationPriority>& route() const;
     const std::vector<std::string>& allowed_methods() const;
     const std::pair<int, std::string>& redirect() const;
@@ -46,6 +45,7 @@ class LocationConfig {
     void Print() const;
 
   private:
+    const std::pair<std::string, LocationConfig::LocationPriority>  InitRoute(const std::pair<std::string, std::string>& value);
     std::pair<std::string, LocationPriority> route_;
     std::vector<std::string> allowed_methods_;
     std::pair</* status code */ int, /* new route */ std::string> redirect_;
