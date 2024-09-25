@@ -9,7 +9,8 @@ volatile bool ServerCluster::run_ = false;
 // testing with one
 ServerCluster::ServerCluster(const config::Config& config /*config*/)
 {
-    config.Print();
+    //config.Print();
+    (void)config;
     std::vector<std::pair<in_addr_t, in_port_t> > listeners;
 
     listeners.push_back(std::make_pair(c_api::IPv4FromString("localhost"), in_port_t(8081)));

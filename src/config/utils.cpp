@@ -116,4 +116,14 @@ bool IsDirectory(const std::string& path)
     }
 }
 
+std::string  Trim(const std::string& str, const std::string& trim_chars) {
+
+    std::string trimmed = str;
+    if (str.find_last_not_of(trim_chars) == std::string::npos) {
+        return std::string();
+    }
+    trimmed.erase(trimmed.find_last_not_of(trim_chars) + 1);
+    return trimmed;
+}
+
 }  // namespace config

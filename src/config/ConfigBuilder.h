@@ -637,6 +637,9 @@ class ConfigBuilder<HttpConfig> {
     {
         std::vector<ServerConfig> server_configs;
         for (size_t i = 0; i < nested_configs.size(); i++) {
+            if (!nested_configs[i].lvl_descr().empty()) {
+                throw std::runtime_error("Invalid configuration file: invalid block.");
+            }
             server_configs.push_back(ConfigBuilder<ServerConfig>::Build(
                 nested_configs[i], inherited_root, inherited_def_file, inherited_redirect));
         }

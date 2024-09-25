@@ -17,6 +17,7 @@ size_t StrToUnsignedInt(const std::string& str);
 in_port_t   StrToInPortT(const std::string& str);
 bool ValidPath(const std::string& val);
 bool IsDirectory(const std::string& path);
+std::string  Trim(const std::string& str, const std::string& trim_chars);
 
 }  // namespace config
 

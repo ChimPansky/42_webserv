@@ -1,4 +1,5 @@
 #include "ConfigParser.h"
+#include <iostream>
 
 namespace config {
 
@@ -10,9 +11,9 @@ ConfigParser::ConfigParser(std::ifstream& ifs, const std::string& lvl, const std
         if (content.empty() || content[0] == '#') {
             continue;
         }
-        char last_char = *content.rbegin();  // TEST
-        content.erase(content.find_last_not_of(" \t" + std::string(1, last_char)) +
-                      1);  // utils function trim
+        content = Trim(content, " \t");
+        char last_char = *content.rbegin();
+        content = Trim(content, " \t" + std::string(1, last_char));
 
         // TEST and improve
         if (last_char == ';') {
