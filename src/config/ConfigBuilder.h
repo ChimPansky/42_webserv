@@ -654,6 +654,8 @@ class ConfigBuilder<HttpConfig> {
         if (!inherited_root.empty() || !inherited_def_file.empty() || !inherited_redirect.empty()) {
             throw std::runtime_error(
                 "Invalid configuration file: invalid settings for http block.");
+        } else if (!f.lvl_descr().empty()) {
+            throw std::runtime_error("Invalid configuration file: invalid block.");
         }
         int keepalive_timeout = BuildKeepAliveTimeout(f.FindSetting("keepalive_timeout"));
         size_t client_max_body_size = BuildClientMaxBodySize(f.FindSetting("client_max_body_size"));
