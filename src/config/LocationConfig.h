@@ -13,19 +13,22 @@ namespace config {
 
 class LocationConfig {
   private:
-    const std::string& InitRoute(const std::string& value);
     const std::string& InitDefaultFile(const std::string& value);
     std::pair<int, std::string> InitRedirect(const std::pair<int, std::string>& value);
-    std::vector<std::string> InitCgiPaths(const std::vector<std::string>& value);
-    std::vector<std::string> InitCgiExtensions(const std::vector<std::string>& value);
 
   public:
-    LocationConfig(const std::string& route, const std::vector<std::string>& allowed_methods,
+    enum LocationPriority {
+        P0 = 0,
+        P1 = 1,
+        P2 = 2
+    };
+    LocationConfig(const std::pair<std::string, std::string>& route, const std::vector<std::string>& allowed_methods,
                    const std::pair<int, std::string>& redirect,
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
                    const std::string& default_file, const std::string& dir_listing);
-    const std::string& route() const;
+    const std::pair<std::string, LocationConfig::LocationPriority>  InitRoute(const std::pair<std::string, std::string>& value);
+    const std::pair<std::string, LocationPriority>& route() const;
     const std::vector<std::string>& allowed_methods() const;
     const std::pair<int, std::string>& redirect() const;
     bool is_cgi() const;
@@ -43,7 +46,7 @@ class LocationConfig {
     void Print() const;
 
   private:
-    std::string route_;
+    std::pair<std::string, LocationPriority> route_;
     std::vector<std::string> allowed_methods_;
     std::pair</* status code */ int, /* new route */ std::string> redirect_;
     bool is_cgi_;

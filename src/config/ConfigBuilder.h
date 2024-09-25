@@ -2,7 +2,6 @@
 #define WS_CONFIG_CONFIGBUILDER_H
 
 #include <unistd.h>
-
 #include <cstddef>
 #include <string>
 #include <utility>
@@ -31,7 +30,7 @@ class ConfigBuilder {
 template <>
 class ConfigBuilder<LocationConfig> {
   private:
-    static std::string BuildRoute(const std::string& vals)
+    static std::pair<std::string, std::string> BuildRoute(const std::string& vals)
     {
         if (vals.empty()) {
             throw std::runtime_error("Invalid configuration file: no route specified.");
@@ -40,21 +39,23 @@ class ConfigBuilder<LocationConfig> {
         return ParseRoute(route_elements);
     }
 
-    static std::string ParseRoute(const std::vector<std::string>& vals)
+    static std::pair<std::string, std::string> ParseRoute(const std::vector<std::string>& vals)
     {
+        std::string route;
+        std::string priority;
         if (vals.size() > 2) {
             throw std::runtime_error("Invalid configuration file: invalid route: " + vals[0]);
+        } else if (vals.size() == 1) {
+            route = vals[0];
+        } else if (vals[0] == "=" || vals[0] == "^~") {
+            priority = vals[0];
+            route = vals[1]; //+ set priorities
         }
-        if (vals.size() == 1) {
-            return vals[0];
+        if (IsDirectory(route)) {
+            return std::make_pair(route, priority);
         }
-        if (vals[0] == "=" || vals[0] == "^~") {
-            // set priorities
-        } else {
-            throw std::runtime_error("Invalid configuration file: invalid route syntax: " +
-                                     vals[0]);
-        }
-        return vals[1];
+        throw std::runtime_error("Invalid configuration file: invalid route: " +
+                                    route);
     }
 
     static std::vector<std::string> BuildAllowedMethods(const std::vector<std::string>& vals)
@@ -63,7 +64,7 @@ class ConfigBuilder<LocationConfig> {
             std::vector<std::string> allowed_methods;
             allowed_methods.push_back("GET");
             allowed_methods.push_back("POST");
-            return allowed_methods;  // if setting is empty - use default allowed_methods
+            return allowed_methods;
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         return ParseAllowedMethods(val_elements);
@@ -92,20 +93,22 @@ class ConfigBuilder<LocationConfig> {
     static std::pair<int, std::string> ParseRedirect(const std::vector<std::string>& vals)
     {
         if (vals.size() != 2) {
-            throw std::runtime_error("Invalid configuration file: invalid return: " + vals[0]);
+            throw std::runtime_error("Invalid configuration file: redirection status code is invalid.");
         }
         int code = config::StrToInt(vals[0]);
-        // if (access(vals[1].c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
-        //     vals[1]);
-        // }
+        if (!ValidPath(vals[1]) && !IsDirectory(vals[1])) {
+            throw std::runtime_error("Invalid configuration file: redirection file/directory doesn't exist: " +
+            vals[1]);
+        }
         return std::make_pair(code, vals[1]);
     }
 
     static std::vector<std::string> BuildCgiPaths(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return std::vector<std::string>();
+            std::vector<std::string> default_cgi_paths;
+            default_cgi_paths.push_back("/cgi-bin");
+            return default_cgi_paths;
         }
         return ParseCgiPaths(vals);
     }
@@ -124,7 +127,9 @@ class ConfigBuilder<LocationConfig> {
     static std::vector<std::string> BuildCgiExtensions(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return std::vector<std::string>();
+            std::vector<std::string> default_cgi_extensions;
+            default_cgi_extensions.push_back(".py");
+            return default_cgi_extensions;
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         return ParseCgiExtensions(val_elements);
@@ -211,7 +216,7 @@ class ConfigBuilder<LocationConfig> {
                                 const std::string& inherited_index,
                                 const std::string& inherited_autoindex)
     {
-        std::string route = BuildRoute(f.lvl_descr());
+        std::pair<std::string, std::string> route = BuildRoute(f.lvl_descr());
         std::vector<std::string> allowed_methods =
             BuildAllowedMethods(f.FindSetting("allow_methods"));
         std::pair<int, std::string> redirect = BuildRedirect(f.FindSetting("return"));
@@ -238,37 +243,28 @@ template <>
 class ConfigBuilder<ServerConfig> {
   private:
 
-    static std::string BuildAccessLogPath(const std::vector<std::string>& vals)
+    static std::pair<std::string, Severity> BuildAccessLog(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return ServerConfig::kDefaultAccessLogPath;
+            return std::make_pair(ServerConfig::kDefaultAccessLogPath, ServerConfig::kDefaultAccessLogLevel);
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
-        if (val_elements.size() < 2) {
-            throw std::runtime_error("Invalid configuration file: invalid access_log: " + vals[0]);
+        if (val_elements.size() == 1) {
+            return std::make_pair(ParseAccessLogPath(val_elements[0]),
+                                  ServerConfig::kDefaultAccessLogLevel);
+        } else if (val_elements.size() == 2) {
+            return std::make_pair(ParseAccessLogPath(val_elements[0]),
+                                  ParseAccessLogLevel(val_elements[1]));
         }
-        return ParseAccessLogPath(val_elements[0]);
+        throw std::runtime_error("Invalid configuration file: invalid access_log: " + vals[0]);
     }
 
-    static const std::string& ParseAccessLogPath(const std::string& vals)
+    static const std::string& ParseAccessLogPath(const std::string& val)
     {
-        // if (access(vals.c_str(), F_OK | R_OK | W_OK) == -1) {
-        //     throw std::runtime_error("Invalid configuration file: access log doesn't exist: " +
-        //     vals);
-        // }
-        return vals;
-    }
-
-    static Severity BuildAccessLogLevel(const std::vector<std::string>& vals)
-    {
-        if (vals.empty()) {
-            return ServerConfig::kDefaultAccessLogLevel;
+        if (!config::ValidPath(val)) {
+            throw std::runtime_error("Invalid configuration file: invalid error_log path: " + val);
         }
-        std::vector<std::string> val_elements = config::SplitLine(vals[0]);
-        if (val_elements.size() != 2) {
-            throw std::runtime_error("Invalid configuration file: invalid access_log: " + vals[1]);
-        }
-        return ParseAccessLogLevel(val_elements[1]);
+        return val;
     }
 
     static Severity ParseAccessLogLevel(const std::string& val)
@@ -297,11 +293,10 @@ class ConfigBuilder<ServerConfig> {
         return ParseErrorLogPath(vals[0]);
     }
 
-    static std::string ParseErrorLogPath(const std::string& val)
+    static const std::string& ParseErrorLogPath(const std::string& val)
     {
-        if (access(val.c_str(), F_OK | R_OK | W_OK) == -1) {
-            throw std::runtime_error("Invalid configuration file: error_log file doesn't exist: " +
-                                     val);
+        if (!config::ValidPath(val)) {
+            throw std::runtime_error("Invalid configuration file: invalid error_log path: " + val);
         }
         return val;
     }
@@ -326,7 +321,7 @@ class ConfigBuilder<ServerConfig> {
 
         if (val.find(':') == std::string::npos) {
             addr = c_api::IPv4FromString("localhost");
-            port = config::StrToInPortT(val);
+            port = config::StrToInPortT(val); //what if IPv4 is given, but port - not, should we take 80 as default port, or is it invalid?
         } else {
             size_t colon_pos = val.find(':');
             addr = c_api::IPv4FromString(val.substr(0, colon_pos));
@@ -438,8 +433,7 @@ class ConfigBuilder<ServerConfig> {
                               const std::string& inherited_index,
                               const std::string& inherited_autoindex)
     {
-        std::string access_log_path = BuildAccessLogPath(f.FindSetting("access_log"));
-        Severity access_log_level = BuildAccessLogLevel(f.FindSetting("access_log"));
+        std::pair<std::string, Severity> access_log = BuildAccessLog(f.FindSetting("access_log"));
         std::string error_log_path = BuildErrorLogPath(f.FindSetting("error_log"));
         std::vector<std::pair<in_addr_t, in_port_t> > listeners =
             BuildListeners(f.FindSetting("listen"));
@@ -456,7 +450,7 @@ class ConfigBuilder<ServerConfig> {
                 throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
             }
         }
-        return ServerConfig(access_log_path, access_log_level, error_log_path, listeners,
+        return ServerConfig(access_log, error_log_path, listeners,
                             server_names, location_configs);
     }
 };
@@ -674,9 +668,9 @@ class ConfigBuilder<Config> {
 
     static std::string ParseErrorLogPath(const std::string& val)
     {
-        /* if (!config::ValidPath(val)) {
+        if (!config::ValidPath(val)) {
             throw std::runtime_error("Invalid configuration file: invalid error_log path: " + val);
-        } */ // check for valid path
+        }
         return val;
     }
 

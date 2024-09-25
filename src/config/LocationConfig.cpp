@@ -1,5 +1,6 @@
 #include "LocationConfig.h"
 #include "utils.h"
+#include <iostream>
 
 namespace config {
 
@@ -9,7 +10,7 @@ const std::string LocationConfig::kDefaultRootDir = "/docs";
 const std::string LocationConfig::kDefaultIndexFile = "index.html";
 const std::string LocationConfig::kDefaultDirListing = "off";
 
-LocationConfig::LocationConfig(const std::string& route,
+LocationConfig::LocationConfig(const std::pair<std::string, std::string>& route,
                                const std::vector<std::string>& allowed_methods,
                                const std::pair<int, std::string>& redirect,
                                const std::vector<std::string>& cgi_paths,
@@ -17,12 +18,12 @@ LocationConfig::LocationConfig(const std::string& route,
                                const std::string& root_dir, const std::string& default_file,
                                const std::string& dir_listing)
     : route_(InitRoute(route)), allowed_methods_(allowed_methods),
-      redirect_(InitRedirect(redirect)), is_cgi_(!cgi_paths.empty() || !cgi_extensions.empty()),
-      cgi_paths_(InitCgiPaths(cgi_paths)), cgi_extensions_(InitCgiExtensions(cgi_extensions)),
+      redirect_(InitRedirect(redirect)), is_cgi_(route.first == "/cgi-bin"),
+      cgi_paths_(cgi_paths), cgi_extensions_(cgi_extensions),
       root_dir_(root_dir), default_file_(InitDefaultFile(default_file)), dir_listing_(dir_listing)
 {}
 
-const std::string& LocationConfig::route() const
+const std::pair<std::string, LocationConfig::LocationPriority>& LocationConfig::route() const
 {
     return route_;
 }
@@ -67,10 +68,19 @@ const std::string& LocationConfig::dir_listing() const
     return dir_listing_;
 }
 
-const std::string& LocationConfig::InitRoute(const std::string& value)
+const std::pair<std::string, LocationConfig::LocationPriority> LocationConfig::InitRoute(const std::pair<std::string, std::string>& value)
 {
-    // To Do
-    return value;
+    LocationPriority priority;
+    if (value.second.empty()) {
+        priority = P2;
+    } else if (value.second == "^~") {
+        priority = P1;
+    } else if (value.second == "=") {
+        priority = P0;
+    } else {
+        throw std::runtime_error("Invalid location priority.");
+    }
+    return std::make_pair(value.first, priority);
 }
 
 const std::string&  LocationConfig::InitDefaultFile(const std::string& value)
@@ -83,26 +93,20 @@ const std::string&  LocationConfig::InitDefaultFile(const std::string& value)
 
 std::pair<int, std::string> LocationConfig::InitRedirect(const std::pair<int, std::string>& value)
 {
+    if (value.first < 300 || value.first > 399) {
+        throw std::runtime_error("Invalid configuration file: invalid redirect status code.");
+    } else if (!IsDirectory(value.second) && !CheckFileExtension(value.second, ".html")) { // check if it is a file or directory
+        std::cout << IsDirectory(value.second) << std::endl;
+        throw std::runtime_error("Invalid configuration file: invalid redirect path: " + value.second);
+    }
     return value;
-}
-
-std::vector<std::string> LocationConfig::InitCgiPaths(const std::vector<std::string>& value)
-{
-    (void)value;
-    return std::vector<std::string>();
-}
-
-std::vector<std::string> LocationConfig::InitCgiExtensions(const std::vector<std::string>& value)
-{
-    (void)value;
-    return std::vector<std::string>();
 }
 
 void LocationConfig::Print() const
 {
     LOG(DEBUG) << "\n";
     LOG(DEBUG) << "--Location configuration: --";
-    LOG(DEBUG) << "Route: " << route_;
+    LOG(DEBUG) << "Route: " << route_.first << " " << route_.second;
     LOG(DEBUG) << "Allowed methods: ";
     for (size_t i = 0; i < allowed_methods_.size(); i++) {
         LOG(DEBUG) << "  " << allowed_methods_[i];

@@ -8,12 +8,12 @@ const Severity ServerConfig::kDefaultAccessLogLevel = INFO;
 const std::string ServerConfig::kDefaultAccessLogPath = "/log/access.log";
 const std::string ServerConfig::kDefaultErrorLogPath = "/log/error.log";
 
-ServerConfig::ServerConfig(const std::string& access_log_path, Severity access_log_level,
+ServerConfig::ServerConfig(const std::pair<std::string, Severity>& access_log,
                            const std::string& error_log_path,
                            const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
                            const std::vector<std::string>& server_names,
                            const std::vector<LocationConfig>& locations)
-    : access_log_path_(InitAccessLog(access_log_path)), access_log_level_(access_log_level),
+    : access_log_path_(InitAccessLog(access_log.first)), access_log_level_(access_log.second),
       error_log_path_(InitErrorLogPath(error_log_path)), listeners_(listeners),
       server_names_(InitServerNames(server_names)), locations_(locations)
 {}
@@ -62,13 +62,6 @@ const std::string& ServerConfig::InitErrorLogPath(const std::string& value)
         throw std::runtime_error("Invalid log file suffix.");
     }
     return value;
-}
-
-std::vector<std::pair<in_addr_t, in_port_t> > InitListeners(const std::string& value)
-{
-    (void)value;
-    // TO DO
-    return std::vector<std::pair<in_addr_t, in_port_t> >();
 }
 
 std::vector<std::string> ServerConfig::InitServerNames(const std::vector<std::string>& value)

@@ -88,11 +88,11 @@ in_port_t   StrToInPortT(const std::string& str) {
 
 bool ValidPath(const std::string& val)
 {
-    if (val.empty() || val.find("/") != 0) {
+    if (val.empty() || val[0] != '/') {
         return false;
     }
 
-    std::ofstream file(val.c_str(), std::ios::out);
+    std::ofstream file(val.substr(1).c_str(), std::ios::out);
     if (!file.is_open()) {
         return false;
     }
