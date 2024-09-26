@@ -5,6 +5,7 @@
 namespace http {
 
 void Request::Reset() {
+    bad_request_ = false;
     method = HTTP_NO_METHOD;
     version = HTTP_NO_VERSION;
     uri_.clear();
@@ -15,12 +16,11 @@ void Request::Reset() {
     params_.clear();
     body_.clear();
     body_size_ = 0;
-    status_code_ = 0;
 }
 
 void Request::Print() const {
     LOG(DEBUG) << "---Request---";
-    LOG(DEBUG) << "Status code: " << status_code_;
+    LOG(DEBUG) << "Bad Request: " << bad_request_;
     LOG(DEBUG) << "Method: " << method;
     LOG(DEBUG) << "URI: " << uri_;
     LOG(DEBUG) << "Version: " << version;

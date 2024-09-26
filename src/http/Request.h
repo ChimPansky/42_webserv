@@ -23,6 +23,7 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
 
 struct Request {
     Method method;
+    bool bad_request_;
     std::string uri_; // todo: change to struct/class
     Version version;
     std::string host_;
@@ -32,7 +33,6 @@ struct Request {
     std::map<std::string, std::string> params_;
     std::vector<char> body_;
     size_t body_size_;
-    int status_code_;
 
     void Reset();
     void Print() const;

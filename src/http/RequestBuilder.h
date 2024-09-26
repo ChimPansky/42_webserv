@@ -10,6 +10,17 @@ namespace http {
 
 class RequestBuilder {
   private:
+    struct EOFChecker {
+      private:
+        short int counter_;
+      public:
+        EOFChecker();
+        void Reset();
+        void Update(char c);
+        bool end_of_line_;
+        bool end_of_file_;
+    };
+  private:
     enum ParseState {
         PS_METHOD,
         PS_URI,
@@ -25,19 +36,19 @@ class RequestBuilder {
     RequestBuilder();
     void Reset();
     void ParseNext(const char* input, size_t input_sz);
-    bool IsReadyForResponse() const;
+    bool IsReadyForResponse();
     const Request& rq() const;
 
   private:
     Request rq_;
+    EOFChecker eof_checker_;
     //Server& server_;
-    bool eof_reached_;
-
     std::vector<char> parse_buf_;
     int chunk_counter_;
     ParseState parse_state_;
     size_t parse_buf_len_;
     std::string header_key_;
+
     ParseState ParseMethod_();
     ParseState ParseUri_();
     ParseState ParseVersion_();
@@ -46,7 +57,6 @@ class RequestBuilder {
     ParseState ParseHeaderValue_();
     ParseState ParseBody_();
 
-    void CheckIfRequestIsComplete_();
     void ResetParseBuf_();
     bool LineIsEmpty_() const;
 
