@@ -2,6 +2,7 @@
 #define WS_SERVERCONFIG_H
 
 #include <netinet/in.h>
+
 #include "LocationConfig.h"
 
 namespace config {
