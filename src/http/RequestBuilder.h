@@ -1,9 +1,10 @@
 #ifndef WS_HTTP_REQUEST_BUILDER_H
 #define WS_HTTP_REQUEST_BUILDER_H
 
-#include "Request.h"
 #include <cstddef>
 #include <vector>
+
+#include "Request.h"
 
 class Server;
 namespace http {
@@ -13,6 +14,7 @@ class RequestBuilder {
     struct EOFChecker {
       private:
         short int counter_;
+
       public:
         EOFChecker();
         void Reset();
@@ -20,6 +22,7 @@ class RequestBuilder {
         bool end_of_line_;
         bool end_of_file_;
     };
+
   private:
     enum ParseState {
         PS_METHOD,
@@ -32,6 +35,7 @@ class RequestBuilder {
         PS_END,
         PS_ERROR
     };
+
   public:
     RequestBuilder();
     void Reset();
@@ -42,7 +46,7 @@ class RequestBuilder {
   private:
     Request rq_;
     EOFChecker eof_checker_;
-    //Server& server_;
+    // Server& server_;
     std::vector<char> parse_buf_;
     int chunk_counter_;
     ParseState parse_state_;
