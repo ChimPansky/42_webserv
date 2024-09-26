@@ -50,7 +50,6 @@ class RequestBuilder {
     std::vector<char> parse_buf_;
     int chunk_counter_;
     ParseState parse_state_;
-    size_t parse_buf_len_;
     std::string header_key_;
 
     ParseState ParseMethod_();
