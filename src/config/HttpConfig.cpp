@@ -45,7 +45,7 @@ int HttpConfig::InitKeepaliveTimeout(int value)
 
 size_t HttpConfig::InitClientMaxBodySize(size_t value)
 {
-    if (value < 1 || value > 1073741824) {     // minimum size is 1 byte, maximum size is 1GB
+    if (value < 1 || value > 1073741824) {  // minimum size is 1 byte, maximum size is 1GB
         throw std::runtime_error("Invalid configuration file: invalid client_max_body_size value.");
     }
     return value;

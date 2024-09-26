@@ -1,7 +1,7 @@
 #include "ServerConfig.h"
 
-#include "utils.h"
 #include "c_api/utils.h"
+#include "utils.h"
 
 namespace config {
 
@@ -74,7 +74,8 @@ void ServerConfig::Print() const
     LOG(DEBUG) << "Error log path: " << error_log_path_;
     LOG(DEBUG) << "Listeners: ";
     for (size_t i = 0; i < listeners_.size(); i++) {
-        LOG(DEBUG) << "  " << c_api::IPv4ToString(listeners_[i].first) << ":" << listeners_[i].second;
+        LOG(DEBUG) << "  " << c_api::IPv4ToString(listeners_[i].first) << ":"
+                   << listeners_[i].second;
     }
     LOG(DEBUG) << "Server names:";
     for (size_t i = 0; i < server_names_.size(); i++) {

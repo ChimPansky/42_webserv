@@ -1,4 +1,5 @@
 #include "ConfigParser.h"
+
 #include <iostream>
 
 namespace config {
@@ -18,18 +19,18 @@ ConfigParser::ConfigParser(std::ifstream& ifs, const std::string& lvl, const std
         // TEST and improve
         if (last_char == ';') {
             if (content.empty()) {
-                throw std::invalid_argument("Empty setting.");
+                throw std::invalid_argument("Invalid config file: empty setting.");
             }
             settings_.insert(config::MakePair(content));
         } else if (last_char == '{') {
             if (content.empty()) {
-                throw std::invalid_argument("Empty block.");
+                throw std::invalid_argument("Invalid config file: empty block.");
             }
             Setting setting = config::MakePair(content);
             nested_configs_.push_back(ConfigParser(ifs, setting.first, setting.second));
         } else if (last_char == '}' && !lvl_.empty()) {
             if (!content.empty()) {
-                throw std::invalid_argument("Invalid paranthesis.");
+                throw std::invalid_argument("Invalid config file: invalid paranthesis.");
             }
             return;
         } else {
@@ -76,17 +77,13 @@ const std::vector<ConfigParser>& ConfigParser::FindNesting(const std::string& ke
 {
     if (nested_configs_.empty()) {
         throw std::runtime_error("Invalid configuration file: no " + key + " block.");
-    } else if ("http" == key && nested_configs_.size() == 1 && "http" == nested_configs_[0].lvl()) {
-        return nested_configs_;
-    } else if ("server" == key || "location" == key) {
-        for (size_t i = 0; i < nested_configs_.size(); i++) {
-            if (key != nested_configs_[i].lvl()) {
-                throw std::runtime_error("Invalid configuration file: invalid block.");
-            }
-        }
-        return nested_configs_;
     }
-    throw std::runtime_error("Invalid configuration file: multiple " + key + " blocks.");
+    for (size_t i = 0; i < nested_configs_.size(); i++) {
+        if (key != nested_configs_[i].lvl()) {
+            throw std::runtime_error("Invalid configuration file: invalid block.");
+        }
+    }
+    return nested_configs_;
 }
 
 }  // namespace config

@@ -2,6 +2,7 @@
 #define WS_CONFIG_CONFIGBUILDER_H
 
 #include <unistd.h>
+
 #include <cstddef>
 #include <stdexcept>
 #include <string>
@@ -20,6 +21,7 @@ template <class ConfigType>
 class ConfigBuilder {
   private:
     static bool IsKeyAllowed(const std::string& key);
+    static bool IsNestingAllowed(const ConfigParser& f);
 
   public:
     static ConfigType Build(const ConfigParser& f, const std::string& inherited_root,
@@ -54,8 +56,7 @@ class ConfigBuilder<LocationConfig> {
         if (route == "/" || (IsDirectory(route) && route[route.size() - 1] == '/')) {
             return std::make_pair(route, priority);
         }
-        throw std::runtime_error("Invalid configuration file: invalid route: " +
-                                    route);
+        throw std::runtime_error("Invalid configuration file: invalid route: " + route);
     }
 
     static std::vector<std::string> BuildAllowedMethods(const std::vector<std::string>& vals)
@@ -93,12 +94,14 @@ class ConfigBuilder<LocationConfig> {
     static std::pair<int, std::string> ParseRedirect(const std::vector<std::string>& vals)
     {
         if (vals.size() != 2) {
-            throw std::runtime_error("Invalid configuration file: redirection status code is invalid.");
+            throw std::runtime_error(
+                "Invalid configuration file: redirection status code is invalid.");
         }
         int code = config::StrToInt(vals[0]);
-        if (vals[1][0] != '/' || ((access(vals[1].substr(1).c_str(), F_OK | R_OK) == -1) && !IsDirectory(vals[1]))) {
-            throw std::runtime_error("Invalid configuration file: redirection file/directory doesn't exist: " +
-            vals[1]);
+        if (vals[1][0] != '/' ||
+            ((access(vals[1].substr(1).c_str(), F_OK | R_OK) == -1) && !IsDirectory(vals[1]))) {
+            throw std::runtime_error(
+                "Invalid configuration file: redirection file/directory doesn't exist: " + vals[1]);
         }
         return std::make_pair(code, vals[1]);
     }
@@ -181,13 +184,13 @@ class ConfigBuilder<LocationConfig> {
     {
         if (access(vals.c_str(), F_OK | R_OK) == -1) {
             throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
-            vals);
+                                     vals);
         }
         return vals;
     }
 
     static bool BuildDirListing(const std::vector<std::string>& vals,
-                                             const std::string& inherited_redirect)
+                                const std::string& inherited_redirect)
     {
         if (vals.empty() && inherited_redirect.empty()) {
             return LocationConfig::kDefaultDirListing;
@@ -212,12 +215,28 @@ class ConfigBuilder<LocationConfig> {
         return key == "allow_methods" || key == "return" || key == "cgi_path" ||
                key == "cgi_extension" || key == "root" || key == "index" || key == "autoindex";
     }
+    static bool IsNestingAllowed(const ConfigParser& f)
+    {
+        if (!f.nested_configs().empty()) {
+            return false;
+        }
+        return true;
+    }
 
   public:
     static LocationConfig Build(const ConfigParser& f, const std::string& inherited_root,
                                 const std::string& inherited_def_file,
                                 const std::string& inherited_redirect)
     {
+        for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
+             it != f.settings().end(); ++it) {
+            if (!IsKeyAllowed(it->first)) {
+                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
+            }
+        }
+        if (!IsNestingAllowed(f)) {
+            throw std::runtime_error("Invalid configuration file: invalid nesting.");
+        }
         std::pair<std::string, std::string> route = BuildRoute(f.lvl_descr());
         std::vector<std::string> allowed_methods =
             BuildAllowedMethods(f.FindSetting("allow_methods"));
@@ -229,13 +248,6 @@ class ConfigBuilder<LocationConfig> {
         std::string default_file = BuildDefaultFile(f.FindSetting("index"), inherited_def_file);
         bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_redirect);
 
-        for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
-             it != f.settings().end(); ++it) {
-            if (!IsKeyAllowed(it->first)) {
-                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
-            }
-        }
-
         return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, root_dir,
                               default_file, dir_listing);
     }
@@ -244,11 +256,11 @@ class ConfigBuilder<LocationConfig> {
 template <>
 class ConfigBuilder<ServerConfig> {
   private:
-
     static std::pair<std::string, Severity> BuildAccessLog(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return std::make_pair(ServerConfig::kDefaultAccessLogPath, ServerConfig::kDefaultAccessLogLevel);
+            return std::make_pair(ServerConfig::kDefaultAccessLogPath,
+                                  ServerConfig::kDefaultAccessLogLevel);
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
@@ -323,7 +335,8 @@ class ConfigBuilder<ServerConfig> {
 
         if (val.find(':') == std::string::npos) {
             addr = c_api::IPv4FromString("localhost");
-            port = config::StrToInPortT(val); //what if IPv4 is given, but port - not, should we take 80 as default port, or is it invalid?
+            port = config::StrToInPortT(val);  // what if IPv4 is given, but port - not, should we
+                                               // take 80 as default port, or is it invalid?
         } else {
             size_t colon_pos = val.find(':');
             addr = c_api::IPv4FromString(val.substr(0, colon_pos));
@@ -343,7 +356,7 @@ class ConfigBuilder<ServerConfig> {
     static std::vector<std::string> ParseServerNames(const std::vector<std::string>& vals)
     {
         std::vector<std::string> server_names;
-    
+
         for (size_t i = 0; i < vals.size(); i++) {
             std::vector<std::string> val_elements = config::SplitLine(vals[i]);
             if (!val_elements.empty()) {
@@ -359,8 +372,8 @@ class ConfigBuilder<ServerConfig> {
         return server_names;
     }
 
-    static bool IsValidComponent(const std::string& label) {
-    
+    static bool IsValidComponent(const std::string& label)
+    {
         if (label.empty() || label[0] == '-' || label[label.size() - 1] == '-') {
             return false;
         }
@@ -374,12 +387,16 @@ class ConfigBuilder<ServerConfig> {
 
     static const std::string& ParseServerName(const std::string& val)
     {
-        if (val.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.*") != std::string::npos)
-            throw std::runtime_error("Invalid server name: invalid characters in server name");
-
-        size_t wildcardPos = val.find('*');
-        if (wildcardPos != std::string::npos && wildcardPos != 0 && wildcardPos != val.size() - 1)
-            throw std::runtime_error("Invalid server name: Wildcard '*' must be at the start or end");
+        for (size_t i = 0; i < val.size(); i++) {
+            if (isalnum(val[i]) || val[i] == '-' || val[i] == '.' || val[i] == '*') {
+                if (val[i] == '*' && i != 0 && i != val.size() - 1) {
+                    throw std::runtime_error(
+                        "Invalid server name: Wildcard '*' must be at the start or end");
+                }
+            } else {
+                throw std::runtime_error("Invalid server name: invalid characters in server name");
+            }
+        }
 
         size_t start = 0;
         size_t dotPos = 0;
@@ -431,7 +448,7 @@ class ConfigBuilder<ServerConfig> {
     {
         if (access(vals.c_str(), F_OK | R_OK) == -1) {
             throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
-            vals);
+                                     vals);
         }
         return vals;
     }
@@ -470,8 +487,21 @@ class ConfigBuilder<ServerConfig> {
     static bool IsKeyAllowed(const std::string& key)
     {
         return key == "listen" || key == "server_name" || key == "access_log" ||
-               key == "error_log" || key == "root" || key == "index" || key == "autoindex" ||
-               key == "location";
+               key == "error_log" || key == "root" || key == "index" || key == "autoindex";
+    }
+
+    static bool IsNestingAllowed(const ConfigParser& f)
+    {
+        if (f.nested_configs().empty()) {
+            return false;
+        }
+        for (std::vector<ConfigParser>::const_iterator it = f.nested_configs().begin();
+             it != f.nested_configs().end(); ++it) {
+            if (it->lvl_descr().empty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
   public:
@@ -479,6 +509,15 @@ class ConfigBuilder<ServerConfig> {
                               const std::string& inherited_def_file,
                               const std::string& inherited_redirect)
     {
+        for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
+             it != f.settings().end(); ++it) {
+            if (!IsKeyAllowed(it->first)) {
+                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
+            }
+        }
+        if (!IsNestingAllowed(f)) {
+            throw std::runtime_error("Invalid configuration file: invalid nesting.");
+        }
         std::pair<std::string, Severity> access_log = BuildAccessLog(f.FindSetting("access_log"));
         std::string error_log_path = BuildErrorLogPath(f.FindSetting("error_log"));
         std::vector<std::pair<in_addr_t, in_port_t> > listeners =
@@ -490,26 +529,13 @@ class ConfigBuilder<ServerConfig> {
         std::vector<LocationConfig> location_configs = BuildLocationConfigs(
             f.FindNesting("location"), root_dir, default_file, dir_listing);  // map or vector
 
-        for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
-             it != f.settings().end(); ++it) {
-            if (!IsKeyAllowed(it->first)) {
-                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
-            }
-        }
-        return ServerConfig(access_log, error_log_path, listeners,
-                            server_names, location_configs);
+        return ServerConfig(access_log, error_log_path, listeners, server_names, location_configs);
     }
 };
 
 template <>
 class ConfigBuilder<HttpConfig> {
   private:
-    static bool IsKeyAllowed(const std::string& key)
-    {
-        return key == "keepalive_timeout" || key == "client_max_body_size" || key == "error_page" ||
-               key == "root" || key == "index" || key == "autoindex";
-    }
-
     static int BuildKeepAliveTimeout(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
@@ -572,7 +598,8 @@ class ConfigBuilder<HttpConfig> {
                 throw std::runtime_error("Invalid configuration file: invalid error_page: " +
                                          vals[i]);
             } else if (access(val_elements[val_elements.size() - 1].c_str(), F_OK | R_OK) == -1) {
-                throw std::runtime_error("Invalid configuration file: error page doesn't exist: " + val_elements[val_elements.size() - 1]);
+                throw std::runtime_error("Invalid configuration file: error page doesn't exist: " +
+                                         val_elements[val_elements.size() - 1]);
             }
             for (size_t j = 0; j < val_elements.size() - 1; j++) {
                 if (j != val_elements.size() - 1) {
@@ -612,7 +639,7 @@ class ConfigBuilder<HttpConfig> {
     {
         if (access(val.c_str(), F_OK | R_OK) == -1) {
             throw std::runtime_error("Invalid configuration file: index file doesn't exist: " +
-            val);
+                                     val);
         }
         return val;
     }
@@ -639,13 +666,30 @@ class ConfigBuilder<HttpConfig> {
     {
         std::vector<ServerConfig> server_configs;
         for (size_t i = 0; i < nested_configs.size(); i++) {
-            if (!nested_configs[i].lvl_descr().empty()) {
-                throw std::runtime_error("Invalid configuration file: invalid block.");
-            }
             server_configs.push_back(ConfigBuilder<ServerConfig>::Build(
                 nested_configs[i], inherited_root, inherited_def_file, inherited_redirect));
         }
         return server_configs;
+    }
+
+    static bool IsKeyAllowed(const std::string& key)
+    {
+        return key == "keepalive_timeout" || key == "client_max_body_size" || key == "error_page" ||
+               key == "root" || key == "index" || key == "autoindex";
+    }
+
+    static bool IsNestingAllowed(const ConfigParser& f)
+    {
+        if (f.nested_configs().empty()) {
+            return false;
+        }
+        for (std::vector<ConfigParser>::const_iterator it = f.nested_configs().begin();
+             it != f.nested_configs().end(); ++it) {
+            if (!it->lvl_descr().empty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
   public:
@@ -656,8 +700,15 @@ class ConfigBuilder<HttpConfig> {
         if (!inherited_root.empty() || !inherited_def_file.empty() || !inherited_redirect.empty()) {
             throw std::runtime_error(
                 "Invalid configuration file: invalid settings for http block.");
-        } else if (!f.lvl_descr().empty()) {
-            throw std::runtime_error("Invalid configuration file: invalid block.");
+        }
+        for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
+             it != f.settings().end(); ++it) {
+            if (!IsKeyAllowed(it->first)) {
+                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
+            }
+        }
+        if (!IsNestingAllowed(f)) {
+            throw std::runtime_error("Invalid configuration file: invalid nesting.");
         }
         int keepalive_timeout = BuildKeepAliveTimeout(f.FindSetting("keepalive_timeout"));
         size_t client_max_body_size = BuildClientMaxBodySize(f.FindSetting("client_max_body_size"));
@@ -667,12 +718,6 @@ class ConfigBuilder<HttpConfig> {
         std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"));
         std::vector<ServerConfig> server_configs =
             BuildServerConfigs(f.FindNesting("server"), root_dir, default_file, dir_listing);
-        for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
-             it != f.settings().end(); ++it) {
-            if (!IsKeyAllowed(it->first)) {
-                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
-            }
-        }
         return HttpConfig(keepalive_timeout, client_max_body_size, error_pages, server_configs);
     }
 };
@@ -748,10 +793,34 @@ class ConfigBuilder<Config> {
         return key == "use" || key == "error_log";
     }
 
+    static bool IsNestingAllowed(const ConfigParser& f)
+    {
+        if (f.nested_configs().size() != 1) {
+            return false;
+        }
+        for (std::vector<ConfigParser>::const_iterator it = f.nested_configs().begin();
+             it != f.nested_configs().end(); ++it) {
+            if (it->lvl() != "http" || !it->lvl_descr().empty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
   public:
     static Config Build(const ConfigParser& f, const std::string& inherited_root,
-                        const std::string& inherited_def_file, const std::string& inherited_redirect)
+                        const std::string& inherited_def_file,
+                        const std::string& inherited_redirect)
     {
+        for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
+             it != f.settings().end(); ++it) {
+            if (!IsKeyAllowed(it->first)) {
+                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
+            }
+        }
+        if (!IsNestingAllowed(f)) {
+            throw std::runtime_error("Invalid configuration file: invalid nesting.");
+        }
         if (!inherited_root.empty() || !inherited_def_file.empty() || !inherited_redirect.empty()) {
             throw std::runtime_error(
                 "Invalid configuration file: invalid settings for main block.");
@@ -760,12 +829,6 @@ class ConfigBuilder<Config> {
         std::pair<std::string, Severity> error_log = BuildErrorLog(f.FindSetting("error_log"));
         HttpConfig http_conf =
             ConfigBuilder<HttpConfig>::Build(f.FindNesting("http")[0], "", "", "");
-        for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
-             it != f.settings().end(); ++it) {
-            if (!IsKeyAllowed(it->first)) {
-                throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
-            }
-        }
         return Config(mx_type, error_log, http_conf);
     }
 };

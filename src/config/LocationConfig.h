@@ -22,7 +22,8 @@ class LocationConfig {
         P1 = 1,
         P2 = 2
     };
-    LocationConfig(const std::pair<std::string, std::string>& route, const std::vector<std::string>& allowed_methods,
+    LocationConfig(const std::pair<std::string, std::string>& route,
+                   const std::vector<std::string>& allowed_methods,
                    const std::pair<int, std::string>& redirect,
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
@@ -35,7 +36,7 @@ class LocationConfig {
     const std::vector<std::string>& cgi_extensions() const;
     const std::string& root_dir();
     const std::string& default_file() const;
-    bool  dir_listing() const;
+    bool dir_listing() const;
     static const int kDefaultRedirectCode;
     static const std::string kDefaultRedirectPath;
     static const std::string kDefaultRootDir;
@@ -45,7 +46,8 @@ class LocationConfig {
     void Print() const;
 
   private:
-    const std::pair<std::string, LocationConfig::LocationPriority>  InitRoute(const std::pair<std::string, std::string>& value);
+    const std::pair<std::string, LocationConfig::LocationPriority> InitRoute(
+        const std::pair<std::string, std::string>& value);
     std::pair<std::string, LocationPriority> route_;
     std::vector<std::string> allowed_methods_;
     std::pair</* status code */ int, /* new route */ std::string> redirect_;
@@ -54,7 +56,7 @@ class LocationConfig {
     std::vector<std::string> cgi_extensions_;
     std::string root_dir_;
     std::string default_file_;
-    bool  dir_listing_;
+    bool dir_listing_;
 };
 
 }  // namespace config

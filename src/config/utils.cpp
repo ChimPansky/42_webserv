@@ -73,7 +73,8 @@ size_t StrToUnsignedInt(const std::string& str)
     return static_cast<size_t>(value);
 }
 
-in_port_t   StrToInPortT(const std::string& str) {
+in_port_t StrToInPortT(const std::string& str)
+{
     if (str.find_first_not_of("0123456789") != std::string::npos) {
         throw std::runtime_error("Nonnumeric characters in string");
     }
@@ -116,8 +117,8 @@ bool IsDirectory(const std::string& path)
     }
 }
 
-std::string  Trim(const std::string& str, const std::string& trim_chars) {
-
+std::string Trim(const std::string& str, const std::string& trim_chars)
+{
     std::string trimmed = str;
     if (str.find_last_not_of(trim_chars) == std::string::npos) {
         return std::string();
