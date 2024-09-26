@@ -80,7 +80,7 @@ in_port_t StrToInPortT(const std::string& str)
     }
     long value = std::atol(str.c_str());
 
-    if (value < 0 || value > 65535) {
+    if (value < 1 || value > 65535) {
         throw std::runtime_error("in_port_t conversion out of range");
     }
 

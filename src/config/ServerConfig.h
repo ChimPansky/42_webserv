@@ -1,6 +1,7 @@
 #ifndef WS_SERVERCONFIG_H
 #define WS_SERVERCONFIG_H
 
+#include <netinet/in.h>
 #include "LocationConfig.h"
 
 namespace config {
@@ -26,6 +27,8 @@ class ServerConfig {
     static const Severity kDefaultAccessLogLevel;
     static const std::string kDefaultAccessLogPath;
     static const std::string kDefaultErrorLogPath;
+    static const std::string kDefaultIPAddress;
+    static const in_port_t kDefaultPort;
 
     void Print() const;
 

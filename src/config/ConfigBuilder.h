@@ -10,6 +10,7 @@
 
 #include "Config.h"
 #include "ConfigParser.h"
+#include "ServerConfig.h"
 #include "c_api/utils.h"
 #include "config/utils.h"
 
@@ -66,6 +67,9 @@ class ConfigBuilder<LocationConfig> {
             allowed_methods.push_back("GET");
             allowed_methods.push_back("POST");
             return allowed_methods;
+        }
+        if (vals[0].empty()) {
+            throw std::runtime_error("Invalid configuration file: no allowed methods specified.");
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         return ParseAllowedMethods(val_elements);
@@ -334,9 +338,13 @@ class ConfigBuilder<ServerConfig> {
         in_port_t port;
 
         if (val.find(':') == std::string::npos) {
-            addr = c_api::IPv4FromString("localhost");
-            port = config::StrToInPortT(val);  // what if IPv4 is given, but port - not, should we
-                                               // take 80 as default port, or is it invalid?
+            if (val.find('.') != std::string::npos) {
+                addr = c_api::IPv4FromString(val);
+                port = ServerConfig::kDefaultPort;
+            } else {
+                addr = c_api::IPv4FromString(ServerConfig::kDefaultIPAddress);
+                port = config::StrToInPortT(val);
+            }
         } else {
             size_t colon_pos = val.find(':');
             addr = c_api::IPv4FromString(val.substr(0, colon_pos));
