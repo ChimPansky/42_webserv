@@ -8,7 +8,7 @@ const std::string LocationConfig::kDefaultRedirectPath = "/new_location";
 const int LocationConfig::kDefaultRedirectCode = 301;
 const std::string LocationConfig::kDefaultRootDir = "/docs";
 const std::string LocationConfig::kDefaultIndexFile = "index.html";
-const std::string LocationConfig::kDefaultDirListing = "off";
+const bool LocationConfig::kDefaultDirListing = false;
 
 LocationConfig::LocationConfig(const std::pair<std::string, std::string>& route,
                                const std::vector<std::string>& allowed_methods,
@@ -16,7 +16,7 @@ LocationConfig::LocationConfig(const std::pair<std::string, std::string>& route,
                                const std::vector<std::string>& cgi_paths,
                                const std::vector<std::string>& cgi_extensions,
                                const std::string& root_dir, const std::string& default_file,
-                               const std::string& dir_listing)
+                               bool dir_listing)
     : route_(InitRoute(route)), allowed_methods_(allowed_methods),
       redirect_(InitRedirect(redirect)), is_cgi_(route.first == "/cgi-bin/"),
       cgi_paths_(cgi_paths), cgi_extensions_(cgi_extensions),
@@ -63,7 +63,7 @@ const std::string& LocationConfig::default_file() const
     return default_file_;
 }
 
-const std::string& LocationConfig::dir_listing() const
+bool    LocationConfig::dir_listing() const
 {
     return dir_listing_;
 }

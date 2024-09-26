@@ -186,21 +186,23 @@ class ConfigBuilder<LocationConfig> {
         return vals;
     }
 
-    static const std::string BuildDirListing(const std::vector<std::string>& vals,
+    static bool BuildDirListing(const std::vector<std::string>& vals,
                                              const std::string& inherited_redirect)
     {
         if (vals.empty() && inherited_redirect.empty()) {
             return LocationConfig::kDefaultDirListing;
         } else if (vals.empty()) {
-            return inherited_redirect;
+            return ParseDirListing(inherited_redirect);
         }
         return ParseDirListing(vals[0]);
     }
 
-    static const std::string& ParseDirListing(const std::string& vals)
+    static bool ParseDirListing(const std::string& vals)
     {
-        if (vals == "on" || vals == "off") {
-            return vals;
+        if (vals == "on") {
+            return true;
+        } else if (vals == "off") {
+            return false;
         }
         throw std::runtime_error("Invalid configuration file: invalid autoindex value: " + vals);
     }
@@ -225,7 +227,7 @@ class ConfigBuilder<LocationConfig> {
             BuildCgiExtensions(f.FindSetting("cgi_extension"));
         std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_root);
         std::string default_file = BuildDefaultFile(f.FindSetting("index"), inherited_def_file);
-        std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_redirect);
+        bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_redirect);
 
         for (std::map<std::string, std::string>::const_iterator it = f.settings().begin();
              it != f.settings().end(); ++it) {
