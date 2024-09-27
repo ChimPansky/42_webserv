@@ -62,6 +62,7 @@ class RequestBuilder {
     ParseState ParseBody_(char c);
 
     size_t ParseLen_() const;
+    int CompareBuf_(const char*, size_t len) const;
     void UpdateBeginIdx_();
     bool LineIsEmpty_() const;
 

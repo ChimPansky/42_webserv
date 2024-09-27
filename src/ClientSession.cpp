@@ -61,7 +61,7 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    ssize_t bytes_recvd = client_.client_sock_->Recv(client_.rq_builder_.buf(), 20);
+    ssize_t bytes_recvd = client_.client_sock_->Recv(client_.rq_builder_.buf(), 10);
     if (bytes_recvd < 0) {
         LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
         client_.CloseConnection();
