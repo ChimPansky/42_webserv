@@ -12,6 +12,8 @@ class ServerConfig {
     const std::string& InitAccessLog(const std::string& value);
     const std::string& InitErrorLogPath(const std::string& value);
     std::vector<std::string> InitServerNames(const std::vector<std::string>& value);
+    const std::vector<std::pair<in_addr_t, in_port_t> >& InitListeners(
+        const std::vector<std::pair<in_addr_t, in_port_t> >& value);
 
   public:
     ServerConfig(const std::pair<std::string, Severity>& error_log,

@@ -47,46 +47,6 @@ bool CheckFileExtension(const std::string& file, const std::string& extention)
                                                   file.substr(file.find_last_of('.')) == extention);
 }
 
-int StrToInt(const std::string& str)
-{
-    if (str.find_first_not_of("0123456789") != std::string::npos) {
-        throw std::runtime_error("Nonnumeric characters in string");
-    }
-    long value = std::atol(str.c_str());
-
-    if (value < INT_MIN || value > INT_MAX) {
-        throw std::runtime_error("Integer conversion out of range");
-    }
-    return static_cast<int>(value);
-}
-
-size_t StrToUnsignedInt(const std::string& str)
-{
-    if (str.find_first_not_of("0123456789") != std::string::npos) {
-        throw std::runtime_error("Nonnumeric characters in string");
-    }
-    long value = std::atol(str.c_str());
-
-    if (value < 0 || value > UINT_MAX) {
-        throw std::runtime_error("Negative value cannot be converted to unsigned int");
-    }
-    return static_cast<size_t>(value);
-}
-
-in_port_t StrToInPortT(const std::string& str)
-{
-    if (str.find_first_not_of("0123456789") != std::string::npos) {
-        throw std::runtime_error("Nonnumeric characters in string");
-    }
-    long value = std::atol(str.c_str());
-
-    if (value < 1 || value > 65535) {
-        throw std::runtime_error("in_port_t conversion out of range");
-    }
-
-    return static_cast<in_port_t>(value);
-}
-
 bool ValidPath(const std::string& val)
 {
     if (val.empty() || val[0] != '/') {

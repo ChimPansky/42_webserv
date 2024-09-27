@@ -13,6 +13,7 @@
 #include "ServerConfig.h"
 #include "c_api/utils.h"
 #include "config/utils.h"
+#include "utils/utils.h"
 
 namespace config {
 
@@ -101,7 +102,7 @@ class ConfigBuilder<LocationConfig> {
             throw std::runtime_error(
                 "Invalid configuration file: redirection status code is invalid.");
         }
-        int code = config::StrToInt(vals[0]);
+        int code = utils::StrToNumeric<int>(vals[0]);
         if (vals[1][0] != '/' ||
             ((access(vals[1].substr(1).c_str(), F_OK | R_OK) == -1) && !IsDirectory(vals[1]))) {
             throw std::runtime_error(
@@ -343,12 +344,12 @@ class ConfigBuilder<ServerConfig> {
                 port = ServerConfig::kDefaultPort;
             } else {
                 addr = c_api::IPv4FromString(ServerConfig::kDefaultIPAddress);
-                port = config::StrToInPortT(val);
+                port = utils::StrToNumeric<in_port_t>(val);
             }
         } else {
             size_t colon_pos = val.find(':');
             addr = c_api::IPv4FromString(val.substr(0, colon_pos));
-            port = config::StrToInPortT(val.substr(colon_pos + 1));
+            port = utils::StrToNumeric<in_port_t>(val.substr(colon_pos + 1));
         }
         return std::make_pair(addr, port);
     }
@@ -554,7 +555,7 @@ class ConfigBuilder<HttpConfig> {
 
     static int ParseKeepAliveTimeout(const std::string& val)
     {
-        return config::StrToInt(val);
+        return utils::StrToNumeric<int>(val);
     }
 
     static size_t BuildClientMaxBodySize(const std::vector<std::string>& vals)
@@ -574,7 +575,7 @@ class ConfigBuilder<HttpConfig> {
 
     static size_t ParseClientMaxBodySize(const std::string& val, const std::string& unit)
     {
-        size_t nb = config::StrToInt(val);
+        size_t nb = utils::StrToNumeric<int>(val);
         if (unit == "KB") {
             return nb << 10;
         } else if (unit == "MB") {
@@ -611,7 +612,7 @@ class ConfigBuilder<HttpConfig> {
             }
             for (size_t j = 0; j < val_elements.size() - 1; j++) {
                 if (j != val_elements.size() - 1) {
-                    error_pages[StrToInt(val_elements[j])] = val_elements[val_elements.size() - 1];
+                    error_pages[utils::StrToNumeric<int>(val_elements[j])] = val_elements[val_elements.size() - 1];
                 }
             }
         }
