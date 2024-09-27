@@ -22,7 +22,7 @@ class ClientSocket {
     int sockfd() const;
 
     // come up with a better signature for recv/send
-    ssize_t Recv(char* buf, size_t sz = sock_buf_sz_) const;
+    ssize_t Recv(std::vector<char>& buf, size_t sz) const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
     char* sock_buf();
     size_t sock_buf_sz() const;

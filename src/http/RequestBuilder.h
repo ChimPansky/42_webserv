@@ -17,7 +17,6 @@ class RequestBuilder {
 
       public:
         EOFChecker();
-        //void Reset();
         void Update(char c);
         bool end_of_line_;
         bool end_of_file_;
@@ -38,29 +37,32 @@ class RequestBuilder {
 
   public:
     RequestBuilder();
-    //void Reset();
-    void ParseNext(const char* input, size_t input_sz);
+    void ParseNext(void);
     bool IsReadyForResponse();
     const Request& rq() const;
+    std::vector<char>& buf();
 
   private:
     Request rq_;
     EOFChecker eof_checker_;
     // Server& server_;
-    std::vector<char> parse_buf_;
-    int chunk_counter_;
+    size_t chunk_counter_;
+    std::vector<char> buf_;
+    size_t begin_idx_;
+    size_t end_idx_;
     ParseState parse_state_;
     std::string header_key_;
 
-    ParseState ParseMethod_();
-    ParseState ParseUri_();
-    ParseState ParseVersion_();
-    ParseState ParseHeaderKey_();
-    ParseState ParseHeaderSep_();
-    ParseState ParseHeaderValue_();
-    ParseState ParseBody_();
+    ParseState ParseMethod_(char c);
+    ParseState ParseUri_(char c);
+    ParseState ParseVersion_(char c);
+    ParseState ParseHeaderKey_(char c);
+    ParseState ParseHeaderSep_(char c);
+    ParseState ParseHeaderValue_(char c);
+    ParseState ParseBody_(char c);
 
-    void ResetParseBuf_();
+    size_t ParseLen_() const;
+    void UpdateBeginIdx_();
     bool LineIsEmpty_() const;
 
     void PrintParseBuf_() const;

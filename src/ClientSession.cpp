@@ -61,7 +61,7 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    ssize_t bytes_recvd = client_.client_sock_->Recv(client_.client_sock_->sock_buf());
+    ssize_t bytes_recvd = client_.client_sock_->Recv(client_.rq_builder_.buf(), 20);
     if (bytes_recvd < 0) {
         LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
         client_.CloseConnection();
@@ -69,7 +69,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
     }
     LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
                << client_.client_sock_->sockfd();
-    client_.rq_builder_.ParseNext(client_.client_sock_->sock_buf(), static_cast<size_t>(bytes_recvd));
+    client_.rq_builder_.ParseNext();
     if (client_.rq_builder_.IsReadyForResponse()) {
         c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(), c_api::CT_READ);
         if (c_api::EventManager::get().RegisterCallback(

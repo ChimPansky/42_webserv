@@ -36,23 +36,27 @@ void RequestBuilder::EOFChecker::Update(char c)
     }
 }
 
-RequestBuilder::RequestBuilder() : chunk_counter_(0), parse_state_(PS_METHOD)
+RequestBuilder::RequestBuilder() : chunk_counter_(0), begin_idx_(0), end_idx_(0), parse_state_(PS_METHOD)
 {}
 const Request& RequestBuilder::rq() const
 {
     return rq_;
 }
 
-void RequestBuilder::ParseNext(const char* input, size_t input_sz)
+std::vector<char>& RequestBuilder::buf()
+{
+    return buf_;
+}
+
+void RequestBuilder::ParseNext(void)
 {
     ++chunk_counter_;
-    LOG(DEBUG) << "Parsing chunk no " << chunk_counter_ << "; bytes_received: " << input_sz;
-    if (input_sz == 0) {
+    LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
+    if (buf_.size() == end_idx_) { // 0 bytes received...
         rq_.bad_request_ = true;
     }
-    for (size_t i = 0; i < input_sz && !IsReadyForResponse(); i++) {
-        char c = input[i];
-        parse_buf_.push_back(c);
+    while (end_idx_ < buf_.size() && !IsReadyForResponse()) {
+        char c = buf_[end_idx_++];
         // PrintParseBuf_();
         eof_checker_.Update(c);
         if (eof_checker_.end_of_file_ &&
@@ -65,31 +69,33 @@ void RequestBuilder::ParseNext(const char* input, size_t input_sz)
         bool state_changed = false;
         switch (parse_state_) {
             case PS_METHOD:
-                parse_state_ = ParseMethod_();
+                parse_state_ = ParseMethod_(c);
                 state_changed = (parse_state_ != PS_METHOD ? true : false);
                 break;
             case PS_URI:
-                parse_state_ = ParseUri_();
+                parse_state_ = PS_END;
+                parse_state_ = ParseUri_(c);
                 state_changed = (parse_state_ != PS_URI ? true : false);
                 break;
             case PS_VERSION:
-                parse_state_ = ParseVersion_();
-                state_changed = (parse_state_ != PS_VERSION ? true : false);
+                parse_state_ = PS_END;
+                // parse_state_ = ParseVersion_(c);
+                // state_changed = (parse_state_ != PS_VERSION ? true : false);
                 break;
             case PS_HEADER_KEY:
-                parse_state_ = ParseHeaderKey_();
+                parse_state_ = ParseHeaderKey_(c);
                 state_changed = (parse_state_ != PS_HEADER_KEY ? true : false);
                 break;
             case PS_HEADER_SEP:
-                parse_state_ = ParseHeaderSep_();
+                parse_state_ = ParseHeaderSep_(c);
                 state_changed = (parse_state_ != PS_HEADER_SEP ? true : false);
                 break;
             case PS_HEADER_VALUE:
-                parse_state_ = ParseHeaderValue_();
+                parse_state_ = ParseHeaderValue_(c);
                 state_changed = (parse_state_ != PS_HEADER_VALUE ? true : false);
                 break;
             case PS_BODY:
-                parse_state_ = ParseBody_();
+                parse_state_ = ParseBody_(c);
                 state_changed = (parse_state_ != PS_BODY ? true : false);
                 break;
             case PS_END:
@@ -98,7 +104,7 @@ void RequestBuilder::ParseNext(const char* input, size_t input_sz)
                 break;
         }
         if (state_changed) {
-            ResetParseBuf_();
+            UpdateBeginIdx_();
         }
     }
     if (eof_checker_.end_of_file_ && parse_state_ != PS_END) {
@@ -115,74 +121,78 @@ bool RequestBuilder::IsReadyForResponse()
     return (eof_checker_.end_of_file_ || rq_.bad_request_ /*body_complete()*/);
 }
 
-RequestBuilder::ParseState RequestBuilder::ParseMethod_()
+RequestBuilder::ParseState RequestBuilder::ParseMethod_(char c)
 {
-    LOG(DEBUG) << "Parsing Method..." << "char: " << parse_buf_[parse_buf_.size() - 1];
-    if (parse_buf_.size() == 4 && std::strncmp(parse_buf_.data(), "GET ", 4) == 0) {
+    LOG(DEBUG) << "Parsing Method... char: " << c;
+    if (ParseLen_() == 4 && std::strncmp(buf_.data() + begin_idx_, "GET ", 4) == 0) {
         rq_.method = HTTP_GET;
         return PS_URI;
     }
-    if (parse_buf_.size() == 5 && std::strncmp(parse_buf_.data(), "POST ", 5) == 0) {
+    if (ParseLen_() == 5 && std::strncmp(buf_.data() + begin_idx_, "POST ", 5) == 0) {
         rq_.method = HTTP_POST;
         return PS_URI;
     }
-    if (parse_buf_.size() == 7 && std::strncmp(parse_buf_.data(), "DELETE ", 7) == 0) {
+    if (ParseLen_() == 7 && std::strncmp(buf_.data() + begin_idx_, "DELETE ", 7) == 0) {
         rq_.method = HTTP_DELETE;
         return PS_URI;
     }
-    if (parse_buf_.size() > 7) {
+    if (ParseLen_() > 7) {
         rq_.bad_request_ = true;
         return PS_ERROR;
     }
     return PS_METHOD;
 }
 
-RequestBuilder::ParseState RequestBuilder::ParseUri_()
+RequestBuilder::ParseState RequestBuilder::ParseUri_(char c)
 {
-    LOG(DEBUG) << "Parsing URI..." << "parse_buf_[" << parse_buf_.size() << "]: " <<
- parse_buf_[parse_buf_.size() - 1];
+    LOG(DEBUG) << "Parsing URI... char: " << c;
 
-    if (parse_buf_.size() > 0 && parse_buf_[parse_buf_.size() - 1] == ' ') {
-        rq_.uri_ = std::string(parse_buf_.data(), parse_buf_.size() - 1);
-        return PS_VERSION;
+    if (c == ' ') {
+        if (ParseLen_() > 1) {
+            rq_.uri_ = std::string(buf_.data() + begin_idx_, buf_.data() + end_idx_ - 1);
+            return PS_VERSION;
+        }
+        else {
+            rq_.bad_request_ = true;
+            return PS_ERROR;
+        }
     }
     return PS_URI;
 }
 
-RequestBuilder::ParseState RequestBuilder::ParseVersion_()
+RequestBuilder::ParseState RequestBuilder::ParseVersion_(char c)
 {
-    LOG(DEBUG) << "Parsing Version..." << "char: " << parse_buf_[parse_buf_.size() - 1];
-    if (parse_buf_.size() == 10 && std::strncmp(parse_buf_.data(), "HTTP/0.9\r\n", 10) == 0) {
+    LOG(DEBUG) << "Parsing Version... char: " << c;
+    if (buf_.size() == 10 && std::strncmp(buf_.data(), "HTTP/0.9\r\n", 10) == 0) {
         rq_.version = HTTP_0_9;
         return PS_HEADER_KEY;
     }
-    if (parse_buf_.size() == 10 && std::strncmp(parse_buf_.data(), "HTTP/1.0\r\n", 10) == 0) {
+    if (buf_.size() == 10 && std::strncmp(buf_.data(), "HTTP/1.0\r\n", 10) == 0) {
         rq_.version = HTTP_1_0;
         return PS_HEADER_KEY;
     }
-    if (parse_buf_.size() == 10 && std::strncmp(parse_buf_.data(), "HTTP/1.1\r\n", 10) == 0) {
+    if (buf_.size() == 10 && std::strncmp(buf_.data(), "HTTP/1.1\r\n", 10) == 0) {
         rq_.version = HTTP_1_1;
         return PS_HEADER_KEY;
     }
-    if (parse_buf_.size() == 8 && std::strncmp(parse_buf_.data(), "HTTP/2\r\n", 8) == 0) {
+    if (buf_.size() == 8 && std::strncmp(buf_.data(), "HTTP/2\r\n", 8) == 0) {
         rq_.version = HTTP_2;
         return PS_HEADER_KEY;
     }
-    if (parse_buf_.size() == 8 && std::strncmp(parse_buf_.data(), "HTTP/3\r\n", 8) == 0) {
+    if (buf_.size() == 8 && std::strncmp(buf_.data(), "HTTP/3\r\n", 8) == 0) {
         rq_.version = HTTP_3;
         return PS_HEADER_KEY;
     }
-    if (parse_buf_.size() > 10) {
+    if (buf_.size() > 10) {
         rq_.bad_request_ = true;
         return PS_ERROR;
     }
     return PS_VERSION;
 }
 
-RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_()
+RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Key...";
-    char c = parse_buf_[(parse_buf_.size() > 0) ? parse_buf_.size() - 1 : 0];
+    LOG(DEBUG) << "Parsing Header-Key... char: " << c;
     if (eof_checker_.end_of_file_) {
         LOG(DEBUG) << "Found EOF while trying go read Headerkey -> End of request (Needed to read body?) ";
         return PS_END;
@@ -192,13 +202,13 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_()
         return PS_BODY;
     }
     if (c == ':') {
-        if (parse_buf_.size() == 0 || parse_buf_[parse_buf_.size() - 2] == '-') {
+        if (buf_.size() == 0 || buf_[buf_.size() - 2] == '-') {
             rq_.bad_request_ = true;
         } else {
-            header_key_ = std::string(parse_buf_.data(), parse_buf_.size() - 1);
+            header_key_ = std::string(buf_.data(), buf_.size() - 1);
             return PS_HEADER_SEP;
         }
-    } else if (!(std::isalnum(c) || (parse_buf_.size() > 0 && c == '-')) && c != '\r') {
+    } else if (!(std::isalnum(c) || (buf_.size() > 0 && c == '-')) && c != '\r') {
         rq_.bad_request_ = true;
         LOG(DEBUG) << "Request-Header can only contain alphanumeric chars and '-'";
     }
@@ -209,23 +219,21 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_()
     return PS_HEADER_KEY;
 }
 
-RequestBuilder::ParseState RequestBuilder::ParseHeaderSep_()
+RequestBuilder::ParseState RequestBuilder::ParseHeaderSep_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Separator...";
-    char c = parse_buf_[parse_buf_.size() - 1];
+    LOG(DEBUG) << "Parsing Header-Separator... char: " << c;
     if (std::isspace(c)) {
         return PS_HEADER_SEP;
     }
     return PS_HEADER_VALUE;
 }
 
-RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_()
+RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Value...";
-    char c = parse_buf_[parse_buf_.size() - 1];
-    if (parse_buf_.size() > 2 && eof_checker_.end_of_line_) {
+    LOG(DEBUG) << "Parsing Header-Value... char: " << c;
+    if (buf_.size() > 2 && eof_checker_.end_of_line_) {
         LOG(DEBUG) << "HeaderValue complete -> inserting into map...";
-        rq_.headers_[header_key_] = std::string(parse_buf_.data(), parse_buf_.size() - 2);
+        rq_.headers_[header_key_] = std::string(buf_.data(), buf_.size() - 2);
         return PS_HEADER_KEY;
     }
     if (!std::isprint(c) && c != '\r') {
@@ -236,9 +244,9 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_()
     return PS_HEADER_VALUE;
 }
 
-RequestBuilder::ParseState RequestBuilder::ParseBody_()
+RequestBuilder::ParseState RequestBuilder::ParseBody_(char c)
 {
-    LOG(DEBUG) << "Parsing Body...";
+    LOG(DEBUG) << "Parsing Body... char: " << c;
     if (eof_checker_.end_of_file_) {
         rq_.bad_request_ = true;
         return PS_BODY;
@@ -246,23 +254,29 @@ RequestBuilder::ParseState RequestBuilder::ParseBody_()
     return PS_END;
 }
 
-void RequestBuilder::ResetParseBuf_()
+size_t RequestBuilder::ParseLen_() const
 {
-    LOG(DEBUG) << "RequestBuilder::ResetParseBuf";
-    if (parse_state_ == PS_HEADER_VALUE) {
-        char beginning_of_header_value = parse_buf_[parse_buf_.size() - 1];
-        parse_buf_.clear();
-        parse_buf_.push_back(beginning_of_header_value);
-    } else {
-        parse_buf_.clear();
-    }
+    return end_idx_ - begin_idx_;
+}
+
+void RequestBuilder::UpdateBeginIdx_()
+{
+    LOG(DEBUG) << "RequestBuilder::UpdateBeginIdx_";
+    begin_idx_ = end_idx_;
+    // if (parse_state_ == PS_HEADER_VALUE) {
+    //     char beginning_of_header_value = buf_[buf_.size() - 1];
+    //     buf_.clear();
+    //     buf_.push_back(beginning_of_header_value);
+    // } else {
+    //     buf_.clear();
+    // }
 }
 
 void RequestBuilder::PrintParseBuf_() const
 {
-    std::cout << "PrintParseBuf(): Len: " << parse_buf_.size() << "; Content: |";
-    for (size_t i = 0; i < parse_buf_.size(); i++) {
-        std::cout << parse_buf_[i];
+    std::cout << "PrintParseBuf(): Len: " << buf_.size() << "; Content: |";
+    for (size_t i = 0; i < buf_.size(); i++) {
+        std::cout << buf_[i];
     }
     std::cout << "|" << std::endl;
 }
@@ -270,7 +284,7 @@ void RequestBuilder::PrintParseBuf_() const
 bool RequestBuilder::LineIsEmpty_() const
 {
     LOG(DEBUG) << "LineIsEmpty()";
-    if (parse_buf_.size() == 2 && eof_checker_.end_of_line_) {
+    if (buf_.size() == 2 && eof_checker_.end_of_line_) {
         LOG(DEBUG) << "LineIEmpty(): empty line found";
         return true;
     }
