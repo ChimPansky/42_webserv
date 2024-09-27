@@ -103,10 +103,10 @@ bool ValidPath(const std::string& val)
 bool IsDirectory(const std::string& path)
 {
     DIR* dir;
-    if (!path.empty() && path[0] == '/') {
-        dir = opendir(path.substr(1).c_str());
+    if (path.empty() || path[0] != '/') {
+        return false;
     } else {
-        dir = opendir(path.c_str());
+        dir = opendir(path.substr(1).c_str());
     }
 
     if (dir) {
