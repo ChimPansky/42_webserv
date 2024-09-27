@@ -4,9 +4,12 @@
 #include <vector>
 
 #include "Config.h"
-#include "Server.h"
+#include "server/Server.h"
 #include "utils/unique_ptr.h"
 #include "utils/shared_ptr.h"
+#include "c_api/multiplexers/ICallback.h"
+#include "c_api/MasterSocket.h"
+#include "ClientSession.h"
 
 class ServerCluster {
   public:
