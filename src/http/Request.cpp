@@ -4,19 +4,12 @@
 
 namespace http {
 
-void Request::Reset()
-{
-    bad_request_ = false;
-    method = HTTP_NO_METHOD;
-    version = HTTP_NO_VERSION;
-    uri_.clear();
-    host_.clear();
-    user_agent_.clear();
-    accept_.clear();
-    headers_.clear();
-    body_.clear();
-    body_size_ = 0;
-}
+Request::Request()
+    : method(HTTP_NO_METHOD),
+      bad_request_(false),
+      version(HTTP_NO_VERSION),
+      body_size_(0)
+{}
 
 void Request::Print() const
 {

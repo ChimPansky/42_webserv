@@ -22,6 +22,8 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
 };
 
 struct Request {
+    Request();
+    
     Method method;
     bool bad_request_;
     std::string uri_;  // todo: change to struct/class

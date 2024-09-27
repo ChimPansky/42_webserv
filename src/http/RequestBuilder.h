@@ -17,7 +17,7 @@ class RequestBuilder {
 
       public:
         EOFChecker();
-        void Reset();
+        //void Reset();
         void Update(char c);
         bool end_of_line_;
         bool end_of_file_;
@@ -38,7 +38,7 @@ class RequestBuilder {
 
   public:
     RequestBuilder();
-    void Reset();
+    //void Reset();
     void ParseNext(const char* input, size_t input_sz);
     bool IsReadyForResponse();
     const Request& rq() const;

@@ -82,7 +82,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
             }
         client_.rq_builder_.rq().Print();
         client_.PrepareResponse();
-        client_.rq_builder_.Reset();
+        client_.rq_builder_ = http::RequestBuilder();
     }
 }
 
