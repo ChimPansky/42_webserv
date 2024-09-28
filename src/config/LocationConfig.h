@@ -19,8 +19,7 @@ class LocationConfig {
   public:
     enum LocationPriority {
         P0 = 0,
-        P1 = 1,
-        P2 = 2
+        P1 = 1
     };
     LocationConfig(const std::pair<std::string, std::string>& route,
                    const std::vector<std::string>& allowed_methods,

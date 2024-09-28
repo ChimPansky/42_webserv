@@ -75,8 +75,6 @@ const std::pair<std::string, LocationConfig::LocationPriority> LocationConfig::I
 {
     LocationPriority priority;
     if (value.second.empty()) {
-        priority = P2;
-    } else if (value.second == "^~") {
         priority = P1;
     } else if (value.second == "=") {
         priority = P0;

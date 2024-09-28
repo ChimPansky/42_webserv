@@ -51,7 +51,7 @@ class ConfigBuilder<LocationConfig> {
             throw std::runtime_error("Invalid configuration file: invalid route: " + vals[0]);
         } else if (vals.size() == 1) {
             route = vals[0];
-        } else if (vals[0] == "=" || vals[0] == "^~") {
+        } else if (vals[0] == "=") {
             priority = vals[0];
             route = vals[1];
         }
