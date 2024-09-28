@@ -34,18 +34,15 @@ int ClientSocket::sockfd() const
 
 ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t sz) const
 {
-    // size_t old_sz = buf.size();
-    // size_t new_sz = old_sz + sz;
-    // LOG(DEBUG) << "ClientSock::Recv: buf.size(): " << old_sz << "; new_sz: " << new_sz << "; buf.capacity(): " << buf.capacity();
-    // if (new_sz > buf.capacity()) {
-    //     buf.resize(new_sz);
-    // }
-
+    LOG(DEBUG) << "ClientSock::Recv before resize: buf.size(): " << buf.size() << "; buf.capacity(): " << buf.capacity();
     size_t old_sz = buf.size();
     buf.resize(old_sz + sz);
-
-    ssize_t bytes_recvd = ::recv(sockfd_, (void*)(buf.data() + old_sz), sz, MSG_NOSIGNAL);
     LOG(DEBUG) << "ClientSock::Recv after resize: buf.size(): " << buf.size() << "; buf.capacity(): " << buf.capacity();
+    ssize_t bytes_recvd = ::recv(sockfd_, (void*)(buf.data() + old_sz), sz, MSG_NOSIGNAL);
+    if (bytes_recvd >= 0 && static_cast<size_t>(bytes_recvd) < sz) {
+        buf.resize(old_sz + bytes_recvd);
+    }
+    LOG(DEBUG) << "ClientSock::Recv after receiving " << bytes_recvd << " bytes; buf.size(): " << buf.size() << "; buf.capacity(): " << buf.capacity();
     return bytes_recvd;
 }
 
