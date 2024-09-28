@@ -80,9 +80,10 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
                 client_.CloseConnection();
                 return ;
             }
-        client_.rq_builder_.rq().Print();
+        //client_.rq_builder_.rq().Print();
         client_.PrepareResponse();
         client_.rq_builder_ = http::RequestBuilder();
+        // ready to read next request... (keepalive)
     }
 }
 
