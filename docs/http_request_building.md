@@ -1,17 +1,6 @@
 
 # HTTP Requests
 
-HTTP-Requests are read piece by piece (chunk by chunk) by the ClientSocket::Recv(std::vector<char>& buf) function
-We call this function with RequestBuilder.rq_buf_.data() {
-    ClientSocket::Recv() is calling the <sys/socket.h> recv(_socket_fd, void* _buf, size_t _n, int _flags) function {
-        Here we read ClientSocket.sock_buf_sz bytes into the ClientSocket.sock_buf_
-    }
-    Then the bytes from ClientSocket.sock_buf_ are appended to the vector        RequestBuilder.rq_buf_
-}
-
-After everytime a piece (chunk) has been attached to buffer in the RequestBuilder (through ClientSession::ClientSocket::Recv()), ClientSession::ProcessNewData() is called where ClientSession.RequestBuilder::ParseChunk() is called.
-In RequestBuilder::ParseChunk() the Request is analized step by step and information about http::Method, URI, Version, Headers, Body are extracted from the buffer.
-
 ## Parsing Method:
 
 ## Parsing URI:
@@ -19,10 +8,6 @@ In RequestBuilder::ParseChunk() the Request is analized step by step and informa
 ## Parsing Version:
 
 ## Parsing Headers
-
-As soon as Host header has been parsed successfully, we know everything we need to determine which Server the Request is intended for (We already knew IP and Port, because thats what the Socket is listening on, now we also know the name of the server (Host header) and the location (URI)).
-So we will set the RequestBuilder& server_ GetServer(IP, Port, Host, URI)...
-
 
 ## **HTTP-Method**: The method indicates the action to be performed on the resource. Examples include `GET`, `POST`, `PUT`, `DELETE`, etc.
 
