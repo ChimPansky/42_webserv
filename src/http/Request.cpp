@@ -5,10 +5,7 @@
 namespace http {
 
 Request::Request()
-    : method(HTTP_NO_METHOD),
-      bad_request_(false),
-      version(HTTP_NO_VERSION),
-      body_size_(0)
+    : method(HTTP_NO_METHOD), bad_request_(false), version(HTTP_NO_VERSION), body_size_(0)
 {}
 
 void Request::Print() const

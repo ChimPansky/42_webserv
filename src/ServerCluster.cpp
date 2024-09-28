@@ -13,7 +13,7 @@ ServerCluster::ServerCluster(const Config& /*config*/)
     std::vector<std::pair<in_addr_t, in_port_t> > listeners;
 
     listeners.push_back(std::make_pair(c_api::IPv4FromString("localhost"), in_port_t(8081)));
-    listeners.push_back(std::make_pair(c_api::IPv4FromString("127.0.0.1"), in_port_t(8082)));
+    listeners.push_back(std::make_pair(c_api::IPv4FromString("localhost"), in_port_t(8082)));
 
     utils::shared_ptr<Server> serv(new Server("Sserv"));  // constructor of server block
     servers_.push_back(serv);

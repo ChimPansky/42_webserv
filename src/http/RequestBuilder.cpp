@@ -14,32 +14,25 @@ RequestBuilder::EOFChecker::EOFChecker() : counter_(0), end_of_line_(false), end
 void RequestBuilder::EOFChecker::Update(char c)
 {
     if (counter_ == 0 && c == '\r') {
-            counter_++;
-    }
-    else if (counter_ == 1) {
+        counter_++;
+    } else if (counter_ == 1) {
         if (c == '\n') {
             counter_++;
-        }
-        else if (c != '\r') {
+        } else if (c != '\r') {
             counter_ = 0;
         }
-    }
-    else if (counter_ == 2) {
+    } else if (counter_ == 2) {
         if (c == '\r') {
             counter_++;
-        }
-        else {
+        } else {
             counter_ = 0;
         }
-    }
-    else if (counter_ == 3) {
+    } else if (counter_ == 3) {
         if (c == '\r') {
             counter_ = 1;
-        }
-        else if (c == '\n') {
+        } else if (c == '\n') {
             counter_++;
-        }
-        else {
+        } else {
             counter_ = 0;
         }
     }
@@ -53,7 +46,8 @@ void RequestBuilder::EOFChecker::Update(char c)
     }
 }
 
-RequestBuilder::RequestBuilder() : chunk_counter_(0), begin_idx_(0), end_idx_(0), parse_state_(PS_METHOD)
+RequestBuilder::RequestBuilder()
+    : chunk_counter_(0), begin_idx_(0), end_idx_(0), parse_state_(PS_METHOD)
 {}
 const Request& RequestBuilder::rq() const
 {
@@ -70,7 +64,7 @@ void RequestBuilder::ParseNext(void)
     ++chunk_counter_;
     LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
     LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
-    if (buf_.size() == end_idx_) { // 0 bytes received...
+    if (buf_.size() == end_idx_) {  // 0 bytes received...
         rq_.bad_request_ = true;
     }
     while (end_idx_ < buf_.size() && !IsReadyForResponse()) {
@@ -132,7 +126,8 @@ void RequestBuilder::ParseNext(void)
 
 bool RequestBuilder::IsReadyForResponse()
 {
-    LOG(DEBUG) << "RequestBuilder::IsReadyForResponse: EOF: " << eof_checker_.end_of_file_ << "Bad Request: " << rq_.bad_request_;
+    LOG(DEBUG) << "RequestBuilder::IsReadyForResponse: EOF: " << eof_checker_.end_of_file_
+               << "Bad Request: " << rq_.bad_request_;
     return (eof_checker_.end_of_file_ || rq_.bad_request_ /*body_complete()*/);
 }
 
@@ -166,8 +161,7 @@ RequestBuilder::ParseState RequestBuilder::ParseUri_(char c)
         if (ParseLen_() > 1) {
             rq_.uri_ = std::string(buf_.data() + begin_idx_, buf_.data() + end_idx_ - 1);
             return PS_VERSION;
-        }
-        else {
+        } else {
             rq_.bad_request_ = true;
             return PS_ERROR;
         }
@@ -209,7 +203,8 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
 {
     LOG(DEBUG) << "Parsing Header-Key... char: " << c;
     if (eof_checker_.end_of_file_) {
-        LOG(DEBUG) << "Found EOF while trying go read Headerkey -> End of request (Needed to read body?) ";
+        LOG(DEBUG)
+            << "Found EOF while trying go read Headerkey -> End of request (Needed to read body?) ";
         return PS_END;
     }
     if (LineIsEmpty_()) {
@@ -217,7 +212,7 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
         return PS_BODY;
     }
     if (c == ':') {
-        if (ParseLen_() == 1 ) {
+        if (ParseLen_() == 1) {
             rq_.bad_request_ = true;
         } else {
             header_key_ = std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
@@ -274,7 +269,8 @@ size_t RequestBuilder::ParseLen_() const
     return end_idx_ - begin_idx_;
 }
 
-int RequestBuilder::CompareBuf_(const char* str, size_t len) const {
+int RequestBuilder::CompareBuf_(const char* str, size_t len) const
+{
     return std::strncmp(buf_.data() + begin_idx_, str, len);
 }
 void RequestBuilder::UpdateBeginIdx_()
