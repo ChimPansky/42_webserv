@@ -69,7 +69,8 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
     }
     LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
                << client_.client_sock_->sockfd();
-    if (1) {
+    client_.rq_builder_.ParseNext();
+    if (client_.rq_builder_.IsReadyForResponse()) {
         c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(), c_api::CT_READ);
         if (c_api::EventManager::get().RegisterCallback(
             client_.client_sock_->sockfd(), c_api::CT_WRITE,
@@ -80,6 +81,9 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
                 return ;
             }
         client_.PrepareResponse();
+        client_.rq_builder_.rq().Print();
+        client_.rq_builder_ = http::RequestBuilder();
+        // ready for next request
     }
 }
 
