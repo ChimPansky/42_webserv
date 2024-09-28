@@ -55,7 +55,7 @@ class ConfigBuilder<LocationConfig> {
             priority = vals[0];
             route = vals[1];
         }
-        if (route == "/" || (IsDirectory(route) && route[route.size() - 1] == '/')) {
+        if (route == "/" || IsDirectory(route)) {
             return std::make_pair(route, priority);
         }
         throw std::runtime_error("Invalid configuration file: invalid route: " + route);
