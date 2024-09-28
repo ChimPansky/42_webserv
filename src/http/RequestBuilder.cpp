@@ -13,16 +13,33 @@ RequestBuilder::EOFChecker::EOFChecker() : counter_(0), end_of_line_(false), end
 {}
 void RequestBuilder::EOFChecker::Update(char c)
 {
-    if (counter_ == 0 || counter_ == 2) {
-        if (c == '\r') {
+    if (counter_ == 0 && c == '\r') {
             counter_++;
-        } else {
-            counter_ = 0;
-        }
-    } else if (counter_ == 1 || counter_ == 3) {
+    }
+    else if (counter_ == 1) {
         if (c == '\n') {
             counter_++;
-        } else {
+        }
+        else if (c != '\r') {
+            counter_ = 0;
+        }
+    }
+    else if (counter_ == 2) {
+        if (c == '\r') {
+            counter_++;
+        }
+        else {
+            counter_ = 0;
+        }
+    }
+    else if (counter_ == 3) {
+        if (c == '\r') {
+            counter_ = 1;
+        }
+        else if (c == '\n') {
+            counter_++;
+        }
+        else {
             counter_ = 0;
         }
     }
@@ -59,6 +76,7 @@ void RequestBuilder::ParseNext(void)
     while (end_idx_ < buf_.size() && !IsReadyForResponse()) {
         char c = buf_[end_idx_++];
         // PrintParseBuf_();
+        LOG(DEBUG) << "Parsing char: " << (int)c;
         eof_checker_.Update(c);
         if (eof_checker_.end_of_file_ &&
             (parse_state_ == PS_METHOD || parse_state_ == PS_URI ||
@@ -107,14 +125,11 @@ void RequestBuilder::ParseNext(void)
         }
     }
     if (eof_checker_.end_of_file_ && parse_state_ != PS_END) {
-        LOG(DEBUG) << "Main loop: EOF while !PS_END --> bad request";
         rq_.bad_request_ = true;
     }
     std::cout << std::endl;
 }
 
-// ready for response if request has been successfully read until end (eof_reached == false) or a
-// problem has occured during parsing (check request.status_code)
 bool RequestBuilder::IsReadyForResponse()
 {
     LOG(DEBUG) << "RequestBuilder::IsReadyForResponse: EOF: " << eof_checker_.end_of_file_ << "Bad Request: " << rq_.bad_request_;
@@ -266,13 +281,6 @@ void RequestBuilder::UpdateBeginIdx_()
 {
     LOG(DEBUG) << "RequestBuilder::UpdateBeginIdx_";
     begin_idx_ = end_idx_;
-    // if (parse_state_ == PS_HEADER_VALUE) {
-    //     char beginning_of_header_value = buf_[buf_.size() - 1];
-    //     buf_.clear();
-    //     buf_.push_back(beginning_of_header_value);
-    // } else {
-    //     buf_.clear();
-    // }
 }
 
 void RequestBuilder::PrintParseBuf_() const

@@ -45,7 +45,6 @@ class RequestBuilder {
   private:
     Request rq_;
     EOFChecker eof_checker_;
-    // Server& server_;
     size_t chunk_counter_;
     std::vector<char> buf_;
     size_t begin_idx_;
