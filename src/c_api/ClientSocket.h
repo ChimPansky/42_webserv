@@ -24,14 +24,9 @@ class ClientSocket {
     // come up with a better signature for recv/send
     ssize_t Recv(std::vector<char>& buf, size_t sz) const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
-    char* sock_buf();
-    size_t sock_buf_sz() const;
-    static const size_t sock_buf_sz_ = 10;
-
 
   private:
     int sockfd_;
-    char sock_buf_[sock_buf_sz_];
 };
 
 }  // namespace c_api

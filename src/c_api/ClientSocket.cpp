@@ -11,8 +11,6 @@
 
 namespace c_api {
 
-const size_t ClientSocket::sock_buf_sz_;
-
 ClientSocket::ClientSocket(int fd) : sockfd_(fd)
 {}
 
@@ -56,13 +54,4 @@ ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz)
     }
     return bytes_sendd;
 }
-
-char* ClientSocket::sock_buf() {
-    return sock_buf_;
-}
-
-size_t ClientSocket::sock_buf_sz() const {
-    return sock_buf_sz_;
-}
-
 }  // namespace c_api
