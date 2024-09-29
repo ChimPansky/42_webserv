@@ -9,59 +9,51 @@ MAGENTA = \033[0;95m
 CYAN = \033[0;96m
 WHITE = \033[0;97m
 
-NAME = webserv_test
-
-all: $(NAME)
-
-test:
-	c++ -std=c++14 googletest.cpp -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(NAME)
-
+-include $(DEP)
 
 CXX98 = c++ -std=c++98
 CXX17 = c++ -std=c++17
 CXXFLAGS += -Wall -Werror -Wextra -Wpedantic
 CXXFLAGS += -g -Og
-# CXXFLAGS += -fsanitize=address,undefined,leak
 
 SOURCE_DIR = ../src
 BUILD_DIR = build
 
 IFLAGS = -I./$(SOURCE_DIR)
-LDFLAGS =
 
-UTIL_FILES = \
-	c_api/utils.cpp
-
-UTIL_SRC = $(addprefix $(SOURCE_DIR)/,$(UTIL_FILES))
-UTIL_OBJ = $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(UTIL_SRC))
-UTIL_DEP = $(UTIL_OBJ:%.o=%.d)
-
-# Create necessary directories under build/
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX98) $(CXXFLAGS) -c $< -o $@
 
-utils: $(UTIL_OBJ)
+##### C_API_UTILS_TESTER #####
+C_API_UTILS_TESTER = c_api_utils_tester
 
-$(NAME): $(UTIL_OBJ)
-	$(CXX17) $(CXXFLAGS) googletest.cpp $(UTIL_OBJ) -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(NAME)
-	@echo "$(GREEN)Executable $(NAME) created!$(DEF_COLOR)"
+C_API_UTILS_FILES = \
+	c_api/utils.cpp
 
-# $(NAME): $(UTIL_OBJ)
-# 	$(CXX98) $(CXXFLAGS) $(UTIL_FILES)
-# 	$(CXX98) $(CXXFLAGS) $(OBJ) -o $(NAME) $(LDFLAGS)
-# 	@echo "$(GREEN)Executable $(NAME) created!$(DEF_COLOR)"
+C_API_UTILS_TESTER_FILES = \
+	c_api_utils_tests.cpp
 
-# utils:
-# 	$(CXX98) $(CXXFLAGS) -c $(UTIL_SRC) -o $(UTIL_OBJ)
+C_API_UTILS_SRC = $(addprefix $(SOURCE_DIR)/,$(C_API_UTILS_FILES))
+C_API_UTILS_OBJ = $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(C_API_UTILS_SRC))
+C_API_UTILS_DEP = $(C_API_UTILS_OBJ:%.o=%.d)
+C_API_UTILS_LIB = $(BUILD_DIR)/libc_api_utils.a
 
+c_api_utils: $(C_API_UTILS_LIB)
 
-$(BUILD_DIR)/%.o : %.cpp
-	mkdir -p $(@D)
-	$(CC) $(CXXFLAGS) $(IFLAGS) -MMD -c $< -o $@
+$(C_API_UTILS_LIB): $(C_API_UTILS_OBJ)
+	@echo "$(CYAN)Creating archive library $(C_API_UTILS_LIB)$(DEF_COLOR)"
+	@ar rcs $@ $^
+	@echo "$(GREEN)$(C_API_UTILS_LIB) created!$(DEF_COLOR)"
 
--include $(DEP)
+$(C_API_UTILS_TESTER): c_api_utils
+	$(CXX17) $(CXXFLAGS) $(C_API_UTILS_TESTER_FILES) $(C_API_UTILS_LIB) -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(C_API_UTILS_TESTER)
+	@echo "$(GREEN)Executable $(C_API_UTILS_TESTER) created!$(DEF_COLOR)"
 
+##### ALL #####
+all: $(C_API_UTILS_TESTER)
+
+#### CLEAN ####
 clean:
 	rm -fr $(BUILD_DIR)
 
@@ -70,7 +62,4 @@ fclean: clean
 
 re: fclean all
 
-# valgrind:
-# 	valgrind --trace-children=yes --track-origins=yes --leak-check=full --show-leak-kinds=all --track-fds=all ./$(NAME) $(DEFAULT_CONF)
-
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re c_api_utils
