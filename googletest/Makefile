@@ -23,16 +23,35 @@ IFLAGS = -I./$(SOURCE_DIR)
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX98) $(CXXFLAGS) -c $< -o $@
+	$(CXX98) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
+
+##### TESTERS #####
+C_API_UTILS_TESTER = c_api_utils_tester
+RQ_BUILDER_TESTER = rq_builder_tester
+
+##### ALL #####
+all: $(C_API_UTILS_TESTER) $(RQ_BUILDER_TESTER)
+
+##### LOGGER Library #####
+LOGGER_FILES = \
+	utils/logger.cpp
+
+LOGGER_SRC = $(addprefix $(SOURCE_DIR)/,$(LOGGER_FILES))
+LOGGER_OBJ = $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(LOGGER_SRC))
+LOGGER_DEP = $(LOGGER_OBJ:%.o=%.d)
+LOGGER_LIB = $(BUILD_DIR)/logger.a
+
+$(LOGGER_LIB): $(LOGGER_OBJ)
+	@echo "$(CYAN)Creating archive library $(LOGGER_LIB)$(DEF_COLOR)"
+	@ar rcs $@ $^
+	@echo "$(GREEN)$(LOGGER_LIB) created!$(DEF_COLOR)"
 
 ##### C_API_UTILS_TESTER #####
-C_API_UTILS_TESTER = c_api_utils_tester
-
 C_API_UTILS_FILES = \
 	c_api/utils.cpp
 
 C_API_UTILS_TESTER_FILES = \
-	c_api_utils_tests.cpp
+	tests_c_api_utils.cpp
 
 C_API_UTILS_SRC = $(addprefix $(SOURCE_DIR)/,$(C_API_UTILS_FILES))
 C_API_UTILS_OBJ = $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(C_API_UTILS_SRC))
@@ -50,16 +69,37 @@ $(C_API_UTILS_TESTER): c_api_utils
 	$(CXX17) $(CXXFLAGS) $(C_API_UTILS_TESTER_FILES) $(C_API_UTILS_LIB) -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(C_API_UTILS_TESTER)
 	@echo "$(GREEN)Executable $(C_API_UTILS_TESTER) created!$(DEF_COLOR)"
 
-##### ALL #####
-all: $(C_API_UTILS_TESTER)
+##### RQ_BUILDER_TESTER #####
+RQ_BUILDER_FILES = \
+	http/RequestBuilder.cpp \
+	http/Request.cpp
+
+RQ_BUILDER_TESTER_FILES = \
+	tests_rq_builder.cpp
+
+RQ_BUILDER_SRC = $(addprefix $(SOURCE_DIR)/,$(RQ_BUILDER_FILES))
+RQ_BUILDER_OBJ = $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(RQ_BUILDER_SRC))
+RQ_BUILDER_DEP = $(RQ_BUILDER_OBJ:%.o=%.d)
+RQ_BUILDER_LIB = $(BUILD_DIR)/librq_builder.a
+
+rq_builder: $(RQ_BUILDER_LIB) $(LOGGER_LIB)
+
+$(RQ_BUILDER_LIB): $(RQ_BUILDER_OBJ)
+	@echo "$(CYAN)Creating archive library $(RQ_BUILDER_LIB)$(DEF_COLOR)"
+	@ar rcs $@ $^
+	@echo "$(GREEN)$(RQ_BUILDER_LIB) created!$(DEF_COLOR)"
+
+$(RQ_BUILDER_TESTER): rq_builder
+	$(CXX17) $(CXXFLAGS) $(RQ_BUILDER_TESTER_FILES) $(RQ_BUILDER_LIB) $(LOGGER_LIB) -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(RQ_BUILDER_TESTER)
+	@echo "$(GREEN)Executable $(RQ_BUILDER_TESTER) created!$(DEF_COLOR)"
 
 #### CLEAN ####
 clean:
 	rm -fr $(BUILD_DIR)
 
 fclean: clean
-	rm -f $(NAME)
+	rm -f $(C_API_UTILS_TESTER) $(RQ_BUILDER_TESTER)
 
 re: fclean all
 
-.PHONY: all clean fclean re c_api_utils
+.PHONY: all clean fclean re c_api_utils rq_builder
