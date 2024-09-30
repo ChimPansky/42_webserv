@@ -299,3 +299,13 @@ bool RequestBuilder::LineIsEmpty_() const
 }
 
 }  // namespace http
+
+
+// int main() {
+//     http::RequestBuilder req_builder;
+//     req_builder.buf().resize(1024);
+//     std::string raw_req = "GET /index.html HTTP/1.1\r\nKey: Value\r\nHost:localhost\r\nUser-Agent: curl/7.68.0\r\nAccept: */*\r\n\r\n";
+//     std::memcpy(req_builder.buf().data(), raw_req.data(), raw_req.size());
+//     req_builder.ParseNext();
+//     req_builder.rq().Print();
+// }
