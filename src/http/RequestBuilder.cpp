@@ -38,11 +38,11 @@ void RequestBuilder::EOFChecker::Update(char c)
     }
     end_of_line_ = (counter_ == 2);
     if (end_of_line_) {
-        LOG(DEBUG) << "---EOL FOUND!---";
+        //LOG(DEBUG) << "---EOL FOUND!---";
     }
     end_of_file_ = (counter_ == 4);
     if (end_of_file_) {
-        LOG(DEBUG) << "---EOF FOUND!---";
+        //LOG(DEBUG) << "---EOF FOUND!---";
     }
 }
 
@@ -62,21 +62,22 @@ std::vector<char>& RequestBuilder::buf()
 void RequestBuilder::ParseNext(void)
 {
     ++chunk_counter_;
-    LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
-    LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
+    //LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
+    //LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
     if (buf_.size() == end_idx_) {  // 0 bytes received...
-        rq_.bad_request_ = true;
+        rq_.bad_request = true;
     }
     while (end_idx_ < buf_.size() && !IsReadyForResponse()) {
         char c = buf_[end_idx_++];
         // PrintParseBuf_();
-        LOG(DEBUG) << "Parsing char: " << (int)c;
+        //LOG(DEBUG) << "Parsing char: " << (int)c;
         eof_checker_.Update(c);
+        rq_.complete = eof_checker_.end_of_file_;
         if (eof_checker_.end_of_file_ &&
             (parse_state_ == PS_METHOD || parse_state_ == PS_URI ||
              parse_state_ == PS_VERSION /*needs to have at least 1 header?*/ ||
              parse_state_ == PS_HEADER_SEP)) {
-            rq_.bad_request_ = true;
+            rq_.bad_request = true;
             continue;
         }
         bool state_changed = false;
@@ -119,21 +120,22 @@ void RequestBuilder::ParseNext(void)
         }
     }
     if (eof_checker_.end_of_file_ && parse_state_ != PS_END) {
-        rq_.bad_request_ = true;
+        rq_.bad_request = true;
     }
     std::cout << std::endl;
 }
 
 bool RequestBuilder::IsReadyForResponse()
 {
-    LOG(DEBUG) << "RequestBuilder::IsReadyForResponse: EOF: " << eof_checker_.end_of_file_
-               << "Bad Request: " << rq_.bad_request_;
-    return (eof_checker_.end_of_file_ || rq_.bad_request_ /*body_complete()*/);
+    //LOG(DEBUG) << "RequestBuilder::IsReadyForResponse: EOF: " << eof_checker_.end_of_file_
+    //           << "Bad Request: " << rq_.bad_request_;
+    return (eof_checker_.end_of_file_ || rq_.bad_request /*body_complete()*/);
 }
 
 RequestBuilder::ParseState RequestBuilder::ParseMethod_(char c)
 {
-    LOG(DEBUG) << "Parsing Method... char: " << c;
+    (void)c;
+    //LOG(DEBUG) << "Parsing Method... char: " << c;
     if (ParseLen_() == 4 && CompareBuf_("GET ", 4) == 0) {
         rq_.method = HTTP_GET;
         return PS_URI;
@@ -147,7 +149,7 @@ RequestBuilder::ParseState RequestBuilder::ParseMethod_(char c)
         return PS_URI;
     }
     if (ParseLen_() > 7) {
-        rq_.bad_request_ = true;
+        rq_.bad_request = true;
         return PS_ERROR;
     }
     return PS_METHOD;
@@ -155,14 +157,14 @@ RequestBuilder::ParseState RequestBuilder::ParseMethod_(char c)
 
 RequestBuilder::ParseState RequestBuilder::ParseUri_(char c)
 {
-    LOG(DEBUG) << "Parsing URI... char: " << c;
+    //LOG(DEBUG) << "Parsing URI... char: " << c;
 
     if (c == ' ') {
         if (ParseLen_() > 1) {
-            rq_.uri_ = std::string(buf_.data() + begin_idx_, buf_.data() + end_idx_ - 1);
+            rq_.uri = std::string(buf_.data() + begin_idx_, buf_.data() + end_idx_ - 1);
             return PS_VERSION;
         } else {
-            rq_.bad_request_ = true;
+            rq_.bad_request = true;
             return PS_ERROR;
         }
     }
@@ -171,7 +173,8 @@ RequestBuilder::ParseState RequestBuilder::ParseUri_(char c)
 
 RequestBuilder::ParseState RequestBuilder::ParseVersion_(char c)
 {
-    LOG(DEBUG) << "Parsing Version... char: " << c;
+    (void)c;
+    //LOG(DEBUG) << "Parsing Version... char: " << c;
     if (ParseLen_() == 10 && CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
         rq_.version = HTTP_0_9;
         return PS_HEADER_KEY;
@@ -193,7 +196,7 @@ RequestBuilder::ParseState RequestBuilder::ParseVersion_(char c)
         return PS_HEADER_KEY;
     }
     if (ParseLen_() > 10) {
-        rq_.bad_request_ = true;
+        rq_.bad_request = true;
         return PS_ERROR;
     }
     return PS_VERSION;
@@ -201,29 +204,29 @@ RequestBuilder::ParseState RequestBuilder::ParseVersion_(char c)
 
 RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Key... char: " << c;
+    //LOG(DEBUG) << "Parsing Header-Key... char: " << c;
     if (eof_checker_.end_of_file_) {
-        LOG(DEBUG)
-            << "Found EOF while trying go read Headerkey -> End of request (Needed to read body?) ";
+        //LOG(DEBUG)
+        //    << "Found EOF while trying go read Headerkey -> End of request (Needed to read body?) ";
         return PS_END;
     }
     if (LineIsEmpty_()) {
-        LOG(DEBUG) << "--EMPTY LINE-- switching to PS_BODY";
+        //LOG(DEBUG) << "--EMPTY LINE-- switching to PS_BODY";
         return PS_BODY;
     }
     if (c == ':') {
         if (ParseLen_() == 1) {
-            rq_.bad_request_ = true;
+            rq_.bad_request = true;
         } else {
             header_key_ = std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
             return PS_HEADER_SEP;
         }
     } else if (!(std::isalnum(c) || (ParseLen_() > 0 && c == '-')) && c != '\r') {
-        rq_.bad_request_ = true;
-        LOG(DEBUG) << "Request-Header can only contain alphanumeric chars and '-'";
+        rq_.bad_request = true;
+        //LOG(DEBUG) << "Request-Header can only contain alphanumeric chars and '-'";
     }
-    if (rq_.bad_request_) {
-        LOG(ERROR) << "Request-Header key is invalid";
+    if (rq_.bad_request) {
+        LOG(ERROR) << "Request-Header key is invalid: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
         return PS_ERROR;
     }
     return PS_HEADER_KEY;
@@ -231,24 +234,25 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
 
 RequestBuilder::ParseState RequestBuilder::ParseHeaderSep_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Separator... char: " << c;
+    //LOG(DEBUG) << "Parsing Header-Separator... char: " << c;
     if (std::isspace(c)) {
         return PS_HEADER_SEP;
     }
+    end_idx_--;
     return PS_HEADER_VALUE;
 }
 
 RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Value... char: " << c;
+    //LOG(DEBUG) << "Parsing Header-Value... char: " << c;
     if (ParseLen_() > 2 && eof_checker_.end_of_line_) {
-        LOG(DEBUG) << "HeaderValue complete -> inserting into map...";
-        rq_.headers_[header_key_] = std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
+        //LOG(DEBUG) << "HeaderValue complete -> inserting into map...";
+        rq_.headers[header_key_] = std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
         return PS_HEADER_KEY;
     }
     if (!std::isprint(c) && c != '\r') {
-        rq_.bad_request_ = true;
-        LOG(DEBUG) << "Request-Header value is invalid";
+        rq_.bad_request = true;
+        //LOG(DEBUG) << "Request-Header value is invalid";
         return PS_ERROR;
     }
     return PS_HEADER_VALUE;
@@ -256,9 +260,10 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_(char c)
 
 RequestBuilder::ParseState RequestBuilder::ParseBody_(char c)
 {
-    LOG(DEBUG) << "Parsing Body... char: " << c;
+    (void)c;
+    //LOG(DEBUG) << "Parsing Body... char: " << c;
     if (eof_checker_.end_of_file_) {
-        rq_.bad_request_ = true;
+        rq_.bad_request = true;
         return PS_BODY;
     }
     return PS_END;
@@ -275,7 +280,7 @@ int RequestBuilder::CompareBuf_(const char* str, size_t len) const
 }
 void RequestBuilder::UpdateBeginIdx_()
 {
-    LOG(DEBUG) << "RequestBuilder::UpdateBeginIdx_";
+    //LOG(DEBUG) << "RequestBuilder::UpdateBeginIdx_";
     begin_idx_ = end_idx_;
 }
 
@@ -290,9 +295,9 @@ void RequestBuilder::PrintParseBuf_() const
 
 bool RequestBuilder::LineIsEmpty_() const
 {
-    LOG(DEBUG) << "LineIsEmpty()";
+    //LOG(DEBUG) << "LineIsEmpty()";
     if (ParseLen_() == 2 && eof_checker_.end_of_line_) {
-        LOG(DEBUG) << "LineIEmpty(): empty line found";
+        //LOG(DEBUG) << "LineIEmpty(): empty line found";
         return true;
     }
     return false;

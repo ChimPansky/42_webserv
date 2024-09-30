@@ -25,15 +25,16 @@ struct Request {
     Request();
 
     Method method;
-    bool bad_request_;
-    std::string uri_;  // todo: change to struct/class
+    bool bad_request;
+    bool complete;
+    std::string uri;  // todo: change to struct/class
     Version version;
-    std::string host_;
-    std::string user_agent_;
-    std::string accept_;
-    std::map<std::string, std::string> headers_;
-    std::vector<char> body_;
-    size_t body_size_;
+    std::string host;
+    std::string user_agent;
+    std::string accept;
+    std::map<std::string, std::string> headers;
+    std::vector<char> body;
+    size_t body_size;
 
     void Reset();
     void Print() const;

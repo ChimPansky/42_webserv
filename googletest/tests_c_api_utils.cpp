@@ -17,7 +17,7 @@ TEST(MultTest, Positive) {
 TEST(IPv4FromStringTest1, Positive) {
     EXPECT_EQ(ntohl(inet_addr("127.0.0.1")), c_api::IPv4FromString("127.0.0.1"));
     EXPECT_EQ(INADDR_LOOPBACK, c_api::IPv4FromString("localhost"));
-    EXPECT_EQ(0, c_api::IPv4FromString("0.0.0.0"));
+    EXPECT_EQ((unsigned int)0, c_api::IPv4FromString("0.0.0.0"));
 }
 
 TEST(IPv4FromStringTest2, Negative) {
