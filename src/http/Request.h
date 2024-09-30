@@ -37,6 +37,7 @@ struct Request {
 
     void Reset();
     void Print() const;
+    std::string GetHeaderVal(const std::string& key) const;
 };
 
 }  // namespace http
