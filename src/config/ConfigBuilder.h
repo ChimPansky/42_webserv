@@ -612,7 +612,8 @@ class ConfigBuilder<HttpConfig> {
             }
             for (size_t j = 0; j < val_elements.size() - 1; j++) {
                 if (j != val_elements.size() - 1) {
-                    error_pages[utils::StrToNumeric<int>(val_elements[j])] = val_elements[val_elements.size() - 1];
+                    error_pages[utils::StrToNumeric<int>(val_elements[j])] =
+                        val_elements[val_elements.size() - 1];
                 }
             }
         }

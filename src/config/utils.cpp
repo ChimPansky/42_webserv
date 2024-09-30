@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <stdexcept>
 #include <string>
 
 namespace config {

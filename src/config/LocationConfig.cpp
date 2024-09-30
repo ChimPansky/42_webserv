@@ -55,7 +55,7 @@ const std::vector<std::string>& LocationConfig::cgi_extensions() const
     return cgi_extensions_;
 }
 
-const std::string& LocationConfig::root_dir()
+const std::string& LocationConfig::root_dir() const
 {
     return root_dir_;
 }

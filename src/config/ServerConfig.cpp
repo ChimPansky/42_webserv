@@ -41,12 +41,12 @@ const std::vector<std::pair<in_addr_t, in_port_t> >& ServerConfig::listeners() c
     return listeners_;
 }
 
-const std::vector<std::string>& ServerConfig::server_names()
+const std::vector<std::string>& ServerConfig::server_names() const
 {
     return server_names_;
 }
 
-const std::vector<LocationConfig>& ServerConfig::locations()
+const std::vector<LocationConfig>& ServerConfig::locations() const
 {
     return locations_;
 }
@@ -67,7 +67,8 @@ const std::string& ServerConfig::InitErrorLogPath(const std::string& value)
     return value;
 }
 
-const std::vector<std::pair<in_addr_t, in_port_t> >& ServerConfig::InitListeners(const std::vector<std::pair<in_addr_t, in_port_t> >& value)
+const std::vector<std::pair<in_addr_t, in_port_t> >& ServerConfig::InitListeners(
+    const std::vector<std::pair<in_addr_t, in_port_t> >& value)
 {
     for (size_t i = 0; i < value.size(); i++) {
         if (value[i].second == 0) {

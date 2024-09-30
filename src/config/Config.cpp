@@ -29,6 +29,11 @@ Severity Config::error_log_level() const
     return error_log_level_;
 }
 
+const HttpConfig& Config::http_config() const
+{
+    return http_config_;
+}
+
 const std::string& Config::InitErrorLogPath(const std::string& value)
 {
     if (!config::CheckFileExtension(value, ".log")) {
@@ -39,7 +44,8 @@ const std::string& Config::InitErrorLogPath(const std::string& value)
 
 const Config Config::GetConfig(const std::string& config_path)
 {
-    if (!config::CheckFileExtension(config_path, ".conf")) {
+    if (!config::CheckFileExtension(config_path, ".conf") ||
+        config_path[config_path.size() - 6] == '/') {
         throw std::invalid_argument("Invalid config file suffix.");
     }
 

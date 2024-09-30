@@ -25,8 +25,8 @@ class ServerConfig {
     Severity access_log_level() const;
     const std::string& error_log_path() const;
     const std::vector<std::pair<in_addr_t, in_port_t> >& listeners() const;
-    const std::vector<std::string>& server_names();
-    const std::vector<LocationConfig>& locations();
+    const std::vector<std::string>& server_names() const;
+    const std::vector<LocationConfig>& locations() const;
     static const Severity kDefaultAccessLogLevel;
     static const std::string kDefaultAccessLogPath;
     static const std::string kDefaultErrorLogPath;

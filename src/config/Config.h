@@ -16,6 +16,7 @@ class Config {
     MxType mx_type() const;
     const std::string& error_log_path() const;
     Severity error_log_level() const;
+    const HttpConfig& http_config() const;
     static const Config GetConfig(const std::string& config_path);
     static const MxType kDefaultMxType;
     static const std::string kDefaultErrorLogPath;

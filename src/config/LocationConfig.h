@@ -33,7 +33,7 @@ class LocationConfig {
     bool is_cgi() const;
     const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
-    const std::string& root_dir();
+    const std::string& root_dir() const;
     const std::string& default_file() const;
     bool dir_listing() const;
     static const int kDefaultRedirectCode;
