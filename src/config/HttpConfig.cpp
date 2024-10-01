@@ -38,8 +38,6 @@ const std::map<int, std::string>& HttpConfig::InitErrorPages(
     for (ErrorPagesIt it = value.begin(); it != value.end(); ++it) {
         if (it->first < 400 || it->first > 599) {
             throw std::runtime_error("Invalid configuration file: invalid error_page status code.");
-        } else if (!config::CheckFileExtension(it->second, ".html")) {
-            throw std::runtime_error("Invalid configuration file: invalid error_page path.");
         }
     }
     return value;
