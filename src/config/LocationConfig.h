@@ -36,11 +36,11 @@ class LocationConfig {
     const std::string& root_dir() const;
     const std::string& default_file() const;
     bool dir_listing() const;
-    static const int kDefaultRedirectCode;
-    static const std::string kDefaultRedirectPath;
-    static const std::string kDefaultRootDir;
-    static const std::string kDefaultIndexFile;
-    static const bool kDefaultDirListing;
+    static inline int kDefaultRedirectCode() { return 301; }
+    static inline const char *kDefaultRedirectPath() { return "/new_location"; }
+    static inline const char *kDefaultRootDir() { return "/docs"; }
+    static inline const char *kDefaultIndexFile() { return "index.html"; }
+    static inline bool kDefaultDirListing() { return false; }
 
     void Print() const;
 

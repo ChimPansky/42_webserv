@@ -89,8 +89,8 @@ class ConfigBuilder<LocationConfig> {
     static std::pair<int, std::string> BuildRedirect(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return std::make_pair(LocationConfig::kDefaultRedirectCode,
-                                  LocationConfig::kDefaultRedirectPath);
+            return std::make_pair(LocationConfig::kDefaultRedirectCode(),
+                                  LocationConfig::kDefaultRedirectPath());
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         return ParseRedirect(val_elements);
@@ -158,7 +158,7 @@ class ConfigBuilder<LocationConfig> {
                                           const std::string& inherited_root)
     {
         if (vals.empty() && inherited_root.empty()) {
-            return LocationConfig::kDefaultRootDir;
+            return LocationConfig::kDefaultRootDir();
         } else if (vals.empty()) {
             return inherited_root;
         }
@@ -178,7 +178,7 @@ class ConfigBuilder<LocationConfig> {
                                               const std::string& inherited_def_file)
     {
         if (vals.empty() && inherited_def_file.empty()) {
-            return LocationConfig::kDefaultIndexFile;
+            return LocationConfig::kDefaultIndexFile();
         } else if (vals.empty()) {
             return inherited_def_file;
         }
@@ -198,7 +198,7 @@ class ConfigBuilder<LocationConfig> {
                                 const std::string& inherited_redirect)
     {
         if (vals.empty() && inherited_redirect.empty()) {
-            return LocationConfig::kDefaultDirListing;
+            return LocationConfig::kDefaultDirListing();
         } else if (vals.empty()) {
             return ParseDirListing(inherited_redirect);
         }
@@ -264,13 +264,13 @@ class ConfigBuilder<ServerConfig> {
     static std::pair<std::string, Severity> BuildAccessLog(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return std::make_pair(ServerConfig::kDefaultAccessLogPath,
-                                  ServerConfig::kDefaultAccessLogLevel);
+            return std::make_pair(ServerConfig::kDefaultAccessLogPath(),
+                                  ServerConfig::kDefaultAccessLogLevel());
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
             return std::make_pair(ParseAccessLogPath(val_elements[0]),
-                                  ServerConfig::kDefaultAccessLogLevel);
+                                  ServerConfig::kDefaultAccessLogLevel());
         } else if (val_elements.size() == 2) {
             return std::make_pair(ParseAccessLogPath(val_elements[0]),
                                   ParseAccessLogLevel(val_elements[1]));
@@ -299,7 +299,7 @@ class ConfigBuilder<ServerConfig> {
         } else if (val == "fatal") {
             return FATAL;
         } else if (val == "") {
-            return ServerConfig::kDefaultAccessLogLevel;
+            return ServerConfig::kDefaultAccessLogLevel();
         }
         throw std::runtime_error("Invalid configuration file: invalid access_log level: " + val);
     }
@@ -307,7 +307,7 @@ class ConfigBuilder<ServerConfig> {
     static std::string BuildErrorLogPath(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return ServerConfig::kDefaultErrorLogPath;
+            return ServerConfig::kDefaultErrorLogPath();
         }
         return ParseErrorLogPath(vals[0]);
     }
@@ -341,9 +341,9 @@ class ConfigBuilder<ServerConfig> {
         if (val.find(':') == std::string::npos) {
             if (val.find('.') != std::string::npos) {
                 addr = c_api::IPv4FromString(val);
-                port = ServerConfig::kDefaultPort;
+                port = ServerConfig::kDefaultPort();
             } else {
-                addr = c_api::IPv4FromString(ServerConfig::kDefaultIPAddress);
+                addr = c_api::IPv4FromString(ServerConfig::kDefaultIPAddress());
                 port = utils::StrToNumeric<in_port_t>(val);
             }
         } else {
@@ -548,7 +548,7 @@ class ConfigBuilder<HttpConfig> {
     static int BuildKeepAliveTimeout(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return HttpConfig::kDefaultKeepaliveTimeout;
+            return HttpConfig::kDefaultKeepaliveTimeout();
         }
         return ParseKeepAliveTimeout(vals[0]);
     }
@@ -561,7 +561,7 @@ class ConfigBuilder<HttpConfig> {
     static size_t BuildClientMaxBodySize(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return HttpConfig::kDefaultClientMaxBodySize;
+            return HttpConfig::kDefaultClientMaxBodySize();
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
@@ -738,7 +738,7 @@ class ConfigBuilder<Config> {
     static MxType BuildMxType(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return Config::kDefaultMxType;
+            return Config::kDefaultMxType();
         }
         return ParseMxType(vals[0]);
     }
@@ -758,12 +758,12 @@ class ConfigBuilder<Config> {
     static std::pair<std::string, Severity> BuildErrorLog(const std::vector<std::string>& vals)
     {
         if (vals.empty()) {
-            return std::make_pair(Config::kDefaultErrorLogPath, Config::kDefaultErrorLogLevel);
+            return std::make_pair(Config::kDefaultErrorLogPath(), Config::kDefaultErrorLogLevel());
         }
         std::vector<std::string> val_elements = config::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
             return std::make_pair(ParseErrorLogPath(val_elements[0]),
-                                  Config::kDefaultErrorLogLevel);
+                                  Config::kDefaultErrorLogLevel());
         } else if (val_elements.size() == 2) {
             return std::make_pair(ParseErrorLogPath(val_elements[0]),
                                   ParseErrorLogLevel(val_elements[1]));
@@ -793,7 +793,7 @@ class ConfigBuilder<Config> {
         } else if (val == "fatal") {
             return FATAL;
         } else if (val.empty()) {
-            return Config::kDefaultErrorLogLevel;
+            return Config::kDefaultErrorLogLevel();
         }
         throw std::runtime_error("Invalid configuration file: invalid error_log level: " + val);
     }

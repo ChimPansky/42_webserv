@@ -6,12 +6,6 @@
 
 namespace config {
 
-const std::string LocationConfig::kDefaultRedirectPath = "/new_location";
-const int LocationConfig::kDefaultRedirectCode = 301;
-const std::string LocationConfig::kDefaultRootDir = "/docs";
-const std::string LocationConfig::kDefaultIndexFile = "index.html";
-const bool LocationConfig::kDefaultDirListing = false;
-
 LocationConfig::LocationConfig(const std::pair<std::string, std::string>& route,
                                const std::vector<std::string>& allowed_methods,
                                const std::pair<int, std::string>& redirect,

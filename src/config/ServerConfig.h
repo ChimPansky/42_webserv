@@ -27,11 +27,11 @@ class ServerConfig {
     const std::vector<std::pair<in_addr_t, in_port_t> >& listeners() const;
     const std::vector<std::string>& server_names() const;
     const std::vector<LocationConfig>& locations() const;
-    static const Severity kDefaultAccessLogLevel;
-    static const std::string kDefaultAccessLogPath;
-    static const std::string kDefaultErrorLogPath;
-    static const std::string kDefaultIPAddress;
-    static const in_port_t kDefaultPort;
+    static inline Severity kDefaultAccessLogLevel() { return INFO; }
+    static inline const char *kDefaultAccessLogPath() { return ""; }
+    static inline const char *kDefaultErrorLogPath() { return ""; }
+    static inline const char *kDefaultIPAddress() { return "localhost"; }
+    static inline in_port_t kDefaultPort() { return 80; }
 
     void Print() const;
 

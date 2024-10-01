@@ -18,9 +18,9 @@ class Config {
     Severity error_log_level() const;
     const HttpConfig& http_config() const;
     static const Config GetConfig(const std::string& config_path);
-    static const MxType kDefaultMxType;
-    static const std::string kDefaultErrorLogPath;
-    static const Severity kDefaultErrorLogLevel;
+    static inline MxType kDefaultMxType() { return c_api::MT_SELECT; }
+    static inline const char *kDefaultErrorLogPath() { return ""; }
+    static inline Severity kDefaultErrorLogLevel() { return INFO; }
 
     void Print() const;
 

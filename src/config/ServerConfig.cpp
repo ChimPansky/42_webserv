@@ -5,12 +5,6 @@
 
 namespace config {
 
-const Severity ServerConfig::kDefaultAccessLogLevel = INFO;
-const std::string ServerConfig::kDefaultAccessLogPath = "/log/access.log";
-const std::string ServerConfig::kDefaultErrorLogPath = "/log/error.log";
-const std::string ServerConfig::kDefaultIPAddress = "localhost";
-const in_port_t ServerConfig::kDefaultPort = 80;
-
 ServerConfig::ServerConfig(const std::pair<std::string, Severity>& access_log,
                            const std::string& error_log_path,
                            const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
