@@ -1,7 +1,8 @@
 #include "Config.h"
 
 #include "ConfigBuilder.h"
-#include "ConfigParser.h"
+#include "ParsedConfig.h"
+
 namespace config {
 
 Config::Config(MxType mx_type, const std::pair<std::string, Severity>& error_log,
@@ -42,8 +43,9 @@ const Config Config::GetConfig(const std::string& config_path)
         throw std::invalid_argument("Couldn't open config file.");
     }
 
-    ConfigParser parser(config_file, "", "");
-    return ConfigBuilder<Config>::Build(parser, "", "", "");
+    ParsedConfig parser(config_file, "", "");
+    InheritedSettings inherited_settings = {};
+    return ConfigBuilder<Config>::Build(parser, inherited_settings);
 }
 
 void Config::Print() const

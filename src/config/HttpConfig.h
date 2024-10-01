@@ -13,26 +13,20 @@ class HttpConfig {
     const std::map<int, std::string>& InitErrorPages(const std::map<int, std::string>& value);
 
   public:
-    HttpConfig(int keepalive_timeout, size_t client_max_body_size,
+    HttpConfig(size_t keepalive_timeout, size_t client_max_body_size,
                const std::map<int, std::string>& error_pages,
                const std::vector<ServerConfig>& server_configs);
-    int keepalive_timeout() const;
+    size_t keepalive_timeout() const;
     size_t client_max_body_size() const;
     const std::map<int, std::string>& error_pages() const;
     const std::vector<ServerConfig>& server_configs() const;
-    static inline int kDefaultKeepaliveTimeout()
-    {
-        return 65;
-    }
-    static inline size_t kDefaultClientMaxBodySize()
-    {
-        return 1048576;
-    }
+    static inline size_t kDefaultKeepaliveTimeout() { return 65; }
+    static inline size_t kDefaultClientMaxBodySize() { return 1048576; }
 
     void Print() const;
 
   private:
-    int keepalive_timeout_;
+    size_t keepalive_timeout_;
     size_t client_max_body_size_;
     std::map</* status code */ int, /* error page path */ std::string> error_pages_;
     std::vector<ServerConfig> server_configs_;

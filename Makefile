@@ -22,7 +22,7 @@ FILENAMES = \
 	c_api/EventManager.cpp \
 	c_api/MasterSocket.cpp \
 	c_api/utils.cpp \
-	config/ConfigParser.cpp \
+	config/ParsedConfig.cpp \
 	config/Config.cpp \
 	config/HttpConfig.cpp \
 	config/ServerConfig.cpp \

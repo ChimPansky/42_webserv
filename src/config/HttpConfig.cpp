@@ -1,17 +1,15 @@
 #include "HttpConfig.h"
 
-#include "config/utils.h"
-
 namespace config {
 
-HttpConfig::HttpConfig(int keepalive_timeout, size_t client_max_body_size,
+HttpConfig::HttpConfig(size_t keepalive_timeout, size_t client_max_body_size,
                        const std::map<int, std::string>& error_pages,
                        const std::vector<ServerConfig>& server_configs)
     : keepalive_timeout_(keepalive_timeout), client_max_body_size_(client_max_body_size),
       error_pages_(InitErrorPages(error_pages)), server_configs_(server_configs)
 {}
 
-int HttpConfig::keepalive_timeout() const
+size_t HttpConfig::keepalive_timeout() const
 {
     return keepalive_timeout_;
 }
