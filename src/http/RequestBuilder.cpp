@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "utils/logger.h"
+#include "utils/utils.h"
 
 namespace http {
 
@@ -72,7 +73,7 @@ void RequestBuilder::ParseNext(void)
         // PrintParseBuf_();
         //LOG(DEBUG) << "Parsing char: " << (int)c;
         eof_checker_.Update(c);
-        rq_.complete = eof_checker_.end_of_file_;
+        rq_.rq_complete = eof_checker_.end_of_file_;
         if (eof_checker_.end_of_file_ &&
             (parse_state_ == PS_METHOD || parse_state_ == PS_URI ||
              parse_state_ == PS_VERSION /*needs to have at least 1 header?*/ ||
@@ -106,6 +107,10 @@ void RequestBuilder::ParseNext(void)
                 parse_state_ = ParseHeaderValue_(c);
                 state_changed = (parse_state_ != PS_HEADER_VALUE ? true : false);
                 break;
+            case PS_AFTER_HEADERS:
+                parse_state_ = ParseHeaderValue_(c);
+                state_changed = (parse_state_ != PS_HEADER_VALUE ? true : false);
+                break;
             case PS_BODY:
                 parse_state_ = ParseBody_(c);
                 state_changed = (parse_state_ != PS_BODY ? true : false);
@@ -116,6 +121,9 @@ void RequestBuilder::ParseNext(void)
                 break;
         }
         if (state_changed) {
+            if (parse_state_ == PS_AFTER_HEADERS) {
+                GetBodySettingsFromHeaders_();
+            }
             UpdateBeginIdx_();
         }
     }
@@ -212,7 +220,8 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
     }
     if (LineIsEmpty_()) {
         //LOG(DEBUG) << "--EMPTY LINE-- switching to PS_BODY";
-        return PS_BODY;
+        rq_.headers_complete = true;
+        return PS_AFTER_HEADERS;
     }
     if (c == ':') {
         if (ParseLen_() == 1) {
@@ -258,6 +267,17 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_(char c)
     return PS_HEADER_VALUE;
 }
 
+RequestBuilder::ParseState RequestBuilder::ParseAfterHeaders_(char c)
+{
+    (void)c;
+    //LOG(DEBUG) << "Parsing After-Headers... char: " << c;
+    if (ParseLen_() == 2 && eof_checker_.end_of_file_) {
+        return PS_END;
+        return PS_BODY;
+    }
+    return PS_AFTER_HEADERS;
+}
+
 RequestBuilder::ParseState RequestBuilder::ParseBody_(char c)
 {
     (void)c;
@@ -269,6 +289,31 @@ RequestBuilder::ParseState RequestBuilder::ParseBody_(char c)
     return PS_END;
 }
 
+void RequestBuilder::GetBodySettingsFromHeaders_()
+{
+    //LOG(DEBUG) << "RequestBuilder::GetBodySettingsFromHeaders_";
+    std::string content_type = rq_.GetHeaderVal("Content-Type");
+    std::string transfer_encoding = rq_.GetHeaderVal("Transfer-Encoding");
+    std::string content_length = rq_.GetHeaderVal("Content-Length");
+    if (content_type == "application/json") {
+        //LOG(DEBUG) << "Content-Type: application/json";
+    }
+    if (transfer_encoding == "chunked") {
+        //LOG(DEBUG) << "Transfer-Encoding: chunked";
+        rq_.body.chunked = true;
+    }
+    if (!content_length.empty()) {
+        //LOG(DEBUG) << "Content-Length: " << content_length;
+        std::pair<bool, size_t> content_length_num = utils::StrToNumericNoThrow<size_t>(content_length);
+        if (content_length_num.first) {
+            rq_.body.size = content_length_num.second;
+        } else {
+            rq_.bad_request = true;
+            return;
+        }
+    }
+}
+
 size_t RequestBuilder::ParseLen_() const
 {
     return end_idx_ - begin_idx_;
@@ -278,6 +323,7 @@ int RequestBuilder::CompareBuf_(const char* str, size_t len) const
 {
     return std::strncmp(buf_.data() + begin_idx_, str, len);
 }
+
 void RequestBuilder::UpdateBeginIdx_()
 {
     //LOG(DEBUG) << "RequestBuilder::UpdateBeginIdx_";

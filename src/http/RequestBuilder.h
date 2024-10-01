@@ -30,6 +30,7 @@ class RequestBuilder {
         PS_HEADER_KEY,
         PS_HEADER_SEP,
         PS_HEADER_VALUE,
+        PS_AFTER_HEADERS,
         PS_BODY,
         PS_END,
         PS_ERROR
@@ -59,6 +60,9 @@ class RequestBuilder {
     ParseState ParseHeaderSep_(char c);
     ParseState ParseHeaderValue_(char c);
     ParseState ParseBody_(char c);
+    ParseState ParseAfterHeaders_(char c);
+
+    void GetBodySettingsFromHeaders_();
 
     size_t ParseLen_() const;
     int CompareBuf_(const char*, size_t len) const;
