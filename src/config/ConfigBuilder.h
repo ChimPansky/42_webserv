@@ -513,11 +513,13 @@ class ConfigBuilder<ServerConfig> {
         std::vector<std::pair<in_addr_t, in_port_t> > listeners =
             BuildListeners(f.FindSetting("listen"));
         std::vector<std::string> server_names = BuildServerNames(f.FindSetting("server_name"));
-        std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_settings.root);
-        std::vector<std::string> default_file = BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
-        std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
+
+        InheritedSettings server_inherited_settings = {};
+        server_inherited_settings.root = BuildRootDir(f.FindSetting("root"), inherited_settings.root);
+        server_inherited_settings.def_file = BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
+        server_inherited_settings.dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
         std::vector<LocationConfig> location_configs = BuildLocationConfigs(
-            f.FindNesting("location"), inherited_settings);
+            f.FindNesting("location"), server_inherited_settings);
 
         return ServerConfig(access_log, error_log_path, listeners, server_names, location_configs);
     }
@@ -700,11 +702,13 @@ class ConfigBuilder<HttpConfig> {
         size_t keepalive_timeout = BuildKeepAliveTimeout(f.FindSetting("keepalive_timeout"));
         size_t client_max_body_size = BuildClientMaxBodySize(f.FindSetting("client_max_body_size"));
         std::map<int, std::string> error_pages = BuildErrorPages(f.FindSetting("error_page"));
-        std::string root_dir = BuildRootDir(f.FindSetting("root"));
-        std::vector<std::string> default_file = BuildDefaultFile(f.FindSetting("index"));
-        std::string dir_listing = BuildDirListing(f.FindSetting("autoindex"));
+        
+        InheritedSettings http_inherited_settings = {};
+        http_inherited_settings.root = BuildRootDir(f.FindSetting("root"));
+        http_inherited_settings.def_file = BuildDefaultFile(f.FindSetting("index"));
+        http_inherited_settings.dir_listing = BuildDirListing(f.FindSetting("autoindex"));
         std::vector<ServerConfig> server_configs =
-            BuildServerConfigs(f.FindNesting("server"), inherited_settings);
+            BuildServerConfigs(f.FindNesting("server"), http_inherited_settings);
         return HttpConfig(keepalive_timeout, client_max_body_size, error_pages, server_configs);
     }
 };
