@@ -59,6 +59,14 @@ bool LocationConfig::dir_listing() const
     return dir_listing_;
 }
 
+std::pair<int, std::string> LocationConfig::InitRedirect(const std::pair<int, std::string>& value)
+{
+    if (value.first < 300 || value.first > 399) {
+        throw std::runtime_error("Invalid configuration file: invalid redirect status code.");
+    }
+    return value;
+}
+
 void LocationConfig::Print() const
 {
     LOG(DEBUG) << "\n";

@@ -8,7 +8,7 @@ HttpConfig::HttpConfig(int keepalive_timeout, size_t client_max_body_size,
                        const std::map<int, std::string>& error_pages,
                        const std::vector<ServerConfig>& server_configs)
     : keepalive_timeout_(keepalive_timeout), client_max_body_size_(client_max_body_size),
-      error_pages_(error_pages), server_configs_(server_configs)
+      error_pages_(InitErrorPages(error_pages)), server_configs_(server_configs)
 {}
 
 int HttpConfig::keepalive_timeout() const
@@ -29,6 +29,20 @@ const std::map<int, std::string>& HttpConfig::error_pages() const
 const std::vector<ServerConfig>& HttpConfig::server_configs() const
 {
     return server_configs_;
+}
+
+const std::map<int, std::string>& HttpConfig::InitErrorPages(
+    const std::map<int, std::string>& value)
+{
+    typedef std::map<int, std::string>::const_iterator ErrorPagesIt;
+    for (ErrorPagesIt it = value.begin(); it != value.end(); ++it) {
+        if (it->first < 400 || it->first > 599) {
+            throw std::runtime_error("Invalid configuration file: invalid error_page status code.");
+        } else if (!config::CheckFileExtension(it->second, ".html")) {
+            throw std::runtime_error("Invalid configuration file: invalid error_page path.");
+        }
+    }
+    return value;
 }
 
 void config::HttpConfig::Print() const
