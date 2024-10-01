@@ -31,6 +31,7 @@ class LocationConfig {
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
                    const std::vector<std::string>& default_file, bool dir_listing);
+
     const std::pair<std::string, Priority>& route() const;
     const std::vector<Method>& allowed_methods() const;
     const std::pair<int, std::string>& redirect() const;
@@ -40,6 +41,7 @@ class LocationConfig {
     const std::string& root_dir() const;
     const std::vector<std::string>& default_file() const;
     bool dir_listing() const;
+
     static inline int kDefaultRedirectCode() { return 301; }
     static inline const char* kDefaultRedirectPath() { return "/new_location"; }
     static inline const char* kDefaultRootDir() { return "/docs"; }

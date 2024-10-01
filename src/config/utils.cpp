@@ -1,6 +1,5 @@
 #include "config/utils.h"
 
-#include <climits>
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
@@ -76,7 +75,7 @@ bool IsDirectory(const std::string& path)
     }
 }
 
-std::string Trim(const std::string& str, const std::string& trim_chars)
+std::string Trim(const std::string& str, const std::string& trim_chars = " \t")
 {
     std::string trimmed = str;
     if (str.find_last_not_of(trim_chars) == std::string::npos) {

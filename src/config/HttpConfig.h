@@ -16,12 +16,14 @@ class HttpConfig {
     HttpConfig(size_t keepalive_timeout, size_t client_max_body_size,
                const std::map<int, std::string>& error_pages,
                const std::vector<ServerConfig>& server_configs);
+
     size_t keepalive_timeout() const;
     size_t client_max_body_size() const;
     const std::map<int, std::string>& error_pages() const;
     const std::vector<ServerConfig>& server_configs() const;
+
     static inline size_t kDefaultKeepaliveTimeout() { return 65; }
-    static inline size_t kDefaultClientMaxBodySize() { return 1048576; }
+    static inline size_t kDefaultClientMaxBodySize() { return 2ul << 20; }
 
     void Print() const;
 

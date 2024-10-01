@@ -21,12 +21,14 @@ class ServerConfig {
                  const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
                  const std::vector<std::string>& server_names,
                  const std::vector<LocationConfig>& locations);
+
     const std::string& access_log_path() const;
     Severity access_log_level() const;
     const std::string& error_log_path() const;
     const std::vector<std::pair<in_addr_t, in_port_t> >& listeners() const;
     const std::vector<std::string>& server_names() const;
     const std::vector<LocationConfig>& locations() const;
+
     static inline Severity kDefaultAccessLogLevel() { return INFO; }
     static inline const char* kDefaultAccessLogPath() { return ""; }
     static inline const char* kDefaultErrorLogPath() { return ""; }
