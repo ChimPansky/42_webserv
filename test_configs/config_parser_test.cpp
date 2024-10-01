@@ -14,12 +14,12 @@ TEST(ConfigTest, LoadValidConfig)
     EXPECT_EQ(conf.mx_type(), c_api::MultiplexType::MT_SELECT);
     EXPECT_EQ(conf.error_log_path(), "/log/error.log");
     EXPECT_EQ(conf.error_log_level(),
-              Severity::INFO);  // Assuming 'info' is mapped to `Severity::INFO`
+              Severity::INFO);
 
     const config::HttpConfig& http_config = conf.http_config();
 
     EXPECT_EQ(http_config.keepalive_timeout(), 65);
-    EXPECT_EQ(http_config.client_max_body_size(), 1048576);  // 1 MB in bytes
+    EXPECT_EQ(http_config.client_max_body_size(), 1048576);
     EXPECT_EQ(http_config.error_pages().at(404), "error_pages/404.html");
     EXPECT_EQ(http_config.error_pages().at(501), "error_pages/501.html");
 
@@ -283,4 +283,9 @@ TEST(ConfigTest, InvalidReturnSetting)
     std::string invalid_file = "test_configs/invalid_return.conf";
 
     EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+}
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

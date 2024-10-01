@@ -1,22 +1,24 @@
 #ifndef WS_UTILS_UTILS_H
 #define WS_UTILS_UTILS_H
 
-#include <sstream>
 #include <limits>
+#include <sstream>
 
 namespace utils {
 
 namespace detail {
 
 template <typename NumType>
-bool IsSignedType() {
+bool IsSignedType()
+{
     return std::numeric_limits<NumType>::min() != 0;
 }
 
 }  // namespace detail
 
 template <typename NumType>
-int StrToNumeric(const std::string& str) {
+int StrToNumeric(const std::string& str)
+{
     std::stringstream ss(str);
     NumType num;
     ss >> std::ws;  // throw here is there are spaces?
@@ -35,9 +37,9 @@ int StrToNumeric(const std::string& str) {
     return num;
 }
 
-
 template <typename NumType>
-std::pair<bool /*is_valid*/, NumType> StrToNumericNoThrow(const std::string& str) {
+std::pair<bool /*is_valid*/, NumType> StrToNumericNoThrow(const std::string& str)
+{
     std::stringstream ss(str);
     NumType num;
     ss >> std::ws;
@@ -96,6 +98,5 @@ std::pair<bool /*is_valid*/, NumType> StrToNumericNoThrow(const std::string& str
 //     test_one<bool>("0");
 //     test_one<bool>("100");
 //     test_one<bool>("true");
-
 
 // }
