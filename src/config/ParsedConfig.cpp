@@ -10,9 +10,9 @@ ParsedConfig::ParsedConfig(std::ifstream& ifs, const std::string& nesting_lvl, c
         if (content.empty() || content[0] == '#') {
             continue;
         }
-        content = Trim(content, " \t");
+        content = utils::fs::Trim(content, " \t");
         char last_char = *content.rbegin();
-        content = Trim(content, " \t" + std::string(1, last_char));
+        content = utils::fs::Trim(content, " \t" + std::string(1, last_char));
 
         if (last_char == ';') {
             if (content.empty()) {
@@ -83,6 +83,19 @@ const std::vector<ParsedConfig>& ParsedConfig::FindNesting(const std::string& ke
         }
     }
     return nested_configs_;
+}
+
+std::pair<std::string, std::string> MakePair(const std::string& line)
+{
+    size_t pos = line.find_first_of(" \t");
+    if (pos == std::string::npos) {
+        return std::make_pair(line, "");
+    }
+    size_t start = line.find_first_not_of(" \t", pos);
+    if (start == std::string::npos) {
+        return std::make_pair(line.substr(0, pos), "");
+    }
+    return std::make_pair(line.substr(0, pos), line.substr(start, line.size() - start));
 }
 
 }  // namespace config

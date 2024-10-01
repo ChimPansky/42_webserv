@@ -33,7 +33,7 @@ const HttpConfig& Config::http_config() const
 
 const Config Config::GetConfig(const std::string& config_path)
 {
-    if (!config::CheckFileExtension(config_path, ".conf") ||
+    if (!utils::fs::CheckFileExtension(config_path, ".conf") ||
         config_path[config_path.size() - 6] == '/') {
         throw std::invalid_argument("Invalid config file suffix.");
     }

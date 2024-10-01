@@ -1,7 +1,7 @@
 #ifndef WS_CONFIG_PARSED_CONFIG_H
 #define WS_CONFIG_PARSED_CONFIG_H
 
-#include <config/utils.h>
+#include <utils/utils.h>
 
 #include <fstream>
 #include <map>
@@ -29,6 +29,8 @@ class ParsedConfig {
     std::multimap<std::string, std::string> settings_;
     std::vector<ParsedConfig> nested_configs_;
 };
+
+std::pair<std::string, std::string> MakePair(const std::string& line);
 
 }  // namespace config
 

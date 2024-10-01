@@ -1,12 +1,10 @@
-#include "config/utils.h"
+#include "utils/utils.h"
 
-#include <cstddef>
-#include <cstdlib>
 #include <fstream>
-#include <iostream>
-#include <string>
 
-namespace config {
+namespace utils {
+
+namespace fs {
 
 std::vector<std::string> SplitLine(const std::string& line)
 {
@@ -24,19 +22,6 @@ std::vector<std::string> SplitLine(const std::string& line)
         start = end + 1;
     }
     return elements;
-}
-
-std::pair<std::string, std::string> MakePair(const std::string& line)
-{
-    size_t pos = line.find_first_of(" \t");
-    if (pos == std::string::npos) {
-        return std::make_pair(line, "");
-    }
-    size_t start = line.find_first_not_of(" \t", pos);
-    if (start == std::string::npos) {
-        return std::make_pair(line.substr(0, pos), "");
-    }
-    return std::make_pair(line.substr(0, pos), line.substr(start, line.size() - start));
 }
 
 bool CheckFileExtension(const std::string& file, const std::string& extention)
@@ -85,4 +70,6 @@ std::string Trim(const std::string& str, const std::string& trim_chars = " \t")
     return trimmed;
 }
 
-}  // namespace config
+} // namespace fs
+
+}  // namespace utils

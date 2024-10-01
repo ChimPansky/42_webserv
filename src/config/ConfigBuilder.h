@@ -13,7 +13,6 @@
 #include "LocationConfig.h"
 #include "ServerConfig.h"
 #include "c_api/utils.h"
-#include "config/utils.h"
 #include "utils/utils.h"
 
 namespace config {
@@ -44,7 +43,7 @@ class ConfigBuilder<LocationConfig> {
         if (vals.empty()) {
             throw std::runtime_error("Invalid configuration file: no route specified.");
         }
-        std::vector<std::string> route_elements = config::SplitLine(vals);
+        std::vector<std::string> route_elements = utils::fs::SplitLine(vals);
         return ParseRoute(route_elements);
     }
 
@@ -78,7 +77,7 @@ class ConfigBuilder<LocationConfig> {
                 throw std::runtime_error(
                     "Invalid configuration file: no allowed methods specified.");
             }
-            std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+            std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             allowed_methods.insert(allowed_methods.end(), val_elements.begin(), val_elements.end());
         }
         return ParseAllowedMethods(allowed_methods);
@@ -111,7 +110,7 @@ class ConfigBuilder<LocationConfig> {
         } else if (vals.size() > 1) {
             throw std::runtime_error("Invalid configuration file: duplicated return value.");
         }
-        std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
         return ParseRedirect(val_elements);
     }
 
@@ -147,7 +146,7 @@ class ConfigBuilder<LocationConfig> {
                 throw std::runtime_error(
                     "Invalid configuration file: no cgi extension specified.");
             }
-            std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+            std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             cgi_extensions.insert(cgi_extensions.end(), val_elements.begin(), val_elements.end());
         }
         return ParseCgiExtensions(cgi_extensions);
@@ -191,7 +190,7 @@ class ConfigBuilder<LocationConfig> {
                 throw std::runtime_error(
                     "Invalid configuration file: no index file specified.");
             }
-            std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+            std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             default_files.insert(default_files.end(), val_elements.begin(), val_elements.end());
         }
         return default_files;
@@ -271,7 +270,7 @@ class ConfigBuilder<ServerConfig> {
             return std::make_pair(ServerConfig::kDefaultAccessLogPath(),
                                   ServerConfig::kDefaultAccessLogLevel());
         }
-        std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
             return std::make_pair(val_elements[0],
                                   ServerConfig::kDefaultAccessLogLevel());
@@ -357,7 +356,7 @@ class ConfigBuilder<ServerConfig> {
         std::vector<std::string> server_names;
 
         for (size_t i = 0; i < vals.size(); i++) {
-            std::vector<std::string> val_elements = config::SplitLine(vals[i]);
+            std::vector<std::string> val_elements = utils::fs::SplitLine(vals[i]);
             if (!val_elements.empty()) {
                 for (size_t j = 0; j < val_elements.size(); j++) {
                     if (val_elements[j] == "\"\"") {
@@ -439,7 +438,7 @@ class ConfigBuilder<ServerConfig> {
                 throw std::runtime_error(
                     "Invalid configuration file: no index file specified.");
             }
-            std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+            std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             default_files.insert(default_files.end(), val_elements.begin(), val_elements.end());
         }
         return default_files;
@@ -550,7 +549,7 @@ class ConfigBuilder<HttpConfig> {
             throw std::runtime_error(
                 "Invalid configuration file: duplicated client_max_body_size.");
         }
-        std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
             return ParseClientMaxBodySize(val_elements[0], "");
         } else if (val_elements.size() == 2) {
@@ -589,7 +588,7 @@ class ConfigBuilder<HttpConfig> {
         std::map<int, std::string> error_pages;
 
         for (size_t i = 0; i < vals.size(); i++) {
-            std::vector<std::string> val_elements = config::SplitLine(vals[i]);
+            std::vector<std::string> val_elements = utils::fs::SplitLine(vals[i]);
             if (val_elements.size() < 2) {
                 throw std::runtime_error("Invalid configuration file: invalid error_page: " +
                                          vals[i]);
@@ -628,7 +627,7 @@ class ConfigBuilder<HttpConfig> {
                 throw std::runtime_error(
                     "Invalid configuration file: no index file specified.");
             }
-            std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+            std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             default_files.insert(default_files.end(), val_elements.begin(), val_elements.end());
         }
         return default_files;
@@ -742,7 +741,7 @@ class ConfigBuilder<Config> {
         } else if (vals.size() > 1) {
             throw std::runtime_error("Invalid configuration file: duplicated error_log value.");
         }
-        std::vector<std::string> val_elements = config::SplitLine(vals[0]);
+        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
             return std::make_pair(val_elements[0],
                                   Config::kDefaultErrorLogLevel());

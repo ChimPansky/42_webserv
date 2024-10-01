@@ -3,8 +3,21 @@
 
 #include <sstream>
 #include <limits>
+#include <vector>
+#include <dirent.h>
+#include <netdb.h>
 
 namespace utils {
+
+namespace fs {
+
+std::vector<std::string> SplitLine(const std::string& line);
+bool CheckFileExtension(const std::string& file, const std::string& extention);
+bool ValidPath(const std::string& val);
+bool IsDirectory(const std::string& path);
+std::string Trim(const std::string& str, const std::string& trim_chars);
+
+} // namespace fs
 
 namespace detail {
 
