@@ -3,14 +3,14 @@
 
 #include <vector>
 
+#include "Config.h"
 #include "Server.h"
-#include "config/Config.h"
-#include "utils/shared_ptr.h"
 #include "utils/unique_ptr.h"
+#include "utils/shared_ptr.h"
 
 class ServerCluster {
   public:
-    static void Start(const config::Config& config);
+    static void Start(const Config& config);
     static void Stop();
 
   private:
@@ -24,7 +24,7 @@ class ServerCluster {
         ServerCluster& cluster_;
     };
 
-    ServerCluster(const config::Config&);
+    ServerCluster(const Config&);
 
     // Sockets
     std::map<int /*fd*/, utils::unique_ptr<c_api::MasterSocket> > sockets_;

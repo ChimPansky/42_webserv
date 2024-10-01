@@ -57,8 +57,7 @@ ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz)
     return bytes_sendd;
 }
 
-size_t ClientSocket::buf_sz() const
-{
+size_t ClientSocket::buf_sz() const {
     return buf_sz_;
 }
 

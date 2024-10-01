@@ -83,4 +83,5 @@ void EventManager::ClearCallback_(int fd, CallbackType type)
     }
 }
 
+
 }  // namespace c_api

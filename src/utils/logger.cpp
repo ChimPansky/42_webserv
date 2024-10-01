@@ -1,9 +1,10 @@
 #include "logger.h"
 
-#include <ctime>
-#include <fstream>
 #include <iostream>
+#include <fstream>
+#include <ctime>
 #include <stdexcept>
+
 
 using namespace utils;
 
@@ -16,19 +17,20 @@ Logger::Logger(char* log_path)
     es_ = (fs_.is_open() ? &fs_ : &std::cerr);
 }
 
-Logger::LogWrapper::LogWrapper(std::ostream& os, Severity sev) : os_(os), sev_(sev)
+
+Logger::LogWrapper::LogWrapper(std::ostream& os, Severity sev)
+    : os_(os), sev_(sev)
 {}
 
-Logger::LogWrapper::~LogWrapper() throw(std::runtime_error)
-{
+
+Logger::LogWrapper::~LogWrapper() throw(std::runtime_error) {
     os_ << std::endl;
     if (sev_ == FATAL) {
         throw std::runtime_error("fatal error");
     }
 }
 
-char* Logger::dump_time()
-{
+char* Logger::dump_time() {
     // add usec?
     time_t rawtime = time(NULL);
     struct tm* timeinfo;
@@ -37,8 +39,7 @@ char* Logger::dump_time()
     return format_buf_;
 }
 
-Logger::LogWrapper Logger::log(enum Severity sev)
-{
+Logger::LogWrapper Logger::log(enum Severity sev) {
     std::ostream& os = (sev < WARNING ? *os_ : *es_);
     // possible color:
     // if (dynamic_cast<std::ofstream*>(&os) == NULL) {
@@ -47,8 +48,7 @@ Logger::LogWrapper Logger::log(enum Severity sev)
     return LogWrapper(os, sev);
 }
 
-Logger& Logger::get()
-{
+Logger& Logger::get() {
     static Logger logger;
     return logger;
 }

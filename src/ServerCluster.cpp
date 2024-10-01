@@ -3,14 +3,13 @@
 #include "Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/utils.h"
+#include "utils/logger.h"
 
 volatile bool ServerCluster::run_ = false;
 
 // testing with one
-ServerCluster::ServerCluster(const config::Config& config /*config*/)
+ServerCluster::ServerCluster(const Config& /*config*/)
 {
-    //config.Print();
-    (void)config;
     std::vector<std::pair<in_addr_t, in_port_t> > listeners;
 
     listeners.push_back(std::make_pair(c_api::IPv4FromString("localhost"), in_port_t(8081)));
@@ -38,8 +37,8 @@ ServerCluster::ServerCluster(const config::Config& config /*config*/)
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
             if (c_api::EventManager::get().RegisterCallback(
-                    sockfd, c_api::CT_READ,
-                    utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
+                sockfd, c_api::CT_READ,
+                utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
                 LOG(FATAL) << "Could not register callback for listener: " << sockfd;
             }
             sockets_[sockfd] = listener;
@@ -55,7 +54,7 @@ void ServerCluster::Stop()
 }
 
 // smth like
-void ServerCluster::Start(const config::Config& config)
+void ServerCluster::Start(const Config& config)
 {
     // register signal for ^C, switch run on that
     run_ = true;

@@ -52,6 +52,7 @@ class Logger {
 
 }  // namespace utils
 
-#define LOG(severity)                                                                       \
-    utils::Logger::get().log(severity) << #severity[0] << utils::Logger::dump_time() << " " \
-                                       << __FILE__ << ":" << __LINE__ << "] "
+#define LOG(severity)                                   \
+    utils::Logger::get().log(severity)                  \
+        << #severity[0] << utils::Logger::dump_time()   \
+        << " " << __FILE__ << ":" << __LINE__ << "] "

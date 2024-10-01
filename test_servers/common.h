@@ -1,11 +1,10 @@
+#include <cstring>
 #include <netinet/in.h>  // sockaddr_in
 #include <sys/socket.h>  // socket, bind
 #include <unistd.h>      // close
-
-#include <cstring>
-#include <sstream>    // close
-#include <stdexcept>  // close
-#include <string>     // close
+#include <string>      // close
+#include <stdexcept>      // close
+#include <sstream>      // close
 
 in_addr_t IPv4FromString(const std::string& ip_str)
 {
@@ -37,15 +36,16 @@ in_addr_t IPv4FromString(const std::string& ip_str)
     return ipv4;
 }
 
+
 int CreateAndBindSocket(in_addr_t ip, in_port_t port, bool set_nonblock = true)
 {
     int sockfd_ = ::socket(/* IPv4 */ AF_INET,
-                           /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
-                           /* explicit tcp */ IPPROTO_TCP);
+                            /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
+                            /* explicit tcp */ IPPROTO_TCP);
     if (sockfd_ < 0) {
         throw std::runtime_error("cannot create socket");
     }
-    int optval = 1;
+	int optval = 1;
     ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
     struct sockaddr_in sa_in = {};
@@ -63,8 +63,7 @@ int CreateAndBindSocket(in_addr_t ip, in_port_t port, bool set_nonblock = true)
         throw std::runtime_error("cannot bind master_socket to the address");
     }
 
-    // start listening for incoming connections, if more then SOMAXCONN are not accepted, rest will
-    // be ignored
+    // start listening for incoming connections, if more then SOMAXCONN are not accepted, rest will be ignored
     if (::listen(sockfd_, SOMAXCONN) != 0) {
         throw std::runtime_error("cannot bind master_socket");
     }

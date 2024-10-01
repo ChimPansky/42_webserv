@@ -13,4 +13,4 @@ struct sockaddr_in GetIPv4SockAddr(in_addr_t ip, in_port_t port);
 
 }  // namespace c_api
 
-#endif
+#endif  // WS_C_API_UTILS_H

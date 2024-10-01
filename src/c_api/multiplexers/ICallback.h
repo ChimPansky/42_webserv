@@ -2,7 +2,6 @@
 #define WS_C_API_MULTIPLEXERS_I_CALLBACK_H
 
 #include <map>
-
 #include "utils/unique_ptr.h"
 
 namespace c_api {
