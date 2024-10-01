@@ -6,8 +6,8 @@ namespace config {
 
 Config::Config(MxType mx_type, const std::pair<std::string, Severity>& error_log,
                const HttpConfig& http_config)
-    : mx_type_(mx_type), error_log_path_(InitErrorLogPath(error_log.first)),
-      error_log_level_(error_log.second), http_config_(http_config)
+    : mx_type_(mx_type), error_log_path_(error_log.first), error_log_level_(error_log.second),
+      http_config_(http_config)
 {}
 
 Config::MxType Config::mx_type() const
@@ -28,14 +28,6 @@ Severity Config::error_log_level() const
 const HttpConfig& Config::http_config() const
 {
     return http_config_;
-}
-
-const std::string& Config::InitErrorLogPath(const std::string& value)
-{
-    if (!config::CheckFileExtension(value, ".log")) {
-        throw std::runtime_error("Invalid log file suffix.");
-    }
-    return value;
 }
 
 const Config Config::GetConfig(const std::string& config_path)

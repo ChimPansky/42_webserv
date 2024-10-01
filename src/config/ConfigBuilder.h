@@ -10,6 +10,7 @@
 
 #include "Config.h"
 #include "ConfigParser.h"
+#include "LocationConfig.h"
 #include "ServerConfig.h"
 #include "c_api/utils.h"
 #include "config/utils.h"
@@ -34,7 +35,7 @@ class ConfigBuilder {
 template <>
 class ConfigBuilder<LocationConfig> {
   private:
-    static std::pair<std::string, std::string> BuildRoute(const std::string& vals)
+    static std::pair<std::string, LocationConfig::Priority> BuildRoute(const std::string& vals)
     {
         if (vals.empty()) {
             throw std::runtime_error("Invalid configuration file: no route specified.");
@@ -43,16 +44,18 @@ class ConfigBuilder<LocationConfig> {
         return ParseRoute(route_elements);
     }
 
-    static std::pair<std::string, std::string> ParseRoute(const std::vector<std::string>& vals)
+    static std::pair<std::string, LocationConfig::Priority> ParseRoute(
+        const std::vector<std::string>& vals)
     {
         std::string route;
-        std::string priority;
+        LocationConfig::Priority priority;
         if (vals.size() > 2) {
             throw std::runtime_error("Invalid configuration file: invalid route: " + vals[0]);
         } else if (vals.size() == 1) {
+            priority = LocationConfig::P1;
             route = vals[0];
         } else if (vals[0] == "=") {
-            priority = vals[0];
+            priority = LocationConfig::P0;
             route = vals[1];
         }
         if (route == "/" || IsDirectory(route)) {
@@ -242,7 +245,7 @@ class ConfigBuilder<LocationConfig> {
         if (!IsNestingAllowed(f)) {
             throw std::runtime_error("Invalid configuration file: invalid nesting.");
         }
-        std::pair<std::string, std::string> route = BuildRoute(f.lvl_descr());
+        std::pair<std::string, LocationConfig::Priority> route = BuildRoute(f.lvl_descr());
         std::vector<std::string> allowed_methods =
             BuildAllowedMethods(f.FindSetting("allow_methods"));
         std::pair<int, std::string> redirect = BuildRedirect(f.FindSetting("return"));

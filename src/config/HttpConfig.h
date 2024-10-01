@@ -10,8 +10,6 @@
 namespace config {
 class HttpConfig {
   private:
-    int InitKeepaliveTimeout(int value);
-    size_t InitClientMaxBodySize(size_t value);
     const std::map<int, std::string>& InitErrorPages(const std::map<int, std::string>& value);
 
   public:
@@ -22,8 +20,14 @@ class HttpConfig {
     size_t client_max_body_size() const;
     const std::map<int, std::string>& error_pages() const;
     const std::vector<ServerConfig>& server_configs() const;
-    static inline int kDefaultKeepaliveTimeout() { return 65; }
-    static inline size_t kDefaultClientMaxBodySize() { return 1048576; }
+    static inline int kDefaultKeepaliveTimeout()
+    {
+        return 65;
+    }
+    static inline size_t kDefaultClientMaxBodySize()
+    {
+        return 1048576;
+    }
 
     void Print() const;
 

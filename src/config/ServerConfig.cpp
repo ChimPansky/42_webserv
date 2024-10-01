@@ -1,7 +1,6 @@
 #include "ServerConfig.h"
 
 #include "c_api/utils.h"
-#include "utils.h"
 
 namespace config {
 
@@ -10,9 +9,9 @@ ServerConfig::ServerConfig(const std::pair<std::string, Severity>& access_log,
                            const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
                            const std::vector<std::string>& server_names,
                            const std::vector<LocationConfig>& locations)
-    : access_log_path_(InitAccessLog(access_log.first)), access_log_level_(access_log.second),
-      error_log_path_(InitErrorLogPath(error_log_path)), listeners_(InitListeners(listeners)),
-      server_names_(server_names), locations_(locations)
+    : access_log_path_(access_log.first), access_log_level_(access_log.second),
+      error_log_path_(error_log_path), listeners_(listeners), server_names_(server_names),
+      locations_(locations)
 {}
 
 const std::string& ServerConfig::access_log_path() const
@@ -43,33 +42,6 @@ const std::vector<std::string>& ServerConfig::server_names() const
 const std::vector<LocationConfig>& ServerConfig::locations() const
 {
     return locations_;
-}
-
-const std::string& ServerConfig::InitAccessLog(const std::string& value)
-{
-    if (!value.empty() && !config::CheckFileExtension(value, ".log")) {
-        throw std::runtime_error("Invalid log file suffix.");
-    }
-    return value;
-}
-
-const std::string& ServerConfig::InitErrorLogPath(const std::string& value)
-{
-    if (!value.empty() && !config::CheckFileExtension(value, ".log")) {
-        throw std::runtime_error("Invalid log file suffix.");
-    }
-    return value;
-}
-
-const std::vector<std::pair<in_addr_t, in_port_t> >& ServerConfig::InitListeners(
-    const std::vector<std::pair<in_addr_t, in_port_t> >& value)
-{
-    for (size_t i = 0; i < value.size(); i++) {
-        if (value[i].second == 0) {
-            throw std::runtime_error("Invalid configuration file: invalid listener.");
-        }
-    }
-    return value;
 }
 
 void ServerConfig::Print() const

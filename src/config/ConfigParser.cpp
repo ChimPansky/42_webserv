@@ -16,7 +16,6 @@ ConfigParser::ConfigParser(std::ifstream& ifs, const std::string& lvl, const std
         char last_char = *content.rbegin();
         content = Trim(content, " \t" + std::string(1, last_char));
 
-        // TEST and improve
         if (last_char == ';') {
             if (content.empty()) {
                 throw std::invalid_argument("Invalid config file: empty setting.");
