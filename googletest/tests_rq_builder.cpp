@@ -49,11 +49,15 @@ TEST(Suite1, Test1) {
     if (BuildRequest(builder, "requests/rq1.txt") != 0) {
         FAIL();
     }
-    EXPECT_EQ(false, builder.rq().rq_complete);
-    EXPECT_EQ(true, builder.rq().bad_request);
-    EXPECT_EQ(http::HTTP_GET, builder.rq().method);
-    EXPECT_EQ("a", builder.rq().uri);
-    // EXPECT_EQ(http::HTTP_2, builder.rq().version);
+    EXPECT_EQ(true, builder.rq().rq_complete);
+    EXPECT_EQ(false, builder.rq().bad_request);
+    EXPECT_EQ(http::HTTP_DELETE, builder.rq().method);
+    EXPECT_EQ("/", builder.rq().uri);
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("bla", builder.rq().GetHeaderVal("Host"));
+    EXPECT_EQ("0", builder.rq().GetHeaderVal("content-length"));
+    EXPECT_EQ(0, builder.rq().body.content_length);
+
     // EXPECT_EQ("192.168.1.1", builder.rq().GetHeaderVal("Host"));
     // EXPECT_EQ("*/*", builder.rq().GetHeaderVal("Accept"));
 }

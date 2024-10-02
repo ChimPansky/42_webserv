@@ -43,13 +43,14 @@ class RequestBuilder {
     std::string header_key_;
 
     size_t  ParseLen_() const;
+    char    GetNextChar_();
     void    NullTerminatorCheck_(char c);
     int     CompareBuf_(const char*, size_t len) const;
     void    UpdateBeginIdx_();
 
     ParseState ParseMethod_(char c);
     ParseState ParseUri_(char c);
-    ParseState ParseVersion_(char c);
+    ParseState ParseVersion_(void);
     ParseState CheckForNextHeader_(char c);
     ParseState ParseHeaderKey_(char c);
     ParseState ParseHeaderKeyValSep_(char c);

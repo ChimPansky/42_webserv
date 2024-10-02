@@ -30,13 +30,13 @@ void RequestBuilder::ParseNext(void)
     ++chunk_counter_;
     //LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
     //LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
-    LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
-    if (buf_.size() == end_idx_) {  // 0 bytes received...
+    if (buf_.size() == end_idx_ && parse_state_ != PS_AFTER_HEADERS) {  // 0 bytes received...
         LOG(DEBUG) << "buf.size() == end_idx -> bad_request";
         parse_state_ = PS_BAD_REQUEST;
     }
-    while (end_idx_ < buf_.size() && !IsReadyForResponse()) {
-        char c = buf_[end_idx_++];
+    while (!IsReadyForResponse() && (end_idx_ < buf_.size() || parse_state_ == PS_AFTER_HEADERS)) {
+        char c = GetNextChar_();
+        LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
         bool state_changed = false;
         NullTerminatorCheck_(c);
         switch (parse_state_) {
@@ -49,7 +49,7 @@ void RequestBuilder::ParseNext(void)
                 state_changed = (parse_state_ != PS_URI ? true : false);
                 break;
             case PS_VERSION:
-                parse_state_ = ParseVersion_(c);
+                parse_state_ = ParseVersion_();
                 state_changed = (parse_state_ != PS_VERSION ? true : false);
                 break;
             case PS_BETWEEN_HEADERS:
@@ -102,10 +102,18 @@ size_t RequestBuilder::ParseLen_() const
     return end_idx_ - begin_idx_;
 }
 
+char RequestBuilder::GetNextChar_()
+{
+    if (parse_state_ == PS_AFTER_HEADERS) {
+        return ' ';
+    }
+    return buf_[end_idx_++];
+}
+
 void RequestBuilder::NullTerminatorCheck_(char c)
 {
-    if (c == '\0' && parse_state_ != PS_BODY && !rq_.body.chunked) {
-        LOG(DEBUG) << "Null char found -> bad_request";
+    if (c == '\0' && parse_state_ != PS_AFTER_HEADERS && parse_state_ != PS_BODY && !rq_.body.chunked) {
+        LOG(DEBUG) << "Null terminator found -> bad_request";
         parse_state_ = PS_BAD_REQUEST;
     }
 }
@@ -161,10 +169,9 @@ RequestBuilder::ParseState RequestBuilder::ParseUri_(char c)
     return PS_URI;
 }
 
-RequestBuilder::ParseState RequestBuilder::ParseVersion_(char c)
+RequestBuilder::ParseState RequestBuilder::ParseVersion_(void)
 {
-    (void)c;
-    LOG(DEBUG) << "Parsing Version... char: " << c;
+    //LOG(DEBUG) << "Parsing Version... ";
     if (ParseLen_() == 10 && CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
         rq_.version = HTTP_0_9;
         return PS_BETWEEN_HEADERS;
