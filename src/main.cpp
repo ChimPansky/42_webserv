@@ -29,8 +29,7 @@ int main(int ac, char **av)
     }
     signal(SIGINT, StopCluster);
 
-    config::Config config = config::Config::GetConfig(av[1]);
-    ServerCluster::Start(config);
+    ServerCluster::Start(config::Config::GetConfig(av[1]));
 
     return 0;
 }
