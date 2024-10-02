@@ -22,18 +22,14 @@ FILENAMES = \
 	c_api/EventManager.cpp \
 	c_api/MasterSocket.cpp \
 	c_api/utils.cpp \
-	config/ParsedConfig.cpp \
-	config/Config.cpp \
-	config/HttpConfig.cpp \
-	config/ServerConfig.cpp \
-	config/LocationConfig.cpp \
 	utils/logger.cpp \
-	utils/utils.cpp \
 	ClientSession.cpp \
+	Config.cpp \
 	Server.cpp \
-	ServerCluster.cpp
+	ServerCluster.cpp \
+	main.cpp
 
-SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES) main.cpp)
+SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES))
 OBJ = $(SRC:%.cpp=$(BUILD_DIR)/%.o)
 DEP = $(OBJ:%.o=%.d)
 
@@ -61,18 +57,8 @@ $(BUILD_DIR)/%.o : %.cpp
 
 -include $(DEP)
 
-CONFIG_TEST = test_configs/config_parser_test.cpp \
-	$(addprefix $(SOURCE_DIR)/,$(FILENAMES))
-
-GTEST_DIR = test_configs/googletest/googletest/include
-GTEST_LIB_DIR = test_configs/googletest/build/lib
-
-tests: $(CONFIG_TEST)
-	$(CXX)	-I$(SOURCE_DIR) -I$(GTEST_DIR) -L$(GTEST_LIB_DIR) $^ -lgtest -lgtest_main -o runTests
-	./runTests
-
 clean:
-	rm -fr $(BUILD_DIR) runTests
+	rm -fr $(BUILD_DIR)
 
 fclean: clean
 	rm -f $(NAME)

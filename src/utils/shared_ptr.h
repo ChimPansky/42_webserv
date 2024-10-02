@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WS_UTILS_SHARED_PTR_H
+#define WS_UTILS_SHARED_PTR_H
 // NOLINTBEGIN
 
 /**
@@ -299,3 +300,4 @@ shared_ptr<T> dynamic_pointer_cast(const shared_ptr<U>& ptr) // never throws
 
 }  // namespace utils
 // NOLINTEND
+#endif  // WS_UTILS_SHARED_PTR_H

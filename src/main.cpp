@@ -13,7 +13,7 @@
 #include <csignal>
 
 #include "ServerCluster.h"
-#include "config/Config.h"
+#include "utils/logger.h"
 
 void StopCluster(int /*signum*/)
 {
@@ -29,7 +29,8 @@ int main(int ac, char **av)
     }
     signal(SIGINT, StopCluster);
 
-    ServerCluster::Start(config::Config::GetConfig(av[1]));
-
+    ServerCluster::Start((Config(av[1])));  // curly braces is a dream
+                        // another approach is Config::parse which returns config,
+                        // but then copy c-tor for Configrequired, as RVO is not guaranteed
     return 0;
 }
