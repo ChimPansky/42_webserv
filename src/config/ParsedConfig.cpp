@@ -2,7 +2,8 @@
 
 namespace config {
 
-ParsedConfig::ParsedConfig(std::ifstream& ifs, const std::string& nesting_lvl, const std::string& nesting_lvl_descr)
+ParsedConfig::ParsedConfig(std::ifstream& ifs, const std::string& nesting_lvl,
+                           const std::string& nesting_lvl_descr)
     : nesting_lvl_(nesting_lvl), nesting_lvl_descr_(nesting_lvl_descr)
 {
     std::string content;
@@ -66,13 +67,15 @@ std::vector<std::string> ParsedConfig::FindSetting(const std::string& key) const
 
     std::pair<SettingsIt, SettingsIt> settings_range = settings_.equal_range(key);
 
-    for (std::multimap<std::string, std::string>::const_iterator it = settings_range.first; it != settings_range.second; ++it) {
+    for (std::multimap<std::string, std::string>::const_iterator it = settings_range.first;
+         it != settings_range.second; ++it) {
         res.push_back(it->second);
     }
     return res;
 }
 
-const std::vector<ParsedConfig>& ParsedConfig::FindNesting(const std::string& key) const // maybe this function isn't needed at all
+const std::vector<ParsedConfig>& ParsedConfig::FindNesting(
+    const std::string& key) const  // maybe this function isn't needed at all
 {
     if (nested_configs_.empty()) {
         throw std::runtime_error("Invalid configuration file: no " + key + " block.");

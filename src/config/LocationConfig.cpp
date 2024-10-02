@@ -9,7 +9,7 @@ LocationConfig::LocationConfig(const std::pair<std::string, Priority>& route,
                                const std::vector<std::string>& cgi_extensions,
                                const std::string& root_dir,
                                const std::vector<std::string>& default_file, bool dir_listing)
-    : route_(route), allowed_methods_(allowed_methods), redirect_(redirect),
+    : route_(route), allowed_methods_(allowed_methods), redirect_(InitRedirect(redirect)),
       is_cgi_(route.first == "/cgi-bin/"), cgi_paths_(cgi_paths), cgi_extensions_(cgi_extensions),
       root_dir_(root_dir), default_file_(default_file), dir_listing_(dir_listing)
 {}

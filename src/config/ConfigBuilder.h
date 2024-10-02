@@ -9,8 +9,8 @@
 #include <utility>
 
 #include "Config.h"
-#include "ParsedConfig.h"
 #include "LocationConfig.h"
+#include "ParsedConfig.h"
 #include "ServerConfig.h"
 #include "c_api/utils.h"
 #include "utils/utils.h"
@@ -54,9 +54,9 @@ class ConfigBuilder<LocationConfig> {
         LocationConfig::Priority priority = LocationConfig::P1;
         if (vals.size() > 2) {
             throw std::runtime_error("Invalid configuration file: invalid route: " + vals[0]);
-        } else if (vals.size() == 1) {
+        } else if (vals.size() == 1 && vals[0][0] == '/') {
             route = vals[0];
-        } else if (vals[0] == "=") {
+        } else if (vals[0] == "=" && vals[1][0] == '/') {
             priority = LocationConfig::P0;
             route = vals[1];
         } else {
@@ -130,6 +130,8 @@ class ConfigBuilder<LocationConfig> {
             return LocationConfig::kDefaultCgiPath();
         } else if (vals.size() > 1) {
             throw std::runtime_error("Invalid configuration file: duplicated cgi_path value.");
+        } else if (vals[0][0] != '/') {
+            throw std::runtime_error("Invalid configuration file: cgi_path isn't a directory.");
         }
         return vals;
     }
@@ -143,8 +145,7 @@ class ConfigBuilder<LocationConfig> {
         }
         for (size_t i = 0; i < vals.size(); i++) {
             if (vals[i].empty()) {
-                throw std::runtime_error(
-                    "Invalid configuration file: no cgi extension specified.");
+                throw std::runtime_error("Invalid configuration file: no cgi extension specified.");
             }
             std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             cgi_extensions.insert(cgi_extensions.end(), val_elements.begin(), val_elements.end());
@@ -172,12 +173,14 @@ class ConfigBuilder<LocationConfig> {
             return inherited_root;
         } else if (vals.size() > 1) {
             throw std::runtime_error("Invalid configuration file: duplicated root value.");
+        } else if (vals[0][0] != '/') {
+            throw std::runtime_error("Invalid configuration file: root isn't a directory.");
         }
         return vals[0];
     }
 
-    static std::vector<std::string> BuildDefaultFile(const std::vector<std::string>& vals,
-                                                     const std::vector<std::string>& inherited_def_file)
+    static std::vector<std::string> BuildDefaultFile(
+        const std::vector<std::string>& vals, const std::vector<std::string>& inherited_def_file)
     {
         std::vector<std::string> default_files;
         if (vals.empty() && inherited_def_file.empty()) {
@@ -187,8 +190,7 @@ class ConfigBuilder<LocationConfig> {
         }
         for (size_t i = 0; i < vals.size(); i++) {
             if (vals[i].empty()) {
-                throw std::runtime_error(
-                    "Invalid configuration file: no index file specified.");
+                throw std::runtime_error("Invalid configuration file: no index file specified.");
             }
             std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             default_files.insert(default_files.end(), val_elements.begin(), val_elements.end());
@@ -254,7 +256,8 @@ class ConfigBuilder<LocationConfig> {
         std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_settings.root);
         std::vector<std::string> default_file =
             BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
-        bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
+        bool dir_listing =
+            BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
 
         return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, root_dir,
                               default_file, dir_listing);
@@ -272,11 +275,9 @@ class ConfigBuilder<ServerConfig> {
         }
         std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
-            return std::make_pair(val_elements[0],
-                                  ServerConfig::kDefaultAccessLogLevel());
+            return std::make_pair(val_elements[0], ServerConfig::kDefaultAccessLogLevel());
         } else if (val_elements.size() == 2) {
-            return std::make_pair(val_elements[0],
-                                  ParseAccessLogLevel(val_elements[1]));
+            return std::make_pair(val_elements[0], ParseAccessLogLevel(val_elements[1]));
         }
         throw std::runtime_error("Invalid configuration file: invalid access_log: " + vals[0]);
     }
@@ -420,12 +421,14 @@ class ConfigBuilder<ServerConfig> {
             return inherited_root;
         } else if (vals.size() > 1) {
             throw std::runtime_error("Invalid configuration file: duplicated root value.");
+        } else if (vals[0][0] != '/') {
+            throw std::runtime_error("Invalid configuration file: root isn't a directory.");
         }
         return vals[0];
     }
 
-    static std::vector<std::string> BuildDefaultFile(const std::vector<std::string>& vals,
-                                                     const std::vector<std::string>& inherited_def_file)
+    static std::vector<std::string> BuildDefaultFile(
+        const std::vector<std::string>& vals, const std::vector<std::string>& inherited_def_file)
     {
         std::vector<std::string> default_files;
         if (vals.empty() && inherited_def_file.empty()) {
@@ -435,8 +438,7 @@ class ConfigBuilder<ServerConfig> {
         }
         for (size_t i = 0; i < vals.size(); i++) {
             if (vals[i].empty()) {
-                throw std::runtime_error(
-                    "Invalid configuration file: no index file specified.");
+                throw std::runtime_error("Invalid configuration file: no index file specified.");
             }
             std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             default_files.insert(default_files.end(), val_elements.begin(), val_elements.end());
@@ -466,12 +468,13 @@ class ConfigBuilder<ServerConfig> {
     }
 
     static std::vector<LocationConfig> BuildLocationConfigs(
-        const std::vector<ParsedConfig>& nested_configs, const InheritedSettings& inherited_settings)
+        const std::vector<ParsedConfig>& nested_configs,
+        const InheritedSettings& inherited_settings)
     {
         std::vector<LocationConfig> server_configs;
         for (size_t i = 0; i < nested_configs.size(); i++) {
-            server_configs.push_back(ConfigBuilder<LocationConfig>::Build(
-                nested_configs[i], inherited_settings));
+            server_configs.push_back(
+                ConfigBuilder<LocationConfig>::Build(nested_configs[i], inherited_settings));
         }
         return server_configs;
     }
@@ -515,11 +518,14 @@ class ConfigBuilder<ServerConfig> {
         std::vector<std::string> server_names = BuildServerNames(f.FindSetting("server_name"));
 
         InheritedSettings server_inherited_settings = {};
-        server_inherited_settings.root = BuildRootDir(f.FindSetting("root"), inherited_settings.root);
-        server_inherited_settings.def_file = BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
-        server_inherited_settings.dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
-        std::vector<LocationConfig> location_configs = BuildLocationConfigs(
-            f.FindNesting("location"), server_inherited_settings);
+        server_inherited_settings.root =
+            BuildRootDir(f.FindSetting("root"), inherited_settings.root);
+        server_inherited_settings.def_file =
+            BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
+        server_inherited_settings.dir_listing =
+            BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
+        std::vector<LocationConfig> location_configs =
+            BuildLocationConfigs(f.FindNesting("location"), server_inherited_settings);
 
         return ServerConfig(access_log, error_log_path, listeners, server_names, location_configs);
     }
@@ -594,9 +600,10 @@ class ConfigBuilder<HttpConfig> {
             if (val_elements.size() < 2) {
                 throw std::runtime_error("Invalid configuration file: invalid error_page: " +
                                          vals[i]);
-            } /* else if (access(val_elements[val_elements.size() - 1].c_str(), F_OK | R_OK) == -1) {
-                throw std::runtime_error("Invalid configuration file: error page doesn't exist: " +
-                                         val_elements[val_elements.size() - 1]); // temprorary comment for valgrind CI test
+            } /* else if (access(val_elements[val_elements.size() - 1].c_str(), F_OK | R_OK) == -1)
+            { throw std::runtime_error("Invalid configuration file: error page doesn't exist: " +
+                                         val_elements[val_elements.size() - 1]); // temprorary
+            comment for valgrind CI test
             } */
             for (size_t j = 0; j < val_elements.size() - 1; j++) {
                 if (j != val_elements.size() - 1) {
@@ -614,6 +621,8 @@ class ConfigBuilder<HttpConfig> {
             return std::string();
         } else if (vals.size() > 1) {
             throw std::runtime_error("Invalid configuration file: duplicated root value.");
+        } else if (vals[0][0] != '/') {
+            throw std::runtime_error("Invalid configuration file: root isn't a directory.");
         }
         return vals[0];
     }
@@ -626,8 +635,7 @@ class ConfigBuilder<HttpConfig> {
         }
         for (size_t i = 0; i < vals.size(); i++) {
             if (vals[i].empty()) {
-                throw std::runtime_error(
-                    "Invalid configuration file: no index file specified.");
+                throw std::runtime_error("Invalid configuration file: no index file specified.");
             }
             std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
             default_files.insert(default_files.end(), val_elements.begin(), val_elements.end());
@@ -654,11 +662,13 @@ class ConfigBuilder<HttpConfig> {
     }
 
     static std::vector<ServerConfig> BuildServerConfigs(
-        const std::vector<ParsedConfig>& nested_configs, const InheritedSettings& inherited_settings)
+        const std::vector<ParsedConfig>& nested_configs,
+        const InheritedSettings& inherited_settings)
     {
         std::vector<ServerConfig> server_configs;
         for (size_t i = 0; i < nested_configs.size(); i++) {
-            server_configs.push_back(ConfigBuilder<ServerConfig>::Build(nested_configs[i], inherited_settings));
+            server_configs.push_back(
+                ConfigBuilder<ServerConfig>::Build(nested_configs[i], inherited_settings));
         }
         return server_configs;
     }
@@ -686,7 +696,8 @@ class ConfigBuilder<HttpConfig> {
   public:
     static HttpConfig Build(const ParsedConfig& f, const InheritedSettings& inherited_settings)
     {
-        if (!inherited_settings.root.empty() || !inherited_settings.def_file.empty() || !inherited_settings.dir_listing.empty()) {
+        if (!inherited_settings.root.empty() || !inherited_settings.def_file.empty() ||
+            !inherited_settings.dir_listing.empty()) {
             throw std::runtime_error(
                 "Invalid configuration file: invalid settings for http block.");
         }
@@ -702,7 +713,7 @@ class ConfigBuilder<HttpConfig> {
         size_t keepalive_timeout = BuildKeepAliveTimeout(f.FindSetting("keepalive_timeout"));
         size_t client_max_body_size = BuildClientMaxBodySize(f.FindSetting("client_max_body_size"));
         std::map<int, std::string> error_pages = BuildErrorPages(f.FindSetting("error_page"));
-        
+
         InheritedSettings http_inherited_settings = {};
         http_inherited_settings.root = BuildRootDir(f.FindSetting("root"));
         http_inherited_settings.def_file = BuildDefaultFile(f.FindSetting("index"));
@@ -747,11 +758,9 @@ class ConfigBuilder<Config> {
         }
         std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
         if (val_elements.size() == 1) {
-            return std::make_pair(val_elements[0],
-                                  Config::kDefaultErrorLogLevel());
+            return std::make_pair(val_elements[0], Config::kDefaultErrorLogLevel());
         } else if (val_elements.size() == 2) {
-            return std::make_pair(val_elements[0],
-                                  ParseErrorLogLevel(val_elements[1]));
+            return std::make_pair(val_elements[0], ParseErrorLogLevel(val_elements[1]));
         }
         throw std::runtime_error("Invalid configuration file: invalid error_log setting: " +
                                  vals[0]);
@@ -775,10 +784,7 @@ class ConfigBuilder<Config> {
         throw std::runtime_error("Invalid configuration file: invalid error_log level: " + val);
     }
 
-    static bool IsKeyAllowed(const std::string& key) {
-
-        return key == "use" || key == "error_log"; 
-    }
+    static bool IsKeyAllowed(const std::string& key) { return key == "use" || key == "error_log"; }
 
     static bool IsNestingAllowed(const ParsedConfig& f)
     {
@@ -806,7 +812,8 @@ class ConfigBuilder<Config> {
         if (!IsNestingAllowed(f)) {
             throw std::runtime_error("Invalid configuration file: invalid nesting.");
         }
-        if (!inherited_settings.root.empty() || !inherited_settings.def_file.empty() || !inherited_settings.dir_listing.empty()) {
+        if (!inherited_settings.root.empty() || !inherited_settings.def_file.empty() ||
+            !inherited_settings.dir_listing.empty()) {
             throw std::runtime_error(
                 "Invalid configuration file: invalid settings for main block.");
         }

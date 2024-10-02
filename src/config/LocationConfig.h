@@ -59,7 +59,8 @@ class LocationConfig {
         default_methods.push_back(POST);
         return default_methods;
     }
-    static inline std::vector<std::string> kDefaultCgiPath() { 
+    static inline std::vector<std::string> kDefaultCgiPath()
+    {
         std::vector<std::string> default_cgi_paths;
         default_cgi_paths.push_back("/cgi-bin/");
         return default_cgi_paths;

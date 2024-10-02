@@ -12,11 +12,12 @@ namespace config {
 
 class ParsedConfig {
   public:
-    ParsedConfig(std::ifstream& ifs, const std::string& nesting_lvl, const std::string& nesting_lvl_descrt = "");
+    ParsedConfig(std::ifstream& ifs, const std::string& nesting_lvl,
+                 const std::string& nesting_lvl_descrt = "");
 
     typedef std::pair<std::string, std::string> Setting;
-    const std::string& nesting_lvl() const; // f. e. "http", "server", "location"
-    const std::string& nesting_lvl_descr() const; // for location lvl only, f. e. "/cgi-bin/"
+    const std::string& nesting_lvl() const;        // f. e. "http", "server", "location"
+    const std::string& nesting_lvl_descr() const;  // for location lvl only, f. e. "/cgi-bin/"
     const std::multimap<std::string, std::string>& settings() const;
     const std::vector<ParsedConfig>& nested_configs() const;
 
