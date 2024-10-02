@@ -30,16 +30,15 @@ void RequestBuilder::ParseNext(void)
     ++chunk_counter_;
     //LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
     //LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
+    LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
     if (buf_.size() == end_idx_) {  // 0 bytes received...
         LOG(DEBUG) << "buf.size() == end_idx -> bad_request";
-        rq_.bad_request = true;
+        parse_state_ = PS_BAD_REQUEST;
     }
     while (end_idx_ < buf_.size() && !IsReadyForResponse()) {
         char c = buf_[end_idx_++];
-        LOG(DEBUG) << "end_idx_ has been incremented to: " << end_idx_;
-        // PrintParseBuf_();
-        //LOG(DEBUG) << "Parsing char: " << (int)c;
         bool state_changed = false;
+        NullTerminatorCheck_(c);
         switch (parse_state_) {
             case PS_METHOD:
                 parse_state_ = ParseMethod_(c);
@@ -87,7 +86,7 @@ void RequestBuilder::ParseNext(void)
         }
     }
     if (parse_state_ == PS_BAD_REQUEST) {
-        LOG(DEBUG) << "After loop: !PS_END -> bad_request";
+        LOG(DEBUG) << "After loop: PS_BAD_REQUEST -> bad_request";
         rq_.bad_request = true;
     }
 }
@@ -97,6 +96,29 @@ bool RequestBuilder::IsReadyForResponse()
     //LOG(DEBUG) << "RequestBuilder::IsReadyForResponse: EOF: " << eof_checker_.end_of_file_
     //           << "Bad Request: " << rq_.bad_request_;
     return (rq_.rq_complete || parse_state_ == PS_BAD_REQUEST /*body_complete()*/);
+}
+size_t RequestBuilder::ParseLen_() const
+{
+    return end_idx_ - begin_idx_;
+}
+
+void RequestBuilder::NullTerminatorCheck_(char c)
+{
+    if (c == '\0' && parse_state_ != PS_BODY && !rq_.body.chunked) {
+        LOG(DEBUG) << "Null char found -> bad_request";
+        parse_state_ = PS_BAD_REQUEST;
+    }
+}
+
+int RequestBuilder::CompareBuf_(const char* str, size_t len) const
+{
+    return std::strncmp(buf_.data() + begin_idx_, str, len);
+}
+
+void RequestBuilder::UpdateBeginIdx_()
+{
+    //LOG(DEBUG) << "RequestBuilder::UpdateBeginIdx_";
+    begin_idx_ = end_idx_;
 }
 
 RequestBuilder::ParseState RequestBuilder::ParseMethod_(char c)
@@ -142,7 +164,7 @@ RequestBuilder::ParseState RequestBuilder::ParseUri_(char c)
 RequestBuilder::ParseState RequestBuilder::ParseVersion_(char c)
 {
     (void)c;
-    //LOG(DEBUG) << "Parsing Version... char: " << c;
+    LOG(DEBUG) << "Parsing Version... char: " << c;
     if (ParseLen_() == 10 && CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
         rq_.version = HTTP_0_9;
         return PS_BETWEEN_HEADERS;
@@ -301,22 +323,6 @@ RequestBuilder::ParseState RequestBuilder::ParseBody_(char c)
     LOG(DEBUG) << "Todo: Parsing Body... char: " << c;
     rq_.rq_complete = true;
     return PS_END;
-}
-
-size_t RequestBuilder::ParseLen_() const
-{
-    return end_idx_ - begin_idx_;
-}
-
-int RequestBuilder::CompareBuf_(const char* str, size_t len) const
-{
-    return std::strncmp(buf_.data() + begin_idx_, str, len);
-}
-
-void RequestBuilder::UpdateBeginIdx_()
-{
-    //LOG(DEBUG) << "RequestBuilder::UpdateBeginIdx_";
-    begin_idx_ = end_idx_;
 }
 
 void RequestBuilder::PrintParseBuf_() const

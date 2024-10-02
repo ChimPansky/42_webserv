@@ -42,6 +42,11 @@ class RequestBuilder {
     ParseState parse_state_;
     std::string header_key_;
 
+    size_t  ParseLen_() const;
+    void    NullTerminatorCheck_(char c);
+    int     CompareBuf_(const char*, size_t len) const;
+    void    UpdateBeginIdx_();
+
     ParseState ParseMethod_(char c);
     ParseState ParseUri_(char c);
     ParseState ParseVersion_(char c);
@@ -52,11 +57,6 @@ class RequestBuilder {
     ParseState ParseBody_(char c);
     ParseState ParseEOF_(void);
     ParseState CheckForBody_(void);
-
-    size_t ParseLen_() const;
-    int CompareBuf_(const char*, size_t len) const;
-    void UpdateBeginIdx_();
-    bool IsLineEmpty_() const;
 
     void PrintParseBuf_() const;
 };
