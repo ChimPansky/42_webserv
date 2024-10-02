@@ -11,29 +11,18 @@ namespace http {
 
 class RequestBuilder {
   private:
-    struct EOFChecker {
-      private:
-        short int counter_;
-
-      public:
-        EOFChecker();
-        void Update(char c);
-        bool end_of_line_;
-        bool end_of_file_;
-    };
-
-  private:
     enum ParseState {
         PS_METHOD,
         PS_URI,
         PS_VERSION,
+        PS_BETWEEN_HEADERS,
         PS_HEADER_KEY,
-        PS_HEADER_SEP,
+        PS_HEADER_KEY_VAL_SEP,
         PS_HEADER_VALUE,
         PS_AFTER_HEADERS,
         PS_BODY,
         PS_END,
-        PS_ERROR
+        PS_BAD_REQUEST
     };
 
   public:
@@ -45,8 +34,8 @@ class RequestBuilder {
 
   private:
     Request rq_;
-    EOFChecker eof_checker_;
     size_t chunk_counter_;
+    size_t crlf_counter_;
     std::vector<char> buf_;
     size_t begin_idx_;
     size_t end_idx_;
@@ -56,18 +45,18 @@ class RequestBuilder {
     ParseState ParseMethod_(char c);
     ParseState ParseUri_(char c);
     ParseState ParseVersion_(char c);
+    ParseState CheckForNextHeader_(char c);
     ParseState ParseHeaderKey_(char c);
-    ParseState ParseHeaderSep_(char c);
+    ParseState ParseHeaderKeyValSep_(char c);
     ParseState ParseHeaderValue_(char c);
     ParseState ParseBody_(char c);
-    ParseState ParseAfterHeaders_(char c);
-
-    void GetBodySettingsFromHeaders_();
+    ParseState ParseEOF_(void);
+    ParseState CheckForBody_(void);
 
     size_t ParseLen_() const;
     int CompareBuf_(const char*, size_t len) const;
     void UpdateBeginIdx_();
-    bool LineIsEmpty_() const;
+    bool IsLineEmpty_() const;
 
     void PrintParseBuf_() const;
 };

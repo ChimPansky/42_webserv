@@ -50,8 +50,7 @@ struct Request {
         // Content-Length := length
         // Remove "chunked" from Transfer-Encoding
         bool chunked;
-        size_t size;
-        size_t remaining;
+        size_t content_length;
         std::vector<char> content;
     };
     Request();
@@ -63,7 +62,6 @@ struct Request {
     bool headers_complete;
     bool rq_complete;
     std::map<std::string, std::string> headers;
-    bool expect_body;
     Body body;
 
     void Print() const;

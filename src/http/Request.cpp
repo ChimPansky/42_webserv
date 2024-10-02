@@ -9,7 +9,7 @@ Request::Request()
 {}
 
 Request::Body::Body()
-    : chunked(false), size(0), remaining(0)
+    : chunked(false), content_length(0)
 {}
 
 std::string Request::GetHeaderVal(const std::string& key) const
@@ -37,7 +37,6 @@ void Request::Print() const
         LOG(DEBUG) << "|" << it->first << "|: |" << it->second << "|";
     }
     LOG(DEBUG) << "\n";
-    LOG(DEBUG) << "Expect Body (announced by headers...): " << expect_body;
     LOG(DEBUG) << "Body (TODO): ";
 }
 }  // namespace http
