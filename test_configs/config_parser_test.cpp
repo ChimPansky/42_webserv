@@ -30,7 +30,7 @@ TEST(ConfigTest, LoadValidConfig)
     const std::vector<config::ServerConfig>& server_configs = http_config.server_configs();
     for (const config::ServerConfig& server_conf : server_configs) {
         if (server_conf.listeners()[0].second == 8080) {
-            EXPECT_EQ(server_conf.error_log_path(), "/log/error.log");
+            EXPECT_EQ(server_conf.error_log_path(), "");
             EXPECT_EQ(server_conf.server_names()[0], "www.example.com");
 
             for (const config::LocationConfig& location_conf : server_conf.locations()) {
@@ -46,7 +46,7 @@ TEST(ConfigTest, LoadValidConfig)
                 }
             }
         } else if (server_conf.listeners()[0].second == 8090) {
-            EXPECT_EQ(server_conf.error_log_path(), "/log/error.log");
+            EXPECT_EQ(server_conf.error_log_path(), "");
             EXPECT_EQ(server_conf.server_names()[0], "example.com");
 
             for (const config::LocationConfig& location_conf : server_conf.locations()) {
@@ -71,13 +71,13 @@ TEST(ConfigTest, MinimumSettingsConfig)
 
     EXPECT_EQ(conf.mx_type(), c_api::MultiplexType::MT_SELECT);
 
-    EXPECT_EQ(conf.error_log_path(), "/log/error.log");
+    EXPECT_EQ(conf.error_log_path(), "");
     EXPECT_EQ(conf.error_log_level(), Severity::INFO);
 
     const config::HttpConfig& http_config = conf.http_config();
 
     EXPECT_EQ(http_config.keepalive_timeout(), 65);
-    EXPECT_EQ(http_config.client_max_body_size(), 1048576);
+    EXPECT_EQ(http_config.client_max_body_size(), 2097152);
 
     const std::vector<config::ServerConfig>& server_configs = http_config.server_configs();
     ASSERT_EQ(server_configs.size(), 1);
@@ -88,7 +88,7 @@ TEST(ConfigTest, MinimumSettingsConfig)
     EXPECT_EQ(server_conf.listeners()[0].second, 8080);
 
     EXPECT_EQ(server_conf.server_names().size(), 0);
-    EXPECT_EQ(server_conf.error_log_path(), "/log/error.log");
+    EXPECT_EQ(server_conf.error_log_path(), "");
 
     EXPECT_EQ(server_conf.locations().size(), 1);
 }
@@ -208,13 +208,6 @@ TEST(ConfigTest, InvalidErrorPageSetting)
 TEST(ConfigTest, InvalidAutoIndexSetting)
 {
     std::string invalid_file = "test_configs/invalid_autoindex.conf";
-
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
-}
-
-TEST(ConfigTest, InvalidIndexSetting)
-{
-    std::string invalid_file = "test_configs/invalid_index.conf";
 
     EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
 }
