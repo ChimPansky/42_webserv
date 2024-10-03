@@ -4,11 +4,10 @@
 #include <netinet/in.h>
 
 #include "LocationConfig.h"
-#include "utils/logger.h"
 
 namespace config {
 
-class ServerConfig : public IConfigBuilder<ServerConfig> {
+class ServerConfig {
   private:
     const std::string& InitAccessLog(const std::string& value);
     const std::string& InitErrorLogPath(const std::string& value);
@@ -16,16 +15,12 @@ class ServerConfig : public IConfigBuilder<ServerConfig> {
     const std::vector<std::pair<in_addr_t, in_port_t> >& InitListeners(
         const std::vector<std::pair<in_addr_t, in_port_t> >& value);
 
-    static bool IsKeyAllowed(const std::string& key);
-    static bool IsNestingAllowed(const ParsedConfig& f);
-
   public:
     ServerConfig(const std::pair<std::string, Severity>& error_log,
                  const std::string& error_log_path,
                  const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
                  const std::vector<std::string>& server_names,
                  const std::vector<LocationConfig>& locations);
-    static ServerConfig Build(const ParsedConfig& f, const InheritedSettings& inherited_settings);
 
     const std::string& access_log_path() const;
     Severity access_log_level() const;

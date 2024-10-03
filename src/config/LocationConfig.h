@@ -7,16 +7,13 @@
 #include <string>
 #include <vector>
 
-#include "IConfigBuilder.h"
+#include "utils/logger.h"
 
 namespace config {
 
-class LocationConfig : public IConfigBuilder<LocationConfig> {
+class LocationConfig {
   private:
     std::pair<int, std::string> InitRedirect(const std::pair<int, std::string>& value);
-
-    static bool IsKeyAllowed(const std::string& key);
-    static bool IsNestingAllowed(const ParsedConfig& f);
 
   public:
     enum Priority {
@@ -34,7 +31,6 @@ class LocationConfig : public IConfigBuilder<LocationConfig> {
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
                    const std::vector<std::string>& default_file, bool dir_listing);
-    static LocationConfig Build(const ParsedConfig& f, const InheritedSettings& inherited_settings);
 
     const std::pair<std::string, Priority>& route() const;
     const std::vector<Method>& allowed_methods() const;
