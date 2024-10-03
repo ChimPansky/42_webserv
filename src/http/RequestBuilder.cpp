@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "Request.h"
 #include "utils/logger.h"
 #include "utils/utils.h"
 
@@ -37,8 +38,8 @@ void RequestBuilder::ParseNext(size_t bytes_read)
             LOG(DEBUG) << "Request is ready for response -> break";
             break;
         }
-        if (bytes_read == 0 && parse_state_ == PS_BODY && !rq_.body.Complete()) {
-            LOG(DEBUG) << "EOF reached, but body is not complete -> bad_request";
+        if (bytes_read == 0 && ReadingBody_() && !rq_.body.Complete()) {
+            LOG(DEBUG) << "EOF reached while reading body and body is not complete -> bad_request";
             parse_state_ = PS_BAD_REQUEST;
             break;
         }
@@ -83,9 +84,21 @@ void RequestBuilder::ParseNext(size_t bytes_read)
                 parse_state_ = CheckForBody_();
                 state_changed = (parse_state_ != PS_AFTER_HEADERS ? true : false);
                 break;
-            case PS_BODY:
-                parse_state_ = ParseBody_();
-                state_changed = (parse_state_ != PS_BODY ? true : false);
+            case PS_BODY_REGULAR:
+                parse_state_ = ReadBodyRegular_();
+                state_changed = (parse_state_ != PS_BODY_REGULAR ? true : false);
+                break;
+            case PS_BODY_CHUNK_SIZE:
+                parse_state_ = ReadBodyChunkSize_(c);
+                state_changed = (parse_state_ != PS_BODY_CHUNK_SIZE ? true : false);
+                break;
+            case PS_BODY_CHUNK_CONTENT:
+                parse_state_ = ReadBodyChunkContent_();
+                state_changed = (parse_state_ != PS_BODY_CHUNK_CONTENT ? true : false);
+                break;
+            case PS_BODY_CHUNK_TRAILER:
+                parse_state_ = ReadBodyChunkTrailer_(c);
+                state_changed = (parse_state_ != PS_BODY_CHUNK_TRAILER ? true : false);
                 break;
             case PS_END:
                 break;
@@ -123,8 +136,8 @@ char RequestBuilder::GetNextChar_()
 
 void RequestBuilder::NullTerminatorCheck_(char c)
 {
-    if (c == '\0' && parse_state_ != PS_AFTER_HEADERS && parse_state_ != PS_BODY && !rq_.body.chunked) {
-        LOG(DEBUG) << "Null terminator found -> bad_request";
+    if (c == '\0' && parse_state_ != PS_AFTER_HEADERS && parse_state_ != PS_BODY_CHUNK_CONTENT) {
+        LOG(DEBUG) << "Null terminator found and not currently reading chunked body content -> bad_request";
         parse_state_ = PS_BAD_REQUEST;
     }
 }
@@ -140,11 +153,9 @@ void RequestBuilder::UpdateBeginIdx_()
     begin_idx_ = end_idx_;
 }
 
-void RequestBuilder::ExtractSubstrLowerCase(const std::vector<char>& buf, std::string& str, size_t begin, size_t len) {
-    str.resize(len);
-    for (size_t i = 0; i < len; i++) {
-        str[i] = std::tolower(buf[begin + i]);
-    }
+bool RequestBuilder::ReadingBody_() const
+{
+    return (parse_state_ == PS_BODY_REGULAR || parse_state_ == PS_BODY_CHUNK_SIZE || parse_state_ == PS_BODY_CHUNK_CONTENT || parse_state_ == PS_BODY_CHUNK_TRAILER);
 }
 
 RequestBuilder::ParseState RequestBuilder::ParseMethod_(char c)
@@ -249,13 +260,16 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
             LOG(ERROR) << "Request-Header key is invalid: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
             return PS_BAD_REQUEST;
         } else {
-            ExtractSubstrLowerCase(buf_, header_key_, begin_idx_, ParseLen_() - 1);
+            // ExtractSubstrLowerCase_(buf_, header_key_, begin_idx_, ParseLen_() - 1);
+            header_key_ = std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
+            // TODO: check if header_key already exists in map (no duplicates allowed)
             return PS_HEADER_KEY_VAL_SEP;
         }
     } else if (!(std::isalnum(c) || (ParseLen_() > 1 && c == '-'))) { // TODO: check this condition...
         LOG(DEBUG) << "Request-Header key can only contain alphanumeric chars and '-' -> bad_request";
         return PS_BAD_REQUEST;
     }
+    buf_[end_idx_ - 1] = std::tolower(c);
     return PS_HEADER_KEY;
 }
 
@@ -284,10 +298,12 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_(char c)
             LOG(DEBUG) << "Request-Header value is invalid -> bad_request";
             return PS_BAD_REQUEST;
         }
+        buf_[end_idx_ - 1] = std::tolower(c);
     } else if (crlf_counter_ == 1) {
         if (c == '\n') {
             LOG(DEBUG) << "HeaderValue complete -> inserting into map...";
-            ExtractSubstrLowerCase(buf_, rq_.headers[header_key_], begin_idx_, ParseLen_() - 2);
+            // ExtractSubstrLowerCase_(buf_, rq_.headers[header_key_], begin_idx_, ParseLen_() - 2);
+            rq_.headers[header_key_] = std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
             crlf_counter_ = 0;
             return PS_BETWEEN_HEADERS;
         }
@@ -316,7 +332,7 @@ RequestBuilder::ParseState RequestBuilder::CheckForBody_(void)
     if (transfer_encoding == "chunked") {
         LOG(DEBUG) << "Chunked Transfer-Encoding found -> Go read body as chunks";
         rq_.body.chunked = true;
-        return PS_BODY;
+        return PS_BODY_CHUNK_SIZE;
     }
     if (!content_length.empty()) {
         std::pair<bool, size_t> content_length_num = utils::StrToNumericNoThrow<size_t>(content_length);
@@ -331,7 +347,7 @@ RequestBuilder::ParseState RequestBuilder::CheckForBody_(void)
         }
         if (rq_.body.remaining_length != 0) {
             LOG(DEBUG) << "Content-Length > 0 -> Go read body according to Content-Length";
-            return PS_BODY;
+            return PS_BODY_REGULAR;
         }
     }
     if (rq_.method == HTTP_POST) {
@@ -343,14 +359,8 @@ RequestBuilder::ParseState RequestBuilder::CheckForBody_(void)
     return PS_END;
 }
 
-// https://datatracker.ietf.org/doc/html/rfc2616#section-3.5
-RequestBuilder::ParseState RequestBuilder::ParseBody_()
+RequestBuilder::ParseState RequestBuilder::ReadBodyRegular_(void)
 {
-    LOG(DEBUG) << "Todo: Parsing Body...";
-    if (rq_.body.chunked) { // TODO: implement chunked body parsing...
-        rq_.rq_complete = true;
-        return PS_END;
-    }
     if (end_idx_ == buf_.size()) {
         size_t copy_size = std::min(buf_.size() - begin_idx_, rq_.body.remaining_length);
         std::memcpy(rq_.body.content.data() + rq_.body.content_idx, buf_.data() + begin_idx_, copy_size);
@@ -365,8 +375,66 @@ RequestBuilder::ParseState RequestBuilder::ParseBody_()
             return PS_END;
         }
     }
-    return PS_BODY;
+    return PS_BODY_REGULAR;
 }
+
+// https://datatracker.ietf.org/doc/html/rfc2616#section-3.5
+
+    // A process for decoding the chunked transfer coding can be represented in pseudo-code as:
+
+    // length := 0
+    // read chunk-size, chunk-ext (if any), and CRLF
+    // while (chunk-size > 0) {
+    //     read chunk-data and CRLF
+    //     append chunk-data to content
+    //     length := length + chunk-size
+    //     read chunk-size, chunk-ext (if any), and CRLF
+    // }
+    // read trailer field
+    // while (trailer field is not empty) {
+    //     if (trailer fields are stored/forwarded separately) {
+    //         append trailer field to existing trailer fields
+    //     }
+    //     else if (trailer field is understood and defined as mergeable) {
+    //         merge trailer field with existing header fields
+    //     }
+    //     else {
+    //         discard trailer field
+    //     }
+    //     read trailer field
+    // }
+    // Content-Length := length
+    // Remove "chunked" from Transfer-Encoding
+RequestBuilder::ParseState RequestBuilder::ReadBodyChunkSize_(char c)
+{
+    LOG(DEBUG) << "Reading Body ChunkSize...";
+    (void) c;
+    if (1) {
+        return PS_BODY_CHUNK_CONTENT;
+    }
+    return PS_BODY_CHUNK_SIZE;
+}
+
+RequestBuilder::ParseState RequestBuilder::ReadBodyChunkContent_(void)
+{
+    LOG(DEBUG) << "Reading Body ChunkContent...";
+    if (1) {
+        return PS_BODY_CHUNK_TRAILER;
+    }
+    return PS_BODY_CHUNK_CONTENT;
+}
+
+RequestBuilder::ParseState RequestBuilder::ReadBodyChunkTrailer_(char c)
+{
+    LOG(DEBUG) << "Reading Body ChunkTrailer...";
+    (void) c;
+    if (1) {
+        rq_.rq_complete = true;
+        return PS_END;
+    }
+    return PS_BODY_CHUNK_TRAILER;
+}
+
 
 void RequestBuilder::PrintParseBuf_() const
 {

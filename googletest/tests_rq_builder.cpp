@@ -49,20 +49,19 @@ static int BuildRequest(http::RequestBuilder& builder, const char* rq_path) {
 //     EXPECT_EQ("localhost", builder.rq().GetHeaderVal("Host"));
 // }
 
-TEST(Suite1, Test1) {
-    http::RequestBuilder builder;
-    if (BuildRequest(builder, "requests/rq1.txt") != 0) {
-        FAIL();
-    }
-    EXPECT_EQ(false, builder.rq().rq_complete);
-    EXPECT_EQ(true, builder.rq().bad_request);
-    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-    EXPECT_EQ("/", builder.rq().uri);
-    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("bla", builder.rq().GetHeaderVal("host"));
-    EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length"));
-    EXPECT_EQ(14, builder.rq().body.content.size());
-    EXPECT_EQ(8, builder.rq().body.content_idx);
+// TEST(Suite1, Test1) {
+//     http::RequestBuilder builder;
+//     if (BuildRequest(builder, "requests/rq1.txt") != 0) {
+//         FAIL();
+//     }
+//     EXPECT_EQ(true, builder.rq().rq_complete);
+//     EXPECT_EQ(false, builder.rq().bad_request);
+//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+//     EXPECT_EQ("/", builder.rq().uri);
+//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+//     EXPECT_EQ("bla", builder.rq().GetHeaderVal("host"));
+//     EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length"));
+//     EXPECT_EQ(14, builder.rq().body.content.size());
     // EXPECT_EQ(BODY_1097, builder.rq().body.content.data());
     //EXPECT_EQ(BODY_14, builder.rq().body.content.data());
     // EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
@@ -70,20 +69,23 @@ TEST(Suite1, Test1) {
 
     // EXPECT_EQ("192.168.1.1", builder.rq().GetHeaderVal("Host"));
     // EXPECT_EQ("*/*", builder.rq().GetHeaderVal("Accept"));
-}
-
-// TEST(Suite1, Test2) {
-//     http::RequestBuilder builder;
-//     if (BuildRequest(builder, "requests/rq2.txt") != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(true, builder.rq().complete);
-//     EXPECT_EQ(false, builder.rq().bad_request);
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/", builder.rq().uri);
-//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-//     EXPECT_EQ("localhost", builder.rq().GetHeaderVal("Host"));
 // }
+
+TEST(Suite1, Test2) {
+    http::RequestBuilder builder;
+    if (BuildRequest(builder, "requests/rq2.txt") != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(true, builder.rq().rq_complete);
+    EXPECT_EQ(false, builder.rq().bad_request);
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/upload", builder.rq().uri);
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host"));
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
+    EXPECT_EQ("application/json", builder.rq().GetHeaderVal("content-type"));
+    EXPECT_EQ("keep-alive", builder.rq().GetHeaderVal("Connection"));
+}
 
 // TEST(Suite1, Test3) {
 //     http::RequestBuilder builder;

@@ -20,7 +20,10 @@ class RequestBuilder {
         PS_HEADER_KEY_VAL_SEP,
         PS_HEADER_VALUE,
         PS_AFTER_HEADERS,
-        PS_BODY,
+        PS_BODY_REGULAR,
+        PS_BODY_CHUNK_SIZE,
+        PS_BODY_CHUNK_CONTENT,
+        PS_BODY_CHUNK_TRAILER,
         PS_END,
         PS_BAD_REQUEST
     };
@@ -43,11 +46,11 @@ class RequestBuilder {
     std::string header_key_;
 
     size_t  ParseLen_() const;
-    char    GetNextChar_();
+    char    GetNextChar_(void);
     void    NullTerminatorCheck_(char c);
     int     CompareBuf_(const char*, size_t len) const;
-    void    UpdateBeginIdx_();
-    void    ExtractSubstrLowerCase(const std::vector<char>& buf, std::string& str, size_t begin, size_t len);
+    void    UpdateBeginIdx_(void);
+    bool    ReadingBody_(void) const;
 
     ParseState ParseMethod_(char c);
     ParseState ParseUri_(char c);
@@ -56,9 +59,13 @@ class RequestBuilder {
     ParseState ParseHeaderKey_(char c);
     ParseState ParseHeaderKeyValSep_(char c);
     ParseState ParseHeaderValue_(char c);
-    ParseState ParseBody_();
     ParseState ParseEOF_(void);
     ParseState CheckForBody_(void);
+
+    ParseState ReadBodyRegular_(void);
+    ParseState ReadBodyChunkSize_(char c);
+    ParseState ReadBodyChunkContent_(void);
+    ParseState ReadBodyChunkTrailer_(char c);
 
     void PrintParseBuf_() const;
 };
