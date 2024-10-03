@@ -8,14 +8,18 @@
 #include "ServerConfig.h"
 
 namespace config {
-class HttpConfig {
+class HttpConfig : public IConfigBuilder<HttpConfig> {
   private:
     const std::map<int, std::string>& InitErrorPages(const std::map<int, std::string>& value);
+
+    static bool IsKeyAllowed(const std::string& key);
+    static bool IsNestingAllowed(const ParsedConfig& f);
 
   public:
     HttpConfig(size_t keepalive_timeout, size_t client_max_body_size,
                const std::map<int, std::string>& error_pages,
                const std::vector<ServerConfig>& server_configs);
+    static HttpConfig Build(const ParsedConfig& f, const InheritedSettings& inherited_settings);
 
     size_t keepalive_timeout() const;
     size_t client_max_body_size() const;
