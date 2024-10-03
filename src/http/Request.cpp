@@ -9,8 +9,13 @@ Request::Request()
 {}
 
 Request::Body::Body()
-    : chunked(false), content_length(0)
+    : chunked(false), content_idx(0), remaining_length(0)
 {}
+
+bool Request::Body::Complete() const
+{
+    return remaining_length == 0;
+}
 
 std::string Request::GetHeaderVal(const std::string& key) const
 {

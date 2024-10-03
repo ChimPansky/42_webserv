@@ -5,6 +5,10 @@
 
 size_t read_size = 10;
 
+#define BODY_14 "Hello, World!\n"
+
+#define BODY_1097 "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptat"
+
 static size_t ReadFromFile(std::ifstream& file, std::vector<char>& buf, size_t sz) {
     size_t old_sz = buf.size();
     buf.resize(old_sz + sz);
@@ -23,7 +27,7 @@ static int BuildRequest(http::RequestBuilder& builder, const char* rq_path) {
         bytes_read = ReadFromFile(file, builder.buf(), read_size);
         std::cout << "Tester: bytes_read: " << bytes_read << std::endl;
         builder.buf().resize(builder.buf().size() - (read_size - bytes_read));
-        builder.ParseNext();
+        builder.ParseNext(bytes_read);
         if (bytes_read == 0) {
             break;
         }
@@ -56,10 +60,13 @@ TEST(Suite1, Test1) {
     EXPECT_EQ("/", builder.rq().uri);
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("bla", builder.rq().GetHeaderVal("host"));
-    // EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length"));
-    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
-    // EXPECT_EQ(1, builder.rq().body.content_length);
-    EXPECT_EQ(true, builder.rq().body.chunked);
+    EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length"));
+    EXPECT_EQ(14, builder.rq().body.content.size());
+    EXPECT_EQ(8, builder.rq().body.content_idx);
+    // EXPECT_EQ(BODY_1097, builder.rq().body.content.data());
+    //EXPECT_EQ(BODY_14, builder.rq().body.content.data());
+    // EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
+    // EXPECT_EQ(true, builder.rq().body.chunked);
 
     // EXPECT_EQ("192.168.1.1", builder.rq().GetHeaderVal("Host"));
     // EXPECT_EQ("*/*", builder.rq().GetHeaderVal("Accept"));

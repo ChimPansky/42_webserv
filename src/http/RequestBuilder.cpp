@@ -26,7 +26,7 @@ std::vector<char>& RequestBuilder::buf()
     return buf_;
 }
 
-void RequestBuilder::ParseNext(void)
+void RequestBuilder::ParseNext(size_t bytes_read)
 {
     ++chunk_counter_;
     //LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
@@ -35,6 +35,11 @@ void RequestBuilder::ParseNext(void)
         std::cout << "end_idx: " << end_idx_ << "; buf.size(): " << buf_.size() << std::endl;
         if (IsReadyForResponse()) {
             LOG(DEBUG) << "Request is ready for response -> break";
+            break;
+        }
+        if (bytes_read == 0 && parse_state_ == PS_BODY && !rq_.body.Complete()) {
+            LOG(DEBUG) << "EOF reached, but body is not complete -> bad_request";
+            parse_state_ = PS_BAD_REQUEST;
             break;
         }
         if (end_idx_ == buf_.size() && parse_state_ && parse_state_ != PS_AFTER_HEADERS) {
@@ -79,7 +84,7 @@ void RequestBuilder::ParseNext(void)
                 state_changed = (parse_state_ != PS_AFTER_HEADERS ? true : false);
                 break;
             case PS_BODY:
-                parse_state_ = ParseBody_(c);
+                parse_state_ = ParseBody_();
                 state_changed = (parse_state_ != PS_BODY ? true : false);
                 break;
             case PS_END:
@@ -318,12 +323,13 @@ RequestBuilder::ParseState RequestBuilder::CheckForBody_(void)
         LOG(DEBUG) << "Content-Length found: " << content_length_num.second;
         if (content_length_num.first) {
             LOG(DEBUG) << "Content-lenght is numeric";
-            rq_.body.content_length = content_length_num.second;
+            rq_.body.remaining_length = content_length_num.second; // TODO: content-length limits?
+            rq_.body.content.resize(content_length_num.second);
         } else {
             LOG(DEBUG) << "Content-lenght is non-numeric -> Bad Request";
             return PS_BAD_REQUEST;;
         }
-        if (rq_.body.content_length != 0) {
+        if (rq_.body.remaining_length != 0) {
             LOG(DEBUG) << "Content-Length > 0 -> Go read body according to Content-Length";
             return PS_BODY;
         }
@@ -338,12 +344,28 @@ RequestBuilder::ParseState RequestBuilder::CheckForBody_(void)
 }
 
 // https://datatracker.ietf.org/doc/html/rfc2616#section-3.5
-RequestBuilder::ParseState RequestBuilder::ParseBody_(char c)
+RequestBuilder::ParseState RequestBuilder::ParseBody_()
 {
-    (void)c;
     LOG(DEBUG) << "Todo: Parsing Body...";
-    rq_.rq_complete = true;
-    return PS_END;
+    if (rq_.body.chunked) { // TODO: implement chunked body parsing...
+        rq_.rq_complete = true;
+        return PS_END;
+    }
+    if (end_idx_ == buf_.size()) {
+        size_t copy_size = std::min(buf_.size() - begin_idx_, rq_.body.remaining_length);
+        std::memcpy(rq_.body.content.data() + rq_.body.content_idx, buf_.data() + begin_idx_, copy_size);
+        rq_.body.content_idx += copy_size;
+        rq_.body.remaining_length -= copy_size;
+        UpdateBeginIdx_();
+        LOG(DEBUG) << "Copied " << copy_size << " bytes to body; body_idx: " << rq_.body.content_idx << "; remaining: " << rq_.body.remaining_length;
+        if (rq_.body.remaining_length == 0) {
+            rq_.rq_complete = true;
+            LOG(DEBUG) << "Body complete: " << rq_.body.content.data();
+            LOG(DEBUG) << "Body size: " << rq_.body.content.size();
+            return PS_END;
+        }
+    }
+    return PS_BODY;
 }
 
 void RequestBuilder::PrintParseBuf_() const

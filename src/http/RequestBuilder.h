@@ -27,7 +27,7 @@ class RequestBuilder {
 
   public:
     RequestBuilder();
-    void ParseNext(void);
+    void ParseNext(size_t bytes_read);
     bool IsReadyForResponse();
     const Request& rq() const;
     std::vector<char>& buf();
@@ -56,7 +56,7 @@ class RequestBuilder {
     ParseState ParseHeaderKey_(char c);
     ParseState ParseHeaderKeyValSep_(char c);
     ParseState ParseHeaderValue_(char c);
-    ParseState ParseBody_(char c);
+    ParseState ParseBody_();
     ParseState ParseEOF_(void);
     ParseState CheckForBody_(void);
 

@@ -50,8 +50,11 @@ struct Request {
         // Content-Length := length
         // Remove "chunked" from Transfer-Encoding
         bool chunked;
-        size_t content_length;
         std::vector<char> content;
+        size_t content_idx;
+        size_t remaining_length;
+
+        bool Complete() const;
     };
     Request();
 
