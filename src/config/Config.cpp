@@ -1,8 +1,5 @@
 #include "Config.h"
 
-#include "ConfigBuilder.h"
-#include "ParsedConfig.h"
-
 namespace config {
 
 Config::Config(MxType mx_type, const std::pair<std::string, Severity>& error_log,
@@ -29,23 +26,6 @@ Severity Config::error_log_level() const
 const HttpConfig& Config::http_config() const
 {
     return http_config_;
-}
-
-const Config Config::GetConfig(const std::string& config_path)
-{
-    if (!utils::fs::CheckFileExtension(config_path, ".conf") ||
-        config_path[config_path.size() - 6] == '/') {
-        throw std::invalid_argument("Invalid config file suffix.");
-    }
-
-    std::ifstream config_file(config_path.c_str());
-    if (!config_file.is_open()) {
-        throw std::invalid_argument("Couldn't open config file.");
-    }
-
-    ParsedConfig parser(config_file, "", "");
-    InheritedSettings inherited_settings = {};
-    return ConfigBuilder<Config>::Build(parser, inherited_settings);
 }
 
 void Config::Print() const

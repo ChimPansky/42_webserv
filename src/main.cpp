@@ -13,7 +13,7 @@
 #include <csignal>
 
 #include "ServerCluster.h"
-#include "config/Config.h"
+#include "config/ConfigBuilder.h"
 
 void StopCluster(int /*signum*/)
 {
@@ -29,7 +29,7 @@ int main(int ac, char **av)
     }
     signal(SIGINT, StopCluster);
 
-    ServerCluster::Start(config::Config::GetConfig(av[1]));
+    ServerCluster::Start(config::ConfigBuilder::GetConfig(av[1]));
 
     return 0;
 }

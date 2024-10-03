@@ -27,6 +27,10 @@ FILENAMES = \
 	config/HttpConfig.cpp \
 	config/ServerConfig.cpp \
 	config/LocationConfig.cpp \
+	config/LocationConfigBuilder.cpp \
+	config/ServerConfigBuilder.cpp \
+	config/HttpConfigBuilder.cpp \
+	config/ConfigBuilder.cpp \
 	utils/logger.cpp \
 	utils/utils.cpp \
 	ClientSession.cpp \
