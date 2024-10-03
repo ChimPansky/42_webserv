@@ -47,6 +47,7 @@ class RequestBuilder {
     void    NullTerminatorCheck_(char c);
     int     CompareBuf_(const char*, size_t len) const;
     void    UpdateBeginIdx_();
+    void    ExtractSubstrLowerCase(const std::vector<char>& buf, std::string& str, size_t begin, size_t len);
 
     ParseState ParseMethod_(char c);
     ParseState ParseUri_(char c);

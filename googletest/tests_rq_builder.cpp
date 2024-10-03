@@ -55,9 +55,11 @@ TEST(Suite1, Test1) {
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().uri);
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("bla", builder.rq().GetHeaderVal("Host"));
-    EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length"));
-    EXPECT_EQ(1, builder.rq().body.content_length);
+    EXPECT_EQ("bla", builder.rq().GetHeaderVal("host"));
+    // EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length"));
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
+    // EXPECT_EQ(1, builder.rq().body.content_length);
+    EXPECT_EQ(true, builder.rq().body.chunked);
 
     // EXPECT_EQ("192.168.1.1", builder.rq().GetHeaderVal("Host"));
     // EXPECT_EQ("*/*", builder.rq().GetHeaderVal("Accept"));

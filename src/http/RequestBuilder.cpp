@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstring>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "utils/logger.h"
@@ -134,6 +135,13 @@ void RequestBuilder::UpdateBeginIdx_()
     begin_idx_ = end_idx_;
 }
 
+void RequestBuilder::ExtractSubstrLowerCase(const std::vector<char>& buf, std::string& str, size_t begin, size_t len) {
+    str.resize(len);
+    for (size_t i = 0; i < len; i++) {
+        str[i] = std::tolower(buf[begin + i]);
+    }
+}
+
 RequestBuilder::ParseState RequestBuilder::ParseMethod_(char c)
 {
     (void)c;
@@ -236,7 +244,7 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
             LOG(ERROR) << "Request-Header key is invalid: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
             return PS_BAD_REQUEST;
         } else {
-            header_key_ = std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
+            ExtractSubstrLowerCase(buf_, header_key_, begin_idx_, ParseLen_() - 1);
             return PS_HEADER_KEY_VAL_SEP;
         }
     } else if (!(std::isalnum(c) || (ParseLen_() > 1 && c == '-'))) { // TODO: check this condition...
@@ -274,7 +282,7 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_(char c)
     } else if (crlf_counter_ == 1) {
         if (c == '\n') {
             LOG(DEBUG) << "HeaderValue complete -> inserting into map...";
-            rq_.headers[header_key_] = std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
+            ExtractSubstrLowerCase(buf_, rq_.headers[header_key_], begin_idx_, ParseLen_() - 2);
             crlf_counter_ = 0;
             return PS_BETWEEN_HEADERS;
         }
