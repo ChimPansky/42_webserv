@@ -81,10 +81,11 @@ TEST(Suite1, Test2) {
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/upload", builder.rq().uri);
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host"));
+    EXPECT_EQ("www.exam.com", builder.rq().GetHeaderVal("host"));
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
     EXPECT_EQ("application/json", builder.rq().GetHeaderVal("content-type"));
     EXPECT_EQ("keep-alive", builder.rq().GetHeaderVal("Connection"));
+    std::cout << "body: " << builder.rq().body.content.data() << std::endl;
 }
 
 // TEST(Suite1, Test3) {

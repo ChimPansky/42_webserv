@@ -1,5 +1,5 @@
 POST /upload HTTP/1.1
-Host: www.example.com
+Host: www.exam.com
 Transfer-Encoding: chunked
 Content-Type: application/json
 Connection: keep-alive
@@ -8,7 +8,7 @@ Connection: keep-alive
 Wiki
 5
 pedia
-E
+C
  in
 chunks.
 0

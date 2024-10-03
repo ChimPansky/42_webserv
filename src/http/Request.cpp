@@ -17,7 +17,7 @@ Request::Request()
 {}
 
 Request::Body::Body()
-    : chunked(false), content_idx(0), remaining_length(0)
+    : chunked(false), chunk_size(0), content_idx(0), remaining_length(0)
 {}
 
 bool Request::Body::Complete() const
@@ -54,4 +54,3 @@ void Request::Print() const
     LOG(DEBUG) << "Body (TODO): ";
 }
 }  // namespace http
-

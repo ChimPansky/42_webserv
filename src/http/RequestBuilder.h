@@ -9,6 +9,8 @@
 class Server;
 namespace http {
 
+size_t      HexToSizeT_(const std::string& hex_str); // TODO: move to utils
+
 class RequestBuilder {
   private:
     enum ParseState {
@@ -52,20 +54,21 @@ class RequestBuilder {
     void    UpdateBeginIdx_(void);
     bool    ReadingBody_(void) const;
 
-    ParseState ParseMethod_(char c);
-    ParseState ParseUri_(char c);
-    ParseState ParseVersion_(void);
-    ParseState CheckForNextHeader_(char c);
-    ParseState ParseHeaderKey_(char c);
-    ParseState ParseHeaderKeyValSep_(char c);
-    ParseState ParseHeaderValue_(char c);
-    ParseState ParseEOF_(void);
-    ParseState CheckForBody_(void);
+    ParseState  ParseMethod_(char c);
+    ParseState  ParseUri_(char c);
+    ParseState  ParseVersion_(void);
+    ParseState  CheckForNextHeader_(char c);
+    ParseState  ParseHeaderKey_(char c);
+    ParseState  ParseHeaderKeyValSep_(char c);
+    ParseState  ParseHeaderValue_(char c);
+    ParseState  ParseEOF_(void);
+    ParseState  CheckForBody_(void);
 
-    ParseState ReadBodyRegular_(void);
-    ParseState ReadBodyChunkSize_(char c);
-    ParseState ReadBodyChunkContent_(void);
-    ParseState ReadBodyChunkTrailer_(char c);
+    ParseState  ReadBodyRegular_(void);
+    ParseState  ReadBodyChunkSize_(char c);
+
+    ParseState  ReadBodyChunkContent_(void);
+    ParseState  ReadBodyChunkTrailer_(char c);
 
     void PrintParseBuf_() const;
 };

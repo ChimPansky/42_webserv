@@ -26,10 +26,11 @@ struct Request {
     struct Body {
         Body();
 
-        bool chunked;
+        bool    chunked;
+        size_t  chunk_size;
         std::vector<char> content;
-        size_t content_idx;
-        size_t remaining_length;
+        size_t  content_idx;
+        size_t  remaining_length;
 
         bool Complete() const;
     };
