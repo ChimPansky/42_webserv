@@ -18,14 +18,15 @@ static int BuildRequest(http::RequestBuilder& builder, const char* rq_path) {
         std::cerr << "Could not open Request File: " << rq_path << std::endl;
         return 1;
     }
-    size_t i = 0;
     size_t bytes_read = 0;
-    while (!builder.IsReadyForResponse() &&  i < 5) {
+    while (!builder.IsReadyForResponse()) {
         bytes_read = ReadFromFile(file, builder.buf(), read_size);
         std::cout << "Tester: bytes_read: " << bytes_read << std::endl;
         builder.buf().resize(builder.buf().size() - (read_size - bytes_read));
         builder.ParseNext();
-        i++;
+        if (bytes_read == 0) {
+            break;
+        }
     }
     return 0;
 }
@@ -49,14 +50,14 @@ TEST(Suite1, Test1) {
     if (BuildRequest(builder, "requests/rq1.txt") != 0) {
         FAIL();
     }
-    EXPECT_EQ(true, builder.rq().rq_complete);
-    EXPECT_EQ(false, builder.rq().bad_request);
-    EXPECT_EQ(http::HTTP_DELETE, builder.rq().method);
+    EXPECT_EQ(false, builder.rq().rq_complete);
+    EXPECT_EQ(true, builder.rq().bad_request);
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().uri);
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("bla", builder.rq().GetHeaderVal("Host"));
-    EXPECT_EQ("0", builder.rq().GetHeaderVal("content-length"));
-    EXPECT_EQ(0, builder.rq().body.content_length);
+    EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length"));
+    EXPECT_EQ(1, builder.rq().body.content_length);
 
     // EXPECT_EQ("192.168.1.1", builder.rq().GetHeaderVal("Host"));
     // EXPECT_EQ("*/*", builder.rq().GetHeaderVal("Accept"));

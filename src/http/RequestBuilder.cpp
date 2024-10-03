@@ -30,13 +30,18 @@ void RequestBuilder::ParseNext(void)
     ++chunk_counter_;
     //LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
     //LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
-    if (buf_.size() == end_idx_ && parse_state_ != PS_AFTER_HEADERS) {  // 0 bytes received...
-        LOG(DEBUG) << "buf.size() == end_idx -> bad_request";
-        parse_state_ = PS_BAD_REQUEST;
-    }
-    while (!IsReadyForResponse() && (end_idx_ < buf_.size() || parse_state_ == PS_AFTER_HEADERS)) {
+    while (true) {
+        std::cout << "end_idx: " << end_idx_ << "; buf.size(): " << buf_.size() << std::endl;
+        if (IsReadyForResponse()) {
+            LOG(DEBUG) << "Request is ready for response -> break";
+            break;
+        }
+        if (end_idx_ == buf_.size() && parse_state_ && parse_state_ != PS_AFTER_HEADERS) {
+            LOG(DEBUG) << "End of buffer reached -> break; parse_state_: " << parse_state_;
+            break;
+        }
         char c = GetNextChar_();
-        LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
+        std::cout << "after getchar; end_idx: " << end_idx_ << "; buf.size(): " << buf_.size() << "; c: " << (int)c << std::endl;
         bool state_changed = false;
         NullTerminatorCheck_(c);
         switch (parse_state_) {
@@ -200,7 +205,7 @@ RequestBuilder::ParseState RequestBuilder::ParseVersion_(void)
 
 RequestBuilder::ParseState RequestBuilder::CheckForNextHeader_(char c)
 {
-    LOG(DEBUG) << "Checking for next header... chr: " << c << " (" << (int)c << ")";
+    //LOG(DEBUG) << "Checking for next header... chr:  (" << (int)c << ")";
     if (ParseLen_() == 1) {
         if (c == '\r') {
             LOG(DEBUG) << "Found carriage return..";
@@ -225,7 +230,7 @@ RequestBuilder::ParseState RequestBuilder::CheckForNextHeader_(char c)
 
 RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Key... char: " << c;
+    //LOG(DEBUG) << "Parsing Header-Key... char: " << c;
     if (c == ':') {
         if (ParseLen_() == 1) {
             LOG(ERROR) << "Request-Header key is invalid: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
@@ -243,7 +248,7 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKey_(char c)
 
 RequestBuilder::ParseState RequestBuilder::ParseHeaderKeyValSep_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Separator... char: " << c;
+    LOG(DEBUG) << "Parsing Header-Separator..." ;
     if (std::isspace(c)) {
         return PS_HEADER_KEY_VAL_SEP;
     }
@@ -253,7 +258,7 @@ RequestBuilder::ParseState RequestBuilder::ParseHeaderKeyValSep_(char c)
 // RFC: https://datatracker.ietf.org/doc/html/rfc2616#page-17
 RequestBuilder::ParseState RequestBuilder::ParseHeaderValue_(char c)
 {
-    LOG(DEBUG) << "Parsing Header-Value... char: " << c << " (" << (int)c << ")";
+    LOG(DEBUG) << "Parsing Header-Value... ";
     if (crlf_counter_ == 0) {
         if (c == '\r') {
             if (ParseLen_() <= 1) {
@@ -327,7 +332,8 @@ RequestBuilder::ParseState RequestBuilder::CheckForBody_(void)
 // https://datatracker.ietf.org/doc/html/rfc2616#section-3.5
 RequestBuilder::ParseState RequestBuilder::ParseBody_(char c)
 {
-    LOG(DEBUG) << "Todo: Parsing Body... char: " << c;
+    (void)c;
+    LOG(DEBUG) << "Todo: Parsing Body...";
     rq_.rq_complete = true;
     return PS_END;
 }
