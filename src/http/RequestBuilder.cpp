@@ -64,7 +64,7 @@ void RequestBuilder::ParseNext(size_t bytes_read)
             break;
         }
         char c = GetNextChar_();
-        std::cout << "after getchar; end_idx: " << end_idx_ << "; buf.size(): " << buf_.size() << "; c: " << (int)c << std::endl;
+        std::cout << "after getchar; begin_idx: " << begin_idx_ << "; end_idx: " << end_idx_ << "; buf.size(): " << buf_.size() << "; c: " << (int)c << std::endl;
         bool state_changed = false;
         NullTerminatorCheck_(c);
         switch (parse_state_) {
@@ -436,14 +436,14 @@ RequestBuilder::ParseState RequestBuilder::ReadBodyChunkSize_(char c)
     }
     if (crlf_counter_ == 1) {
         if (c == '\n') {
-            LOG(DEBUG) << "Found line feed. Converting hex to size_t..";
+            LOG(DEBUG) << "Found line feed. Converting hex to size_t: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
             crlf_counter_ = 0;
             std::pair<bool, size_t> converted_size = HexStrToSizeT_(std::string(buf_.data() + begin_idx_, ParseLen_() - 2));
             if (!converted_size.first) {
                 LOG(DEBUG) << "Read invalid ChunkSize -> Bad Request...";
                 return PS_BAD_REQUEST;
             }
-            rq_.body.chunk_size = converted_size.second; // TODO: check for cuhunk size limits
+            rq_.body.chunk_size = converted_size.second; // TODO: check for chunk size limits
             LOG(DEBUG) << "Read ChunkSize: " << rq_.body.chunk_size;
             if (rq_.body.chunk_size == 0) {
                 LOG(DEBUG) << "Read ChunkSize 0 -> Request complete!";

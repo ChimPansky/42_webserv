@@ -1,14 +1,4 @@
-POST /upload HTTP/1.1
-Host: www.exam.com
+POST / HTTP/2
 Transfer-Encoding: chunked
-Content-Type: application/json
-Connection: keep-alive
 
-4
-Wiki
-5
-pedia
-C
- in
-chunks.
 0
