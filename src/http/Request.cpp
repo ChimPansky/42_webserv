@@ -4,6 +4,14 @@
 
 namespace http {
 
+std::string ToLowerCase(const std::string& input)  {
+    std::string result = input;
+    for (size_t i = 0; i < result.size(); i++) {
+        result[i] = std::tolower(result[i]);
+    }
+    return result;
+}
+
 Request::Request()
     : method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), bad_request(false), headers_complete(false), rq_complete(false)
 {}
@@ -19,12 +27,13 @@ bool Request::Body::Complete() const
 
 std::string Request::GetHeaderVal(const std::string& key) const
 {
-    std::map<std::string, std::string>::const_iterator it = headers.find(key);
+    std::map<std::string, std::string>::const_iterator it = headers.find(ToLowerCase(key));
     if (it != headers.end()) {
         return it->second;
     }
     return "";
 }
+
 
 void Request::Print() const
 {
@@ -45,3 +54,4 @@ void Request::Print() const
     LOG(DEBUG) << "Body (TODO): ";
 }
 }  // namespace http
+

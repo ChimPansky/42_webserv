@@ -21,34 +21,11 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
     HTTP_3
 };
 
+std::string ToLowerCase(const std::string& str); // TODO: move this to utils
 struct Request {
     struct Body {
         Body();
-        // A process for decoding the chunked transfer coding can be represented in pseudo-code as:
 
-        // length := 0
-        // read chunk-size, chunk-ext (if any), and CRLF
-        // while (chunk-size > 0) {
-        //     read chunk-data and CRLF
-        //     append chunk-data to content
-        //     length := length + chunk-size
-        //     read chunk-size, chunk-ext (if any), and CRLF
-        // }
-        // read trailer field
-        // while (trailer field is not empty) {
-        //     if (trailer fields are stored/forwarded separately) {
-        //         append trailer field to existing trailer fields
-        //     }
-        //     else if (trailer field is understood and defined as mergeable) {
-        //         merge trailer field with existing header fields
-        //     }
-        //     else {
-        //         discard trailer field
-        //     }
-        //     read trailer field
-        // }
-        // Content-Length := length
-        // Remove "chunked" from Transfer-Encoding
         bool chunked;
         std::vector<char> content;
         size_t content_idx;
