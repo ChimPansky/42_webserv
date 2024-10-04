@@ -32,13 +32,13 @@ FILENAMES = \
 	config/HttpConfigBuilder.cpp \
 	config/ConfigBuilder.cpp \
 	utils/logger.cpp \
+	utils/utils.cpp \
 	ClientSession.cpp \
 	Config.cpp \
 	Server.cpp \
-	ServerCluster.cpp \
-	main.cpp
+	ServerCluster.cpp
 
-SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES))
+SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES) main.cpp)
 OBJ = $(SRC:%.cpp=$(BUILD_DIR)/%.o)
 DEP = $(OBJ:%.o=%.d)
 
@@ -66,8 +66,18 @@ $(BUILD_DIR)/%.o : %.cpp
 
 -include $(DEP)
 
+CONFIG_TEST = test_configs/config_parser_test.cpp \
+	$(addprefix $(SOURCE_DIR)/,$(FILENAMES))
+
+GTEST_DIR = $(HOME)/googletest/googletest/include
+GTEST_LIB_DIR = $(HOME)/googletest/build/lib
+
+tests: $(CONFIG_TEST)
+	$(CXX)	-I$(SOURCE_DIR) -I$(GTEST_DIR) -L$(GTEST_LIB_DIR) $^ -lgtest -lgtest_main -o runTests
+	./runTests
+
 clean:
-	rm -fr $(BUILD_DIR)
+	rm -fr $(BUILD_DIR) runTests
 
 fclean: clean
 	rm -f $(NAME)

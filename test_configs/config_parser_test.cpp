@@ -6,14 +6,14 @@
 #include <vector>
 #include <iostream>
 
-#include "config/Config.h"
+#include "config/ConfigBuilder.h"
 
 TEST(ConfigTest, LoadValidConfig)
 {
     std::string valid_file = "./test_configs/valid_config.conf";
     char buf[1024];
     std::cout << getcwd(buf, sizeof(buf)) << std::endl;
-    config::Config conf = config::Config::GetConfig(valid_file);
+    config::Config conf = config::ConfigBuilder::GetConfig(valid_file);
 
     EXPECT_EQ(conf.mx_type(), c_api::MultiplexType::MT_SELECT);
     EXPECT_EQ(conf.error_log_path(), "/log/error.log");
@@ -67,7 +67,7 @@ TEST(ConfigTest, LoadValidConfig)
 TEST(ConfigTest, MinimumSettingsConfig)
 {
     std::string valid_file = "test_configs/minimum_settings.conf";
-    config::Config conf = config::Config::GetConfig(valid_file);
+    config::Config conf = config::ConfigBuilder::GetConfig(valid_file);
 
     EXPECT_EQ(conf.mx_type(), c_api::MultiplexType::MT_SELECT);
 
@@ -97,189 +97,189 @@ TEST(ConfigTest, LoadInvalidConfigExtension)
 {
     std::string invalid_file = "test_configs/invalid_extension.txt";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, LoadNonExistentConfigFile)
 {
     std::string invalid_file = "test_configs/non_existent.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, LoadNonExistentConfigFile2)
 {
     std::string invalid_file = "test_configs/.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidSyntax1)
 {
     std::string invalid_file = "test_configs/invalid_syntax1.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidSyntax2)
 {
     std::string invalid_file = "test_configs/invalid_syntax2.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidNesting1)
 {
     std::string invalid_file = "test_configs/invalid_nesting1.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidNesting2)
 {
     std::string invalid_file = "test_configs/invalid_nesting2.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidNesting3)
 {
     std::string invalid_file = "test_configs/invalid_nesting3.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, EmptySetting)
 {
     std::string invalid_file = "test_configs/empty_setting.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, UnknownSetting)
 {
     std::string invalid_file = "test_configs/unknown_setting.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, NoListenSetting)
 {
     std::string invalid_file = "test_configs/no_listen_setting.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, EmptyFile)
 {
     std::string invalid_file = "test_configs/empty_file.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidUseSetting)
 {
     std::string invalid_file = "test_configs/invalid_use.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidErrorLogSetting)
 {
     std::string invalid_file = "test_configs/invalid_error_log.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidClientMaxBodySizeSetting)
 {
     std::string invalid_file = "test_configs/invalid_clientmaxbodysize.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidErrorPageSetting)
 {
     std::string invalid_file = "test_configs/invalid_errorpage.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidAutoIndexSetting)
 {
     std::string invalid_file = "test_configs/invalid_autoindex.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidKeepAliveTimeoutSetting)
 {
     std::string invalid_file = "test_configs/invalid_keepalive.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidListenSetting)
 {
     std::string invalid_file = "test_configs/invalid_listen.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidServerNameSetting)
 {
     std::string invalid_file = "test_configs/invalid_server_name.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidAccessLogSetting)
 {
     std::string invalid_file = "test_configs/invalid_access_log.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidRootSetting)
 {
     std::string invalid_file = "test_configs/invalid_root.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidRoute)
 {
     std::string invalid_file = "test_configs/invalid_route.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidAllowMethodsSetting)
 {
     std::string invalid_file = "test_configs/invalid_limit_except.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidCgiExtensionSetting)
 {
     std::string invalid_file = "test_configs/invalid_cgi_extension.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidCgiPathSetting)
 {
     std::string invalid_file = "test_configs/invalid_cgi_path.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 TEST(ConfigTest, InvalidReturnSetting)
 {
     std::string invalid_file = "test_configs/invalid_return.conf";
 
-    EXPECT_THROW(config::Config::GetConfig(invalid_file), std::exception);
+    EXPECT_THROW(config::ConfigBuilder::GetConfig(invalid_file), std::exception);
 }
 
 int main(int argc, char **argv) {
