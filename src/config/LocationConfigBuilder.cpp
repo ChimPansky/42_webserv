@@ -2,8 +2,6 @@
 
 #include <sys/types.h>
 
-#include "IConfigBuilder.h"
-
 namespace config {
 
 static std::pair<std::string, bool> ParseRoute(const std::vector<std::string>& vals)
