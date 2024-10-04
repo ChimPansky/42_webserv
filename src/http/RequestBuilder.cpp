@@ -12,24 +12,6 @@
 
 namespace http {
 
-std::pair<bool /* is_valid*/, size_t> HexStrToSizeT_(const std::string &hex_str) {
-    size_t result = 0;
-    char c = 0;
-    for (size_t i = 0; i < hex_str.size(); i++) {
-        result *= 16;
-        c = std::tolower(hex_str[i]);
-        if (std::isdigit(c)) {
-            result += c - '0';
-        } else if (c >= 'a' && c <= 'f') {
-            result += c - 'a' + 10;
-        }
-        else {
-            return std::make_pair(false, 0);
-        }
-    }
-    return std::make_pair(true, result);
-}
-
 RequestBuilder::RequestBuilder()
     : chunk_counter_(0), crlf_counter_(0), begin_idx_(0), end_idx_(0), parse_state_(PS_METHOD)
 {}
@@ -438,7 +420,7 @@ RequestBuilder::ParseState RequestBuilder::ReadBodyChunkSize_(char c)
         if (c == '\n') {
             LOG(DEBUG) << "Found line feed. Converting hex to size_t: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
             crlf_counter_ = 0;
-            std::pair<bool, size_t> converted_size = HexStrToSizeT_(std::string(buf_.data() + begin_idx_, ParseLen_() - 2));
+            std::pair<bool, size_t> converted_size = utils::HexStrToSizeT_(std::string(buf_.data() + begin_idx_, ParseLen_() - 2));
             if (!converted_size.first) {
                 LOG(DEBUG) << "Read invalid ChunkSize -> Bad Request...";
                 return PS_BAD_REQUEST;

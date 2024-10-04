@@ -9,8 +9,6 @@
 class Server;
 namespace http {
 
-size_t      HexToSizeT_(const std::string& hex_str); // TODO: move to utils
-
 class RequestBuilder {
   private:
     enum ParseState {

@@ -21,7 +21,6 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
     HTTP_3
 };
 
-std::string ToLowerCase(const std::string& str); // TODO: move this to utils
 struct Request {
     struct Body {
         Body();
