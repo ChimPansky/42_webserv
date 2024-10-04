@@ -12,7 +12,7 @@ namespace config {
 
 class ParsedConfig {
   public:
-    ParsedConfig(std::ifstream& ifs, const std::string& nesting_lvl,
+    ParsedConfig(std::ifstream& ifs, const std::string& nesting_lvl = "",
                  const std::string& nesting_lvl_descrt = "");
 
     typedef std::pair<std::string, std::string> Setting;
@@ -22,7 +22,6 @@ class ParsedConfig {
     const std::vector<ParsedConfig>& nested_configs() const;
 
     std::vector<std::string> FindSetting(const std::string& key) const;
-    const std::vector<ParsedConfig>& FindNesting(const std::string& key) const;
 
   private:
     std::string nesting_lvl_;

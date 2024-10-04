@@ -2,7 +2,7 @@
 
 namespace config {
 
-LocationConfig::LocationConfig(const std::pair<std::string, Priority>& route,
+LocationConfig::LocationConfig(const std::pair<std::string, bool>& route,
                                const std::vector<Method>& allowed_methods,
                                const std::pair<int, std::string>& redirect,
                                const std::vector<std::string>& cgi_paths,
@@ -10,11 +10,12 @@ LocationConfig::LocationConfig(const std::pair<std::string, Priority>& route,
                                const std::string& root_dir,
                                const std::vector<std::string>& default_file, bool dir_listing)
     : route_(route), allowed_methods_(allowed_methods), redirect_(InitRedirect(redirect)),
-      is_cgi_(route.first == "/cgi-bin/"), cgi_paths_(cgi_paths), cgi_extensions_(cgi_extensions),
-      root_dir_(root_dir), default_file_(default_file), dir_listing_(dir_listing)
+      is_cgi_(route.first == "/cgi-bin/" || route.first == "/cgi-bin"), cgi_paths_(cgi_paths),
+      cgi_extensions_(cgi_extensions), root_dir_(root_dir), default_file_(default_file),
+      dir_listing_(dir_listing)
 {}
 
-const std::pair<std::string, LocationConfig::Priority>& LocationConfig::route() const
+const std::pair<std::string, bool>& LocationConfig::route() const
 {
     return route_;
 }

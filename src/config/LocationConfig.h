@@ -16,23 +16,19 @@ class LocationConfig {
     std::pair<int, std::string> InitRedirect(const std::pair<int, std::string>& value);
 
   public:
-    enum Priority {
-        P0 = 0,
-        P1 = 1
-    };
     enum Method {
         GET,
         POST,
         DELETE
     };
-    LocationConfig(const std::pair<std::string, Priority>& route,
+    LocationConfig(const std::pair<std::string, /* is exact match */ bool>& route,
                    const std::vector<Method>& allowed_methods,
                    const std::pair<int, std::string>& redirect,
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
                    const std::vector<std::string>& default_file, bool dir_listing);
 
-    const std::pair<std::string, Priority>& route() const;
+    const std::pair<std::string, /* is exact match */ bool>& route() const;
     const std::vector<Method>& allowed_methods() const;
     const std::pair<int, std::string>& redirect() const;
     bool is_cgi() const;
@@ -76,7 +72,7 @@ class LocationConfig {
     void Print() const;
 
   private:
-    std::pair<std::string, Priority> route_;
+    std::pair<std::string, bool> route_;
     std::vector<Method> allowed_methods_;
     std::pair<int /* status code */, std::string /* new route */> redirect_;
     bool is_cgi_;

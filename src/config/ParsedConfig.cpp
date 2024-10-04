@@ -74,20 +74,6 @@ std::vector<std::string> ParsedConfig::FindSetting(const std::string& key) const
     return res;
 }
 
-const std::vector<ParsedConfig>& ParsedConfig::FindNesting(
-    const std::string& key) const  // maybe this function isn't needed at all
-{
-    if (nested_configs_.empty()) {
-        throw std::runtime_error("Invalid configuration file: no " + key + " block.");
-    }
-    for (size_t i = 0; i < nested_configs_.size(); i++) {
-        if (key != nested_configs_[i].nesting_lvl()) {
-            throw std::runtime_error("Invalid configuration file: invalid block.");
-        }
-    }
-    return nested_configs_;
-}
-
 std::pair<std::string, std::string> MakePair(const std::string& line)
 {
     size_t pos = line.find_first_of(" \t");

@@ -2,6 +2,7 @@
 
 #include "HttpConfig.h"
 #include "HttpConfigBuilder.h"
+#include "IConfigBuilder.h"
 
 namespace config {
 
@@ -66,7 +67,7 @@ bool ConfigBuilder::IsKeyAllowed(const std::string& key) const
     return key == "use" || key == "error_log";
 }
 
-bool ConfigBuilder::IsNestingAllowed(const ParsedConfig& f) const
+bool ConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
 {
     if (f.nested_configs().size() != 1) {
         return false;
@@ -89,24 +90,20 @@ Config ConfigBuilder::Build(const ParsedConfig& f,
             throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
         }
     }
-    if (!IsNestingAllowed(f)) {
-        throw std::runtime_error("Invalid configuration file: invalid nesting.");
-    }
-    if (!inherited_settings.root.empty() || !inherited_settings.def_file.empty() ||
-        !inherited_settings.dir_listing.empty()) {
-        throw std::runtime_error("Invalid configuration file: invalid settings for main block.");
-    }
     ConfigBuilder::MxType mx_type = BuildMxType(f.FindSetting("use"));
     std::pair<std::string, Severity> error_log = BuildErrorLog(f.FindSetting("error_log"));
+
+    if (!CheckAllNestings(f)) {
+        throw std::runtime_error("Invalid configuration file: invalid nesting.");
+    }
     HttpConfigBuilder http_builder;
-    HttpConfig http_conf = http_builder.Build(f.FindNesting("http")[0], inherited_settings);
+    HttpConfig http_conf = http_builder.Build(f.nested_configs()[0], inherited_settings);
     return Config(mx_type, error_log, http_conf);
 }
 
-const Config ConfigBuilder::GetConfig(const std::string& config_path)
+const Config ConfigBuilder::GetConfigFromConfFile(const std::string& config_path)
 {
-    if (!utils::fs::CheckFileExtension(config_path, ".conf") ||
-        config_path[config_path.size() - 6] == '/') {
+    if (!utils::fs::CheckFileExtension(config_path, ".conf")) {
         throw std::invalid_argument("Invalid config file suffix.");
     }
 
@@ -115,10 +112,9 @@ const Config ConfigBuilder::GetConfig(const std::string& config_path)
         throw std::invalid_argument("Couldn't open config file.");
     }
 
-    ParsedConfig parser(config_file, "", "");
-    InheritedSettings inherited_settings = {};
+    ParsedConfig parser(config_file);
     ConfigBuilder config_builder;
-    return config_builder.Build(parser, inherited_settings);
+    return config_builder.Build(parser);
 }
 
 }  // namespace config

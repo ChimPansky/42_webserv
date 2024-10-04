@@ -13,10 +13,11 @@ namespace config {
 class HttpConfigBuilder : public IConfigBuilder<HttpConfig> {
   private:
     bool IsKeyAllowed(const std::string& key) const;
-    bool IsNestingAllowed(const ParsedConfig& f) const;
+    bool CheckAllNestings(const ParsedConfig& f) const;
 
   public:
-    HttpConfig Build(const ParsedConfig& f, const InheritedSettings& inherited_settings) const;
+    HttpConfig Build(const ParsedConfig& f,
+                     const InheritedSettings& inherited_settings = InheritedSettings()) const;
 };
 
 }  // namespace config
