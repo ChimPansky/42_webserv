@@ -12,23 +12,47 @@ class LocationBlock;
 
 class IProcessor {
   public:
-    virtual void ReadNext();
-    virtual bool IsDone();
-    virtual bool HasFailed();
-    virtual ~IProcessor();
+    // virtual void ReadNext();  // accept and add to rq or return body chank?
+    // virtual bool IsDone();
+    // virtual bool HasFailed();  // return error code or always internal?
+    virtual ~IProcessor() {};
+
+    // class FileProcessorCallback : public c_api::ICallback {
+    //   public:
+    //     void Call(int fd) {
+    //       fp->ReadNext();
+    //       if (fp->IsDone()) {
+    //         if (fp->HasFailed()) {
+    //           // replace response with error response
+    //         }
+    //         client.SendResponse(rs_);
+    //         c_api::EventManager::ClearEvent_(fd);
+    //       }
+    //     }
+    //   private:
+    //     utils::unique_ptr<IProcessor> fp_;
+    //     utils::unique_ptr<Response> rs_;
+    //     ClientSession& client_;
+    // }
 };
 
-class FileProcessor : IProcessor {
+#include <fcntl.h>
+#include <unistd.h>
+class FileProcessor : public IProcessor {
   public:
-    FileProcessor(const config::LocationBlock&, const http::Request& rq, http::Response& rs);
+    // change back to config
+    FileProcessor(const std::string& location, const http::Request&, http::Response&) {fd_ = open(location.c_str(), O_RDONLY);}
+    ~FileProcessor() {close(fd_);};
+  private:
+    int fd_;
 };
 
-class CgiProcessor : IProcessor {
+class CgiProcessor : public IProcessor {
   public:
     CgiProcessor(const config::LocationBlock&, const http::Request& rq, http::Response& rs);
 };
 
-class DirProcessor : IProcessor {
+class DirProcessor : public IProcessor {
   public:
     DirProcessor(const config::LocationBlock&, const http::Request& rq, http::Response& rs);
 };
@@ -36,7 +60,9 @@ class DirProcessor : IProcessor {
 // + redirection
 // + error pages
 
-utils::unique_ptr<IProcessor> GetReadInterface(const config::LocationBlock&, const http::Request& rq, http::Response& rs);
+utils::unique_ptr<IProcessor> GetReadInterface(const config::LocationBlock&, const http::Request& rq, http::Response& rs) {
+  return utils::unique_ptr<IProcessor>(new FileProcessor("www/index.html", rq, rs));
+}
 
 
 // mb in cgi/fs later
