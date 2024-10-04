@@ -32,8 +32,8 @@ class ServerConfig {
     static inline Severity kDefaultAccessLogLevel() { return INFO; }
     static inline const char* kDefaultAccessLogPath() { return ""; }
     static inline const char* kDefaultErrorLogPath() { return ""; }
-    static inline const char* kDefaultIPAddress() { return "localhost"; }
-    static inline in_port_t kDefaultPort() { return 80; }
+    static inline in_addr_t kDefaultIPAddress() { return INADDR_ANY; }
+    static inline in_port_t kDefaultPort() { return 8080; }
 
     void Print() const;
 

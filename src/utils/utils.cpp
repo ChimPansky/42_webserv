@@ -26,6 +26,9 @@ std::vector<std::string> SplitLine(const std::string& line)
 
 bool CheckFileExtension(const std::string& file, const std::string& extention)
 {
+    if (file.length() > extention.length() && file[file.size() - 6] == '/') {
+        return false;
+    }
     return file.length() > extention.length() && (file.find_last_of('.') != std::string::npos &&
                                                   file.substr(file.find_last_of('.')) == extention);
 }
@@ -70,6 +73,6 @@ std::string Trim(const std::string& str, const std::string& trim_chars = " \t")
     return trimmed;
 }
 
-} // namespace fs
+}  // namespace fs
 
 }  // namespace utils

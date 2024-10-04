@@ -2,19 +2,20 @@
 
 #include <sys/types.h>
 
+#include "IConfigBuilder.h"
+
 namespace config {
 
-static std::pair<std::string, LocationConfig::Priority> ParseRoute(
-    const std::vector<std::string>& vals)
+static std::pair<std::string, bool> ParseRoute(const std::vector<std::string>& vals)
 {
     std::string route;
-    LocationConfig::Priority priority = LocationConfig::P1;
+    bool priority = false;
     if (vals.size() > 2) {
         throw std::runtime_error("Invalid configuration file: invalid route: " + vals[0]);
     } else if (vals.size() == 1 && vals[0][0] == '/') {
         route = vals[0];
     } else if (vals[0] == "=" && vals[1][0] == '/') {
-        priority = LocationConfig::P0;
+        priority = true;
         route = vals[1];
     } else {
         throw std::runtime_error("Invalid configuration file: invalid route: " + vals[0]);
@@ -22,7 +23,7 @@ static std::pair<std::string, LocationConfig::Priority> ParseRoute(
     return std::make_pair(route, priority);
 }
 
-static std::pair<std::string, LocationConfig::Priority> BuildRoute(const std::string& vals)
+static std::pair<std::string, bool> BuildRoute(const std::string& vals)
 {
     if (vals.empty()) {
         throw std::runtime_error("Invalid configuration file: no route specified.");
@@ -31,6 +32,7 @@ static std::pair<std::string, LocationConfig::Priority> BuildRoute(const std::st
     return ParseRoute(route_elements);
 }
 
+// TODO : Location config::Get -> http::Get/ HOWTO?
 static std::vector<LocationConfig::Method> ParseAllowedMethods(const std::vector<std::string>& vals)
 {
     std::vector<LocationConfig::Method> allowed_methods;
@@ -101,7 +103,7 @@ static std::vector<std::string> BuildCgiPaths(const std::vector<std::string>& va
 static const std::vector<std::string>& ParseCgiExtensions(const std::vector<std::string>& vals)
 {
     for (size_t i = 0; i < vals.size(); i++) {
-        if (vals[i] != ".py" && vals[i] != ".php") {
+        if (vals[i][0] != '.' || vals[i].length() < 2) {
             throw std::runtime_error("Invalid configuration file: invalid cgi_extension: " +
                                      vals[i]);
         }
@@ -131,33 +133,17 @@ static const std::string BuildRootDir(const std::vector<std::string>& vals,
 {
     if (vals.empty() && inherited_root.empty()) {
         return LocationConfig::kDefaultRootDir();
-    } else if (vals.empty()) {
-        return inherited_root;
-    } else if (vals.size() > 1) {
-        throw std::runtime_error("Invalid configuration file: duplicated root value.");
-    } else if (vals[0][0] != '/') {
-        throw std::runtime_error("Invalid configuration file: root isn't a directory.");
     }
-    return vals[0];
+    return InheritedSettings::BuildRootDir(vals, inherited_root);
 }
 
 static std::vector<std::string> BuildDefaultFile(const std::vector<std::string>& vals,
                                                  const std::vector<std::string>& inherited_def_file)
 {
-    std::vector<std::string> default_files;
     if (vals.empty() && inherited_def_file.empty()) {
         return LocationConfig::kDefaultIndexFile();
-    } else if (vals.empty()) {
-        return inherited_def_file;
     }
-    for (size_t i = 0; i < vals.size(); i++) {
-        if (vals[i].empty()) {
-            throw std::runtime_error("Invalid configuration file: no index file specified.");
-        }
-        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
-        default_files.insert(default_files.end(), val_elements.begin(), val_elements.end());
-    }
-    return default_files;
+    return InheritedSettings::BuildDefaultFile(vals, inherited_def_file);
 }
 
 static bool ParseDirListing(const std::string& vals)
@@ -175,12 +161,8 @@ static bool BuildDirListing(const std::vector<std::string>& vals,
 {
     if (vals.empty() && inherited_redirect.empty()) {
         return LocationConfig::kDefaultDirListing();
-    } else if (vals.size() > 1) {
-        throw std::runtime_error("Invalid configuration file: duplicated autoindex value.");
-    } else if (vals.empty()) {
-        return ParseDirListing(inherited_redirect);
     }
-    return ParseDirListing(vals[0]);
+    return ParseDirListing(InheritedSettings::BuildDirListing(vals, inherited_redirect));
 }
 
 bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
@@ -188,7 +170,8 @@ bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
     return key == "limit_except" || key == "return" || key == "cgi_path" ||
            key == "cgi_extension" || key == "root" || key == "index" || key == "autoindex";
 }
-bool LocationConfigBuilder::IsNestingAllowed(const ParsedConfig& f) const
+
+bool LocationConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
 {
     if (!f.nested_configs().empty()) {
         return false;
@@ -205,10 +188,7 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
             throw std::runtime_error("Invalid configuration file: invalid key: " + it->first);
         }
     }
-    if (!IsNestingAllowed(f)) {
-        throw std::runtime_error("Invalid configuration file: invalid nesting.");
-    }
-    std::pair<std::string, LocationConfig::Priority> route = BuildRoute(f.nesting_lvl_descr());
+    std::pair<std::string, bool> route = BuildRoute(f.nesting_lvl_descr());
     std::vector<LocationConfig::Method> allowed_methods =
         BuildAllowedMethods(f.FindSetting("limit_except"));
     std::pair<int, std::string> redirect = BuildRedirect(f.FindSetting("return"));
@@ -219,7 +199,11 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
         BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
     bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
 
+    if (!CheckAllNestings(f)) {
+        throw std::runtime_error("Invalid configuration file: invalid nesting.");
+    }
     return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, root_dir,
                           default_file, dir_listing);
 }
+
 }  // namespace config
