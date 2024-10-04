@@ -29,6 +29,8 @@ static std::pair<std::string, Severity> BuildAccessLog(const std::vector<std::st
     if (vals.empty()) {
         return std::make_pair(ServerConfig::kDefaultAccessLogPath(),
                               ServerConfig::kDefaultAccessLogLevel());
+    } else if (vals.size() > 1) {
+        throw std::runtime_error("Invalid configuration file: duplicated access_log value.");
     }
     std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
     if (val_elements.size() == 1) {
