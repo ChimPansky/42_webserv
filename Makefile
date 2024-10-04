@@ -25,6 +25,7 @@ FILENAMES = \
 	http/Request.cpp \
 	http/RequestBuilder.cpp \
 	utils/logger.cpp \
+	utils/utils.cpp \
 	ClientSession.cpp \
 	Config.cpp \
 	Server.cpp \
