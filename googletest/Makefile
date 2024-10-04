@@ -9,8 +9,6 @@ MAGENTA = \033[0;95m
 CYAN = \033[0;96m
 WHITE = \033[0;97m
 
--include $(DEP)
-
 CXX98 = c++ -std=c++98
 CXX17 = c++ -std=c++17
 CXXFLAGS += -Wall -Werror -Wextra -Wpedantic
@@ -20,10 +18,6 @@ SOURCE_DIR = ../src
 BUILD_DIR = build
 
 IFLAGS = -I./$(SOURCE_DIR)
-
-$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
-	@mkdir -p $(dir $@)
-	$(CXX98) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
 
 ##### TESTERS #####
 C_API_UTILS_TESTER = c_api_utils_tester
@@ -58,14 +52,12 @@ C_API_UTILS_OBJ = $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(C_API_UTILS_
 C_API_UTILS_DEP = $(C_API_UTILS_OBJ:%.o=%.d)
 C_API_UTILS_LIB = $(BUILD_DIR)/libc_api_utils.a
 
-c_api_utils: $(C_API_UTILS_LIB)
-
-$(C_API_UTILS_LIB): $(C_API_UTILS_OBJ)
+$(C_API_UTILS_LIB): $(C_API_UTILS_OBJ) $(C_API_UTILS_TESTER_FILES)
 	@echo "$(CYAN)Creating archive library $(C_API_UTILS_LIB)$(DEF_COLOR)"
 	@ar rcs $@ $^
 	@echo "$(GREEN)$(C_API_UTILS_LIB) created!$(DEF_COLOR)"
 
-$(C_API_UTILS_TESTER): c_api_utils
+$(C_API_UTILS_TESTER): $(C_API_UTILS_LIB)
 	$(CXX17) $(CXXFLAGS) $(C_API_UTILS_TESTER_FILES) $(C_API_UTILS_LIB) -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(C_API_UTILS_TESTER)
 	@echo "$(GREEN)Executable $(C_API_UTILS_TESTER) created!$(DEF_COLOR)"
 
@@ -82,16 +74,21 @@ RQ_BUILDER_OBJ = $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(RQ_BUILDER_SR
 RQ_BUILDER_DEP = $(RQ_BUILDER_OBJ:%.o=%.d)
 RQ_BUILDER_LIB = $(BUILD_DIR)/librq_builder.a
 
-rq_builder: $(RQ_BUILDER_LIB) $(LOGGER_LIB)
-
 $(RQ_BUILDER_LIB): $(RQ_BUILDER_OBJ)
 	@echo "$(CYAN)Creating archive library $(RQ_BUILDER_LIB)$(DEF_COLOR)"
 	@ar rcs $@ $^
 	@echo "$(GREEN)$(RQ_BUILDER_LIB) created!$(DEF_COLOR)"
 
-$(RQ_BUILDER_TESTER): rq_builder
+$(RQ_BUILDER_TESTER): $(RQ_BUILDER_LIB) $(LOGGER_LIB) $(RQ_BUILDER_TESTER_FILES)
 	$(CXX17) $(CXXFLAGS) $(RQ_BUILDER_TESTER_FILES) $(RQ_BUILDER_LIB) $(LOGGER_LIB) -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(RQ_BUILDER_TESTER)
 	@echo "$(GREEN)Executable $(RQ_BUILDER_TESTER) created!$(DEF_COLOR)"
+
+# TODO: try to fix dependencies, so that changes in headerfiles are recognized
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
+	@mkdir -p $(@D)
+	$(CXX98) $(CXXFLAGS) $(IFLAGS) -MMD -c $< -o $@
+
+-include $(DEP)
 
 #### CLEAN ####
 clean:
@@ -102,4 +99,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re c_api_utils rq_builder
+.PHONY: all clean fclean re
