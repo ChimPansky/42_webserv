@@ -1,5 +1,5 @@
-#ifndef WS_CONFIG_ICONFIG_BUILDER_H
-#define WS_CONFIG_ICONFIG_BUILDER_H
+#ifndef WS_CONFIG_I_CONFIG_BUILDER_H
+#define WS_CONFIG_I_CONFIG_BUILDER_H
 
 #include <unistd.h>
 
@@ -7,20 +7,6 @@
 #include <string>
 
 #include "ParsedConfig.h"
-#include "c_api/multiplexers/IMultiplexer.h"
-=======
-#include <cstddef>
-#include <stdexcept>
-#include <string>
-#include <utility>
-
-#include "Config.h"
-#include "ParsedConfig.h"
-#include "LocationConfig.h"
-#include "ServerConfig.h"
-#include "c_api/utils.h"
-#include "utils/utils.h"
->>>>>>> 7375547a5cd5002c656ac8f12e965181f1d396c0
 
 namespace config {
 
@@ -30,21 +16,20 @@ struct InheritedSettings {
     std::string dir_listing;
 };
 
-typedef c_api::MultiplexType MxType;
-
 template <class ConfigType>
 class IConfigBuilder {
 <<<<<<< HEAD
   protected:
-    static bool IsKeyAllowed(const std::string& key);
-    static bool IsNestingAllowed(const ParsedConfig& f);
+    virtual bool IsKeyAllowed(const std::string& key) const = 0;
+    virtual bool IsNestingAllowed(const ParsedConfig& f) const = 0;
 
   public:
-    static ConfigType Build(const ParsedConfig& f, const InheritedSettings& inherited_settings);
+    virtual ConfigType Build(const ParsedConfig& f,
+                             const InheritedSettings& inherited_settings) const = 0;
 };
 
 // template <>
-// class IConfigBuilder<LocationConfig> {
+// class ConfigBuilder<LocationConfig> {
 //   private:
 //     static std::pair<std::string, LocationConfig::Priority> BuildRoute(const std::string& vals)
 //     {
@@ -281,7 +266,7 @@ class IConfigBuilder {
 // };
 
 // template <>
-// class IConfigBuilder<ServerConfig> {
+// class ConfigBuilder<ServerConfig> {
 //   private:
 //     static std::pair<std::string, Severity> BuildAccessLog(const std::vector<std::string>& vals)
 //     {
@@ -492,7 +477,7 @@ class IConfigBuilder {
 //         std::vector<LocationConfig> server_configs;
 //         for (size_t i = 0; i < nested_configs.size(); i++) {
 //             server_configs.push_back(
-//                 IConfigBuilder<LocationConfig>::Build(nested_configs[i], inherited_settings));
+//                 ConfigBuilder<LocationConfig>::Build(nested_configs[i], inherited_settings));
 //         }
 //         return server_configs;
 //     }
@@ -553,7 +538,7 @@ class IConfigBuilder {
 // };
 
 // template <>
-// class IConfigBuilder<HttpConfig> {
+// class ConfigBuilder<HttpConfig> {
 //   private:
 //     static size_t BuildKeepAliveTimeout(const std::vector<std::string>& vals)
 //     {
@@ -692,7 +677,7 @@ class IConfigBuilder {
 //         std::vector<ServerConfig> server_configs;
 //         for (size_t i = 0; i < nested_configs.size(); i++) {
 //             server_configs.push_back(
-//                 IConfigBuilder<ServerConfig>::Build(nested_configs[i], inherited_settings));
+//                 ConfigBuilder<ServerConfig>::Build(nested_configs[i], inherited_settings));
 //         }
 //         return server_configs;
 //     }
@@ -752,7 +737,7 @@ class IConfigBuilder {
 // };
 
 // template <>
-// class IConfigBuilder<Config> {
+// class ConfigBuilder<Config> {
 //   private:
 //     static MxType BuildMxType(const std::vector<std::string>& vals)
 //     {
@@ -850,7 +835,7 @@ class IConfigBuilder {
 //         MxType mx_type = BuildMxType(f.FindSetting("use"));
 //         std::pair<std::string, Severity> error_log = BuildErrorLog(f.FindSetting("error_log"));
 //         HttpConfig http_conf =
-//             IConfigBuilder<HttpConfig>::Build(f.FindNesting("http")[0], inherited_settings);
+//             ConfigBuilder<HttpConfig>::Build(f.FindNesting("http")[0], inherited_settings);
 //         return Config(mx_type, error_log, http_conf);
 //     }
 // };
@@ -1649,4 +1634,4 @@ class IConfigBuilder<Config> {
 
 }  // namespace config
 
-#endif  // WS_CONFIG_ICONFIG_BUILDER_H
+#endif  // WS_CONFIG_CONFIG_BUILDER_H

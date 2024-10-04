@@ -22,6 +22,15 @@ FILENAMES = \
 	c_api/EventManager.cpp \
 	c_api/MasterSocket.cpp \
 	c_api/utils.cpp \
+	config/ParsedConfig.cpp \
+	config/Config.cpp \
+	config/HttpConfig.cpp \
+	config/ServerConfig.cpp \
+	config/LocationConfig.cpp \
+	config/LocationConfigBuilder.cpp \
+	config/ServerConfigBuilder.cpp \
+	config/HttpConfigBuilder.cpp \
+	config/ConfigBuilder.cpp \
 	utils/logger.cpp \
 	ClientSession.cpp \
 	Config.cpp \
