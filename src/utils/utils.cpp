@@ -15,6 +15,9 @@ std::pair<bool /* is_valid*/, size_t> HexStrToSizeT_(const std::string& hex_str)
 {
     size_t result = 0;
     char c = 0;
+    if (hex_str.size() == 0) {
+        return std::make_pair(false, 0);
+    }
     for (size_t i = 0; i < hex_str.size(); i++) {
         result *= 16;
         c = std::tolower(hex_str[i]);

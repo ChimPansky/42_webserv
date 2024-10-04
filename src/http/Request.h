@@ -1,6 +1,7 @@
 #ifndef WS_HTTP_REQUEST_H
 #define WS_HTTP_REQUEST_H
 
+#include <cstddef>
 #include <map>
 #include <string>
 #include <vector>
@@ -30,6 +31,7 @@ struct Request {
         std::vector<char> content;
         size_t  content_idx;
         size_t  remaining_length;
+        size_t  max_body_size;
 
         bool Complete() const;
     };
@@ -39,7 +41,6 @@ struct Request {
     std::string uri;  // todo: change to struct/class
     Version version;
     bool bad_request;
-    bool headers_complete;
     bool rq_complete;
     std::map<std::string, std::string> headers;
     Body body;

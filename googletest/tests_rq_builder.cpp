@@ -24,11 +24,19 @@ static int BuildRequest(http::RequestBuilder& builder, const char* rq_path) {
     }
     size_t bytes_read = 0;
     while (!builder.IsReadyForResponse()) {
-        bytes_read = ReadFromFile(file, builder.buf(), read_size);
-        std::cout << "Tester: bytes_read: " << bytes_read << std::endl;
-        builder.buf().resize(builder.buf().size() - (read_size - bytes_read));
-        builder.ParseNext(bytes_read);
-        if (bytes_read == 0) {
+        bytes_read = 0;
+        if (builder.needs_info_from_server()) {
+            std::cout << "RequestBuilder needs info from server -> Get it and then continue building..." << std::endl;
+            // these settings should come from server:
+            builder.set_max_body_size(50);  // 1MB
+        }
+        if (builder.HasReachedEndOfBuffer()) {
+            bytes_read = ReadFromFile(file, builder.buf(), read_size);
+            std::cout << "Tester: bytes_read: " << bytes_read << std::endl;
+            builder.buf().resize(builder.buf().size() - (read_size - bytes_read));
+        }
+        if (builder.ParseNext(bytes_read) == 0) {
+            std::cerr << "ParseNext returned 0..." << std::endl;
             break;
         }
     }
@@ -76,11 +84,11 @@ TEST(Suite1, Test2) {
     if (BuildRequest(builder, "requests/rq2.txt") != 0) {
         FAIL();
     }
-    EXPECT_EQ(true, builder.rq().rq_complete);
+    EXPECT_TRUE(builder.rq().rq_complete);
     EXPECT_EQ(false, builder.rq().bad_request);
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-    EXPECT_EQ("/", builder.rq().uri);
-    // EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("/aaaaa", builder.rq().uri);
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     // EXPECT_EQ("www.exam.com", builder.rq().GetHeaderVal("host"));
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
     // EXPECT_EQ("application/json", builder.rq().GetHeaderVal("content-type"));

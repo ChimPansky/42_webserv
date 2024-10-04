@@ -6,11 +6,11 @@
 namespace http {
 
 Request::Request()
-    : method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), bad_request(false), headers_complete(false), rq_complete(false)
+    : method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), bad_request(false), rq_complete(false)
 {}
 
 Request::Body::Body()
-    : chunked(false), chunk_size(0), content_idx(0), remaining_length(0)
+    : chunked(false), chunk_size(0), content_idx(0), remaining_length(0), max_body_size(0)
 {}
 
 bool Request::Body::Complete() const
@@ -35,7 +35,6 @@ void Request::Print() const
     LOG(DEBUG) << "URI: " << uri;
     LOG(DEBUG) << "Version: " << version;
     LOG(DEBUG) << "Bad Request: " << bad_request;
-    LOG(DEBUG) << "Headers complete: " << headers_complete;
     LOG(DEBUG) << "Request complete: " << rq_complete;
     LOG(DEBUG) << "\n";
     LOG(DEBUG) << "~Headers~";
