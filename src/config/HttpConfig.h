@@ -1,7 +1,6 @@
 #ifndef WS_HTTPCONFIG_H
 #define WS_HTTPCONFIG_H
 
-#include <cstddef>
 #include <map>
 #include <string>
 
