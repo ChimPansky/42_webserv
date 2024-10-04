@@ -23,6 +23,7 @@ FILENAMES = \
 	c_api/MasterSocket.cpp \
 	c_api/utils.cpp \
 	utils/logger.cpp \
+	utils/utils.cpp \
 	ClientSession.cpp \
 	Config.cpp \
 	Server.cpp \
