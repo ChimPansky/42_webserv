@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include <Config.h>
+#include "config/Config.h"
 #include "http/Request.h"
 #include "http/Response.h"
 #include <utils/unique_ptr.h>

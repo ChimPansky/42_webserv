@@ -3,12 +3,11 @@
 #include "server/Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/utils.h"
-#include "utils/logger.h"
 
 volatile bool ServerCluster::run_ = false;
 
 // testing with one
-ServerCluster::ServerCluster(const Config& /*config*/)
+ServerCluster::ServerCluster(const config::Config& /*config*/)
 {
     std::vector<std::pair<in_addr_t, in_port_t> > listeners;
 
@@ -54,7 +53,7 @@ void ServerCluster::Stop()
 }
 
 // smth like
-void ServerCluster::Start(const Config& config)
+void ServerCluster::Start(const config::Config& config)
 {
     // register signal for ^C, switch run on that
     run_ = true;
