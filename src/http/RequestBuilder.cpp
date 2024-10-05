@@ -9,6 +9,7 @@
 #include "Request.h"
 #include "utils/logger.h"
 #include "utils/utils.h"
+#include "utils.h"
 
 namespace http {
 
@@ -408,7 +409,7 @@ RequestBuilder::ParseState RequestBuilder::ReadBodyChunkSize_(char c)
         if (c == '\n') {
             LOG(DEBUG) << "Found line feed. Converting hex to size_t: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
             crlf_counter_ = 0;
-            std::pair<bool, size_t> converted_size = utils::HexStrToSizeT_(std::string(buf_.data() + begin_idx_, ParseLen_() - 2));
+            std::pair<bool, size_t> converted_size = HexStrToSizeT(std::string(buf_.data() + begin_idx_, ParseLen_() - 2));
             if (!converted_size.first) {
                 LOG(DEBUG) << "Read invalid ChunkSize -> Bad Request...";
                 return PS_BAD_REQUEST;
@@ -478,10 +479,10 @@ void RequestBuilder::PrintParseBuf_() const
 
 
 // int main() {
-//     http::RequestBuilder req_builder;
-//     req_builder.buf().resize(1024);
-//     std::string raw_req = "GET /index.html HTTP/1.1\r\nKey: Value\r\nHost:localhost\r\nUser-Agent: curl/7.68.0\r\nAccept: */*\r\n\r\n";
-//     std::memcpy(req_builder.buf().data(), raw_req.data(), raw_req.size());
-//     req_builder.ParseNext();
-//     req_builder.rq().Print();
+//     std::string hex_str1 = "10000000";
+//     std::string hex_str2 = "FFFFFFFFFFFFFFFF";
+//     std::pair<bool, size_t> result1 = http::HexStrToSizeT_(hex_str1);
+//     std::pair<bool, size_t> result2 = http::HexStrToSizeT_(hex_str2);
+//     std::cout << "Result: " << result1.first << "; " << result1.second << std::endl;
+//     std::cout << "Result: " << result2.first << "; " << result2.second << std::endl;
 // }
