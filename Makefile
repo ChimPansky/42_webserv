@@ -35,7 +35,6 @@ FILENAMES = \
 	utils/logger.cpp \
 	utils/utils.cpp \
 	ClientSession.cpp \
-	Config.cpp \
 	Server.cpp \
 	ServerCluster.cpp
 
