@@ -52,8 +52,9 @@ TEST(ValidWithBody, 1_Bodylen_14_Buffer_50) {
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host"));
     EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length"));
-    EXPECT_EQ(14, builder.rq().body.content.size());
-    EXPECT_STREQ(BODY_14, builder.rq().body.content.data());
+    EXPECT_EQ((unsigned long)14, builder.rq().body.content.size());
+    const char* str = BODY_14;
+    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body.content);
 }
 
 TEST(ValidWithBody, 2_Chunked_1100_Buffer_10) {
@@ -67,7 +68,8 @@ TEST(ValidWithBody, 2_Chunked_1100_Buffer_10) {
     EXPECT_EQ("/upload", builder.rq().uri);
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
-    EXPECT_STREQ(BODY_1100, builder.rq().body.content.data());
+    const char* str = BODY_1100;
+    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body.content);
 }
 
 TEST(ValidWithBody, 3_Chunked_1100_Buffer_9) {
@@ -81,6 +83,8 @@ TEST(ValidWithBody, 3_Chunked_1100_Buffer_9) {
     EXPECT_EQ("/upload", builder.rq().uri);
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
+    const char* str = BODY_1100;
+    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body.content);
     EXPECT_STREQ(BODY_1100, builder.rq().body.content.data());
 }
 
@@ -96,8 +100,10 @@ TEST(ValidWithBody, 4_Bodylen_1_Buffer_50) {
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host"));
     EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length"));
-    EXPECT_EQ(1, builder.rq().body.content.size());
-    EXPECT_STREQ("a", builder.rq().body.content.data());
+    EXPECT_EQ((unsigned long)1, builder.rq().body.content.size());
+    const char *str = "a";
+    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body.content);
+    // builder.rq().Print();
 }
 
 TEST(ValidWithBody, 5_Chunked_1_Buffer_10) {
@@ -108,10 +114,13 @@ TEST(ValidWithBody, 5_Chunked_1_Buffer_10) {
     EXPECT_TRUE(builder.rq().rq_complete);
     EXPECT_FALSE(builder.rq().bad_request);
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-    EXPECT_EQ("/uploa", builder.rq().uri);
+    EXPECT_EQ("/upload", builder.rq().uri);
     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding"));
-    EXPECT_STREQ("L", builder.rq().body.content.data());
+    // EXPECT_STREQ("L", std:: builder.rq().body.content.data());
+    const char *str = "L";
+    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body.content);
+    // builder.rq().Print();
 }
 
 // Valid without body:
@@ -145,6 +154,56 @@ TEST(ValidWithoutBody, 7_GetWithQuery_Buffer_100) {
     EXPECT_EQ("", builder.rq().GetHeaderVal("content-length"));  // No body, no content-length
     EXPECT_TRUE(builder.rq().body.content.empty());
 }
+
+TEST(ValidWithoutBody, 8_GetWithHeaders_Buffer_100) {
+    http::RequestBuilder builder;
+    if (BuildRequest(builder, "requests/rq8.txt", 100) != 0) {
+        FAIL();
+    }
+    EXPECT_TRUE(builder.rq().rq_complete);
+    EXPECT_FALSE(builder.rq().bad_request);
+    EXPECT_EQ(http::HTTP_GET, builder.rq().method);
+    EXPECT_EQ("/products", builder.rq().uri);
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("shop.example.com", builder.rq().GetHeaderVal("host"));
+    EXPECT_EQ("application/json", builder.rq().GetHeaderVal("accept"));
+    EXPECT_EQ("CustomClient/1.0", builder.rq().GetHeaderVal("user-agent"));
+    EXPECT_TRUE(builder.rq().body.content.empty());
+}
+
+TEST(ValidWithoutBody, 9_PostWithHeaders_Buffer_80) {
+    http::RequestBuilder builder;
+    if (BuildRequest(builder, "requests/rq9.txt", 80) != 0) {
+        FAIL();
+    }
+    EXPECT_FALSE(builder.rq().rq_complete);
+    EXPECT_TRUE(builder.rq().bad_request);
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/submit", builder.rq().uri);
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host"));
+    EXPECT_EQ("application/x-www-form-urlencoded", builder.rq().GetHeaderVal("content-type"));
+    EXPECT_EQ("http://www.example.com", builder.rq().GetHeaderVal("referer"));
+    EXPECT_TRUE(builder.rq().body.content.empty());
+}
+
+TEST(ValidWithoutBody, 10_DeleteWithHeaders_Buffer_50) {
+    http::RequestBuilder builder;
+    if (BuildRequest(builder, "requests/rq10.txt", 50) != 0) {
+        FAIL();
+    }
+    EXPECT_TRUE(builder.rq().rq_complete);
+    EXPECT_FALSE(builder.rq().bad_request);
+    EXPECT_EQ(http::HTTP_DELETE, builder.rq().method);
+    EXPECT_EQ("/items/123", builder.rq().uri);
+    EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
+    EXPECT_EQ("api.items.com", builder.rq().GetHeaderVal("host"));
+    EXPECT_EQ("Bearer some_token", builder.rq().GetHeaderVal("authorization"));
+    EXPECT_TRUE(builder.rq().body.content.empty());
+}
+
+
+
 
 int main (int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

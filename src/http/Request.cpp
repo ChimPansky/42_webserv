@@ -27,6 +27,17 @@ std::string Request::GetHeaderVal(const std::string& key) const
     return "";
 }
 
+void Request::Body::Print() const {
+    LOG(DEBUG) << "---Body---";
+    LOG(DEBUG) << "Chunked: " << chunked;
+    LOG(DEBUG) << "Chunk size: " << chunk_size;
+    LOG(DEBUG) << "Content index: " << content_idx;
+    LOG(DEBUG) << "Remaining length: " << remaining_length;
+    LOG(DEBUG) << "Max body size: " << max_body_size;
+    LOG(DEBUG) << "Content size: " << content.size();
+    LOG(DEBUG) << "Content: " << content.data();
+    LOG(DEBUG) << "\n";
+}
 
 void Request::Print() const
 {
@@ -42,7 +53,7 @@ void Request::Print() const
          it != headers.end(); ++it) {
         LOG(DEBUG) << "|" << it->first << "|: |" << it->second << "|";
     }
+    body.Print();
     LOG(DEBUG) << "\n";
-    LOG(DEBUG) << "Body (TODO): ";
 }
 }  // namespace http

@@ -43,11 +43,12 @@ bool RequestBuilder::HasReachedEndOfBuffer() const
 
 size_t RequestBuilder::ParseNext(size_t bytes_read)
 {
+    // LOG(DEBUG) << "RequestBuilder::ParseNext: bytes_read: " << bytes_read;
     ++chunk_counter_;
     size_t iterations = 0;
     ////LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
     ////LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
-    if (bytes_read == 0 && ReadingBody_() && !rq_.body.Complete()) {
+    if (bytes_read == 0 && ReadingBody_() && !rq_.body.Complete() && !needs_info_from_server_) {
         //LOG(DEBUG) << "EOF reached while reading body and body is not complete -> bad_request";
         build_state_ = BS_BAD_REQUEST;
     }
@@ -87,20 +88,21 @@ size_t RequestBuilder::ParseNext(size_t bytes_read)
                 build_state_ = BuildHeaderValue_(c);
                 state_changed = (build_state_ != BS_HEADER_VALUE ? true : false);
                 break;
-            case BS_HEADERS_COMPLETE:
-                needs_info_from_server_ = true;
-                build_state_ = BS_CHECK_FOR_BODY;
-                return iterations;
             case BS_CHECK_FOR_BODY:
-                needs_info_from_server_ = false;
                 build_state_ = CheckForBody_();
                 state_changed = (build_state_ != BS_CHECK_FOR_BODY ? true : false);
+                if (ReadingBody_()) {
+                    needs_info_from_server_ = true;
+                    return iterations;
+                }
                 break;
             case BS_BODY_REGULAR:
+                needs_info_from_server_ = false;
                 build_state_ = BuildBodyRegular_();
                 state_changed = (build_state_ != BS_BODY_REGULAR ? true : false);
                 break;
             case BS_BODY_CHUNK_SIZE:
+                needs_info_from_server_ = false;
                 build_state_ = BuildBodyChunkSize_(c);
                 state_changed = (build_state_ != BS_BODY_CHUNK_SIZE ? true : false);
                 break;
@@ -130,7 +132,7 @@ size_t RequestBuilder::ParseNext(size_t bytes_read)
 
 bool RequestBuilder::IsReadyForResponse()
 {
-    ////LOG(DEBUG) << "RequestBuilder::IsReadyForResponse: EOF: " << eof_checker_.end_of_file_
+    //LOG(DEBUG) << "RequestBuilder::IsReadyForResponse: EOF: " << eof_checker_.end_of_file_
     //           << "Bad Request: " << rq_.bad_request_;
     return (rq_.rq_complete || build_state_ == BS_BAD_REQUEST /*body_complete()*/);
 }
@@ -141,7 +143,7 @@ size_t RequestBuilder::ParseLen_() const
 
 char RequestBuilder::GetNextChar_()
 {
-    if (build_state_ == BS_HEADERS_COMPLETE || build_state_ == BS_CHECK_FOR_BODY) {
+    if (build_state_ == BS_CHECK_FOR_BODY) {
         return ' ';
     }
     return buf_[end_idx_++];
@@ -209,7 +211,7 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_(char c)
 
 RequestBuilder::BuildState RequestBuilder::BuildVersion_(void)
 {
-    ////LOG(DEBUG) << "Parsing Version... ";
+    //LOG(DEBUG) << "Parsing Version. ParseLen: " << ParseLen_() << "; buf: " << std::string(buf_.data() + begin_idx_, ParseLen_());
     if (ParseLen_() == 10 && CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
         rq_.version = HTTP_0_9;
     }
@@ -251,7 +253,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForNextHeader_(char c)
         if (c == '\n') {
             //LOG(DEBUG) << "Found empty line -> End of Headers";
             crlf_counter_ = 0;
-            return BS_HEADERS_COMPLETE;
+            return BS_CHECK_FOR_BODY;
         }
         crlf_counter_ = 0;
         //LOG(DEBUG) << "Found random char after carriage return -> bad_request...";
@@ -306,7 +308,6 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderValue_(char c)
             //LOG(DEBUG) << "Request-Header value is invalid -> bad_request";
             return BS_BAD_REQUEST;
         }
-        buf_[end_idx_ - 1] = std::tolower(c);
     }
     if (crlf_counter_ == 1) {
         if (c == '\n') {
@@ -328,7 +329,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
 {
     //LOG(DEBUG) << "After Headers, checking if body is expected...";
     if (rq_.method == HTTP_GET || rq_.method == HTTP_DELETE) {
-        //LOG(DEBUG) << "No Body expected for GET/DELETE -> request complete";
+        // LOG(DEBUG) << "No Body expected for GET/DELETE -> request complete";
         return BS_END;
     }
     std::string content_length = rq_.GetHeaderVal("content-length");
@@ -351,7 +352,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
             rq_.body.content.resize(content_length_num.second);
         } else {
             //LOG(DEBUG) << "Content-lenght is non-numeric -> Bad Request";
-            return BS_BAD_REQUEST;;
+            return BS_BAD_REQUEST;
         }
         if (rq_.body.remaining_length != 0) {
             //LOG(DEBUG) << "Content-Length > 0 -> Go read body according to Content-Length";

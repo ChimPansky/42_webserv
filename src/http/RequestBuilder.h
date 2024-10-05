@@ -18,7 +18,6 @@ class RequestBuilder {
         BS_HEADER_KEY,
         BS_HEADER_KEY_VAL_SEP,
         BS_HEADER_VALUE,
-        BS_HEADERS_COMPLETE,
         BS_CHECK_FOR_BODY,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,

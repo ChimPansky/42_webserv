@@ -34,6 +34,7 @@ struct Request {
         size_t  max_body_size;
 
         bool Complete() const;
+        void Print() const;
     };
     Request();
 

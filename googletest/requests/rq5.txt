@@ -1,4 +1,4 @@
-POST /uploa HTTP/1.0
+POST /upload HTTP/1.0
 Transfer-Encoding: chunked
 
 1
