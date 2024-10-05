@@ -73,11 +73,11 @@ GTEST_DIR = $(HOME)/googletest/googletest/include
 GTEST_LIB_DIR = $(HOME)/googletest/build/lib
 
 tests: $(CONFIG_TEST)
-	$(CXX)	-I$(SOURCE_DIR) -I$(GTEST_DIR) -L$(GTEST_LIB_DIR) $^ -lgtest -lgtest_main -o runTests
-	./runTests
+	$(CXX)	-I$(SOURCE_DIR) -I$(GTEST_DIR) -L$(GTEST_LIB_DIR) $^ -lgtest -lgtest_main -o $(BUILD_DIR)/runTests
+	$(BUILD_DIR)/runTests
 
 clean:
-	rm -fr $(BUILD_DIR) runTests
+	rm -fr $(BUILD_DIR)
 
 fclean: clean
 	rm -f $(NAME)

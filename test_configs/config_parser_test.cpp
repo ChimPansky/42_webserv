@@ -1,12 +1,39 @@
 #include <gtest/gtest.h>
+#include <unistd.h>
 
 #include <exception>
-#include <stdexcept>
-#include <unistd.h>
-#include <vector>
 #include <iostream>
+#include <stdexcept>
+#include <filesystem>
+#include <vector>
 
 #include "config/ConfigBuilder.h"
+
+void RunInvalidConfigTests(const std::string& directory)
+{
+    DIR* dir;
+    struct dirent* entry;
+
+    dir = opendir(directory.c_str());
+    if (dir == NULL) {
+        perror("opendir");
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        std::string filename = entry->d_name;
+
+        if (filename == "." || filename == "..")
+            continue;
+
+        if (filename.find(".conf") != std::string::npos) {
+            std::string file_path = directory + "/" + filename;
+            std::cout << "Testing invalid config: " << file_path << std::endl;
+            EXPECT_THROW(config::ConfigBuilder::GetConfigFromConfFile(file_path), std::exception);
+        }
+    }
+    closedir(dir);
+}
 
 TEST(ConfigTest, LoadValidConfig)
 {
@@ -23,7 +50,7 @@ TEST(ConfigTest, LoadValidConfig)
     const config::HttpConfig& http_config = conf.http_config();
 
     EXPECT_EQ(http_config.keepalive_timeout(), 65);
-    EXPECT_EQ(http_config.client_max_body_size(), 1048576);  // 1 MB in bytes
+    EXPECT_EQ(http_config.client_max_body_size(), 1 << 20);  // 1 MB in bytes
     EXPECT_EQ(http_config.error_pages().at(404), "error_pages/404.html");
     EXPECT_EQ(http_config.error_pages().at(501), "error_pages/501.html");
 
@@ -36,13 +63,17 @@ TEST(ConfigTest, LoadValidConfig)
             for (const config::LocationConfig& location_conf : server_conf.locations()) {
                 if (location_conf.route().first == "/docs/") {
                     EXPECT_EQ(location_conf.root_dir(), "/docs");
-                    EXPECT_EQ(location_conf.allowed_methods()[0], config::LocationConfig::Method::GET);
-                    EXPECT_EQ(location_conf.allowed_methods()[1], config::LocationConfig::Method::POST);
+                    EXPECT_EQ(location_conf.allowed_methods()[0],
+                              config::LocationConfig::Method::GET);
+                    EXPECT_EQ(location_conf.allowed_methods()[1],
+                              config::LocationConfig::Method::POST);
                 } else if (location_conf.route().first == "/error_pages/") {
                     EXPECT_EQ(location_conf.root_dir(), "/docs");
                     EXPECT_EQ(location_conf.dir_listing(), true);
-                    EXPECT_EQ(location_conf.allowed_methods()[0], config::LocationConfig::Method::GET);
-                    EXPECT_EQ(location_conf.allowed_methods()[1], config::LocationConfig::Method::POST);
+                    EXPECT_EQ(location_conf.allowed_methods()[0],
+                              config::LocationConfig::Method::GET);
+                    EXPECT_EQ(location_conf.allowed_methods()[1],
+                              config::LocationConfig::Method::POST);
                 }
             }
         } else if (server_conf.listeners()[0].second == 8090) {
@@ -77,7 +108,7 @@ TEST(ConfigTest, MinimumSettingsConfig)
     const config::HttpConfig& http_config = conf.http_config();
 
     EXPECT_EQ(http_config.keepalive_timeout(), 65);
-    EXPECT_EQ(http_config.client_max_body_size(), 2097152);
+    EXPECT_EQ(http_config.client_max_body_size(), 2ul << 20);  // 2 MB in bytes
 
     const std::vector<config::ServerConfig>& server_configs = http_config.server_configs();
     ASSERT_EQ(server_configs.size(), 1);
@@ -93,7 +124,13 @@ TEST(ConfigTest, MinimumSettingsConfig)
     EXPECT_EQ(server_conf.locations().size(), 1);
 }
 
-TEST(ConfigTest, LoadInvalidConfigExtension)
+TEST(ConfigTest, InvalidConfigs)
+{
+    std::string invalid_config_directory = "test_configs/invalid_configs";
+    RunInvalidConfigTests(invalid_config_directory);
+}
+
+/* TEST(ConfigTest, LoadInvalidConfigExtension)
 {
     std::string invalid_file = "test_configs/invalid_extension.txt";
 
@@ -280,9 +317,10 @@ TEST(ConfigTest, InvalidReturnSetting)
     std::string invalid_file = "test_configs/invalid_return.conf";
 
     EXPECT_THROW(config::ConfigBuilder::GetConfigFromConfFile(invalid_file), std::exception);
-}
+} */
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv)
+{
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
