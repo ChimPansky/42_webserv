@@ -7,7 +7,6 @@
 namespace utils {
 
 std::string ToLowerCase(const std::string& input);
-std::pair<bool /* is_valid*/, size_t> HexStrToSizeT_(const std::string& hex_str);
 
 namespace detail {
 
