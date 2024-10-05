@@ -6,26 +6,25 @@
 
 #include "Request.h"
 
-class Server;
 namespace http {
 
 class RequestBuilder {
   private:
-    enum ParseState {
-        PS_METHOD,
-        PS_URI,
-        PS_VERSION,
-        PS_BETWEEN_HEADERS,
-        PS_HEADER_KEY,
-        PS_HEADER_KEY_VAL_SEP,
-        PS_HEADER_VALUE,
-        PS_HEADERS_COMPLETE,
-        PS_CHECK_FOR_BODY,
-        PS_BODY_REGULAR,
-        PS_BODY_CHUNK_SIZE,
-        PS_BODY_CHUNK_CONTENT,
-        PS_END,
-        PS_BAD_REQUEST
+    enum BuildState {
+        BS_METHOD,
+        BS_URI,
+        BS_VERSION,
+        BS_BETWEEN_HEADERS,
+        BS_HEADER_KEY,
+        BS_HEADER_KEY_VAL_SEP,
+        BS_HEADER_VALUE,
+        BS_HEADERS_COMPLETE,
+        BS_CHECK_FOR_BODY,
+        BS_BODY_REGULAR,
+        BS_BODY_CHUNK_SIZE,
+        BS_BODY_CHUNK_CONTENT,
+        BS_END,
+        BS_BAD_REQUEST
     };
 
   public:
@@ -45,36 +44,34 @@ class RequestBuilder {
     std::vector<char>   buf_;
     size_t  begin_idx_;
     size_t  end_idx_;
-    ParseState  parse_state_;
+    BuildState  build_state_;
     std::string header_key_;
     bool    needs_info_from_server_;
 
-    size_t  ParseLen_() const;
-    char    GetNextChar_(void);
-    void    NullTerminatorCheck_(char c);
-    int     CompareBuf_(const char*, size_t len) const;
-    void    UpdateBeginIdx_(void);
-    bool    ReadingBody_(void) const;
+    size_t      ParseLen_() const;
+    char        GetNextChar_(void);
+    void        NullTerminatorCheck_(char c);
+    int         CompareBuf_(const char*, size_t len) const;
+    void        UpdateBeginIdx_(void);
+    bool        ReadingBody_(void) const;
 
-    ParseState  ParseMethod_(char c);
-    ParseState  ParseUri_(char c);
-    ParseState  ParseVersion_(void);
-    ParseState  CheckForNextHeader_(char c);
-    ParseState  ParseHeaderKey_(char c);
-    ParseState  ParseHeaderKeyValSep_(char c);
-    ParseState  ParseHeaderValue_(char c);
-    ParseState  ParseEOF_(void);
-    ParseState  AfterHeadersRoutine_(void);
-    ParseState  CheckForBody_(void);
+    BuildState  BuildMethod_(void);
+    BuildState  BuildUri_(char c);
+    BuildState  BuildVersion_(void);
+    BuildState  CheckForNextHeader_(char c);
+    BuildState  BuildHeaderKey_(char c);
+    BuildState  ParseHeaderKeyValSep_(char c);
+    BuildState  BuildHeaderValue_(char c);
+    BuildState  CheckForBody_(void);
 
-    ParseState  ReadBodyRegular_(void);
-    ParseState  ReadBodyChunkSize_(char c);
+    BuildState  BuildBodyRegular_(void);
 
-    ParseState  ReadBodyChunkContent_(void);
+    BuildState  BuildBodyChunkSize_(char c);
+    BuildState  BuildBodyChunkContent_(void);
 
     bool        DoesBodyExceedMaxSize_() const;
 
-    void PrintParseBuf_() const;
+    void        PrintParseBuf_() const;
 };
 
 }  // namespace http

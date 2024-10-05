@@ -18,6 +18,7 @@ SOURCE_DIR = ../src
 BUILD_DIR = build
 
 IFLAGS = -I./$(SOURCE_DIR)
+MAKEFLAGS = j$(nproc)
 
 ##### TESTERS #####
 C_API_UTILS_TESTER = c_api_utils_tester
