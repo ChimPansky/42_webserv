@@ -33,6 +33,7 @@ class RequestBuilder {
         BS_HEADER_KEY_VAL_SEP,
         BS_HEADER_VALUE,
         BS_CHECK_FOR_BODY,
+        BS_BODY_REGULAR_CHECK_LENGTH,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,
         BS_BODY_CHUNK_CONTENT,
@@ -79,6 +80,7 @@ class RequestBuilder {
     BuildState BuildHeaderValue_(char c);
     BuildState CheckForBody_(void);
 
+    BuildState CheckBodyRegularLength_(void);
     BuildState BuildBodyRegular_(void);
 
     BuildState BuildBodyChunkSize_(char c);

@@ -24,7 +24,7 @@ static int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size
     while (!builder.IsReadyForResponse()) {
         bytes_read = 0;
         if (builder.needs_info_from_server()) {
-            //std::cout << "RequestBuilder needs info from server -> Get it and then continue building..." << std::endl;
+            std::cout << "RequestBuilder needs info from server -> Get it and then continue building..." << std::endl;
             // these settings should come from server:
             builder.set_max_body_size(10000);  // 1MB
         }
