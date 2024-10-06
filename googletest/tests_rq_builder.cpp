@@ -33,7 +33,7 @@ static int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size
             builder.buf().resize(builder.buf().size() - (read_size - bytes_read));
         }
         if (builder.ProcessBuffer(bytes_read) == 0) {
-            std::cerr << "ProcessBuffer returned 0..." << std::endl;
+            // std::cerr << "ProcessBuffer returned 0..." << std::endl;
             break;
         }
     }
