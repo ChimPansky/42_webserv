@@ -44,6 +44,7 @@ class RequestBuilder {
     size_t  begin_idx_;
     size_t  end_idx_;
     BuildState  build_state_;
+    bool    found_space_;
     std::string header_key_;
     bool    needs_info_from_server_;
 

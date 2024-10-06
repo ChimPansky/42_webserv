@@ -14,7 +14,7 @@
 namespace http {
 
 RequestBuilder::RequestBuilder()
-    : chunk_counter_(0), crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), needs_info_from_server_(false)
+    : chunk_counter_(0), crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), found_space_(false), needs_info_from_server_(false)
 {}
 const Request& RequestBuilder::rq() const
 {
@@ -119,7 +119,7 @@ size_t RequestBuilder::ParseNext(size_t bytes_read)
             UpdateBeginIdx_();
         }
     }
-    if (build_state_ == BS_BAD_REQUEST) {
+    if (build_state_ == BS_BAD_REQUEST || iterations == 0) {
         //LOG(DEBUG) << "After loop: BS_BAD_REQUEST -> bad_request!";
         rq_.bad_request = true;
     }
@@ -272,6 +272,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_(char c)
         } else {
             // ExtractSubstrLowerCase_(buf_, header_key_, begin_idx_, ParseLen_() - 1);
             header_key_ = std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
+            found_space_ = false;
             // TODO: check if header_key already exists in map (no duplicates allowed)
             return BS_HEADER_KEY_VAL_SEP;
         }
@@ -287,7 +288,12 @@ RequestBuilder::BuildState RequestBuilder::ParseHeaderKeyValSep_(char c)
 {
     //LOG(DEBUG) << "Parsing Header-Separator..." ;
     if (std::isspace(c)) {
+        found_space_ = true;
         return BS_HEADER_KEY_VAL_SEP;
+    }
+    if (!found_space_) {
+        //LOG(DEBUG) << "No space found after ':' -> bad_request";
+        return BS_BAD_REQUEST;
     }
     end_idx_--;
     return BS_HEADER_VALUE;
