@@ -24,9 +24,10 @@ FILENAMES = \
 	c_api/utils.cpp \
 	http/Request.cpp \
 	http/RequestBuilder.cpp \
+	http/utils.cpp \
 	utils/logger.cpp \
+	utils/utils.cpp \
 	ClientSession.cpp \
-	Config.cpp \
 	Server.cpp \
 	ServerCluster.cpp \
 	main.cpp
