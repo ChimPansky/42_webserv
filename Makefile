@@ -10,6 +10,7 @@ CXX = c++
 CXXFLAGS += -Wall -Werror -Wextra -Wpedantic -std=c++98
 CXXFLAGS += -g -Og
 # CXXFLAGS += -fsanitize=address,undefined,leak
+MAKEFLAGS = -j$(nproc)
 
 IFLAGS = -I./$(SOURCE_DIR)
 LDFLAGS =
