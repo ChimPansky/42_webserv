@@ -23,19 +23,7 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
 };
 
 struct Request {
-    struct Body {
-        Body();
 
-        bool    chunked;
-        size_t  chunk_size;
-        std::vector<char> content;
-        size_t  content_idx;
-        size_t  remaining_length;
-        size_t  max_body_size;
-
-        bool Complete() const;
-        void Print() const;
-    };
     Request();
 
     Method method;
@@ -44,7 +32,7 @@ struct Request {
     bool bad_request;
     bool rq_complete;
     std::map<std::string, std::string> headers;
-    Body body;
+    std::vector<char> body;
 
     void Print() const;
     std::string GetHeaderVal(const std::string& key) const;

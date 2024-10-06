@@ -14,8 +14,18 @@
 namespace http {
 
 RequestBuilder::RequestBuilder()
-    : chunk_counter_(0), crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), found_space_(false), needs_info_from_server_(false)
+    : crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), found_space_(false), needs_info_from_server_(false), body_builder_(&rq_.body)
 {}
+
+RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
+    : body(rq_body), chunked(false), chunk_size(0), idx(0), remaining_length(0), max_body_size(0)
+{}
+
+bool RequestBuilder::BodyBuilder::Complete() const
+{
+    return remaining_length == 0;
+}
+
 const Request& RequestBuilder::rq() const
 {
     return rq_;
@@ -28,7 +38,7 @@ bool RequestBuilder::needs_info_from_server() const
 
 void RequestBuilder::set_max_body_size(size_t max_body_size)
 {
-    rq_.body.max_body_size = max_body_size;
+    body_builder_.max_body_size = max_body_size;
 }
 
 std::vector<char>& RequestBuilder::buf()
@@ -41,19 +51,17 @@ bool RequestBuilder::HasReachedEndOfBuffer() const
     return end_idx_ == buf_.size();
 }
 
-size_t RequestBuilder::ParseNext(size_t bytes_read)
+size_t RequestBuilder::ProcessBuffer(size_t bytes_read)
 {
-    // LOG(DEBUG) << "RequestBuilder::ParseNext: bytes_read: " << bytes_read;
-    ++chunk_counter_;
-    size_t iterations = 0;
-    ////LOG(DEBUG) << "Parsing chunk no " << chunk_counter_;
+    // LOG(DEBUG) << "RequestBuilder::ProcessBuffer: bytes_read: " << bytes_read;
+    size_t chars_processed = 0;
     ////LOG(DEBUG) << "buf_.size(): " << buf_.size() << "; end_idx_: " << end_idx_;
-    if (bytes_read == 0 && ReadingBody_() && !rq_.body.Complete() && !needs_info_from_server_) {
+    if (bytes_read == 0 && ReadingBody_() && !body_builder_.Complete() && !needs_info_from_server_) {
         //LOG(DEBUG) << "EOF reached while reading body and body is not complete -> bad_request";
         build_state_ = BS_BAD_REQUEST;
     }
     while (!IsReadyForResponse() && (!HasReachedEndOfBuffer() || build_state_ == BS_CHECK_FOR_BODY) && build_state_ != BS_BAD_REQUEST) {
-        iterations++;
+        chars_processed++;
         //LOG(DEBUG) << "before getchar: ParseLen: " << ParseLen_() << "; begin_idx: " << begin_idx_ << "; end_idx: " << end_idx_ << "; buf.size(): " << buf_.size();
         char c = GetNextChar_();
         //LOG(DEBUG) << "after  getchar; ParseLen: " << ParseLen_() << "; begin_idx: " << begin_idx_ << "; end_idx: " << end_idx_ << "; buf.size(): " << buf_.size() << "; c: " << (int)c;
@@ -93,7 +101,7 @@ size_t RequestBuilder::ParseNext(size_t bytes_read)
                 state_changed = (build_state_ != BS_CHECK_FOR_BODY ? true : false);
                 if (ReadingBody_()) {
                     needs_info_from_server_ = true;
-                    return iterations;
+                    return chars_processed;
                 }
                 break;
             case BS_BODY_REGULAR:
@@ -119,15 +127,15 @@ size_t RequestBuilder::ParseNext(size_t bytes_read)
             UpdateBeginIdx_();
         }
     }
-    if (build_state_ == BS_BAD_REQUEST || iterations == 0) {
-        //LOG(DEBUG) << "After loop: BS_BAD_REQUEST -> bad_request!";
+    if (build_state_ == BS_BAD_REQUEST || chars_processed == 0) {
+        //LOG(DEBUG) << "After loop: BS_BAD_REQUEST OR no chars processed -> bad_request!";
         rq_.bad_request = true;
     }
     if (build_state_ == BS_END) {
         //LOG(DEBUG) << "After loop: BS_END -> rq_complete!";
         rq_.rq_complete = true;
     }
-    return iterations;
+    return chars_processed;
 }
 
 bool RequestBuilder::IsReadyForResponse()
@@ -346,7 +354,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
     }
     if (transfer_encoding == "chunked") {
         //LOG(DEBUG) << "Chunked Transfer-Encoding found -> Go read body as chunks";
-        rq_.body.chunked = true;
+        body_builder_.chunked = true;
         return BS_BODY_CHUNK_SIZE;
     }
     if (!content_length.empty()) {
@@ -354,13 +362,13 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
         //LOG(DEBUG) << "Content-Length found: " << content_length_num.second;
         if (content_length_num.first) {
             //LOG(DEBUG) << "Content-lenght is numeric";
-            rq_.body.remaining_length = content_length_num.second; // TODO: content-length limits?
-            rq_.body.content.resize(content_length_num.second);
+            body_builder_.remaining_length = content_length_num.second; // TODO: content-length limits?
+            body_builder_.body->resize(content_length_num.second);
         } else {
             //LOG(DEBUG) << "Content-lenght is non-numeric -> Bad Request";
             return BS_BAD_REQUEST;
         }
-        if (rq_.body.remaining_length != 0) {
+        if (body_builder_.remaining_length != 0) {
             //LOG(DEBUG) << "Content-Length > 0 -> Go read body according to Content-Length";
             return BS_BODY_REGULAR;
         }
@@ -376,17 +384,17 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_(void)
 {
     if (HasReachedEndOfBuffer()) {
-        size_t copy_size = std::min(buf_.size() - begin_idx_, rq_.body.remaining_length);
-        std::memcpy(rq_.body.content.data() + rq_.body.content_idx, buf_.data() + begin_idx_, copy_size);
-        rq_.body.content_idx += copy_size;
-        rq_.body.remaining_length -= copy_size;
+        size_t copy_size = std::min(buf_.size() - begin_idx_, body_builder_.remaining_length);
+        std::memcpy(body_builder_.body->data() + body_builder_.idx, buf_.data() + begin_idx_, copy_size);
+        body_builder_.idx += copy_size;
+        body_builder_.remaining_length -= copy_size;
         UpdateBeginIdx_();
-        //LOG(DEBUG) << "Copied " << copy_size << " bytes to body; body_idx: " << rq_.body.content_idx << "; remaining: " << rq_.body.remaining_length;
+        //LOG(DEBUG) << "Copied " << copy_size << " bytes to body; body_idx: " << rq_.body.idx << "; remaining: " << rq_.body.remaining_length;
         if (DoesBodyExceedMaxSize_()) {
             //LOG(DEBUG) << "Body size exceeds max_body_size -> Bad Request...";
             return BS_BAD_REQUEST;
         }
-        if (rq_.body.remaining_length == 0) {
+        if (body_builder_.remaining_length == 0) {
             //LOG(DEBUG) << "Body complete: " << rq_.body.content.data();
             //LOG(DEBUG) << "Body size: " << rq_.body.content.size();
             return BS_END;
@@ -416,9 +424,9 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_(char c)
                 //LOG(DEBUG) << "Read invalid ChunkSize -> Bad Request...";
                 return BS_BAD_REQUEST;
             }
-            rq_.body.chunk_size = converted_size.second; // TODO: check for chunk size limits
+            body_builder_.chunk_size = converted_size.second; // TODO: check for chunk size limits
             //LOG(DEBUG) << "Read ChunkSize: " << rq_.body.chunk_size;
-            if (rq_.body.chunk_size == 0) {
+            if (body_builder_.chunk_size == 0) {
                 //LOG(DEBUG) << "Read ChunkSize 0 -> Request complete!";
                 return BS_END;
             }
@@ -433,14 +441,14 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_(char c)
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_(void)
 {
     //LOG(DEBUG) << "Reading Body ChunkContent...";
-    if (ParseLen_() + rq_.body.content.size() > rq_.body.max_body_size) {
+    if (ParseLen_() + body_builder_.body->size() > body_builder_.max_body_size) {
         //LOG(DEBUG) << "Body size exceeds max_body_size -> Bad Request...";
         return BS_BAD_REQUEST;
     }
-    if (ParseLen_() == rq_.body.chunk_size) {
-        size_t old_sz = rq_.body.content.size();
-        rq_.body.content.resize(old_sz + rq_.body.chunk_size);
-        std::memcpy(rq_.body.content.data() + old_sz, buf_.data() + begin_idx_, rq_.body.chunk_size);
+    if (ParseLen_() == body_builder_.chunk_size) {
+        size_t old_sz = body_builder_.body->size();
+        body_builder_.body->resize(old_sz + body_builder_.chunk_size);
+        std::memcpy(body_builder_.body->data() + old_sz, buf_.data() + begin_idx_, body_builder_.chunk_size);
         //LOG(DEBUG) << "Copied " << rq_.body.chunk_size << " bytes to body; body_size: " << rq_.body.content.size();
         if (DoesBodyExceedMaxSize_()) {
             //LOG(DEBUG) << "Body size exceeds max_body_size -> Bad Request...";
@@ -448,14 +456,14 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_(void)
         }
         return BS_BODY_CHUNK_CONTENT;
     }
-    if (ParseLen_() == rq_.body.chunk_size + 1) {
+    if (ParseLen_() == body_builder_.chunk_size + 1) {
         if (buf_[end_idx_ - 1] != '\r') {
             //LOG(DEBUG) << "Expected CR after chunk content -> Bad Request...";
             return BS_BAD_REQUEST;
         }
         return BS_BODY_CHUNK_CONTENT;
     }
-    if (ParseLen_() == rq_.body.chunk_size + 2) {
+    if (ParseLen_() == body_builder_.chunk_size + 2) {
         if (buf_[end_idx_ - 1] != '\n') {
             //LOG(DEBUG) << "Expected LF after CR after chunk content -> Bad Request...";
             return BS_BAD_REQUEST;
@@ -468,7 +476,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_(void)
 
 bool RequestBuilder::DoesBodyExceedMaxSize_() const {
     //LOG(DEBUG) << "BODYSIZE? size: " << rq_.body.content.size() << "; max: " << rq_.body.max_body_size;
-    return rq_.body.content.size() > rq_.body.max_body_size;
+    return body_builder_.body->size() > body_builder_.max_body_size;
 }
 
 void RequestBuilder::PrintParseBuf_() const

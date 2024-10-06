@@ -9,15 +9,6 @@ Request::Request()
     : method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), bad_request(false), rq_complete(false)
 {}
 
-Request::Body::Body()
-    : chunked(false), chunk_size(0), content_idx(0), remaining_length(0), max_body_size(0)
-{}
-
-bool Request::Body::Complete() const
-{
-    return remaining_length == 0;
-}
-
 std::string Request::GetHeaderVal(const std::string& key) const
 {
     std::map<std::string, std::string>::const_iterator it = headers.find(utils::ToLowerCase(key));
@@ -26,19 +17,6 @@ std::string Request::GetHeaderVal(const std::string& key) const
     }
     return "";
 }
-
-void Request::Body::Print() const {
-    LOG(DEBUG) << "---Body---";
-    LOG(DEBUG) << "Chunked: " << chunked;
-    LOG(DEBUG) << "Chunk size: " << chunk_size;
-    LOG(DEBUG) << "Content index: " << content_idx;
-    LOG(DEBUG) << "Remaining length: " << remaining_length;
-    LOG(DEBUG) << "Max body size: " << max_body_size;
-    LOG(DEBUG) << "Content size: " << content.size();
-    LOG(DEBUG) << "Content: " << content.data();
-    LOG(DEBUG) << "\n";
-}
-
 void Request::Print() const
 {
     LOG(DEBUG) << "---Request---";
@@ -53,7 +31,8 @@ void Request::Print() const
          it != headers.end(); ++it) {
         LOG(DEBUG) << "|" << it->first << "|: |" << it->second << "|";
     }
-    body.Print();
+    LOG(DEBUG) << "Body size: " << body.size();
+    LOG(DEBUG) << "Body: " << body.data();
     LOG(DEBUG) << "\n";
 }
 }  // namespace http
