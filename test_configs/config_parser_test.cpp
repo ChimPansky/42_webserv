@@ -9,15 +9,25 @@
 
 #include "config/ConfigBuilder.h"
 
-void RunInvalidConfigTests(const std::string& directory)
+class ConfigInvalidTest : public ::testing::TestWithParam<std::string> {};
+
+TEST_P(ConfigInvalidTest, InvalidConfigShouldThrow)
 {
+    std::string file_path = GetParam();
+    std::cout << "Testing invalid config: " << file_path << std::endl;
+    EXPECT_THROW(config::ConfigBuilder::GetConfigFromConfFile(file_path), std::exception);
+}
+
+std::vector<std::string> GetInvalidConfigFiles(const std::string& directory)
+{
+    std::vector<std::string> file_paths;
     DIR* dir;
     struct dirent* entry;
 
     dir = opendir(directory.c_str());
     if (dir == NULL) {
         perror("opendir");
-        return;
+        return file_paths;
     }
 
     while ((entry = readdir(dir)) != NULL) {
@@ -27,13 +37,18 @@ void RunInvalidConfigTests(const std::string& directory)
             continue;
 
         if (filename.find(".conf") != std::string::npos) {
-            std::string file_path = directory + "/" + filename;
-            std::cout << "Testing invalid config: " << file_path << std::endl;
-            EXPECT_THROW(config::ConfigBuilder::GetConfigFromConfFile(file_path), std::exception);
+            file_paths.push_back(directory + "/" + filename);
         }
     }
     closedir(dir);
+    return file_paths;
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    InvalidConfigTests,
+    ConfigInvalidTest,
+    ::testing::ValuesIn(GetInvalidConfigFiles("test_configs/invalid_configs"))
+);
 
 TEST(ConfigTest, LoadValidConfig)
 {
@@ -122,12 +137,6 @@ TEST(ConfigTest, MinimumSettingsConfig)
     EXPECT_EQ(server_conf.error_log_path(), "");
 
     EXPECT_EQ(server_conf.locations().size(), 1);
-}
-
-TEST(ConfigTest, InvalidConfigs)
-{
-    std::string invalid_config_directory = "test_configs/invalid_configs";
-    RunInvalidConfigTests(invalid_config_directory);
 }
 
 /* TEST(ConfigTest, LoadInvalidConfigExtension)
