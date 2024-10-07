@@ -6,8 +6,7 @@
 
 #include "c_api/ClientSocket.h"
 #include "c_api/multiplexers/ICallback.h"
-#include "http/Request.h"
-#include "http/Response.h"
+#include "http/RequestBuilder.h"
 #include "utils/unique_ptr.h"
 
 class ClientSession {
@@ -45,8 +44,8 @@ class ClientSession {
     int master_socket_fd_;  // to choose correct server later
     std::vector<char> buf_;  // string?
     size_t buf_send_idx_;
+    http::RequestBuilder rq_builder_;
     http::Request rq_;
-    http::Response rs_;
     bool connection_closed_;
 };
 

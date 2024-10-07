@@ -51,8 +51,8 @@ Connection: Closed\n\r\
 void ClientSession::PrepareResponse()
 {
     buf_send_idx_ = 0;
-    buf_.resize(sizeof(HTTP_RESPONSE));
-    std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
+    buf_.resize(rq_builder_.buf().size());
+    std::memcpy(buf_.data(), rq_builder_.buf().data(), rq_builder_.buf().size());
 }
 
 ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
@@ -60,26 +60,32 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
-    // assert fd == client_sock.fd
-    long bytes_recvd = client_.client_sock_->Recv(client_.buf_);
-    if (bytes_recvd <= 0) {
-        LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
-        client_.CloseConnection();
-        return;
+    LOG(DEBUG) << "clientreadcallback::Call";
+    size_t bytes_read = 0;
+    if (client_.rq_builder_.needs_info_from_server()) {
+        client_.rq_builder_.set_max_body_size(1000);
     }
-    LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
-               << client_.client_sock_->sockfd();
-    if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
-        c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(),
-                                                           c_api::CT_READ);
-        if (c_api::EventManager::get().RegisterCallback(
-            client_.client_sock_->sockfd(), c_api::CT_WRITE,
+    if (client_.rq_builder_.HasReachedEndOfBuffer()) {
+        client_.rq_builder_.buf().resize(client_.rq_builder_.buf().size() + 1024);
+        bytes_read = client_.client_sock_->Recv(client_.rq_builder_.buf());
+        if (bytes_read <= 0) {
+            LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
+            client_.CloseConnection();
+            return;
+        }
+    }
+    LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_read << " bytes recvd from " << client_.client_sock_->sockfd();
+    if (client_.rq_builder_.ProcessBuffer(bytes_read) == 0 || client_.rq_builder_.IsReadyForResponse()) {
+        // delete readcallback...
+        c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(), c_api::CT_READ);
+        // create writecallback
+        if (c_api::EventManager::get().RegisterCallback(client_.client_sock_->sockfd(), c_api::CT_WRITE,
             utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
                 LOG(ERROR) << "Could not register write callback for client: "
                     << client_.client_sock_->sockfd();
                 client_.CloseConnection();
                 return ;
-            }
+        }
         client_.PrepareResponse();
     }
 }
