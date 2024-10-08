@@ -10,6 +10,8 @@
 
 namespace utils {
 
+std::string ToLowerCase(const std::string& input);
+
 namespace fs {
 
 std::vector<std::string> SplitLine(const std::string& line);
@@ -75,7 +77,6 @@ std::pair<bool /*is_valid*/, NumType> StrToNumericNoThrow(const std::string& str
 }  // namespace utils
 
 #endif  // WS_UTILS_UTILS_H
-
 // #include <iostream>
 
 // template <typename NumType>
