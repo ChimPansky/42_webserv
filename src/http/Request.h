@@ -21,16 +21,22 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
     HTTP_2,
     HTTP_3
 };
+enum RqStatus {
+    RQ_INCOMPLETE,
+    RQ_BAD,
+    RQ_GOOD
+};
 
 struct Request {
 
     Request();
 
+    RqStatus status;
     Method method;
     std::string uri;  // todo: change to struct/class
     Version version;
-    bool bad_request;
-    bool rq_complete;
+    // bool bad_request;
+    // bool rq_complete;
     std::map<std::string, std::string> headers;
     std::vector<char> body;
 

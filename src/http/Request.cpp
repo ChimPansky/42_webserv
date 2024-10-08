@@ -6,7 +6,7 @@
 namespace http {
 
 Request::Request()
-    : method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), bad_request(false), rq_complete(false)
+    : status(RQ_INCOMPLETE), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
 {}
 
 std::string Request::GetHeaderVal(const std::string& key) const
@@ -20,11 +20,10 @@ std::string Request::GetHeaderVal(const std::string& key) const
 void Request::Print() const
 {
     LOG(DEBUG) << "---Request---";
+    LOG(DEBUG) << "Status: " << status;
     LOG(DEBUG) << "Method: " << method;
     LOG(DEBUG) << "URI: " << uri;
     LOG(DEBUG) << "Version: " << version;
-    LOG(DEBUG) << "Bad Request: " << bad_request;
-    LOG(DEBUG) << "Request complete: " << rq_complete;
     LOG(DEBUG) << "\n";
     LOG(DEBUG) << "~Headers~";
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();

@@ -2,7 +2,6 @@
 
 #include <cctype>
 #include <cstring>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -127,17 +126,18 @@ size_t RequestBuilder::ProcessBuffer(size_t bytes_read)
         }
     }
     if (build_state_ == BS_BAD_REQUEST || chars_processed == 0) {
-        rq_.bad_request = true;
+        rq_.status = RQ_BAD;
     }
     if (build_state_ == BS_END) {
-        rq_.rq_complete = true;
+        rq_.status = RQ_GOOD;
     }
     return chars_processed;
 }
 
 bool RequestBuilder::IsReadyForResponse()
 {
-    return (rq_.rq_complete || build_state_ == BS_BAD_REQUEST /*body_complete()*/);
+    // return (rq_.rq_complete || build_state_ == BS_BAD_REQUEST /*body_complete()*/);
+    return (rq_.status != RQ_INCOMPLETE);
 }
 size_t RequestBuilder::ParseLen_() const
 {
