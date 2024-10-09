@@ -1,7 +1,7 @@
 #include "Request.h"
 
-#include "utils/logger.h"
-#include "utils/utils.h"
+#include "../utils/logger.h"
+#include "../utils/utils.h"
 
 namespace http {
 
@@ -20,7 +20,7 @@ std::string Request::GetHeaderVal(const std::string& key) const
 void Request::Print() const
 {
     LOG(DEBUG) << "---Request---";
-    LOG(DEBUG) << "Status: " << status;
+    LOG(DEBUG) << "Status: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"));
     LOG(DEBUG) << "Method: " << method;
     LOG(DEBUG) << "URI: " << uri;
     LOG(DEBUG) << "Version: " << version;

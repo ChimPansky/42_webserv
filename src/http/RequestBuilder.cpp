@@ -36,6 +36,7 @@ RqBuilderStatus RequestBuilder::builder_status() const {
 
 void RequestBuilder::ApplyServerInfo(size_t max_body_size)
 {
+    LOG(DEBUG) << "ApplyServerInfo()";
     body_builder_.max_body_size = max_body_size;
     if (HasReachedEndOfBuffer_()) {
         builder_status_ = http::RB_NEED_MORE_BYTES;
@@ -63,7 +64,7 @@ bool RequestBuilder::HasReachedEndOfBuffer_(void) const
 bool RequestBuilder::IsBodyReadingState_(BuildState state) const
 {
     return (state == BS_BODY_REGULAR || state == BS_BODY_CHUNK_SIZE
-        || state == BS_BODY_CHUNK_CONTENT);
+        || state == BS_BODY_CHUNK_CONTENT || state == BS_CHECK_BODY_REGULAR_LENGTH);
 }
 
 bool RequestBuilder::IsProcessingState_(BuildState state) const
@@ -94,6 +95,7 @@ bool RequestBuilder::LoopCondition_(void) {
 
 void RequestBuilder::Build(size_t bytes_read)
 {
+    LOG(DEBUG) << "RequestBuilder::Build(" << bytes_read << ")";
     if (HasReachedEndOfBuffer_() && bytes_read == 0) {
         build_state_ = BS_BAD_REQUEST;
         return ;
@@ -140,6 +142,7 @@ void RequestBuilder::Build(size_t bytes_read)
                 build_state_ = CheckForBody_();
                 state_changed = (build_state_ != BS_CHECK_FOR_BODY ? true : false);
                 if (IsBodyReadingState_(build_state_)) {
+                    LOG(DEBUG) << "builder_status has been set to RB_NEED_INFO_FROM_SERVER";
                     builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
                     return;
                 }
@@ -359,12 +362,9 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
         std::pair<bool, size_t> content_length_num = utils::StrToNumericNoThrow<size_t>(content_length);
         if (content_length_num.first) {
             body_builder_.remaining_length = content_length_num.second; // TODO: content-length limits?
-            body_builder_.body->resize(content_length_num.second);
+            return BS_CHECK_BODY_REGULAR_LENGTH;
         } else {
             return BS_BAD_REQUEST;
-        }
-        if (body_builder_.remaining_length != 0) {
-            return BS_BODY_REGULAR;
         }
     }
     if (rq_.method == HTTP_POST) {
@@ -378,6 +378,7 @@ RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_(void) {
     if (body_builder_.remaining_length > body_builder_.max_body_size) {
         return BS_BAD_REQUEST;
     }
+    body_builder_.body->resize(body_builder_.remaining_length);
     return BS_BODY_REGULAR;
 }
 
@@ -415,10 +416,14 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_(char c)
         if (c == '\n') {
             crlf_counter_ = 0;
             std::pair<bool, size_t> converted_size = HexStrToSizeT(std::string(buf_.data() + begin_idx_, ParseLen_() - 2));
+            LOG(DEBUG) << "Converting chunk size: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
             if (!converted_size.first) {
+                LOG(DEBUG) << "Bad Chunk size";
                 return BS_BAD_REQUEST;
             }
+            LOG(DEBUG) << "Good Chunk size: " << converted_size.second;
             body_builder_.chunk_size = converted_size.second; // TODO: check for chunk size limits
+            LOG(DEBUG) << "rq_.body.size(): " << rq_.body.size() << "; body_builder_.chunk_size: " << body_builder_.chunk_size << "; body_builder_.max_body_size: " << body_builder_.max_body_size;
             if (rq_.body.size() + body_builder_.chunk_size > body_builder_.max_body_size) {
                 return BS_BAD_REQUEST;
             }
