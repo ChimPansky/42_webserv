@@ -17,8 +17,8 @@ enum RqBuilderStatus {
 };
 
 class RequestBuilder {
-    class   BodyBuilder {
-      public:
+  private:
+    struct   BodyBuilder {
         BodyBuilder(std::vector<char> *rq_body);
 
         std::vector<char> *body;
