@@ -9,6 +9,8 @@
 #include "http/RequestBuilder.h"
 #include "utils/unique_ptr.h"
 
+#define CLIENT_RD_CALLBACK_BUF_SZ 20
+
 class ClientSession {
   private:
     ClientSession(const ClientSession&);
@@ -20,6 +22,7 @@ class ClientSession {
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
+    void ProcessNewData(size_t bytes_recvd);
     void CloseConnection();
     void PrepareResponse(); // later: get this from server
     class ClientReadCallback : public c_api::ICallback {
@@ -47,6 +50,8 @@ class ClientSession {
     http::RequestBuilder rq_builder_;
     http::Request rq_;
     bool connection_closed_;
+
+    Server* virtual_server;
 };
 
 #endif  // WS_CLIENT_H

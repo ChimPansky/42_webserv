@@ -2,6 +2,7 @@
 
 #include "c_api/EventManager.h"
 #include "c_api/multiplexers/ICallback.h"
+#include "http/RequestBuilder.h"
 #include "utils/logger.h"
 #include "utils/unique_ptr.h"
 
@@ -61,32 +62,35 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     LOG(DEBUG) << "clientreadcallback::Call";
-    size_t bytes_read = 0;
-    if (client_.rq_builder_.needs_info_from_server()) {
-        client_.rq_builder_.set_max_body_size(1000);
+
+    size_t bytes_recvd = client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_BUF_SZ);
+    if (bytes_recvd < 0) {
+        LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
+        client_.CloseConnection();
+        return;
     }
-    if (client_.rq_builder_.HasReachedEndOfBuffer()) {
-        client_.rq_builder_.buf().resize(client_.rq_builder_.buf().size() + 1024);
-        bytes_read = client_.client_sock_->Recv(client_.rq_builder_.buf());
-        if (bytes_read <= 0) {
-            LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
-            client_.CloseConnection();
-            return;
+    client_.ProcessNewData(bytes_recvd);
+}
+
+void ClientSession::ProcessNewData(size_t bytes_recvd) {
+    rq_builder_.Build(bytes_recvd);
+    while (rq_builder_.builder_status() == http::RB_BUILDING) {
+        rq_builder_.Build(bytes_recvd);
+        if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {// get max_body_size (and maybe pointer to virtual server) from server...
+            rq_builder_.ApplyServerInfo(1000);
+            virtual_server = NULL; // set this with pointer to server later...
         }
     }
-    LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_read << " bytes recvd from " << client_.client_sock_->sockfd();
-    if (client_.rq_builder_.ProcessBuffer(bytes_read) == 0 || client_.rq_builder_.IsReadyForResponse()) {
-        // delete readcallback...
-        c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(), c_api::CT_READ);
-        // create writecallback
-        if (c_api::EventManager::get().RegisterCallback(client_.client_sock_->sockfd(), c_api::CT_WRITE,
-            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
+    if (rq_builder_.builder_status() == http::RB_DONE) {
+        c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READ);
+        if (c_api::EventManager::get().RegisterCallback(client_sock_->sockfd(), c_api::CT_WRITE,
+            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this))) != 0) {
                 LOG(ERROR) << "Could not register write callback for client: "
-                    << client_.client_sock_->sockfd();
-                client_.CloseConnection();
+                    << client_sock_->sockfd();
+                CloseConnection();
                 return ;
         }
-        client_.PrepareResponse();
+        PrepareResponse();
     }
 }
 

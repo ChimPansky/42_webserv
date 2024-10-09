@@ -6,7 +6,15 @@
 
 #include "Request.h"
 
+class Server;
 namespace http {
+
+enum RqBuilderStatus {
+    RB_BUILDING,
+    RB_NEED_MORE_BYTES,
+    RB_NEED_INFO_FROM_SERVER,
+    RB_DONE
+};
 
 class RequestBuilder {
     class   BodyBuilder {
@@ -33,7 +41,7 @@ class RequestBuilder {
         BS_HEADER_KEY_VAL_SEP,
         BS_HEADER_VALUE,
         BS_CHECK_FOR_BODY,
-        BS_BODY_REGULAR_CHECK_LENGTH,
+        BS_CHECK_BODY_REGULAR_LENGTH,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,
         BS_BODY_CHUNK_CONTENT,
@@ -43,16 +51,18 @@ class RequestBuilder {
 
   public:
     RequestBuilder();
-    bool HasReachedEndOfBuffer() const;
-    size_t ProcessBuffer(size_t bytes_read);
+    void Build(size_t bytes_read);
     bool IsReadyForResponse();
-    bool needs_info_from_server() const;
-    void set_max_body_size(size_t max_body_size);
-    const Request& rq() const;
+    void ApplyServerInfo(size_t max_body_size);
     std::vector<char>& buf();
+
+    // Getters:
+    RqBuilderStatus builder_status() const;
+    const Request& rq() const;
 
   private:
     Request rq_;
+    RqBuilderStatus builder_status_;
     size_t crlf_counter_;
     std::vector<char> buf_;
     size_t begin_idx_;
@@ -65,11 +75,16 @@ class RequestBuilder {
 
 
     size_t ParseLen_() const;
-    char GetNextChar_(void);
     void NullTerminatorCheck_(char c);
     int CompareBuf_(const char*, size_t len) const;
     void UpdateBeginIdx_(void);
-    bool ReadingBody_(void) const;
+
+    bool LoopCondition_(void);
+
+    bool HasReachedEndOfBuffer_(void) const;
+
+    bool IsBodyReadingState_(BuildState state) const;
+    bool IsProcessingState_(BuildState state) const;
 
     BuildState BuildMethod_(void);
     BuildState BuildUri_(char c);
