@@ -79,7 +79,7 @@ void RequestBuilder::NullTerminatorCheck_(char c)
     }
 }
 
-bool RequestBuilder::LoopCondition_(void) {
+bool RequestBuilder::CanBuild_(void) {
     if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
         return false;
     }
@@ -96,12 +96,15 @@ bool RequestBuilder::LoopCondition_(void) {
 void RequestBuilder::Build(size_t bytes_read)
 {
     LOG(DEBUG) << "RequestBuilder::Build(" << bytes_read << ")";
+    LOG(DEBUG) << "end_idx_: " << end_idx_ << "; buf_.size(): " << buf_.size();
     if (HasReachedEndOfBuffer_() && bytes_read == 0) {
-        build_state_ = BS_BAD_REQUEST;
+        LOG(DEBUG) << "End of buffer && 0 bytes_read --> bad request";
+        rq_.status = RQ_BAD;
+        builder_status_ = RB_DONE;
         return ;
     }
 
-    while (LoopCondition_()) {
+    while (CanBuild_()) {
         // !IsReadyForResponse() && (!HasReachedEndOfBuffer_() || build_state_ == BS_CHECK_FOR_BODY) && build_state_ != BS_BAD_REQUEST) {
         char c = ' ';
         if (IsProcessingState_(build_state_) && !HasReachedEndOfBuffer_()) {
@@ -187,8 +190,6 @@ size_t RequestBuilder::ParseLen_() const
 {
     return end_idx_ - begin_idx_;
 }
-
-
 
 int RequestBuilder::CompareBuf_(const char* str, size_t len) const
 {

@@ -18,6 +18,7 @@ size_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz) {
     if (bytes_recvd >= 0 && static_cast<size_t>(bytes_recvd) < read_sz) {
         buf.resize(old_buf_sz + bytes_recvd);
     }
+    std::cout << "bytes_recvd: " << bytes_recvd << std::endl;
     return bytes_recvd;
 }
 
@@ -55,7 +56,7 @@ int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read
 }
 
 TEST(ValidWithBody, 1_Bodylen_14_Buffer_50) {
-    std::cout << "Test1" << std::endl;
+    std::cout << "TEST1" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq1.txt", 50) != 0) {
         FAIL();
@@ -72,7 +73,7 @@ TEST(ValidWithBody, 1_Bodylen_14_Buffer_50) {
 }
 
 TEST(ValidWithBody, 2_One_Chunk_1100_Buffer_10) {
-    std::cout << "Test2" << std::endl;
+    std::cout << "TEST2" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq2.txt", 10) != 0) {
         FAIL();
@@ -88,7 +89,7 @@ TEST(ValidWithBody, 2_One_Chunk_1100_Buffer_10) {
 }
 
 TEST(ValidWithBody, 3_One_Chunk_1100_Buffer_9) {
-    std::cout << "Test3" << std::endl;
+    std::cout << "TEST3" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq2.txt", 9) != 0) {
         FAIL();
@@ -104,6 +105,7 @@ TEST(ValidWithBody, 3_One_Chunk_1100_Buffer_9) {
 }
 
 TEST(ValidWithBody, 4_Bodylen_1_Buffer_50) {
+    std::cout << "TEST4" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq4.txt", 50) != 0) {
         FAIL();
@@ -120,6 +122,7 @@ TEST(ValidWithBody, 4_Bodylen_1_Buffer_50) {
 }
 
 TEST(ValidWithBody, 5_Chunked_1_Buffer_10) {
+    std::cout << "TEST5" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq5.txt", 50) != 0) {
         FAIL();
@@ -135,6 +138,7 @@ TEST(ValidWithBody, 5_Chunked_1_Buffer_10) {
 
 // Valid without body:
 TEST(ValidWithoutBody, 6_SimpleGet_Buffer_50) {
+    std::cout << "TEST6" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq6.txt", 50) != 0) {
         FAIL();
@@ -150,6 +154,7 @@ TEST(ValidWithoutBody, 6_SimpleGet_Buffer_50) {
 
 
 TEST(ValidWithoutBody, 7_GetWithQuery_Buffer_100) {
+    std::cout << "TEST7" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq7.txt", 100) != 0) {
         FAIL();
@@ -164,6 +169,7 @@ TEST(ValidWithoutBody, 7_GetWithQuery_Buffer_100) {
 }
 
 TEST(ValidWithoutBody, 8_GetWithHeaders_Buffer_100) {
+    std::cout << "TEST8" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq8.txt", 100) != 0) {
         FAIL();
@@ -179,6 +185,7 @@ TEST(ValidWithoutBody, 8_GetWithHeaders_Buffer_100) {
 }
 
 TEST(InValidWithoutBody, 9_PostWithHeaders_Buffer_80) {
+    std::cout << "TEST9" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq9.txt", 80) != 0) {
         FAIL();
@@ -194,6 +201,7 @@ TEST(InValidWithoutBody, 9_PostWithHeaders_Buffer_80) {
 }
 
 TEST(ValidWithoutBody, 10_DeleteWithHeaders_Buffer_50) {
+    std::cout << "TEST10" << std::endl;
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq10.txt", 50) != 0) {
         FAIL();
@@ -207,17 +215,18 @@ TEST(ValidWithoutBody, 10_DeleteWithHeaders_Buffer_50) {
     ASSERT_EQ(http::RQ_GOOD, builder.rq().status);
 }
 
-// TEST(InValidWithoutBody, 11_Incomplete_Method_Buffer_7) {
-//     std::cout << "TEST 11" << std::endl;
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "requests/rq11.txt", 7) != 0) {
-//         FAIL();
-//     }
-//     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
-// }
+TEST(InValidWithoutBody, 11_Incomplete_Method_Buffer_7) {
+    std::cout << "TEST 11" << std::endl;
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "requests/rq11.txt", 7) != 0) {
+        FAIL();
+    }
+    ASSERT_EQ(http::RQ_BAD, builder.rq().status);
+}
 
 TEST(InValidWithoutBody, 12_Too_Many_Spaces_Buffer_7) {
-     http::RequestBuilder builder = http::RequestBuilder();
+    std::cout << "TEST12" << std::endl;
+    http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq12.txt", 7) != 0) {
         FAIL();
     }
@@ -226,6 +235,7 @@ TEST(InValidWithoutBody, 12_Too_Many_Spaces_Buffer_7) {
 }
 
 TEST(InValidWithoutBody, 13_No_URI_Buffer_10) {
+    std::cout << "TEST13" << std::endl;
      http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "requests/rq13.txt", 10) != 0) {
         FAIL();

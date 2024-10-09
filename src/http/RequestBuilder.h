@@ -73,13 +73,12 @@ class RequestBuilder {
     bool needs_info_from_server_;
     BodyBuilder body_builder_;
 
-
     size_t ParseLen_() const;
     void NullTerminatorCheck_(char c);
     int CompareBuf_(const char*, size_t len) const;
     void UpdateBeginIdx_(void);
 
-    bool LoopCondition_(void);
+    bool CanBuild_(void);
 
     bool HasReachedEndOfBuffer_(void) const;
 
@@ -100,8 +99,6 @@ class RequestBuilder {
 
     BuildState BuildBodyChunkSize_(char c);
     BuildState BuildBodyChunkContent_(void);
-
-    bool DoesBodyExceedMaxSize_() const;
 
     void PrintParseBuf_() const;
 };
