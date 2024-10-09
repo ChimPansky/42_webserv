@@ -1,7 +1,6 @@
 #ifndef WS_HTTP_REQUEST_H
 #define WS_HTTP_REQUEST_H
 
-#include <cstddef>
 #include <map>
 #include <string>
 #include <vector>
@@ -27,21 +26,33 @@ enum RqStatus {
     RQ_GOOD
 };
 
-struct Request {
-
+class RequestBuilder;
+class Request {
+  public:
     Request();
 
-    RqStatus status;
-    Method method;
-    std::string uri;  // todo: change to struct/class
-    Version version;
+  private:
+    RqStatus status_;
+    Method method_;
+    std::string uri_;  // todo: change to struct/class
+    Version version_;
     // bool bad_request;
     // bool rq_complete;
-    std::map<std::string, std::string> headers;
-    std::vector<char> body;
+    std::map<std::string, std::string> headers_;
+    std::vector<char> body_;
 
-    void Print() const;
+  public:
     std::string GetHeaderVal(const std::string& key) const;
+    void Print() const;
+    friend class RequestBuilder;
+
+    // Getters:
+    RqStatus status() const;
+    Method method() const;
+    const std::string& uri() const;
+    Version version() const;
+    const std::map<std::string, std::string>& headers() const;
+    const std::vector<char>& body() const;
 };
 
 }  // namespace http

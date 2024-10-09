@@ -13,7 +13,7 @@
 namespace http {
 
 RequestBuilder::RequestBuilder()
-    : builder_status_(RB_BUILDING), crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), found_space_(false), needs_info_from_server_(false), body_builder_(&rq_.body)
+    : builder_status_(RB_BUILDING), crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), found_space_(false), needs_info_from_server_(false), body_builder_(&rq_.body_)
 {}
 
 RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
@@ -53,7 +53,7 @@ std::vector<char>& RequestBuilder::buf()
 bool RequestBuilder::IsReadyForResponse()
 {
     // return (rq_.rq_complete || build_state_ == BS_BAD_REQUEST /*body_complete()*/);
-    return (rq_.status != RQ_INCOMPLETE);
+    return (rq_.status_ != RQ_INCOMPLETE);
 }
 
 bool RequestBuilder::HasReachedEndOfBuffer_(void) const
@@ -99,7 +99,7 @@ void RequestBuilder::Build(size_t bytes_read)
     LOG(DEBUG) << "end_idx_: " << end_idx_ << "; buf_.size(): " << buf_.size();
     if (HasReachedEndOfBuffer_() && bytes_read == 0) {
         LOG(DEBUG) << "End of buffer && 0 bytes_read --> bad request";
-        rq_.status = RQ_BAD;
+        rq_.status_ = RQ_BAD;
         builder_status_ = RB_DONE;
         return ;
     }
@@ -176,12 +176,12 @@ void RequestBuilder::Build(size_t bytes_read)
         }
     }
     if (build_state_ == BS_BAD_REQUEST) {
-        rq_.status = RQ_BAD;
+        rq_.status_ = RQ_BAD;
     }
     if (build_state_ == BS_END) {
-        rq_.status = RQ_GOOD;
+        rq_.status_ = RQ_GOOD;
     }
-    if (rq_.status != RQ_INCOMPLETE) {
+    if (rq_.status_ != RQ_INCOMPLETE) {
         builder_status_ = RB_DONE;
     }
 }
@@ -205,15 +205,15 @@ void RequestBuilder::UpdateBeginIdx_()
 RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 {
     if (ParseLen_() == 4 && CompareBuf_("GET ", 4) == 0) {
-        rq_.method = HTTP_GET;
+        rq_.method_ = HTTP_GET;
     }
     if (ParseLen_() == 5 && CompareBuf_("POST ", 5) == 0) {
-        rq_.method = HTTP_POST;
+        rq_.method_ = HTTP_POST;
     }
     if (ParseLen_() == 7 && CompareBuf_("DELETE ", 7) == 0) {
-        rq_.method = HTTP_DELETE;
+        rq_.method_ = HTTP_DELETE;
     }
-    if (rq_.method != HTTP_NO_METHOD) {
+    if (rq_.method_ != HTTP_NO_METHOD) {
         return BS_URI;
     }
     if (ParseLen_() > 7) {
@@ -228,7 +228,7 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_(char c)
 {
     if (c == ' ') {
         if (ParseLen_() > 1) {
-            rq_.uri = std::string(buf_.data() + begin_idx_, buf_.data() + end_idx_ - 1);
+            rq_.uri_ = std::string(buf_.data() + begin_idx_, buf_.data() + end_idx_ - 1);
             return BS_VERSION;
         } else {
             return BS_BAD_REQUEST;
@@ -240,21 +240,21 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_(char c)
 RequestBuilder::BuildState RequestBuilder::BuildVersion_(void)
 {
     if (ParseLen_() == 10 && CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
-        rq_.version = HTTP_0_9;
+        rq_.version_ = HTTP_0_9;
     }
     if (ParseLen_() == 10 && CompareBuf_("HTTP/1.0\r\n", 10) == 0) {
-        rq_.version = HTTP_1_0;
+        rq_.version_ = HTTP_1_0;
     }
     if (ParseLen_() == 10 && CompareBuf_("HTTP/1.1\r\n", 10) == 0) {
-        rq_.version = HTTP_1_1;
+        rq_.version_ = HTTP_1_1;
     }
     if (ParseLen_() == 8 && CompareBuf_("HTTP/2\r\n", 8) == 0) {
-        rq_.version = HTTP_2;
+        rq_.version_ = HTTP_2;
     }
     if (ParseLen_() == 8 && CompareBuf_("HTTP/3\r\n", 8) == 0) {
-        rq_.version = HTTP_3;
+        rq_.version_ = HTTP_3;
     }
-    if (rq_.version != HTTP_NO_VERSION) {
+    if (rq_.version_ != HTTP_NO_VERSION) {
         return BS_BETWEEN_HEADERS;
     }
     if (ParseLen_() > 10) {
@@ -334,7 +334,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderValue_(char c)
     if (crlf_counter_ == 1) {
         if (c == '\n') {
             crlf_counter_ = 0;
-            rq_.headers[header_key_] = std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
+            rq_.headers_[header_key_] = std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
             return BS_BETWEEN_HEADERS;
         }
         crlf_counter_ = 0;
@@ -347,7 +347,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderValue_(char c)
 RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
 {
     LOG(DEBUG) << "CheckForBody";
-    if (rq_.method == HTTP_GET || rq_.method == HTTP_DELETE) {
+    if (rq_.method_ == HTTP_GET || rq_.method_ == HTTP_DELETE) {
         return BS_END;
     }
     std::string content_length = rq_.GetHeaderVal("content-length");
@@ -368,7 +368,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
             return BS_BAD_REQUEST;
         }
     }
-    if (rq_.method == HTTP_POST) {
+    if (rq_.method_ == HTTP_POST) {
         return BS_BAD_REQUEST;
     }
     return BS_END;
@@ -424,8 +424,8 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_(char c)
             }
             LOG(DEBUG) << "Good Chunk size: " << converted_size.second;
             body_builder_.chunk_size = converted_size.second; // TODO: check for chunk size limits
-            LOG(DEBUG) << "rq_.body.size(): " << rq_.body.size() << "; body_builder_.chunk_size: " << body_builder_.chunk_size << "; body_builder_.max_body_size: " << body_builder_.max_body_size;
-            if (rq_.body.size() + body_builder_.chunk_size > body_builder_.max_body_size) {
+            LOG(DEBUG) << "rq_.body_.size(): " << rq_.body_.size() << "; body_builder_.chunk_size: " << body_builder_.chunk_size << "; body_builder_.max_body_size: " << body_builder_.max_body_size;
+            if (rq_.body_.size() + body_builder_.chunk_size > body_builder_.max_body_size) {
                 return BS_BAD_REQUEST;
             }
             if (body_builder_.chunk_size == 0) {
