@@ -31,7 +31,7 @@ void Request::Print() const
         LOG(DEBUG) << "|" << it->first << "|: |" << it->second << "|";
     }
     LOG(DEBUG) << "Body size: " << body.size();
-    LOG(DEBUG) << "Body: " << body.data();
+    //LOG(DEBUG) << "Body: " << body.data();
     LOG(DEBUG) << "\n";
 }
 

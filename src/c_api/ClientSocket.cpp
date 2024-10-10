@@ -33,6 +33,7 @@ int ClientSocket::sockfd() const
 
 ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t read_size) const
 {
+    LOG(DEBUG) << "ClientSocket::Recv(std::vector<char>& buf, size_t read_size): this makes sure that buffer is large enough by resizing it and then reads directly into it (yes exactly the thing that you absolutely despise, Vova!!)";
     size_t old_buf_sz = buf.size();
     buf.resize(old_buf_sz + read_size);
     ssize_t bytes_recvd = ::recv(sockfd_, (void*)(buf.data() + old_buf_sz), read_size, MSG_NOSIGNAL);
