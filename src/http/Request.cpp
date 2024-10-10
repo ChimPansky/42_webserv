@@ -1,30 +1,30 @@
 #include "Request.h"
 
-#include "utils/logger.h"
-#include "utils/utils.h"
+#include "../utils/logger.h"
+#include "../utils/utils.h"
 
 namespace http {
 
 Request::Request()
-    : method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), bad_request(false), rq_complete(false)
+    : status(RQ_INCOMPLETE), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
 {}
 
-std::string Request::GetHeaderVal(const std::string& key) const
+std::pair<bool/*header-key found*/, std::string /*header-value*/> Request::GetHeaderVal(const std::string& key) const
 {
     std::map<std::string, std::string>::const_iterator it = headers.find(utils::ToLowerCase(key));
     if (it != headers.end()) {
-        return it->second;
+        return std::make_pair(true, it->second);
     }
-    return "";
+    return std::make_pair(false, "");
 }
+
 void Request::Print() const
 {
     LOG(DEBUG) << "---Request---";
+    LOG(DEBUG) << "Status: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"));
     LOG(DEBUG) << "Method: " << method;
     LOG(DEBUG) << "URI: " << uri;
     LOG(DEBUG) << "Version: " << version;
-    LOG(DEBUG) << "Bad Request: " << bad_request;
-    LOG(DEBUG) << "Request complete: " << rq_complete;
     LOG(DEBUG) << "\n";
     LOG(DEBUG) << "~Headers~";
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
@@ -35,4 +35,5 @@ void Request::Print() const
     LOG(DEBUG) << "Body: " << body.data();
     LOG(DEBUG) << "\n";
 }
+
 }  // namespace http
