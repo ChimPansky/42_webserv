@@ -74,14 +74,17 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
 
 void ClientSession::ProcessNewData(size_t bytes_recvd) {
     rq_builder_.Build(bytes_recvd);
-    while (rq_builder_.builder_status() == http::RB_BUILDING) {
-        rq_builder_.Build(bytes_recvd);
-        if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {// get max_body_size (and maybe pointer to virtual server) from server...
-            rq_builder_.ApplyServerInfo(1000);
-            virtual_server = NULL; // set this with pointer to server later...
+    if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
+        // get max_body_size (and maybe pointer to virtual server) from server...
+        rq_builder_.ApplyServerInfo(1000);
+        virtual_server = NULL; // set this with pointer to server later...
+        if (rq_builder_.builder_status() == http::RB_NEED_DATA_FROM_CLIENT) {
+            return ; // reached end of buffer, so break out of ProcessNewData and wait for new data from client
         }
+        rq_builder_.Build(bytes_recvd); // there is still something left in buffer, so keep building with it until we reach end of buffer
     }
-    if (rq_builder_.builder_status() == http::RB_DONE) {
+
+    if (rq_builder_.builder_status() == http::RB_DONE) { // RQ-Building finished -> deregister readcallback, register writecallback, close client connection (later: keep-alive) and prepare response (later: comes from server)
         c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READ);
         if (c_api::EventManager::get().RegisterCallback(client_sock_->sockfd(), c_api::CT_WRITE,
             utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this))) != 0) {
@@ -90,7 +93,8 @@ void ClientSession::ProcessNewData(size_t bytes_recvd) {
                 CloseConnection();
                 return ;
         }
-        PrepareResponse();
+        rq_builder_.rq().Print();
+        PrepareResponse();  // for now just echo the request-buf-content
     }
 }
 
