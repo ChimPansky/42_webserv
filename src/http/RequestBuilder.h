@@ -11,7 +11,7 @@ namespace http {
 
 enum RqBuilderStatus {
     RB_BUILDING,
-    RB_NEED_MORE_BYTES,
+    RB_NEED_DATA_FROM_CLIENT,
     RB_NEED_INFO_FROM_SERVER,
     RB_DONE
 };
@@ -23,8 +23,8 @@ class RequestBuilder {
 
         std::vector<char> *body;
         bool    chunked;
-        size_t  chunk_size;
-        size_t  idx;
+        size_t  next_chunk_size;
+        size_t  body_idx;
         size_t  remaining_length;
         size_t  max_body_size;
 
@@ -52,7 +52,6 @@ class RequestBuilder {
   public:
     RequestBuilder();
     void Build(size_t bytes_read);
-    bool IsReadyForResponse();
     void ApplyServerInfo(size_t max_body_size);
     std::vector<char>& buf();
 
@@ -70,7 +69,6 @@ class RequestBuilder {
     BuildState build_state_;
     bool found_space_;
     std::string header_key_;
-    bool needs_info_from_server_;
     BodyBuilder body_builder_;
 
     size_t ParseLen_() const;

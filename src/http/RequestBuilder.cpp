@@ -12,11 +12,11 @@
 namespace http {
 
 RequestBuilder::RequestBuilder()
-    : builder_status_(RB_BUILDING), crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), found_space_(false), needs_info_from_server_(false), body_builder_(&rq_.body_)
+    : builder_status_(RB_BUILDING), crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), found_space_(false), body_builder_(&rq_.body_)
 {}
 
 RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
-    : body(rq_body), chunked(false), chunk_size(0), idx(0), remaining_length(0), max_body_size(0)
+    : body(rq_body), chunked(false), next_chunk_size(0), body_idx(0), remaining_length(0), max_body_size(0)
 {}
 
 bool RequestBuilder::BodyBuilder::Complete() const
@@ -38,7 +38,7 @@ void RequestBuilder::ApplyServerInfo(size_t max_body_size)
     LOG(DEBUG) << "ApplyServerInfo()";
     body_builder_.max_body_size = max_body_size;
     if (HasReachedEndOfBuffer_()) {
-        builder_status_ = http::RB_NEED_MORE_BYTES;
+        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
     } else {
         builder_status_ = http::RB_BUILDING;
     }
@@ -47,12 +47,6 @@ void RequestBuilder::ApplyServerInfo(size_t max_body_size)
 std::vector<char>& RequestBuilder::buf()
 {
     return buf_;
-}
-
-bool RequestBuilder::IsReadyForResponse()
-{
-    // return (rq_.rq_complete || build_state_ == BS_BAD_REQUEST /*body_complete()*/);
-    return (rq_.status_ != RQ_INCOMPLETE);
 }
 
 bool RequestBuilder::HasReachedEndOfBuffer_(void) const
@@ -86,7 +80,7 @@ bool RequestBuilder::CanBuild_(void) {
         return true;
     }
     if (IsProcessingState_(build_state_) && HasReachedEndOfBuffer_()) {
-        builder_status_ = http::RB_NEED_MORE_BYTES;
+        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
         return false;
     }
     return true;
@@ -349,17 +343,17 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
     if (rq_.method_ == HTTP_GET || rq_.method_ == HTTP_DELETE) {
         return BS_END;
     }
-    std::string content_length = rq_.GetHeaderVal("content-length");
-    std::string transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
-    if (!content_length.empty() && !transfer_encoding.empty()) {
+    std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
+    std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
+    if (content_length.first && transfer_encoding.first) {
         return BS_BAD_REQUEST;
     }
-    if (transfer_encoding == "chunked") {
+    if (transfer_encoding.second == "chunked") {
         body_builder_.chunked = true;
         return BS_BODY_CHUNK_SIZE;
     }
-    if (!content_length.empty()) {
-        std::pair<bool, size_t> content_length_num = utils::StrToNumericNoThrow<size_t>(content_length);
+    if (content_length.first) {
+        std::pair<bool, size_t> content_length_num = utils::StrToNumericNoThrow<size_t>(content_length.second);
         if (content_length_num.first) {
             body_builder_.remaining_length = content_length_num.second; // TODO: content-length limits?
             return BS_CHECK_BODY_REGULAR_LENGTH;
@@ -387,11 +381,11 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_(void)
     LOG(DEBUG) << "BuildBodyRegular_";
     if (HasReachedEndOfBuffer_()) {
         size_t copy_size = std::min(buf_.size() - begin_idx_, body_builder_.remaining_length);
-        LOG(DEBUG) << "copying... copy_size: " << copy_size << "; body_builder_.idx: " << body_builder_.idx << "; begin_idx_: " << begin_idx_ << "; body.size(); " << body_builder_.body->size();
-        std::memcpy(body_builder_.body->data() + body_builder_.idx, buf_.data() + begin_idx_, copy_size);
+        LOG(DEBUG) << "copying... copy_size: " << copy_size << "; body_builder_.body_idx: " << body_builder_.body_idx << "; begin_idx_: " << begin_idx_ << "; body.size(); " << body_builder_.body->size();
+        std::memcpy(body_builder_.body->data() + body_builder_.body_idx, buf_.data() + begin_idx_, copy_size);
         std::string str(buf_.data() + begin_idx_, buf_.data() + begin_idx_ + copy_size);
         LOG(DEBUG) << "copy content: " << str;
-        body_builder_.idx += copy_size;
+        body_builder_.body_idx += copy_size;
         body_builder_.remaining_length -= copy_size;
         UpdateBeginIdx_();
         if (body_builder_.remaining_length == 0) {
@@ -422,12 +416,12 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_(char c)
                 return BS_BAD_REQUEST;
             }
             LOG(DEBUG) << "Good Chunk size: " << converted_size.second;
-            body_builder_.chunk_size = converted_size.second; // TODO: check for chunk size limits
-            LOG(DEBUG) << "rq_.body_.size(): " << rq_.body_.size() << "; body_builder_.chunk_size: " << body_builder_.chunk_size << "; body_builder_.max_body_size: " << body_builder_.max_body_size;
-            if (rq_.body_.size() + body_builder_.chunk_size > body_builder_.max_body_size) {
+            body_builder_.next_chunk_size = converted_size.second; // TODO: check for chunk size limits
+            LOG(DEBUG) << "rq_.body_.size(): " << rq_.body_.size() << "; body_builder_.next_chunk_size: " << body_builder_.next_chunk_size << "; body_builder_.max_body_size: " << body_builder_.max_body_size;
+            if (rq_.body_.size() + body_builder_.next_chunk_size > body_builder_.max_body_size) {
                 return BS_BAD_REQUEST;
             }
-            if (body_builder_.chunk_size == 0) {
+            if (body_builder_.next_chunk_size == 0) {
                 return BS_END;
             }
             return BS_BODY_CHUNK_CONTENT;
@@ -441,19 +435,19 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_(char c)
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_(void)
 {
     LOG(DEBUG) << "BuildBodyChunkContent_";
-    if (ParseLen_() == body_builder_.chunk_size) {
+    if (ParseLen_() == body_builder_.next_chunk_size) {
         size_t old_sz = body_builder_.body->size();
-        body_builder_.body->resize(old_sz + body_builder_.chunk_size);
-        std::memcpy(body_builder_.body->data() + old_sz, buf_.data() + begin_idx_, body_builder_.chunk_size);
+        body_builder_.body->resize(old_sz + body_builder_.next_chunk_size);
+        std::memcpy(body_builder_.body->data() + old_sz, buf_.data() + begin_idx_, body_builder_.next_chunk_size);
         return BS_BODY_CHUNK_CONTENT;
     }
-    if (ParseLen_() == body_builder_.chunk_size + 1) {
+    if (ParseLen_() == body_builder_.next_chunk_size + 1) {
         if (buf_[end_idx_ - 1] != '\r') {
             return BS_BAD_REQUEST;
         }
         return BS_BODY_CHUNK_CONTENT;
     }
-    if (ParseLen_() == body_builder_.chunk_size + 2) {
+    if (ParseLen_() == body_builder_.next_chunk_size + 2) {
         if (buf_[end_idx_ - 1] != '\n') {
             return BS_BAD_REQUEST;
         }

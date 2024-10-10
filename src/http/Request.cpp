@@ -9,14 +9,15 @@ Request::Request()
     : status_(RQ_INCOMPLETE), method_(HTTP_NO_METHOD), version_(HTTP_NO_VERSION)
 {}
 
-std::string Request::GetHeaderVal(const std::string& key) const
+std::pair<bool/*header-key found*/, std::string /*header-value*/> Request::GetHeaderVal(const std::string& key) const
 {
     std::map<std::string, std::string>::const_iterator it = headers_.find(utils::ToLowerCase(key));
     if (it != headers_.end()) {
-        return it->second;
+        return std::make_pair(true, it->second);
     }
-    return "";
+    return std::make_pair(false, "");
 }
+
 void Request::Print() const
 {
     LOG(DEBUG) << "---Request---";
@@ -36,7 +37,7 @@ void Request::Print() const
 }
 
 //Getters:
-RqStatus Request::status() const
+RQ_Status Request::status() const
 {
     return status_;
 }
