@@ -37,7 +37,7 @@ void Request::Print() const
 }
 
 //Getters:
-RQ_Status Request::status() const
+RqStatus Request::status() const
 {
     return status_;
 }
