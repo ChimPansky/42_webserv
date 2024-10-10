@@ -12,93 +12,21 @@
 namespace http {
 
 RequestBuilder::RequestBuilder()
-    : builder_status_(RB_BUILDING), crlf_counter_(0), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), found_space_(false), body_builder_(&rq_.body_)
+    : builder_status_(RB_BUILDING), begin_idx_(0), end_idx_(0), build_state_(BS_METHOD), body_builder_(&rq_.body)
 {}
 
 RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
-    : body(rq_body), chunked(false), next_chunk_size(0), body_idx(0), remaining_length(0), max_body_size(0)
+    : body(rq_body), chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
-
-bool RequestBuilder::BodyBuilder::Complete() const
-{
-    return remaining_length == 0;
-}
-
-const Request& RequestBuilder::rq() const
-{
-    return rq_;
-}
-
-RqBuilderStatus RequestBuilder::builder_status() const {
-    return builder_status_;
-}
-
-void RequestBuilder::ApplyServerInfo(size_t max_body_size)
-{
-    LOG(DEBUG) << "ApplyServerInfo()";
-    body_builder_.max_body_size = max_body_size;
-    if (HasReachedEndOfBuffer_()) {
-        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
-    } else {
-        builder_status_ = http::RB_BUILDING;
-    }
-}
-
-std::vector<char>& RequestBuilder::buf()
-{
-    return buf_;
-}
-
-bool RequestBuilder::HasReachedEndOfBuffer_(void) const
-{
-    return end_idx_ == buf_.size();
-}
-
-bool RequestBuilder::IsBodyReadingState_(BuildState state) const
-{
-    return (state == BS_BODY_REGULAR || state == BS_BODY_CHUNK_SIZE
-        || state == BS_BODY_CHUNK_CONTENT || state == BS_CHECK_BODY_REGULAR_LENGTH);
-}
-
-bool RequestBuilder::IsProcessingState_(BuildState state) const
-{
-    return (state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH );
-}
-
-void RequestBuilder::NullTerminatorCheck_(char c)
-{
-    if (c == '\0' && build_state_ != BS_BODY_CHUNK_CONTENT) {
-        build_state_ = BS_BAD_REQUEST;
-    }
-}
-
-bool RequestBuilder::CanBuild_(void) {
-    if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
-        return false;
-    }
-    if (build_state_ == BS_BODY_REGULAR && ParseLen_() > 0) {
-        return true;
-    }
-    if (IsProcessingState_(build_state_) && HasReachedEndOfBuffer_()) {
-        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
-        return false;
-    }
-    return true;
-}
-
 void RequestBuilder::Build(size_t bytes_read)
 {
-    LOG(DEBUG) << "RequestBuilder::Build(" << bytes_read << ")";
-    LOG(DEBUG) << "end_idx_: " << end_idx_ << "; buf_.size(): " << buf_.size();
     if (HasReachedEndOfBuffer_() && bytes_read == 0) {
-        LOG(DEBUG) << "End of buffer && 0 bytes_read --> bad request";
-        rq_.status_ = RQ_BAD;
+        rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;
         return ;
     }
 
     while (CanBuild_()) {
-        // !IsReadyForResponse() && (!HasReachedEndOfBuffer_() || build_state_ == BS_CHECK_FOR_BODY) && build_state_ != BS_BAD_REQUEST) {
         char c = ' ';
         if (IsProcessingState_(build_state_) && !HasReachedEndOfBuffer_()) {
             c = buf_[end_idx_++];
@@ -138,7 +66,6 @@ void RequestBuilder::Build(size_t bytes_read)
                 build_state_ = CheckForBody_();
                 state_changed = (build_state_ != BS_CHECK_FOR_BODY ? true : false);
                 if (IsBodyReadingState_(build_state_)) {
-                    LOG(DEBUG) << "builder_status has been set to RB_NEED_INFO_FROM_SERVER";
                     builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
                     return;
                 }
@@ -169,44 +96,52 @@ void RequestBuilder::Build(size_t bytes_read)
         }
     }
     if (build_state_ == BS_BAD_REQUEST) {
-        rq_.status_ = RQ_BAD;
+        rq_.status = RQ_BAD;
     }
     if (build_state_ == BS_END) {
-        rq_.status_ = RQ_GOOD;
+        rq_.status = RQ_GOOD;
     }
-    if (rq_.status_ != RQ_INCOMPLETE) {
+    if (rq_.status != RQ_INCOMPLETE) {
         builder_status_ = RB_DONE;
     }
 }
 
-size_t RequestBuilder::ParseLen_() const
+void RequestBuilder::ApplyServerInfo(size_t max_body_size)
 {
-    return end_idx_ - begin_idx_;
+    body_builder_.max_body_size = max_body_size;
+    if (HasReachedEndOfBuffer_()) {
+        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
+    } else {
+        builder_status_ = http::RB_BUILDING;
+    }
 }
 
-int RequestBuilder::CompareBuf_(const char* str, size_t len) const
-{
-    return std::strncmp(buf_.data() + begin_idx_, str, len);
+RqBuilderStatus RequestBuilder::builder_status() const {
+    return builder_status_;
 }
 
-void RequestBuilder::UpdateBeginIdx_()
+const Request& RequestBuilder::rq() const
 {
-    ////LOG(DEBUG) << "RequestBuilder::UpdateBeginIdx_";
-    begin_idx_ = end_idx_;
+    return rq_;
+}
+
+std::vector<char>& RequestBuilder::buf()
+{
+    return buf_;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 {
     if (ParseLen_() == 4 && CompareBuf_("GET ", 4) == 0) {
-        rq_.method_ = HTTP_GET;
+        rq_.method = HTTP_GET;
     }
     if (ParseLen_() == 5 && CompareBuf_("POST ", 5) == 0) {
-        rq_.method_ = HTTP_POST;
+        rq_.method = HTTP_POST;
     }
     if (ParseLen_() == 7 && CompareBuf_("DELETE ", 7) == 0) {
-        rq_.method_ = HTTP_DELETE;
+        rq_.method = HTTP_DELETE;
     }
-    if (rq_.method_ != HTTP_NO_METHOD) {
+    if (rq_.method != HTTP_NO_METHOD) {
         return BS_URI;
     }
     if (ParseLen_() > 7) {
@@ -221,7 +156,7 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_(char c)
 {
     if (c == ' ') {
         if (ParseLen_() > 1) {
-            rq_.uri_ = std::string(buf_.data() + begin_idx_, buf_.data() + end_idx_ - 1);
+            rq_.uri = std::string(buf_.data() + begin_idx_, buf_.data() + end_idx_ - 1);
             return BS_VERSION;
         } else {
             return BS_BAD_REQUEST;
@@ -233,21 +168,21 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_(char c)
 RequestBuilder::BuildState RequestBuilder::BuildVersion_(void)
 {
     if (ParseLen_() == 10 && CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
-        rq_.version_ = HTTP_0_9;
+        rq_.version = HTTP_0_9;
     }
     if (ParseLen_() == 10 && CompareBuf_("HTTP/1.0\r\n", 10) == 0) {
-        rq_.version_ = HTTP_1_0;
+        rq_.version = HTTP_1_0;
     }
     if (ParseLen_() == 10 && CompareBuf_("HTTP/1.1\r\n", 10) == 0) {
-        rq_.version_ = HTTP_1_1;
+        rq_.version = HTTP_1_1;
     }
     if (ParseLen_() == 8 && CompareBuf_("HTTP/2\r\n", 8) == 0) {
-        rq_.version_ = HTTP_2;
+        rq_.version = HTTP_2;
     }
     if (ParseLen_() == 8 && CompareBuf_("HTTP/3\r\n", 8) == 0) {
-        rq_.version_ = HTTP_3;
+        rq_.version = HTTP_3;
     }
-    if (rq_.version_ != HTTP_NO_VERSION) {
+    if (rq_.version != HTTP_NO_VERSION) {
         return BS_BETWEEN_HEADERS;
     }
     if (ParseLen_() > 10) {
@@ -258,38 +193,28 @@ RequestBuilder::BuildState RequestBuilder::BuildVersion_(void)
 
 RequestBuilder::BuildState RequestBuilder::CheckForNextHeader_(char c)
 {
-    if (ParseLen_() == 1) {
-        if (c == '\r') {
-            crlf_counter_++;
-            return BS_BETWEEN_HEADERS;
-        }
+    if (ParseLen_() == 1 && c != EOL_CARRIAGE_RETURN) {
         end_idx_--;
         return BS_HEADER_KEY;
     }
-    if (ParseLen_() == 2) {
-        if (c == '\n') {
-            crlf_counter_ = 0;
-            return BS_CHECK_FOR_BODY;
-        }
-        crlf_counter_ = 0;
-        return BS_BAD_REQUEST;
+    if (CheckForEOL_()) {
+        return BS_CHECK_FOR_BODY;
     }
-    return BS_BAD_REQUEST; // should never reach this point...
+    return BS_BETWEEN_HEADERS;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_(char c)
 {
     if (c == ':') {
         if (ParseLen_() == 1) {
-            LOG(ERROR) << "Request-Header key is invalid: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
             return BS_BAD_REQUEST;
         } else {
             header_key_ = std::string(buf_.data() + begin_idx_, ParseLen_() - 1);
-            found_space_ = false;
             // TODO: check if header_key already exists in map (no duplicates allowed)
+            // also: check length of header keys/values and total number of headers
             return BS_HEADER_KEY_VAL_SEP;
         }
-    } else if (!(std::isalnum(c) || (ParseLen_() > 1 && c == '-'))) { // TODO: check this condition...
+    } else if (!(std::isalnum(c) || (ParseLen_() > 1 && c == '-'))) {
         return BS_BAD_REQUEST;
     }
     buf_[end_idx_ - 1] = std::tolower(c);
@@ -299,10 +224,9 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_(char c)
 RequestBuilder::BuildState RequestBuilder::ParseHeaderKeyValSep_(char c)
 {
     if (std::isspace(c)) {
-        found_space_ = true;
         return BS_HEADER_KEY_VAL_SEP;
     }
-    if (!found_space_) {
+    if (ParseLen_() < 2) {
         return BS_BAD_REQUEST;
     }
     end_idx_--;
@@ -312,35 +236,22 @@ RequestBuilder::BuildState RequestBuilder::ParseHeaderKeyValSep_(char c)
 // RFC: https://datatracker.ietf.org/doc/html/rfc2616#page-17
 RequestBuilder::BuildState RequestBuilder::BuildHeaderValue_(char c)
 {
-    if (crlf_counter_ == 0) {
-        if (c == '\r') {
-            if (ParseLen_() <= 1) {
-                return BS_BAD_REQUEST;
-            }
-            crlf_counter_++;
-            return BS_HEADER_VALUE;
-        }
-        if (!std::isprint(c)) { // TODO: additional checks for valid characters...
-            return BS_BAD_REQUEST;
-        }
+    if (CheckForEOL_()) {
+        rq_.headers[header_key_] = std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
+        return BS_BETWEEN_HEADERS;
     }
-    if (crlf_counter_ == 1) {
-        if (c == '\n') {
-            crlf_counter_ = 0;
-            rq_.headers_[header_key_] = std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
-            return BS_BETWEEN_HEADERS;
-        }
-        crlf_counter_ = 0;
+    if (ParseLen_() > 1 && buf_[end_idx_ - 2] == EOL_CARRIAGE_RETURN) {
         return BS_BAD_REQUEST;
-
+    }
+    if (c != EOL_CARRIAGE_RETURN && !std::isprint(c)) { // TODO: additional checks for valid characters...
+        return BS_BAD_REQUEST;
     }
     return BS_HEADER_VALUE;
 }
 
 RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
 {
-    LOG(DEBUG) << "CheckForBody";
-    if (rq_.method_ == HTTP_GET || rq_.method_ == HTTP_DELETE) {
+    if (rq_.method == HTTP_GET || rq_.method == HTTP_DELETE) {
         return BS_END;
     }
     std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
@@ -361,14 +272,13 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_(void)
             return BS_BAD_REQUEST;
         }
     }
-    if (rq_.method_ == HTTP_POST) {
+    if (rq_.method == HTTP_POST) {
         return BS_BAD_REQUEST;
     }
     return BS_END;
 }
 
 RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_(void) {
-    LOG(DEBUG) << "CheckForRegularLength";
     if (body_builder_.remaining_length > body_builder_.max_body_size) {
         return BS_BAD_REQUEST;
     }
@@ -378,13 +288,10 @@ RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_(void) {
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_(void)
 {
-    LOG(DEBUG) << "BuildBodyRegular_";
     if (HasReachedEndOfBuffer_()) {
         size_t copy_size = std::min(buf_.size() - begin_idx_, body_builder_.remaining_length);
-        LOG(DEBUG) << "copying... copy_size: " << copy_size << "; body_builder_.body_idx: " << body_builder_.body_idx << "; begin_idx_: " << begin_idx_ << "; body.size(); " << body_builder_.body->size();
         std::memcpy(body_builder_.body->data() + body_builder_.body_idx, buf_.data() + begin_idx_, copy_size);
         std::string str(buf_.data() + begin_idx_, buf_.data() + begin_idx_ + copy_size);
-        LOG(DEBUG) << "copy content: " << str;
         body_builder_.body_idx += copy_size;
         body_builder_.remaining_length -= copy_size;
         UpdateBeginIdx_();
@@ -398,62 +305,98 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_(void)
 // https://datatracker.ietf.org/doc/html/rfc2616#section-3.5
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_(char c)
 {
-    LOG(DEBUG) << "BuildBodyChunkSize_";
     buf_[end_idx_ - 1] = std::tolower(c);
-    if (crlf_counter_ == 0) {
-        if (c == '\r') {
-            crlf_counter_++;
+    if (CheckForEOL_()) {
+        std::pair<bool, size_t> converted_size = utils::HexToNumericNoThrow<size_t>(
+            std::string(buf_.data() + begin_idx_, ParseLen_() - 2));
+        if (!converted_size.first) {
+            return BS_BAD_REQUEST;
         }
-        return BS_BODY_CHUNK_SIZE;
-    }
-    if (crlf_counter_ == 1) {
-        if (c == '\n') {
-            crlf_counter_ = 0;
-            std::pair<bool, size_t> converted_size = utils::HexToNumericNoThrow<size_t>(std::string(buf_.data() + begin_idx_, ParseLen_() - 2));
-            LOG(DEBUG) << "Converting chunk size: " << std::string(buf_.data() + begin_idx_, ParseLen_() - 2);
-            if (!converted_size.first) {
-                LOG(DEBUG) << "Bad Chunk size";
-                return BS_BAD_REQUEST;
-            }
-            LOG(DEBUG) << "Good Chunk size: " << converted_size.second;
-            body_builder_.next_chunk_size = converted_size.second; // TODO: check for chunk size limits
-            LOG(DEBUG) << "rq_.body_.size(): " << rq_.body_.size() << "; body_builder_.next_chunk_size: " << body_builder_.next_chunk_size << "; body_builder_.max_body_size: " << body_builder_.max_body_size;
-            if (rq_.body_.size() + body_builder_.next_chunk_size > body_builder_.max_body_size) {
-                return BS_BAD_REQUEST;
-            }
-            if (body_builder_.next_chunk_size == 0) {
-                return BS_END;
-            }
-            return BS_BODY_CHUNK_CONTENT;
+        body_builder_.remaining_length = converted_size.second; // TODO: check for chunk size limits
+        if (rq_.body.size() + body_builder_.remaining_length > body_builder_.max_body_size) {
+            return BS_BAD_REQUEST;
         }
-        crlf_counter_ = 0;
-        return BS_BAD_REQUEST;
+        if (body_builder_.remaining_length == 0) {
+            return BS_END;
+        }
+        return BS_BODY_CHUNK_CONTENT;
     }
     return BS_BODY_CHUNK_SIZE;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_(void)
 {
-    LOG(DEBUG) << "BuildBodyChunkContent_";
-    if (ParseLen_() == body_builder_.next_chunk_size) {
+    if (CheckForEOL_()) {
+        if (ParseLen_() - 2 != body_builder_.remaining_length) {
+            return BS_BAD_REQUEST;
+        }
         size_t old_sz = body_builder_.body->size();
-        body_builder_.body->resize(old_sz + body_builder_.next_chunk_size);
-        std::memcpy(body_builder_.body->data() + old_sz, buf_.data() + begin_idx_, body_builder_.next_chunk_size);
-        return BS_BODY_CHUNK_CONTENT;
-    }
-    if (ParseLen_() == body_builder_.next_chunk_size + 1) {
-        if (buf_[end_idx_ - 1] != '\r') {
-            return BS_BAD_REQUEST;
-        }
-        return BS_BODY_CHUNK_CONTENT;
-    }
-    if (ParseLen_() == body_builder_.next_chunk_size + 2) {
-        if (buf_[end_idx_ - 1] != '\n') {
-            return BS_BAD_REQUEST;
-        }
+        body_builder_.body->resize(old_sz + body_builder_.remaining_length);
+        std::memcpy(body_builder_.body->data() + old_sz, buf_.data() + begin_idx_, body_builder_.remaining_length);
         return BS_BODY_CHUNK_SIZE;
     }
     return BS_BODY_CHUNK_CONTENT;
+}
+
+bool RequestBuilder::CanBuild_(void) {
+    if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
+        return false;
+    }
+    if (build_state_ == BS_BODY_REGULAR && ParseLen_() > 0) {
+        return true;
+    }
+    if (IsProcessingState_(build_state_) && HasReachedEndOfBuffer_()) {
+        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
+        return false;
+    }
+    return true;
+}
+
+size_t RequestBuilder::ParseLen_() const
+{
+    return end_idx_ - begin_idx_;
+}
+
+int RequestBuilder::CompareBuf_(const char* str, size_t len) const
+{
+    return std::strncmp(buf_.data() + begin_idx_, str, len);
+}
+
+
+void RequestBuilder::NullTerminatorCheck_(char c)
+{
+    if (c == '\0' && build_state_ != BS_BODY_CHUNK_CONTENT) {
+        build_state_ = BS_BAD_REQUEST;
+    }
+}
+void RequestBuilder::UpdateBeginIdx_()
+{
+    begin_idx_ = end_idx_;
+}
+
+bool RequestBuilder::CheckForEOL_() const {
+    if (ParseLen_() < 2) {
+        return false;
+    }
+    if (buf_[end_idx_ - 2] == EOL_CARRIAGE_RETURN && buf_[end_idx_ - 1] == EOL_LINE_FEED) {
+        return true;
+    }
+    return false;
+}
+
+bool RequestBuilder::HasReachedEndOfBuffer_(void) const
+{
+    return end_idx_ == buf_.size();
+}
+
+bool RequestBuilder::IsBodyReadingState_(BuildState state) const
+{
+    return (state == BS_BODY_CHUNK_SIZE || state == BS_CHECK_BODY_REGULAR_LENGTH);
+}
+
+bool RequestBuilder::IsProcessingState_(BuildState state) const
+{
+    return (state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH );
 }
 
 }  // namespace http

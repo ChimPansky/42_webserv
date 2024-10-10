@@ -23,12 +23,9 @@ class RequestBuilder {
 
         std::vector<char> *body;
         bool    chunked;
-        size_t  next_chunk_size;
         size_t  body_idx;
         size_t  remaining_length;
         size_t  max_body_size;
-
-        bool Complete() const;
     };
 
   private:
@@ -48,40 +45,28 @@ class RequestBuilder {
         BS_END,
         BS_BAD_REQUEST
     };
+    enum EOL_CHARS {
+        EOL_CARRIAGE_RETURN = '\r',
+        EOL_LINE_FEED = '\n'
+    };
 
   public:
     RequestBuilder();
     void Build(size_t bytes_read);
     void ApplyServerInfo(size_t max_body_size);
-    std::vector<char>& buf();
-
-    // Getters:
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
+    std::vector<char>& buf();
 
   private:
     Request rq_;
     RqBuilderStatus builder_status_;
-    size_t crlf_counter_;
     std::vector<char> buf_;
     size_t begin_idx_;
     size_t end_idx_;
     BuildState build_state_;
-    bool found_space_;
     std::string header_key_;
     BodyBuilder body_builder_;
-
-    size_t ParseLen_() const;
-    void NullTerminatorCheck_(char c);
-    int CompareBuf_(const char*, size_t len) const;
-    void UpdateBeginIdx_(void);
-
-    bool CanBuild_(void);
-
-    bool HasReachedEndOfBuffer_(void) const;
-
-    bool IsBodyReadingState_(BuildState state) const;
-    bool IsProcessingState_(BuildState state) const;
 
     BuildState BuildMethod_(void);
     BuildState BuildUri_(char c);
@@ -91,14 +76,21 @@ class RequestBuilder {
     BuildState ParseHeaderKeyValSep_(char c);
     BuildState BuildHeaderValue_(char c);
     BuildState CheckForBody_(void);
-
     BuildState CheckBodyRegularLength_(void);
     BuildState BuildBodyRegular_(void);
-
     BuildState BuildBodyChunkSize_(char c);
     BuildState BuildBodyChunkContent_(void);
 
-    void PrintParseBuf_() const;
+    // helpers:
+    bool CanBuild_(void);
+    size_t ParseLen_() const;
+    int CompareBuf_(const char*, size_t len) const;
+    void NullTerminatorCheck_(char c);
+    void UpdateBeginIdx_(void);
+    bool CheckForEOL_() const;
+    bool HasReachedEndOfBuffer_(void) const;
+    bool IsBodyReadingState_(BuildState state) const;
+    bool IsProcessingState_(BuildState state) const;
 };
 
 }  // namespace http

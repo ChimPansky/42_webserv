@@ -16,32 +16,18 @@ enum RqStatus {
 };
 
 class RequestBuilder;
-class Request {
-  public:
+struct Request {
     Request();
 
-  private:
-    RqStatus status_;
-    Method method_;
-    std::string uri_;  // todo: change to struct/class
-    Version version_;
-    // bool bad_request;
-    // bool rq_complete;
-    std::map<std::string, std::string> headers_;
-    std::vector<char> body_;
+    RqStatus status;
+    Method method;
+    std::string uri;  // todo: change to struct/class
+    Version version;
+    std::map<std::string, std::string> headers;
+    std::vector<char> body;
 
-  public:
     std::pair<bool/*header-key found*/, std::string /*header-value*/>GetHeaderVal(const std::string& key) const;
     void Print() const;
-    friend class RequestBuilder;
-
-    // Getters:
-    RqStatus status() const;
-    Method method() const;
-    const std::string& uri() const;
-    Version version() const;
-    const std::map<std::string, std::string>& headers() const;
-    const std::vector<char>& body() const;
 };
 
 }  // namespace http
