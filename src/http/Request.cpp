@@ -1,18 +1,18 @@
 #include "Request.h"
 
-#include "utils/logger.h"
-#include "utils/utils.h"
+#include "../utils/logger.h"
+#include "../utils/utils.h"
 
 namespace http {
 
 Request::Request()
-    : method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), bad_request(false), rq_complete(false)
+    : status_(RQ_INCOMPLETE), method_(HTTP_NO_METHOD), version_(HTTP_NO_VERSION)
 {}
 
 std::string Request::GetHeaderVal(const std::string& key) const
 {
-    std::map<std::string, std::string>::const_iterator it = headers.find(utils::ToLowerCase(key));
-    if (it != headers.end()) {
+    std::map<std::string, std::string>::const_iterator it = headers_.find(utils::ToLowerCase(key));
+    if (it != headers_.end()) {
         return it->second;
     }
     return "";
@@ -20,19 +20,50 @@ std::string Request::GetHeaderVal(const std::string& key) const
 void Request::Print() const
 {
     LOG(DEBUG) << "---Request---";
-    LOG(DEBUG) << "Method: " << method;
-    LOG(DEBUG) << "URI: " << uri;
-    LOG(DEBUG) << "Version: " << version;
-    LOG(DEBUG) << "Bad Request: " << bad_request;
-    LOG(DEBUG) << "Request complete: " << rq_complete;
+    LOG(DEBUG) << "Status: " << (status_ == RQ_INCOMPLETE ? "Incomplete" : (status_ == RQ_BAD ? "Bad" : "Good"));
+    LOG(DEBUG) << "Method: " << method_;
+    LOG(DEBUG) << "URI: " << uri_;
+    LOG(DEBUG) << "Version: " << version_;
     LOG(DEBUG) << "\n";
     LOG(DEBUG) << "~Headers~";
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin();
-         it != headers.end(); ++it) {
+    for (std::map<std::string, std::string>::const_iterator it = headers_.begin();
+         it != headers_.end(); ++it) {
         LOG(DEBUG) << "|" << it->first << "|: |" << it->second << "|";
     }
-    LOG(DEBUG) << "Body size: " << body.size();
-    LOG(DEBUG) << "Body: " << body.data();
+    LOG(DEBUG) << "Body size: " << body_.size();
+    LOG(DEBUG) << "Body: " << body_.data();
     LOG(DEBUG) << "\n";
 }
+
+//Getters:
+RqStatus Request::status() const
+{
+    return status_;
+}
+
+Method Request::method() const
+{
+    return method_;
+}
+
+const std::string& Request::uri() const
+{
+    return uri_;
+}
+
+Version Request::version() const
+{
+    return version_;
+}
+
+const std::map<std::string, std::string>& Request::headers() const
+{
+    return headers_;
+}
+
+const std::vector<char>& Request::body() const
+{
+    return body_;
+}
+
 }  // namespace http
