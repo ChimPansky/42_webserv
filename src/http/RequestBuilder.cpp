@@ -381,7 +381,7 @@ bool RequestBuilder::CheckForEOL_() const {
     if (buf_[end_idx_ - 2] == EOL_CARRIAGE_RETURN && buf_[end_idx_ - 1] == EOL_LINE_FEED) {
         return true;
     }
-    return BS_URI;
+    return false;
 }
 
 bool RequestBuilder::HasReachedEndOfBuffer_(void) const

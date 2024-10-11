@@ -98,6 +98,7 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
         LOG(ERROR) << "error accepting connection on: " << fd;  // add perror
         return;
     }
+    LOG(INFO) << "";
     LOG(INFO) << "New incoming connection on: " << fd;
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
 }

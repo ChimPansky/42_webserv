@@ -54,11 +54,9 @@ class RequestBuilder {
     RequestBuilder();
     void Build(size_t bytes_read);
     void ApplyServerInfo(size_t max_body_size);
-    std::vector<char>& buf();
-
-    // Getters:
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
+    std::vector<char>& buf();
 
   private:
     Request rq_;
@@ -86,8 +84,8 @@ class RequestBuilder {
     // helpers:
     bool CanBuild_(void);
     size_t ParseLen_() const;
-    void NullTerminatorCheck_(char c);
     int CompareBuf_(const char*, size_t len) const;
+    void NullTerminatorCheck_(char c);
     void UpdateBeginIdx_(void);
     bool CheckForEOL_() const;
     bool HasReachedEndOfBuffer_(void) const;

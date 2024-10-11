@@ -17,22 +17,24 @@ std::pair<bool/*header_key_found*/, std::string /*header_value*/> Request::GetHe
     }
     return std::make_pair(false, "");
 }
+
 void Request::Print() const
 {
-    LOG(DEBUG) << "---Request---";
+    LOG(DEBUG) << "---------------------------";
+    LOG(DEBUG) << "---Request Content Begin---";
     LOG(DEBUG) << "Status: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"));
     LOG(DEBUG) << "Method: " << method;
     LOG(DEBUG) << "URI: " << uri;
     LOG(DEBUG) << "Version: " << version;
-    LOG(DEBUG) << "\n";
     LOG(DEBUG) << "~Headers~";
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
          it != headers.end(); ++it) {
-        LOG(DEBUG) << "|" << it->first << "|: |" << it->second << "|";
+        LOG(DEBUG) << it->first << ": " << it->second;
     }
     LOG(DEBUG) << "Body size: " << body.size();
-    //LOG(DEBUG) << "Body: " << body.data();
-    LOG(DEBUG) << "\n";
+    LOG(DEBUG) << "Body: " << body.data();
+    LOG(DEBUG) << "--- Request Content End ---";
+    LOG(DEBUG) << "---------------------------";
 }
 
 }  // namespace http
