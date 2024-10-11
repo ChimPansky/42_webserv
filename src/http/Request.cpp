@@ -9,7 +9,7 @@ Request::Request()
     : status(RQ_INCOMPLETE), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
 {}
 
-std::pair<bool/*header-key found*/, std::string /*header-value*/> Request::GetHeaderVal(const std::string& key) const
+std::pair<bool/*header_key_found*/, std::string /*header_value*/> Request::GetHeaderVal(const std::string& key) const
 {
     std::map<std::string, std::string>::const_iterator it = headers.find(utils::ToLowerCase(key));
     if (it != headers.end()) {
