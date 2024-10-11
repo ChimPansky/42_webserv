@@ -142,4 +142,4 @@ std::pair<bool /* is_valid*/, NumType> HexToNumericNoThrow(const std::string& st
     // test_one<bool>("100");
     // test_one<bool>("true");
 
-}
+// }
