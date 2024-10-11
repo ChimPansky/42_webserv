@@ -16,7 +16,7 @@ env:
 jobs:
   check-commit-message:
     name: Check Commit Message
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check Title Format
         uses: gsactions/commit-message-checker@v2
@@ -47,7 +47,7 @@ jobs:
         if: (!contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch'))
   compilation_test:
     name: Compilation Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 2
     strategy:
       fail-fast: false
@@ -60,7 +60,7 @@ jobs:
         run: make
   basic_valgrind_test:
     name: Valgrind Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 2
     strategy:
       fail-fast: false
@@ -78,7 +78,7 @@ jobs:
     needs:
       - compilation_test
       - basic_valgrind_test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Show compilation test results
         run: echo "Compilation successful"
