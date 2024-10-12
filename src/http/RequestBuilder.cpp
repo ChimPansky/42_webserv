@@ -18,9 +18,21 @@ RequestBuilder::RequestBuilder()
 RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
     : body(rq_body), chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
-void RequestBuilder::Build(size_t bytes_read)
+
+void RequestBuilder::PrepareToRecvData(size_t recv_size) {
+    buf_.resize(buf_.size() + recv_size);
+}
+
+void RequestBuilder::AdjustBufferSize_(size_t bytes_recvd) {
+    if (bytes_recvd >= 0 && (buf_.size() > (end_idx_ + bytes_recvd))) {
+        buf_.resize(end_idx_ + bytes_recvd);
+    }
+}
+
+void RequestBuilder::Build(size_t bytes_recvd)
 {
-    if (HasReachedEndOfBuffer_() && bytes_read == 0) {
+    AdjustBufferSize_(bytes_recvd);
+    if (HasReachedEndOfBuffer_() && bytes_recvd == 0) {
         rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;
         return ;

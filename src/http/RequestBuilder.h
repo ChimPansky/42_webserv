@@ -52,7 +52,8 @@ class RequestBuilder {
 
   public:
     RequestBuilder();
-    void Build(size_t bytes_read);
+    void PrepareToRecvData(size_t recv_size);
+    void Build(size_t bytes_recvd);
     void ApplyServerInfo(size_t max_body_size);
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
@@ -82,6 +83,7 @@ class RequestBuilder {
     BuildState BuildBodyChunkContent_(void);
 
     // helpers:
+    void AdjustBufferSize_(size_t bytes_recvd);
     bool CanBuild_(void);
     size_t ParseLen_() const;
     int CompareBuf_(const char*, size_t len) const;

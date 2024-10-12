@@ -10,28 +10,25 @@
 #define CLIENT_MAX_BODY_SIZE 1500
 
 size_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz) {
-    size_t old_buf_sz = buf.size();
-    buf.resize(old_buf_sz + read_sz);
-    file.read(buf.data() + old_buf_sz, read_sz);
-    size_t bytes_recvd = file.gcount();
-    if (bytes_recvd >= 0 && static_cast<size_t>(bytes_recvd) < read_sz) {
-        buf.resize(old_buf_sz + bytes_recvd);
-    }
-    return bytes_recvd;
+    // size_t old_buf_sz = buf.size();
+    // buf.resize(old_buf_sz + read_sz);
+    file.read(buf.data() + buf.size() - read_sz, read_sz);
+    // size_t bytes_recvd = file.gcount();
+    // if (bytes_recvd >= 0 && static_cast<size_t>(bytes_recvd) < read_sz) {
+    //     buf.resize(old_buf_sz + bytes_recvd);
+    // }
+    return file.gcount();
 }
 
 void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd) {
     builder.Build(bytes_recvd);
     if (builder.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
         builder.ApplyServerInfo(CLIENT_MAX_BODY_SIZE);
-        if (builder.builder_status() == http::RB_NEED_DATA_FROM_CLIENT) {
-            return ;
-        }
-        builder.Build(bytes_recvd);
     }
 }
 
 void Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz) {
+    builder.PrepareToRecvData(read_sz);
     size_t bytes_recvd = Recv(file, builder.buf(), read_sz);
     ProcessNewData(builder, bytes_recvd);
 }
