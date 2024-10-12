@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <sys/types.h>
 
 #include "Request.h"
 
@@ -18,7 +19,24 @@ enum RqBuilderStatus {
 
 class RequestBuilder {
   private:
-    struct   BodyBuilder {
+    struct Parser {
+        Parser(std::vector<char> *rq_buf);
+
+        char Peek() const;
+        void Advance(ssize_t n);
+        void UpdateBeginIdx();
+        bool HasReachedEnd() const;
+        size_t ElementLen() const;
+        std::string ExtractElementEOL() const;
+        std::string ExtractElementNoEOL() const;
+
+        std::vector<char> *buf;
+        size_t element_begin_idx; // begin of Request-Element, e.g. Method, Uri, Header-Key, Header-Val,...
+        size_t end_idx;
+        size_t remaining_length;
+    };
+
+    struct BodyBuilder {
         BodyBuilder(std::vector<char> *rq_body);
 
         std::vector<char> *body;
@@ -62,9 +80,8 @@ class RequestBuilder {
   private:
     Request rq_;
     RqBuilderStatus builder_status_;
+    Parser parser_;
     std::vector<char> buf_;
-    size_t begin_idx_;
-    size_t end_idx_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
@@ -85,12 +102,9 @@ class RequestBuilder {
     // helpers:
     void AdjustBufferSize_(size_t bytes_recvd);
     bool CanBuild_(void);
-    size_t ParseLen_() const;
     int CompareBuf_(const char*, size_t len) const;
     void NullTerminatorCheck_(char c);
-    void UpdateBeginIdx_(void);
     bool CheckForEOL_() const;
-    bool HasReachedEndOfBuffer_(void) const;
     bool IsBodyReadingState_(BuildState state) const;
     bool IsProcessingState_(BuildState state) const;
 };
