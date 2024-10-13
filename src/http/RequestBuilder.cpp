@@ -39,9 +39,8 @@ size_t RequestBuilder::Parser::ElementLen() const {
 void RequestBuilder::Parser::UpdateBeginIdx() {
     element_begin_idx = end_idx;
     LOG(DEBUG) << "Parser::UpdateBeginIdx()";
-    ExtractElementEOL();
-    ExtractElementNoEOL();
-
+    // ExtractElementEOL();
+    // ExtractElementNoEOL();
 }
 
 bool RequestBuilder::Parser::HasReachedEnd() const {
@@ -51,21 +50,23 @@ bool RequestBuilder::Parser::HasReachedEnd() const {
 
 std::string RequestBuilder::Parser::ExtractElementEOL() const
 {
+    if (end_idx < 2) {
+        return "";
+    }
     size_t begin = element_begin_idx;
     size_t end = end_idx - 2;
     LOG(DEBUG) << "ExtractElementEOL() element_begin_idx: " << begin << "; end_idx - 2: " << end;
-    LOG(DEBUG) << "{" << std::string(buf-> data() + std::max(begin, (size_t)0), buf->data() + std::max(begin, end)) << "}";
-    return std::string(buf-> data() + std::max(begin, (size_t)0), buf->data() + std::max(begin, end));
+    LOG(DEBUG) << "{" << std::string(buf->data() + begin, buf->data() + std::max(begin, end)) << "}";
+    return std::string(buf-> data() + begin, buf->data() + std::max(begin, end));
 }
 
 std::string RequestBuilder::Parser::ExtractElementNoEOL() const
 {
-
     size_t begin = element_begin_idx;
     size_t end = end_idx;
     LOG(DEBUG) << "ExtractElementNoEOL() element_begin_idx: " << begin << "; end_idx: " << end;
-    LOG(DEBUG) << "{" << std::string(buf-> data() + std::max(begin, (size_t)0), buf->data() + std::max(begin, end)) << "}";
-    return std::string(buf-> data() + std::max(begin, (size_t)0), buf->data() + std::max(begin, end));
+    LOG(DEBUG) << "{" << std::string(buf->data() + begin, buf->data() + end) << "}";
+    return std::string(buf->data() + begin, buf->data() + end);
 }
 
 void RequestBuilder::PrepareToRecvData(size_t recv_size) {
@@ -93,11 +94,16 @@ void RequestBuilder::Build(size_t bytes_recvd)
         builder_status_ = RB_DONE;
         return ;
     }
-
+    for (size_t i = 0; i < buf_.size(); i++) {
+        LOG(DEBUG) << "buf.data[" << i << "]: " << buf_[i];
+        LOG(DEBUG) << "buf.data() + " << i << ": " << buf_.data() + i;
+    }
     while (CanBuild_()) {
         LOG(DEBUG) << "Buildloop: State: " << build_state_;
+        parser_.ExtractElementEOL();
+        parser_.ExtractElementNoEOL();
         char c = ' ';
-        if (IsProcessingState_(build_state_) && !parser_.HasReachedEnd()) {
+        if (IsProcessingState_(build_state_)) {
             parser_.Advance(1);
             c = parser_.Peek();
             NullTerminatorCheck_(c);
@@ -211,10 +217,11 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 //https://datatracker.ietf.org/doc/html/rfc2616#page-17
 // https://datatracker.ietf.org/doc/html/rfc2396
 RequestBuilder::BuildState RequestBuilder::BuildUri_(char c)
-{
+{//////////
     if (c == ' ') {
         if (parser_.ElementLen() >= 1) {
             rq_.uri = parser_.ExtractElementNoEOL();
+            parser_.Advance(1);
             return BS_VERSION;
         } else {
             return BS_BAD_REQUEST;
