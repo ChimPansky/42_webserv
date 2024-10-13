@@ -64,8 +64,9 @@ $(C_API_UTILS_TESTER): $(C_API_UTILS_LIB)
 
 ##### RQ_BUILDER_TESTER #####
 RQ_BUILDER_FILES = \
-	http/RequestBuilder.cpp \
 	http/Request.cpp \
+	http/RequestBuilder.cpp \
+	http/RequestParser.cpp \
 	utils/utils.cpp
 
 RQ_BUILDER_TESTER_FILES = \

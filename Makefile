@@ -36,6 +36,7 @@ FILENAMES = \
 	config/InheritedSettings.cpp \
 	http/Request.cpp \
 	http/RequestBuilder.cpp \
+	http/RequestParser.cpp \
 	utils/logger.cpp \
 	utils/utils.cpp \
 	ClientSession.cpp \
