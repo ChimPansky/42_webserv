@@ -385,9 +385,6 @@ bool RequestBuilder::CanBuild_() {
     if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
         return false;
     }
-    if (build_state_ == BS_BODY_REGULAR && parser_.ElementLen() > 0) {
-        return true;
-    }
     if (IsParsingState_(build_state_) && parser_.EndOfBuffer()) {
         builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
         return false;
