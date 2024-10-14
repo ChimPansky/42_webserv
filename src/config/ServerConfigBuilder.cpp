@@ -171,7 +171,7 @@ static std::vector<LocationConfig> BuildLocationConfigs(
 bool ServerConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "listen" || key == "server_name" || key == "access_log" || key == "error_log" ||
-           key == "root" || key == "index" || key == "autoindex";
+           key == "root" || key == "index" || key == "autoindex" || "client_max_body_size";
 }
 
 bool ServerConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
@@ -210,6 +210,8 @@ ServerConfig ServerConfigBuilder::Build(const ParsedConfig& f,
         InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
     server_inherited_settings.dir_listing = InheritedSettings::BuildDirListing(
         f.FindSetting("autoindex"), inherited_settings.dir_listing);
+    server_inherited_settings.client_max_body_size = InheritedSettings::BuildClientMaxBodySize(
+        f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);
 
     if (!CheckAllNestings(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");

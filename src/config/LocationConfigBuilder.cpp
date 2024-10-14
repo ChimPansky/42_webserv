@@ -163,10 +163,46 @@ static bool BuildDirListing(const std::vector<std::string>& vals,
     return ParseDirListing(InheritedSettings::BuildDirListing(vals, inherited_redirect));
 }
 
+unsigned int ParseClientMaxBodySize(const std::string& val, const std::string& unit)
+{
+    unsigned int nb = utils::StrToNumeric<int>(val);
+    if (unit == "KB") {
+        return nb << 10;
+    } else if (unit == "MB") {
+        return nb << 20;
+    } else if (unit == "GB") {
+        return nb << 30;
+    } else if (unit.empty()) {
+        return nb;
+    }
+    throw std::runtime_error("Invalid configuration file: invalid client_max_body_size unit: " +
+                             val);
+}
+
+unsigned int BuildClientMaxBodySize(const std::vector<std::string>& vals,
+                                    const std::string& inherited_client_max_body_size)
+{
+    if (vals.empty() && inherited_client_max_body_size.empty()) {
+        return LocationConfig::kDefaultClientMaxBodySize();
+    } else if (vals.size() > 1) {
+        throw std::runtime_error("Invalid configuration file: duplicated client_max_body_size.");
+    }
+    std::vector<std::string> val_elements = utils::fs::SplitLine(
+        InheritedSettings::BuildClientMaxBodySize(vals, inherited_client_max_body_size));
+    if (val_elements.size() == 1) {
+        return ParseClientMaxBodySize(val_elements[0], "");
+    } else if (val_elements.size() == 2) {
+        return ParseClientMaxBodySize(val_elements[0], val_elements[1]);
+    }
+    throw std::runtime_error("Invalid configuration file: invalid client_max_body_size: " +
+                             vals[0]);
+}
+
 bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "limit_except" || key == "return" || key == "cgi_path" ||
-           key == "cgi_extension" || key == "root" || key == "index" || key == "autoindex";
+           key == "cgi_extension" || key == "root" || key == "index" || key == "autoindex" ||
+           "client_max_body_size";
 }
 
 bool LocationConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
@@ -196,12 +232,14 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
     std::vector<std::string> default_file =
         BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
     bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
+    unsigned int client_max_body_size = BuildClientMaxBodySize(
+        f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);
 
     if (!CheckAllNestings(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
     return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, root_dir,
-                          default_file, dir_listing);
+                          default_file, dir_listing, client_max_body_size);
 }
 
 }  // namespace config
