@@ -3,7 +3,7 @@
 
 namespace http {
 
-RequestParser::RequestParser(std::vector<char> *rq_buf)
+RequestParser::RequestParser(std::vector<unsigned char> *rq_buf)
     : buf_(rq_buf), old_buf_size_(0), line_begin_idx_(0), element_begin_idx_(0), element_end_idx_(0)
 {}
 

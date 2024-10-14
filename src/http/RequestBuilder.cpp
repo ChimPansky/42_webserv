@@ -15,7 +15,7 @@ RequestBuilder::RequestBuilder()
     : builder_status_(RB_BUILDING), parser_(&buf_), build_state_(BS_METHOD), body_builder_(&rq_.body)
 {}
 
-RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
+RequestBuilder::BodyBuilder::BodyBuilder(std::vector<unsigned char> *rq_body)
     : body(rq_body), chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
 
@@ -121,7 +121,7 @@ const Request& RequestBuilder::rq() const
     return rq_;
 }
 
-std::vector<char>& RequestBuilder::buf()
+std::vector<unsigned char>& RequestBuilder::buf()
 {
     return buf_;
 }
@@ -394,7 +394,7 @@ bool RequestBuilder::CanBuild_() {
 
 int RequestBuilder::CompareBuf_(const char* str, size_t len) const
 {
-    return std::strncmp(buf_.data() + parser_.element_begin_idx(), str, len);
+    return std::strncmp((char*)buf_.data() + parser_.element_begin_idx(), str, len);
 }
 
 void RequestBuilder::NullTerminatorCheck_(char c)

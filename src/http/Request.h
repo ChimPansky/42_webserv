@@ -24,7 +24,7 @@ struct Request {
     std::string uri;  // todo: change to struct/class
     Version version;
     std::map<std::string, std::string> headers;
-    std::vector<char> body;
+    std::vector<unsigned char> body;
 
     std::pair<bool/*header-key found*/, std::string /*header-value*/>GetHeaderVal(const std::string& key) const;
     void Print() const;

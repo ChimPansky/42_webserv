@@ -9,14 +9,8 @@
 
 #define CLIENT_MAX_BODY_SIZE 1500
 
-size_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz) {
-    // size_t old_buf_sz = buf.size();
-    // buf.resize(old_buf_sz + read_sz);
-    file.read(buf.data() + buf.size() - read_sz, read_sz);
-    // size_t bytes_recvd = file.gcount();
-    // if (bytes_recvd >= 0 && static_cast<size_t>(bytes_recvd) < read_sz) {
-    //     buf.resize(old_buf_sz + bytes_recvd);
-    // }
+size_t Recv(std::ifstream& file, std::vector<unsigned char>& buf, size_t read_sz) {
+    file.read((reinterpret_cast<char*>(buf.data())) + buf.size() - read_sz, read_sz); // will there be a difference between using ifstream::read (which expects char*) vs using sys/socket recv() which is using void* ?
     return file.gcount();
 }
 
@@ -55,7 +49,7 @@ TEST(ValidWithBody, 1_Bodylen_14) {
     ASSERT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     ASSERT_EQ("14", builder.rq().GetHeaderVal("content-length").second);
     const char* str = BODY_14;
-    ASSERT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    ASSERT_EQ(std::vector<unsigned char>(str, str + strlen(str)), builder.rq().body);
     ASSERT_EQ((unsigned long)14, builder.rq().body.size());
     ASSERT_EQ(http::RQ_GOOD, builder.rq().status);
 }
@@ -71,7 +65,7 @@ TEST(ValidWithBody, 2_One_Chunk_1100) {
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
     ASSERT_EQ((unsigned long)1100, builder.rq().body.size());
     const char* str = BODY_1100;
-    ASSERT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    ASSERT_EQ(std::vector<unsigned char>(str, str + strlen(str)), builder.rq().body);
     ASSERT_EQ(http::RQ_GOOD, builder.rq().status);
 }
 
@@ -86,7 +80,7 @@ TEST(ValidWithBody, 3_One_Chunk_1100) {
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
     ASSERT_EQ((unsigned long)1100, builder.rq().body.size());
     const char* str = BODY_1100;
-    ASSERT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    ASSERT_EQ(std::vector<unsigned char>(str, str + strlen(str)), builder.rq().body);
     ASSERT_EQ(http::RQ_GOOD, builder.rq().status);
 }
 
@@ -102,7 +96,7 @@ TEST(ValidWithBody, 4_Bodylen_1) {
     ASSERT_EQ("1", builder.rq().GetHeaderVal("content-length").second);
     ASSERT_EQ((unsigned long)1, builder.rq().body.size());
     const char *str = "a";
-    ASSERT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    ASSERT_EQ(std::vector<unsigned char>(str, str + strlen(str)), builder.rq().body);
     ASSERT_EQ(http::RQ_GOOD, builder.rq().status);
 }
 
@@ -116,7 +110,7 @@ TEST(ValidWithBody, 5_Chunked_1) {
     ASSERT_EQ(http::HTTP_1_0, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
     const char *str = "L";
-    ASSERT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    ASSERT_EQ(std::vector<unsigned char>(str, str + strlen(str)), builder.rq().body);
     ASSERT_EQ(http::RQ_GOOD, builder.rq().status);
 }
 

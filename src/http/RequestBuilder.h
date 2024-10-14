@@ -21,9 +21,9 @@ enum RqBuilderStatus {
 class RequestBuilder {
   private:
     struct BodyBuilder {
-        BodyBuilder(std::vector<char> *rq_body);
+        BodyBuilder(std::vector<unsigned char> *rq_body);
 
-        std::vector<char> *body;
+        std::vector<unsigned char> *body;
         bool    chunked;
         size_t  body_idx;
         size_t  remaining_length;
@@ -59,13 +59,13 @@ class RequestBuilder {
     void ApplyServerInfo(size_t max_body_size);
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
-    std::vector<char>& buf();
+    std::vector<unsigned char>& buf();
 
   private:
     Request rq_;
     RqBuilderStatus builder_status_;
     RequestParser parser_;
-    std::vector<char> buf_;
+    std::vector<unsigned char> buf_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;

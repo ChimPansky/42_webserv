@@ -9,7 +9,7 @@ namespace http {
 
 class RequestParser {
   public:
-    RequestParser(std::vector<char> *rq_buf);
+    RequestParser(std::vector<unsigned char> *rq_buf);
 
     char Peek(ssize_t offset = 0) const;
     bool Advance(ssize_t n = 1);
@@ -20,7 +20,7 @@ class RequestParser {
     std::string ExtractElement(ssize_t end_offset = 0) const;
 
   private:
-    std::vector<char> *buf_;
+    std::vector<unsigned char> *buf_;
     size_t old_buf_size_;
     size_t line_begin_idx_;
     ssize_t element_begin_idx_; // begin of Request-Element, e.g. Method, Uri, Header-Key, Header-Val,...
