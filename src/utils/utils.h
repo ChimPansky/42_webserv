@@ -10,7 +10,7 @@
 
 namespace utils {
 
-std::string ToLowerCase(const std::string& input);
+std::string ToLowerCase(std::string input);
 
 namespace fs {
 

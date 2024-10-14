@@ -21,7 +21,7 @@ void StopCluster(int /*signum*/)
     ServerCluster::Stop();
 }
 
-int main(int ac, char **av)
+/* int main(int ac, char **av)
 {
     if (ac != 2) {
         LOG(ERROR) << "usage: ws <path-to-config-file>";
@@ -32,4 +32,4 @@ int main(int ac, char **av)
     ServerCluster::Start(config::ConfigBuilder::GetConfigFromConfFile(av[1]));
 
     return 0;
-}
+} */

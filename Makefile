@@ -33,6 +33,7 @@ FILENAMES = \
 	config/HttpConfigBuilder.cpp \
 	config/ConfigBuilder.cpp \
 	config/InheritedSettings.cpp \
+	http/Request.cpp \
 	utils/logger.cpp \
 	utils/utils.cpp \
 	ClientSession.cpp \

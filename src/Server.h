@@ -22,9 +22,12 @@ class Server {
     ~Server();
 
     const std::string& name() const;
+    // only if hostname of the request matches any of the server names
+    bool DoesMatchTheRequest(const http::Request& rq) const;
 
   private:
     std::string name_;
+    std::vector<std::string>  server_names_;
 };
 
 #endif  // WS_SERVER_H
