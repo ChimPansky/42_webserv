@@ -75,10 +75,10 @@ std::pair<bool /*is_valid*/, NumType> StrToNumericNoThrow(const std::string& str
     return std::make_pair(true, num);
 }
 template <typename NumType>
-std::pair<bool /* is_valid*/, NumType> HexToNumericNoThrow(const std::string& str)
+std::pair<bool /* is_valid*/, NumType> HexToUnsignedNumericNoThrow(const std::string& str)
 {
     NumType num;
-    if (str.empty() || (!detail::IsSignedType<NumType>() && str[0] == '-')) {
+    if (str.empty() || (detail::IsSignedType<NumType>())) {
         return std::make_pair(false, 0);
     }
     if (!std::isxdigit(str[0])) {
