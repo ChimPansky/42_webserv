@@ -19,6 +19,8 @@ class RequestParser {
     size_t ElementLen() const;
     std::string ExtractElement(ssize_t end_offset = 0) const;
 
+    char& operator[](ssize_t index);
+
   private:
     std::vector<char> *buf_;
     size_t old_buf_size_;
@@ -30,6 +32,7 @@ class RequestParser {
     size_t old_buf_size() const;
     size_t element_end_idx() const;
     size_t element_begin_idx() const;
+
 
     void set_old_buf_size(size_t sz);
 };

@@ -237,7 +237,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_()
         } else if (!(std::isalnum(c) || (parser_.ElementLen() > 1 && c == '-'))) {
             return BS_BAD_REQUEST;
         }
-        buf_[parser_.element_end_idx()] = std::tolower(buf_[parser_.element_end_idx()]);
+        parser_[parser_.element_end_idx()] = std::tolower(buf_[parser_.element_end_idx()]);
         parser_.Advance();
     }
     return BS_HEADER_KEY;
