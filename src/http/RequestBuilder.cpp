@@ -12,7 +12,7 @@
 namespace http {
 
 RequestBuilder::RequestBuilder()
-    : builder_status_(RB_BUILDING), parser_(&buf_), build_state_(BS_METHOD), body_builder_(&rq_.body)
+    : builder_status_(RB_BUILDING), build_state_(BS_METHOD), body_builder_(&rq_.body)
 {}
 
 RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
@@ -20,14 +20,11 @@ RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
 {}
 
 void RequestBuilder::PrepareToRecvData(size_t recv_size) {
-    parser_.set_old_buf_size(buf_.size());
-    buf_.resize(buf_.size() + recv_size);
+    parser_.PrepareToRecvData(recv_size);
 }
 
 void RequestBuilder::AdjustBufferSize_(size_t bytes_recvd) {
-    if (bytes_recvd >= 0 && (buf_.size() > parser_.old_buf_size() + bytes_recvd)) {
-        buf_.resize(parser_.old_buf_size() + bytes_recvd);
-    }
+    parser_.AdjustBufferSize_(bytes_recvd);
 }
 
 void RequestBuilder::Build(size_t bytes_recvd)
@@ -123,19 +120,19 @@ const Request& RequestBuilder::rq() const
 
 std::vector<char>& RequestBuilder::buf()
 {
-    return buf_;
+    return parser_.buf();
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 {
     while (!parser_.EndOfBuffer()) {
-        if (parser_.ElementLen() == 4 && CompareBuf_("GET ", 4) == 0) {
+        if (parser_.ElementLen() == 4 && parser_.CompareBuf_("GET ", 4) == 0) {
             rq_.method = HTTP_GET;
         }
-        if (parser_.ElementLen() == 5 && CompareBuf_("POST ", 5) == 0) {
+        if (parser_.ElementLen() == 5 && parser_.CompareBuf_("POST ", 5) == 0) {
             rq_.method = HTTP_POST;
         }
-        if (parser_.ElementLen() == 7 && CompareBuf_("DELETE ", 7) == 0) {
+        if (parser_.ElementLen() == 7 && parser_.CompareBuf_("DELETE ", 7) == 0) {
             rq_.method = HTTP_DELETE;
         }
         if (rq_.method != HTTP_NO_METHOD) {
@@ -175,19 +172,19 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_()
 RequestBuilder::BuildState RequestBuilder::BuildVersion_()
 {
     while (!parser_.EndOfBuffer()) {
-        if (parser_.ElementLen() == 10 && CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
+        if (parser_.ElementLen() == 10 && parser_.CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
             rq_.version = HTTP_0_9;
         }
-        if (parser_.ElementLen() == 10 && CompareBuf_("HTTP/1.0\r\n", 10) == 0) {
+        if (parser_.ElementLen() == 10 && parser_.CompareBuf_("HTTP/1.0\r\n", 10) == 0) {
             rq_.version = HTTP_1_0;
         }
-        if (parser_.ElementLen() == 10 && CompareBuf_("HTTP/1.1\r\n", 10) == 0) {
+        if (parser_.ElementLen() == 10 && parser_.CompareBuf_("HTTP/1.1\r\n", 10) == 0) {
             rq_.version = HTTP_1_1;
         }
-        if (parser_.ElementLen() == 8 && CompareBuf_("HTTP/2\r\n", 8) == 0) {
+        if (parser_.ElementLen() == 8 && parser_.CompareBuf_("HTTP/2\r\n", 8) == 0) {
             rq_.version = HTTP_2;
         }
-        if (parser_.ElementLen() == 8 && CompareBuf_("HTTP/3\r\n", 8) == 0) {
+        if (parser_.ElementLen() == 8 && parser_.CompareBuf_("HTTP/3\r\n", 8) == 0) {
             rq_.version = HTTP_3;
         }
         if (rq_.version != HTTP_NO_VERSION) {
@@ -237,7 +234,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_()
         } else if (!(std::isalnum(c) || (parser_.ElementLen() > 1 && c == '-'))) {
             return BS_BAD_REQUEST;
         }
-        parser_[parser_.element_end_idx()] = std::tolower(buf_[parser_.element_end_idx()]);
+        parser_[parser_.element_end_idx()] = std::tolower(parser_[parser_.element_end_idx()]);
         parser_.Advance();
     }
     return BS_HEADER_KEY;
@@ -322,7 +319,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
         parser_.Advance();
     }
     size_t copy_size = std::min(parser_.ElementLen(), body_builder_.remaining_length);
-    std::memcpy(body_builder_.body->data() + body_builder_.body_idx, buf_.data() + parser_.element_begin_idx(), copy_size);
+    std::memcpy(body_builder_.body->data() + body_builder_.body_idx, parser_.buf().data() + parser_.element_begin_idx(), copy_size);
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;
     parser_.StartNewElement();
@@ -372,7 +369,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
             }
             size_t old_sz = body_builder_.body->size();
             body_builder_.body->resize(old_sz + body_builder_.remaining_length);
-            std::memcpy(body_builder_.body->data() + old_sz, buf_.data() + parser_.element_begin_idx(), body_builder_.remaining_length);
+            std::memcpy(body_builder_.body->data() + old_sz, parser_.buf().data() + parser_.element_begin_idx(), body_builder_.remaining_length);
             parser_.Advance();
             return BS_BODY_CHUNK_SIZE;
         }
@@ -393,11 +390,6 @@ bool RequestBuilder::CanBuild_() {
         return false;
     }
     return true;
-}
-
-int RequestBuilder::CompareBuf_(const char* str, size_t len) const
-{
-    return std::strncmp(buf_.data() + parser_.element_begin_idx(), str, len);
 }
 
 void RequestBuilder::NullTerminatorCheck_(char c)
