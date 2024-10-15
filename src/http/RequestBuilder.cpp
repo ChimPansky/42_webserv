@@ -337,7 +337,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 {
     while (true) {
-        buf_[parser_.element_end_idx() - 1] = std::tolower(buf_[parser_.element_end_idx() - 1]);
+        parser_[parser_.element_end_idx() - 1] = std::tolower(parser_[parser_.element_end_idx() - 1]);
         if (CheckForEOL_()) {
             std::pair<bool, size_t> converted_size = utils::HexToNumericNoThrow<size_t>(
                 parser_.ExtractElement(-1));
