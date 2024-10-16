@@ -10,7 +10,7 @@
 
 namespace utils {
 
-std::string ToLowerCase(const std::string& input);
+std::string ToLowerCase(std::string str);
 
 namespace fs {
 
@@ -69,6 +69,26 @@ std::pair<bool /*is_valid*/, NumType> StrToNumericNoThrow(const std::string& str
     }
     ss >> std::ws;
     if (!ss.eof()) {
+        return std::make_pair(false, 0);
+    }
+    return std::make_pair(true, num);
+}
+template <typename NumType>
+std::pair<bool /* is_valid*/, NumType> HexToNumericNoThrow(const std::string& str)
+{
+    NumType num;
+    if (str.empty() || (!detail::IsSignedType<NumType>() && str[0] == '-')) {
+        return std::make_pair(false, 0);
+    }
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (!std::isxdigit(str[i])) {
+            return std::make_pair(false, 0);
+        }
+    }
+    std::stringstream ss;
+    ss << std::hex << str;
+    ss >> num;
+    if (ss.fail() || !ss.eof()) {
         return std::make_pair(false, 0);
     }
     return std::make_pair(true, num);

@@ -1,0 +1,5 @@
+GET /products HTTP/1.1
+Host: shop.example.com
+Accept: application/json
+User-Agent: CustomClient/1.0
+
