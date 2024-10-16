@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <vector>
 
-
 #include "Request.h"
 #include "RequestParser.h"
 
@@ -21,13 +20,13 @@ enum RqBuilderStatus {
 class RequestBuilder {
   private:
     struct BodyBuilder {
-        BodyBuilder(std::vector<char> *rq_body);
+        BodyBuilder(std::vector<char>* rq_body);
 
-        std::vector<char> *body;
-        bool    chunked;
-        size_t  body_idx;
-        size_t  remaining_length;
-        size_t  max_body_size;
+        std::vector<char>* body;
+        bool chunked;
+        size_t body_idx;
+        size_t remaining_length;
+        size_t max_body_size;
     };
 
   private:

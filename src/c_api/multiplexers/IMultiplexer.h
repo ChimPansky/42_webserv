@@ -14,7 +14,7 @@ enum MultiplexType {
 
 class IMultiplexer {
   public:
-    virtual ~IMultiplexer() {};
+    virtual ~IMultiplexer(){};
     virtual int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets) = 0;
     virtual int RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
                            const FdToCallbackMap& wr_sockets) = 0;

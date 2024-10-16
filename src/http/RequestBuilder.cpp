@@ -15,15 +15,17 @@ RequestBuilder::RequestBuilder()
     : builder_status_(RB_BUILDING), build_state_(BS_METHOD), body_builder_(&rq_.body)
 {}
 
-RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char> *rq_body)
+RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char>* rq_body)
     : body(rq_body), chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
 
-void RequestBuilder::PrepareToRecvData(size_t recv_size) {
+void RequestBuilder::PrepareToRecvData(size_t recv_size)
+{
     parser_.PrepareToRecvData(recv_size);
 }
 
-void RequestBuilder::AdjustBufferSize_(size_t bytes_recvd) {
+void RequestBuilder::AdjustBufferSize_(size_t bytes_recvd)
+{
     parser_.AdjustBufferSize_(bytes_recvd);
 }
 
@@ -33,35 +35,60 @@ void RequestBuilder::Build(size_t bytes_recvd)
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;
-        return ;
+        return;
     }
     while (CanBuild_()) {
-        if (IsParsingState_(build_state_)) { // todo: check for \0 within states...
-            NullTerminatorCheck_(parser_.Peek()); // can there be \0 in body???
+        if (IsParsingState_(build_state_)) {       // todo: check for \0 within states...
+            NullTerminatorCheck_(parser_.Peek());  // can there be \0 in body???
         }
         BuildState old_state = build_state_;
         switch (build_state_) {
-            case BS_METHOD: build_state_ = BuildMethod_(); break;
-            case BS_URI: build_state_ = BuildUri_(); break;
-            case BS_VERSION: build_state_ = BuildVersion_(); break;
-            case BS_BETWEEN_HEADERS: build_state_ = CheckForNextHeader_(); break;
-            case BS_HEADER_KEY: build_state_ = BuildHeaderKey_(); break;
-            case BS_HEADER_KEY_VAL_SEP: build_state_ = ParseHeaderKeyValSep_(); break;
-            case BS_HEADER_VALUE: build_state_ = BuildHeaderValue_(); break;
+            case BS_METHOD:
+                build_state_ = BuildMethod_();
+                break;
+            case BS_URI:
+                build_state_ = BuildUri_();
+                break;
+            case BS_VERSION:
+                build_state_ = BuildVersion_();
+                break;
+            case BS_BETWEEN_HEADERS:
+                build_state_ = CheckForNextHeader_();
+                break;
+            case BS_HEADER_KEY:
+                build_state_ = BuildHeaderKey_();
+                break;
+            case BS_HEADER_KEY_VAL_SEP:
+                build_state_ = ParseHeaderKeyValSep_();
+                break;
+            case BS_HEADER_VALUE:
+                build_state_ = BuildHeaderValue_();
+                break;
             case BS_CHECK_FOR_BODY: {
                 build_state_ = CheckForBody_();
-                if (build_state_ == BS_BODY_CHUNK_SIZE || build_state_ == BS_CHECK_BODY_REGULAR_LENGTH) {
+                if (build_state_ == BS_BODY_CHUNK_SIZE ||
+                    build_state_ == BS_CHECK_BODY_REGULAR_LENGTH) {
                     builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
                     return;
                 }
                 break;
             }
-            case BS_CHECK_BODY_REGULAR_LENGTH: build_state_ = CheckBodyRegularLength_(); break;
-            case BS_BODY_REGULAR: build_state_ = BuildBodyRegular_(); break;
-            case BS_BODY_CHUNK_SIZE: build_state_ = BuildBodyChunkSize_(); break;
-            case BS_BODY_CHUNK_CONTENT: build_state_ = BuildBodyChunkContent_(); break;
-            case BS_BAD_REQUEST: break;
-            case BS_END: break;
+            case BS_CHECK_BODY_REGULAR_LENGTH:
+                build_state_ = CheckBodyRegularLength_();
+                break;
+            case BS_BODY_REGULAR:
+                build_state_ = BuildBodyRegular_();
+                break;
+            case BS_BODY_CHUNK_SIZE:
+                build_state_ = BuildBodyChunkSize_();
+                break;
+            case BS_BODY_CHUNK_CONTENT:
+                build_state_ = BuildBodyChunkContent_();
+                break;
+            case BS_BAD_REQUEST:
+                break;
+            case BS_END:
+                break;
         }
         if (build_state_ != old_state) {
             parser_.StartNewElement();
@@ -88,7 +115,8 @@ void RequestBuilder::ApplyServerInfo(size_t max_body_size)
     }
 }
 
-RqBuilderStatus RequestBuilder::builder_status() const {
+RqBuilderStatus RequestBuilder::builder_status() const
+{
     return builder_status_;
 }
 
@@ -126,13 +154,13 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
     return BS_METHOD;
 }
 
-//https://datatracker.ietf.org/doc/html/rfc2616#page-17
-// https://datatracker.ietf.org/doc/html/rfc2396
+// https://datatracker.ietf.org/doc/html/rfc2616#page-17
+//  https://datatracker.ietf.org/doc/html/rfc2396
 RequestBuilder::BuildState RequestBuilder::BuildUri_()
 {
     while (!parser_.EndOfBuffer()) {
         if (parser_.ExceededLineLimit() || parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
-            return BS_BAD_REQUEST; // todo: 414 Request-URI Too Long
+            return BS_BAD_REQUEST;  // todo: 414 Request-URI Too Long
         }
         if (parser_.Peek() == ' ') {
             if (parser_.ElementLen() > 1) {
@@ -247,7 +275,8 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderValue_()
         if (parser_.ElementLen() > 1 && parser_.Peek(-1) == EOL_CARRIAGE_RETURN) {
             return BS_BAD_REQUEST;
         }
-        if (c != EOL_CARRIAGE_RETURN && !std::isprint(c)) { // TODO: additional checks for valid characters...
+        if (c != EOL_CARRIAGE_RETURN &&
+            !std::isprint(c)) {  // TODO: additional checks for valid characters...
             return BS_BAD_REQUEST;
         }
         parser_.Advance();
@@ -270,9 +299,11 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
         return BS_BODY_CHUNK_SIZE;
     }
     if (content_length.first) {
-        std::pair<bool, size_t> content_length_num = utils::StrToNumericNoThrow<size_t>(content_length.second);
+        std::pair<bool, size_t> content_length_num =
+            utils::StrToNumericNoThrow<size_t>(content_length.second);
         if (content_length_num.first) {
-            body_builder_.remaining_length = content_length_num.second; // TODO: content-length limits?
+            body_builder_.remaining_length =
+                content_length_num.second;  // TODO: content-length limits?
             return BS_CHECK_BODY_REGULAR_LENGTH;
         } else {
             return BS_BAD_REQUEST;
@@ -284,7 +315,8 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
     return BS_END;
 }
 
-RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_() {
+RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_()
+{
     if (body_builder_.remaining_length > body_builder_.max_body_size) {
         return BS_BAD_REQUEST;
     }
@@ -298,7 +330,8 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
         parser_.Advance();
     }
     size_t copy_size = std::min(parser_.ElementLen(), body_builder_.remaining_length);
-    std::memcpy(body_builder_.body->data() + body_builder_.body_idx, parser_.buf().data() + parser_.element_begin_idx(), copy_size);
+    std::memcpy(body_builder_.body->data() + body_builder_.body_idx,
+                parser_.buf().data() + parser_.element_begin_idx(), copy_size);
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;
     parser_.StartNewElement();
@@ -313,14 +346,16 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 {
     while (true) {
-        parser_[parser_.element_end_idx() - 1] = std::tolower(parser_[parser_.element_end_idx() - 1]);
+        parser_[parser_.element_end_idx() - 1] =
+            std::tolower(parser_[parser_.element_end_idx() - 1]);
         if (CheckForEOL_()) {
-            std::pair<bool, size_t> converted_size = utils::HexToNumericNoThrow<size_t>(
-                parser_.ExtractElement(-1));
+            std::pair<bool, size_t> converted_size =
+                utils::HexToNumericNoThrow<size_t>(parser_.ExtractElement(-1));
             if (!converted_size.first) {
                 return BS_BAD_REQUEST;
             }
-            body_builder_.remaining_length = converted_size.second; // TODO: check for chunk size limits
+            body_builder_.remaining_length =
+                converted_size.second;  // TODO: check for chunk size limits
             if (rq_.body.size() + body_builder_.remaining_length > body_builder_.max_body_size) {
                 return BS_BAD_REQUEST;
             }
@@ -348,7 +383,9 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
             }
             size_t old_sz = body_builder_.body->size();
             body_builder_.body->resize(old_sz + body_builder_.remaining_length);
-            std::memcpy(body_builder_.body->data() + old_sz, parser_.buf().data() + parser_.element_begin_idx(), body_builder_.remaining_length);
+            std::memcpy(body_builder_.body->data() + old_sz,
+                        parser_.buf().data() + parser_.element_begin_idx(),
+                        body_builder_.remaining_length);
             parser_.Advance();
             return BS_BODY_CHUNK_SIZE;
         }
@@ -357,7 +394,8 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
     return BS_BODY_CHUNK_CONTENT;
 }
 
-bool RequestBuilder::CanBuild_() {
+bool RequestBuilder::CanBuild_()
+{
     if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
         return false;
     }
@@ -378,7 +416,8 @@ void RequestBuilder::NullTerminatorCheck_(char c)
     }
 }
 
-bool RequestBuilder::CheckForEOL_() const {
+bool RequestBuilder::CheckForEOL_() const
+{
     if (parser_.ElementLen() < 2) {
         return false;
     }
@@ -390,7 +429,7 @@ bool RequestBuilder::CheckForEOL_() const {
 
 bool RequestBuilder::IsParsingState_(BuildState state) const
 {
-    return (state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH );
+    return (state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH);
 }
 
 }  // namespace http
