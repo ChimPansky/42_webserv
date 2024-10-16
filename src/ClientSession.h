@@ -2,6 +2,7 @@
 #define WS_CLIENT_H
 
 #include <sys/types.h>
+
 #include <vector>
 
 #include "c_api/ClientSocket.h"
@@ -24,7 +25,7 @@ class ClientSession {
     bool IsRequestReady() const;
     void ProcessNewData(size_t bytes_recvd);
     void CloseConnection();
-    void PrepareResponse(); // later: get this from server
+    void PrepareResponse();  // later: get this from server
     class ClientReadCallback : public c_api::ICallback {
       public:
         ClientReadCallback(ClientSession& client);
@@ -44,7 +45,7 @@ class ClientSession {
 
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
-    int master_socket_fd_;  // to choose correct server later
+    int master_socket_fd_;   // to choose correct server later
     std::vector<char> buf_;  // string?
     size_t buf_send_idx_;
     http::RequestBuilder rq_builder_;
