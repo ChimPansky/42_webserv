@@ -23,7 +23,7 @@ void RequestParser::PrepareToRecvData(size_t recv_size)
 
 void RequestParser::AdjustBufferSize_(size_t bytes_recvd)
 {
-    if (bytes_recvd >= 0 && (buf_.size() > old_buf_size_ + bytes_recvd)) {
+    if (buf_.size() > old_buf_size_ + bytes_recvd) {
         buf_.resize(old_buf_size_ + bytes_recvd);
     }
 }
