@@ -1,7 +1,8 @@
 #include "RequestParser.h"
-#include "http.h"
 
 #include <cstring>
+
+#include "http.h"
 
 namespace http {
 
@@ -9,28 +10,34 @@ RequestParser::RequestParser()
     : old_buf_size_(0), line_begin_idx_(0), element_begin_idx_(0), element_end_idx_(0)
 {}
 
-std::vector<char>& RequestParser::buf() {
+std::vector<char>& RequestParser::buf()
+{
     return buf_;
 }
 
-void RequestParser::PrepareToRecvData(size_t recv_size) {
+void RequestParser::PrepareToRecvData(size_t recv_size)
+{
     old_buf_size_ = buf_.size();
     buf_.resize(buf_.size() + recv_size);
 }
 
-void RequestParser::AdjustBufferSize_(size_t bytes_recvd) {
-    if (bytes_recvd >= 0 && (buf_.size() > old_buf_size_ + bytes_recvd)) {
+void RequestParser::AdjustBufferSize_(size_t bytes_recvd)
+{
+    if (buf_.size() > old_buf_size_ + bytes_recvd) {
         buf_.resize(old_buf_size_ + bytes_recvd);
     }
 }
 
-bool RequestParser::Advance(ssize_t n) {
+bool RequestParser::Advance(ssize_t n)
+{
     element_end_idx_ += n;
     return true;
 }
 
-char RequestParser::Peek(ssize_t offset) const {
-    if (element_end_idx_ + offset < 0 || element_end_idx_ + offset >= static_cast<ssize_t>(buf_.size())) {
+char RequestParser::Peek(ssize_t offset) const
+{
+    if (element_end_idx_ + offset < 0 ||
+        element_end_idx_ + offset >= static_cast<ssize_t>(buf_.size())) {
         return '\0';
     }
     return buf_[element_end_idx_ + offset];
@@ -41,19 +48,23 @@ int RequestParser::CompareBuf_(const char* str, size_t len) const
     return std::strncmp((buf_.data()) + element_begin_idx(), str, len);
 }
 
-size_t RequestParser::ElementLen() const {
+size_t RequestParser::ElementLen() const
+{
     return element_end_idx_ - element_begin_idx_ + 1;
 }
 
-bool RequestParser::ExceededLineLimit() const {
+bool RequestParser::ExceededLineLimit() const
+{
     return line_begin_idx_ > RQ_LINE_LEN_LIMIT;
 }
 
-void RequestParser::StartNewElement() {
+void RequestParser::StartNewElement()
+{
     element_begin_idx_ = element_end_idx_;
 }
 
-bool RequestParser::EndOfBuffer() const {
+bool RequestParser::EndOfBuffer() const
+{
     return element_end_idx_ >= static_cast<ssize_t>(buf_.size()) - 1;
 }
 
@@ -66,36 +77,42 @@ std::string RequestParser::ExtractElement(ssize_t end_offset) const
         return "";
     }
     size_t begin = element_begin_idx_;
-    size_t end = std::max(static_cast<ssize_t>(element_end_idx_) + end_offset, static_cast<ssize_t>(begin));
+    size_t end =
+        std::max(static_cast<ssize_t>(element_end_idx_) + end_offset, static_cast<ssize_t>(begin));
     end = std::min(end, buf_.size());
-    //LOG(DEBUG) << "{" << std::string(buf_-> data() + begin, buf_->data() + end) << "}";
-    return std::string(buf_. data() + begin, buf_.data() + end);
+    // LOG(DEBUG) << "{" << std::string(buf_-> data() + begin, buf_->data() + end) << "}";
+    return std::string(buf_.data() + begin, buf_.data() + end);
 }
 
-char& RequestParser::operator[](ssize_t index) {
-        if (index < 0) {
-            return buf_[0];
-        }
-        if (index > static_cast<ssize_t>(buf_.size())) {
-            return buf_[buf_.size() - 1];
-        }
-        return buf_[index];
+char& RequestParser::operator[](ssize_t index)
+{
+    if (index < 0) {
+        return buf_[0];
     }
+    if (index > static_cast<ssize_t>(buf_.size())) {
+        return buf_[buf_.size() - 1];
+    }
+    return buf_[index];
+}
 
-size_t RequestParser::old_buf_size() const {
+size_t RequestParser::old_buf_size() const
+{
     return old_buf_size_;
 }
 
-size_t RequestParser::element_end_idx() const {
+size_t RequestParser::element_end_idx() const
+{
     return element_end_idx_;
 }
 
-size_t RequestParser::element_begin_idx() const {
+size_t RequestParser::element_begin_idx() const
+{
     return element_begin_idx_;
 }
 
-void RequestParser::set_old_buf_size(size_t sz) {
+void RequestParser::set_old_buf_size(size_t sz)
+{
     old_buf_size_ = sz;
 }
 
-} // namespace http
+}  // namespace http

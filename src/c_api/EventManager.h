@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "multiplexers/IMultiplexer.h"
 #include "multiplexers/ICallback.h"
+#include "multiplexers/IMultiplexer.h"
 #include "utils/unique_ptr.h"
 
 namespace c_api {
@@ -31,7 +31,7 @@ class EventManager {
     utils::unique_ptr<IMultiplexer> multiplexer_;
     FdToCallbackMap rd_sockets_;  // this contains callbacks for both: listeners & clients
     FdToCallbackMap wr_sockets_;  // this contains callbacks for (write) clients only
-    std::vector<std::pair<int, CallbackType> > fds_to_delete_; // to delete after CheckOnce
+    std::vector<std::pair<int, CallbackType> > fds_to_delete_;  // to delete after CheckOnce
 };
 
 }  // namespace c_api
