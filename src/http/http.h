@@ -3,6 +3,9 @@
 
 namespace http {
 
+#define RQ_LINE_LEN_LIMIT 8192
+#define RQ_URI_LEN_LIMIT 8192
+
 enum Method {
     HTTP_NO_METHOD,
     HTTP_GET,

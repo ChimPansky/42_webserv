@@ -1,0 +1,3 @@
+GET /search?q=example HTTP/1.1
+Host: www.search.com
+

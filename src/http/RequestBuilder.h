@@ -4,7 +4,9 @@
 #include <cstddef>
 #include <vector>
 
+
 #include "Request.h"
+#include "RequestParser.h"
 
 class Server;
 namespace http {
@@ -18,7 +20,7 @@ enum RqBuilderStatus {
 
 class RequestBuilder {
   private:
-    struct   BodyBuilder {
+    struct BodyBuilder {
         BodyBuilder(std::vector<char> *rq_body);
 
         std::vector<char> *body;
@@ -52,7 +54,8 @@ class RequestBuilder {
 
   public:
     RequestBuilder();
-    void Build(size_t bytes_read);
+    void PrepareToRecvData(size_t recv_size);
+    void Build(size_t bytes_recvd);
     void ApplyServerInfo(size_t max_body_size);
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
@@ -61,36 +64,30 @@ class RequestBuilder {
   private:
     Request rq_;
     RqBuilderStatus builder_status_;
-    std::vector<char> buf_;
-    size_t begin_idx_;
-    size_t end_idx_;
+    RequestParser parser_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
 
-    BuildState BuildMethod_(void);
-    BuildState BuildUri_(char c);
-    BuildState BuildVersion_(void);
-    BuildState CheckForNextHeader_(char c);
-    BuildState BuildHeaderKey_(char c);
-    BuildState ParseHeaderKeyValSep_(char c);
-    BuildState BuildHeaderValue_(char c);
-    BuildState CheckForBody_(void);
-    BuildState CheckBodyRegularLength_(void);
-    BuildState BuildBodyRegular_(void);
-    BuildState BuildBodyChunkSize_(char c);
-    BuildState BuildBodyChunkContent_(void);
+    BuildState BuildMethod_();
+    BuildState BuildUri_();
+    BuildState BuildVersion_();
+    BuildState CheckForNextHeader_();
+    BuildState BuildHeaderKey_();
+    BuildState ParseHeaderKeyValSep_();
+    BuildState BuildHeaderValue_();
+    BuildState CheckForBody_();
+    BuildState CheckBodyRegularLength_();
+    BuildState BuildBodyRegular_();
+    BuildState BuildBodyChunkSize_();
+    BuildState BuildBodyChunkContent_();
 
     // helpers:
-    bool CanBuild_(void);
-    size_t ParseLen_() const;
-    int CompareBuf_(const char*, size_t len) const;
+    void AdjustBufferSize_(size_t bytes_recvd);
+    bool CanBuild_();
     void NullTerminatorCheck_(char c);
-    void UpdateBeginIdx_(void);
     bool CheckForEOL_() const;
-    bool HasReachedEndOfBuffer_(void) const;
-    bool IsBodyReadingState_(BuildState state) const;
-    bool IsProcessingState_(BuildState state) const;
+    bool IsParsingState_(BuildState state) const;
 };
 
 }  // namespace http
