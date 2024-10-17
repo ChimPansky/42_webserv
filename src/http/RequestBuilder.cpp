@@ -350,7 +350,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
             std::tolower(parser_[parser_.element_end_idx() - 1]);
         if (CheckForEOL_()) {
             std::pair<bool, size_t> converted_size =
-                utils::HexToNumericNoThrow<size_t>(parser_.ExtractElement(-1));
+                utils::HexToUnsignedNumericNoThrow<size_t>(parser_.ExtractElement(-1));
             if (!converted_size.first) {
                 return BS_BAD_REQUEST;
             }
