@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <vector>
 
-
 #include "Request.h"
 #include "RequestParser.h"
 
@@ -65,7 +64,6 @@ class RequestBuilder {
     Request rq_;
     RqBuilderStatus builder_status_;
     RequestParser parser_;
-    std::vector<unsigned char> buf_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
@@ -86,7 +84,6 @@ class RequestBuilder {
     // helpers:
     void AdjustBufferSize_(size_t bytes_recvd);
     bool CanBuild_();
-    int CompareBuf_(const char*, size_t len) const;
     void NullTerminatorCheck_(char c);
     bool CheckForEOL_() const;
     bool IsParsingState_(BuildState state) const;

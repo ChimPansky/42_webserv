@@ -11,9 +11,11 @@
 
 size_t Recv(std::ifstream& file, std::vector<unsigned char>& buf, size_t read_sz) {
     file.read((reinterpret_cast<char*>(buf.data())) + buf.size() - read_sz, read_sz); // will there be a difference between using ifstream::read (which expects char*) vs using sys/socket recv() which is using void* ?
+
     return file.gcount();
 }
 
+// Client Context
 void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd) {
     builder.Build(bytes_recvd);
     if (builder.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
@@ -21,10 +23,17 @@ void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd) {
     }
 }
 
-void Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz) {
+// Client Callback context
+bool Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz) {
     builder.PrepareToRecvData(read_sz);
     size_t bytes_recvd = Recv(file, builder.buf(), read_sz);
+    if (bytes_recvd < 0) {
+        std::cerr << "Could not read from client: closing connection..." << std::endl;
+        //client_.CloseConnection();
+        return false;
+    }
     ProcessNewData(builder, bytes_recvd);
+    return true;
 }
 
 int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read_size = 10) {
@@ -33,8 +42,11 @@ int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read
         std::cerr << "Could not open Request File: " << rq_path << std::endl;
         return 1;
     }
-    while (builder.builder_status() != http::RB_DONE)
-        Call(builder, file, read_size);
+    while (builder.builder_status() != http::RB_DONE) {
+        if (!Call(builder, file, read_size)) {
+            break;
+        };
+    }
     return 0;
 }
 

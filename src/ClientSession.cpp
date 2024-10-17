@@ -10,18 +10,19 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
       connection_closed_(false)
 {
     if (c_api::EventManager::get().RegisterCallback(
-        client_sock_->sockfd(), c_api::CT_READ,
-        utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
-            LOG(ERROR) << "Could not register read callback for client: " << client_sock_->sockfd();
-            CloseConnection();
-            return ;
-        }
+            client_sock_->sockfd(), c_api::CT_READ,
+            utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
+        LOG(ERROR) << "Could not register read callback for client: " << client_sock_->sockfd();
+        CloseConnection();
+        return;
+    }
 }
 
 ClientSession::~ClientSession()
 {}
 
-void ClientSession::CloseConnection() {
+void ClientSession::CloseConnection()
+{
     connection_closed_ = true;
     c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READWRITE);
     LOG(INFO) << "Client " << client_sock_->sockfd() << ": Connection closed";
@@ -70,23 +71,21 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
     LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
                << client_.client_sock_->sockfd();
     if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
-        c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(),
-                                                           c_api::CT_READ);
+        c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(), c_api::CT_READ);
         if (c_api::EventManager::get().RegisterCallback(
-            client_.client_sock_->sockfd(), c_api::CT_WRITE,
-            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
-                LOG(ERROR) << "Could not register write callback for client: "
-                    << client_.client_sock_->sockfd();
-                client_.CloseConnection();
-                return ;
-            }
+                client_.client_sock_->sockfd(), c_api::CT_WRITE,
+                utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
+            LOG(ERROR) << "Could not register write callback for client: "
+                       << client_.client_sock_->sockfd();
+            client_.CloseConnection();
+            return;
+        }
         client_.PrepareResponse();
     }
 }
 
 ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : client_(client)
-{
-}
+{}
 
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 {
@@ -99,8 +98,7 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
         return;
     }
     if (client_.buf_send_idx_ == client_.buf_.size()) {
-        LOG(INFO) << client_.buf_send_idx_
-                  << " bytes sent, close connection";
+        LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection";
         client_.CloseConnection();
     }
 }

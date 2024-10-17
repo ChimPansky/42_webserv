@@ -97,7 +97,6 @@ std::pair<bool /* is_valid*/, NumType> HexToNumericNoThrow(const std::string& st
 }  // namespace utils
 
 #endif  // WS_UTILS_UTILS_H
-
 // #include <iostream>
 
 // template <typename NumType>

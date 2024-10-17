@@ -2,6 +2,7 @@
 #define WS_C_API_MULTIPLEXERS_I_CALLBACK_H
 
 #include <map>
+
 #include "utils/unique_ptr.h"
 
 namespace c_api {
@@ -23,7 +24,7 @@ class ICallback {
     // possible args for assert right fd
     // consider changing to void Call()
     virtual void Call(int fd) = 0;
-    virtual ~ICallback() {};
+    virtual ~ICallback(){};
 };
 
 typedef std::map<int /*fd*/, utils::unique_ptr<ICallback> > FdToCallbackMap;
