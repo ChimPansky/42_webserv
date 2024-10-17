@@ -65,7 +65,6 @@ TEST(ConfigTest, LoadValidConfig)
     const config::HttpConfig& http_config = conf.http_config();
 
     EXPECT_EQ(http_config.keepalive_timeout(), 65);
-    EXPECT_EQ(http_config.client_max_body_size(), 1 << 20);  // 1 MB in bytes
     EXPECT_EQ(http_config.error_pages().at(404), "error_pages/404.html");
     EXPECT_EQ(http_config.error_pages().at(501), "error_pages/501.html");
 
@@ -82,6 +81,7 @@ TEST(ConfigTest, LoadValidConfig)
                               config::LocationConfig::Method::GET);
                     EXPECT_EQ(location_conf.allowed_methods()[1],
                               config::LocationConfig::Method::POST);
+                    EXPECT_EQ(location_conf.client_max_body_size(), 5 << 20);  // 5 MB in bytes
                 } else if (location_conf.route().first == "/error_pages/") {
                     EXPECT_EQ(location_conf.root_dir(), "/docs");
                     EXPECT_EQ(location_conf.dir_listing(), true);
@@ -89,6 +89,7 @@ TEST(ConfigTest, LoadValidConfig)
                               config::LocationConfig::Method::GET);
                     EXPECT_EQ(location_conf.allowed_methods()[1],
                               config::LocationConfig::Method::POST);
+                    EXPECT_EQ(location_conf.client_max_body_size(), 4 << 20);
                 }
             }
         } else if (server_conf.listeners()[0].second == 8090) {
@@ -99,11 +100,13 @@ TEST(ConfigTest, LoadValidConfig)
                 if (location_conf.route().first == "/conf/") {
                     EXPECT_EQ(location_conf.redirect().first, 301);
                     EXPECT_EQ(location_conf.redirect().second, "/error_pages/404.html");
+                    EXPECT_EQ(location_conf.client_max_body_size(), 1 << 20);
                 } else if (location_conf.route().first == "/cgi-bin/") {
                     EXPECT_EQ(location_conf.root_dir(), "/cgi-bin");
                     EXPECT_EQ(location_conf.cgi_paths()[0], "/cgi-bin");
                     EXPECT_EQ(location_conf.cgi_extensions()[0], ".php");
                     EXPECT_EQ(location_conf.cgi_extensions()[1], ".py");
+                    EXPECT_EQ(location_conf.client_max_body_size(), 1 << 20);
                 }
             }
         }
@@ -123,7 +126,6 @@ TEST(ConfigTest, MinimumSettingsConfig)
     const config::HttpConfig& http_config = conf.http_config();
 
     EXPECT_EQ(http_config.keepalive_timeout(), 65);
-    EXPECT_EQ(http_config.client_max_body_size(), 2ul << 20);  // 2 MB in bytes
 
     const std::vector<config::ServerConfig>& server_configs = http_config.server_configs();
     ASSERT_EQ(server_configs.size(), 1);
