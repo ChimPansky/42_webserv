@@ -16,11 +16,7 @@ env:
 jobs:
   check-commit-message:
     name: Check Commit Message
-<<<<<<< HEAD
-    runs-on: ubuntu-22.04
-=======
     runs-on: ubuntu-22.04  # ubuntu-latest is now 24.0 (noble) which causes trouble with clang-12, so stay at 22.0 (jammy)
->>>>>>> main
     steps:
       - name: Check Title Format
         uses: gsactions/commit-message-checker@v2
