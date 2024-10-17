@@ -52,7 +52,7 @@ class ClientSession {
     http::Request rq_;
     bool connection_closed_;
 
-    Server* virtual_server;
+    // Server* virtual_server; later: set this once request was successfully matched to corresponding server
 };
 
 #endif  // WS_CLIENT_H

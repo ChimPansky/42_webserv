@@ -53,8 +53,8 @@ Connection: Closed\n\r\
 void ClientSession::PrepareResponse()
 {
     buf_send_idx_ = 0;
-    buf_.resize(rq_builder_.buf().size());
-    std::memcpy(buf_.data(), rq_builder_.buf().data(), rq_builder_.buf().size());
+    buf_.resize(sizeof(HTTP_RESPONSE));
+    std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
 }
 
 ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
