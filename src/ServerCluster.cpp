@@ -102,3 +102,7 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>
         (new ClientSession(client_sock, fd, &cluster_));
 }
+
+const std::vector<utils::shared_ptr<Server> >& ServerCluster::servers() const{
+    return servers_;
+}

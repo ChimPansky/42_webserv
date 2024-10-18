@@ -33,8 +33,15 @@ void Request::Print() const
         LOG(DEBUG) << "|" << it->first << "|: |" << it->second << "|";
     }
     LOG(DEBUG) << "Body size: " << body.size();
-    LOG(DEBUG) << "Body: " << body.data();
+    LOG(DEBUG) << "Body: ";
+    BodyPrint();
     LOG(DEBUG) << "\n";
+}
+
+void Request::BodyPrint() const {
+    for (std::vector<char>::const_iterator it = body.begin(); it != body.end(); ++it) {
+        LOG(DEBUG) << *it;
+    }
 }
 
 }  // namespace http

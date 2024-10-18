@@ -16,6 +16,8 @@ class ServerCluster {
     static void Start(const config::Config& config);
     static void Stop();
 
+    const std::vector<utils::shared_ptr<Server> >& servers() const;
+
   private:
     class MasterSocketCallback : public c_api::ICallback {
       public:
