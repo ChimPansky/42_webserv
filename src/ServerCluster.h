@@ -3,10 +3,13 @@
 
 #include <vector>
 
-#include "Server.h"
+#include "c_api/MasterSocket.h"
 #include "config/Config.h"
 #include "utils/shared_ptr.h"
 #include "utils/unique_ptr.h"
+
+class Server;
+class ClientSession;
 
 class ServerCluster {
   public:

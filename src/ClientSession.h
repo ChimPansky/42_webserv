@@ -5,6 +5,7 @@
 
 #include <vector>
 
+#include "ServerCluster.h"
 #include "c_api/ClientSocket.h"
 #include "c_api/multiplexers/ICallback.h"
 #include "http/Request.h"
@@ -18,7 +19,7 @@ class ClientSession {
     ClientSession();
 
   public:
-    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock, int master_sock_fd);
+    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock, int master_sock_fd, ServerCluster *server_cluster);
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
@@ -49,6 +50,8 @@ class ClientSession {
     http::Request rq_;
     http::Response rs_;
     bool connection_closed_;
+
+    ServerCluster *server_cluster_;
 };
 
 #endif  // WS_CLIENT_H

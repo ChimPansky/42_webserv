@@ -99,5 +99,6 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
         return;
     }
     LOG(INFO) << "New incoming connection on: " << fd;
-    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
+    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>
+        (new ClientSession(client_sock, fd, &cluster_));
 }

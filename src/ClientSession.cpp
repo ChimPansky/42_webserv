@@ -1,13 +1,14 @@
 #include "ClientSession.h"
 
+#include "Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/multiplexers/ICallback.h"
 #include "utils/logger.h"
 #include "utils/unique_ptr.h"
 
-ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
+ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd, ServerCluster* server_cluster)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0),
-      connection_closed_(false)
+      connection_closed_(false), server_cluster_(server_cluster)
 {
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
