@@ -114,6 +114,10 @@ static const std::string& ParseServerName(const std::string& val)
         }
     }
 
+    if (val[0] == '*' && val[val.size() - 1] == '*') {
+        throw std::runtime_error("Invalid server name: invalid wildcard in server name");
+    }
+
     size_t start = 0;
     size_t dotPos = 0;
     while ((dotPos = val.find('.', start)) != std::string::npos) {
