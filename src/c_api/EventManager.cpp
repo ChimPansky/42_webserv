@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+#include "multiplexers/ICallback.h"
 #include "multiplexers/IMultiplexer.h"
 #include "utils/logger.h"
 
@@ -42,9 +43,12 @@ int EventManager::CheckOnce()
 int EventManager::RegisterCallback(int fd, CallbackType type,
                                    utils::unique_ptr<c_api::ICallback> callback)
 {
-    if (!(type & CT_READ) && !(type & CT_WRITE)) {
+    if (!(type & CT_READ) && !(type & CT_WRITE) && !(type & CT_PICK_SERVER)) {
         LOG(FATAL) << "Unknown callback type";
         return 1;
+    }
+    if (type & CT_PICK_SERVER) {
+        
     }
     if (multiplexer_->RegisterFd(fd, type, rd_sockets_, wr_sockets_) != 0) {
         return 1;

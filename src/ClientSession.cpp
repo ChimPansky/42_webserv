@@ -62,6 +62,9 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
+    if (client_.rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
+        return;
+    }
     client_.rq_builder_.PrepareToRecvData(CLIENT_RD_CALLBACK_RD_SZ);
     ssize_t bytes_recvd =
         client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
@@ -78,7 +81,16 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
     rq_builder_.Build(bytes_recvd);
     if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
         // get info from server here...
-        rq_builder_.ApplyServerInfo(1000);
+        if (c_api::EventManager::get().RegisterCallback(
+                client_sock_->sockfd(), c_api::CT_PICK_SERVER,
+                utils::unique_ptr<c_api::ICallback>(new ClientPickServerCallback(*this))) != 0) {
+            LOG(ERROR) << "Could not register pick-server callback for client: "
+                       << client_sock_->sockfd();
+            CloseConnection();
+            return;
+        }
+        // rq_builder_.ApplyServerInfo(1000);
+        return;
     }
     if (rq_builder_.builder_status() == http::RB_DONE) {
         c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READ);
@@ -112,4 +124,16 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
         LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection";
         client_.CloseConnection();
     }
+}
+
+ClientSession::ClientPickServerCallback::ClientPickServerCallback(ClientSession& client) : client_(client)
+{}
+
+void ClientSession::ClientPickServerCallback::Call(int /*fd*/)
+{
+    LOG(DEBUG) << "ClientPickServerCallback: Picking server...";
+    client_.rq_builder_.ApplyServerInfo(1000);
+    c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(), c_api::CT_PICK_SERVER);
+    // assert fd == client_sock.fd
+
 }

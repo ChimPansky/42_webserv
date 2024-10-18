@@ -10,6 +10,7 @@ namespace c_api {
 enum CallbackType {
     CT_READ = 0x001,
     CT_WRITE = 0x004,
+    CT_PICK_SERVER = 0x008,
     CT_READWRITE = CT_READ | CT_WRITE
 };
 

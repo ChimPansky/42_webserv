@@ -42,6 +42,14 @@ class ClientSession {
       private:
         ClientSession& client_;
     };
+    class ClientPickServerCallback : public c_api::ICallback {
+      public:
+        ClientPickServerCallback(ClientSession& client);
+        virtual void Call(int);
+
+      private:
+        ClientSession& client_;
+    };
 
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
