@@ -2,6 +2,7 @@
 
 #include "c_api/EventManager.h"
 #include "c_api/multiplexers/ICallback.h"
+#include "http/RequestBuilder.h"
 #include "utils/logger.h"
 #include "utils/unique_ptr.h"
 
@@ -61,26 +62,36 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
-    // assert fd == client_sock.fd
-    long bytes_recvd = client_.client_sock_->Recv(client_.buf_);
-    if (bytes_recvd <= 0) {
+    client_.rq_builder_.PrepareToRecvData(CLIENT_RD_CALLBACK_RD_SZ);
+    ssize_t bytes_recvd =
+        client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
+    if (bytes_recvd < 0) {
         LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
         client_.CloseConnection();
         return;
     }
-    LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
-               << client_.client_sock_->sockfd();
-    if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
-        c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(), c_api::CT_READ);
+    client_.ProcessNewData(bytes_recvd);
+}
+
+void ClientSession::ProcessNewData(size_t bytes_recvd)
+{
+    rq_builder_.Build(bytes_recvd);
+    if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
+        // get info from server here...
+        rq_builder_.ApplyServerInfo(1000);
+    }
+    if (rq_builder_.builder_status() == http::RB_DONE) {
+        c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READ);
         if (c_api::EventManager::get().RegisterCallback(
-                client_.client_sock_->sockfd(), c_api::CT_WRITE,
-                utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
+                client_sock_->sockfd(), c_api::CT_WRITE,
+                utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this))) != 0) {
             LOG(ERROR) << "Could not register write callback for client: "
-                       << client_.client_sock_->sockfd();
-            client_.CloseConnection();
+                       << client_sock_->sockfd();
+            CloseConnection();
             return;
         }
-        client_.PrepareResponse();
+        rq_builder_.rq().Print();
+        PrepareResponse();  // for now just echo the request-buf-content
     }
 }
 
