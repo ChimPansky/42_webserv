@@ -1,0 +1,1 @@
+DELETE /upload/subfolder1/subfolder2 HTTP/2

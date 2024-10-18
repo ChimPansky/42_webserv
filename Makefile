@@ -15,6 +15,7 @@ MAKEFLAGS = -j$(nproc)
 IFLAGS = -I./$(SOURCE_DIR)
 LDFLAGS =
 
+
 FILENAMES = \
 	c_api/multiplexers/EpollMultiplexer.cpp \
 	c_api/multiplexers/IMultiplexer.cpp \
@@ -34,6 +35,8 @@ FILENAMES = \
 	config/ConfigBuilder.cpp \
 	config/InheritedSettings.cpp \
 	http/Request.cpp \
+	http/RequestBuilder.cpp \
+	http/RequestParser.cpp \
 	utils/logger.cpp \
 	utils/utils.cpp \
 	ClientSession.cpp \

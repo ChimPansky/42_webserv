@@ -36,8 +36,8 @@ ServerCluster::ServerCluster(const config::Config& /*config*/)
             sockfd = listener->sockfd();
             sockets_to_servers_[sockfd].push_back(serv);
             if (c_api::EventManager::get().RegisterCallback(
-                sockfd, c_api::CT_READ,
-                utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
+                    sockfd, c_api::CT_READ,
+                    utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
                 LOG(FATAL) << "Could not register callback for listener: " << sockfd;
             }
             sockets_[sockfd] = listener;

@@ -1,36 +1,39 @@
 #include "MasterSocket.h"
-#include "c_api/utils.h"
 
 #include <cstring>
 #include <stdexcept>
 
+#include "c_api/utils.h"
+
 namespace {
-    int CreateSocket(bool set_nonblock) {
-        int sockfd = ::socket(/* IPv4 */ AF_INET,
-                              /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
-                              /* explicit tcp */ IPPROTO_TCP);
-        if (sockfd < 0) {
-            throw std::runtime_error("cannot create socket");
-        }
-        int optval = 1;
-        ::setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-        return sockfd;
+int CreateSocket(bool set_nonblock)
+{
+    int sockfd = ::socket(/* IPv4 */ AF_INET,
+                          /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
+                          /* explicit tcp */ IPPROTO_TCP);
+    if (sockfd < 0) {
+        throw std::runtime_error("cannot create socket");
+    }
+    int optval = 1;
+    ::setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    return sockfd;
+}
+
+// TODO convertion from addrin to addr here is technically a UB
+void BindAndListen(int sockfd_, struct sockaddr_in& addr_in)
+{
+    // bind socket to ip address and port
+    if (::bind(sockfd_, (struct sockaddr*)&addr_in, sizeof(addr_in)) != 0) {
+        throw std::runtime_error("cannot bind master_socket to the address");
     }
 
-    // TODO convertion from addrin to addr here is technically a UB
-    void BindAndListen(int sockfd_, struct sockaddr_in& addr_in) {
-        // bind socket to ip address and port
-        if (::bind(sockfd_, (struct sockaddr*)&addr_in, sizeof(addr_in)) != 0) {
-            throw std::runtime_error("cannot bind master_socket to the address");
-        }
-
-        // start listening for incoming connections, if more then SOMAXCONN are not accepted,
-        // rest will be ignored
-        if (::listen(sockfd_, SOMAXCONN) != 0) {
-            throw std::runtime_error("cannot bind master_socket");
-        }
+    // start listening for incoming connections, if more then SOMAXCONN are not accepted,
+    // rest will be ignored
+    if (::listen(sockfd_, SOMAXCONN) != 0) {
+        throw std::runtime_error("cannot bind master_socket");
     }
 }
+}  // namespace
 
 namespace c_api {
 
@@ -42,13 +45,11 @@ MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
     BindAndListen(sockfd_, addr_in_);
 }
 
-MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock)
-  : addr_in_(addr)
+MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock) : addr_in_(addr)
 {
     sockfd_ = CreateSocket(set_nonblock);
     BindAndListen(sockfd_, addr_in_);
 }
-
 
 utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
 {
@@ -61,7 +62,6 @@ utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
     return utils::unique_ptr<ClientSocket>(new ClientSocket(client_fd));
 }
 
-
 // technically at this point socket must be unbinded
 //   probably with 'shutdown', which is not in the allowed funcs
 //   otherwise socket will be close but port still occupied
@@ -73,12 +73,10 @@ MasterSocket::~MasterSocket()
     close(sockfd_);
 }
 
-
 int MasterSocket::sockfd() const
 {
     return sockfd_;
 }
-
 
 bool MasterSocket::IsSameSockAddr(struct sockaddr_in& addr) const
 {

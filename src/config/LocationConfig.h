@@ -26,7 +26,8 @@ class LocationConfig {
                    const std::pair<int, std::string>& redirect,
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
-                   const std::vector<std::string>& default_file, bool dir_listing);
+                   const std::vector<std::string>& default_file, bool dir_listing,
+                   unsigned int client_max_body_size);
 
     const std::pair<std::string, /* is exact match */ bool>& route() const;
     const std::vector<Method>& allowed_methods() const;
@@ -37,10 +38,11 @@ class LocationConfig {
     const std::string& root_dir() const;
     const std::vector<std::string>& default_file() const;
     bool dir_listing() const;
-
+    unsigned int client_max_body_size() const;
     static inline int kDefaultRedirectCode() { return 301; }
     static inline const char* kDefaultRedirectPath() { return "/new_location"; }
     static inline const char* kDefaultRootDir() { return "/docs"; }
+    static inline unsigned int kDefaultClientMaxBodySize() { return 2ul << 20; }
     static inline std::vector<std::string> kDefaultIndexFile()
     {
         std::vector<std::string> default_file;
@@ -81,6 +83,7 @@ class LocationConfig {
     std::string root_dir_;
     std::vector<std::string> default_file_;
     bool dir_listing_;
+    unsigned int client_max_body_size_;
 };
 
 }  // namespace config
