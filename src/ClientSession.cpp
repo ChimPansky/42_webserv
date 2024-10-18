@@ -1,12 +1,12 @@
 #include "ClientSession.h"
 
-#include "Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/multiplexers/ICallback.h"
 #include "http/Request.h"
 #include "http/RequestBuilder.h"
 #include "utils/logger.h"
 #include "utils/unique_ptr.h"
+#include "server/Server.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd, ServerCluster* server_cluster)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0),
@@ -79,8 +79,10 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
 {
     rq_builder_.Build(bytes_recvd);
     if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
+        PickServerFromCluster(rq_builder_.rq());
         // get info from server here...
         rq_builder_.ApplyServerInfo(1000);
+        return;
     }
     if (rq_builder_.builder_status() == http::RB_DONE) {
         c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READ);
@@ -116,10 +118,15 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
     }
 }
 
-Server *ClientSession::PickServerFromCluster(http::Request& rq) {
+Server *ClientSession::PickServerFromCluster(const http::Request& rq) {
+    LOG(DEBUG) << "ClientSession::PickServerFromCluster... ";
     for (std::vector<utils::shared_ptr<Server> >::const_iterator it = server_cluster_->servers().begin(); it != server_cluster_->servers().end(); ++it) {
-        // it->MatchRequest();
-        (void)rq;
+        if ((*it)->DoesMatchTheRequest(rq)) {
+            LOG(DEBUG) << "MATCH! " << (*it);
+        }
+        else {
+            LOG(DEBUG) << "NO MATCH! " << (*it);
+        }
     }
     return NULL;
 }

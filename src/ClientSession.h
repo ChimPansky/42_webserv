@@ -27,7 +27,7 @@ class ClientSession {
     void ProcessNewData(size_t bytes_recvd);
     void CloseConnection();
     void PrepareResponse();  // later: get this from server
-    Server* PickServerFromCluster(http::Request& rq);
+    Server* PickServerFromCluster(const http::Request& rq);
 
     class ClientReadCallback : public c_api::ICallback {
       public:

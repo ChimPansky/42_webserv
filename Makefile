@@ -40,7 +40,7 @@ FILENAMES = \
 	utils/logger.cpp \
 	utils/utils.cpp \
 	ClientSession.cpp \
-	Server.cpp \
+	server/Server.cpp \
 	ServerCluster.cpp
 
 SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES) main.cpp)

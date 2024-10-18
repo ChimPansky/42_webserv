@@ -1,8 +1,9 @@
 #include "ServerCluster.h"
 
-#include "Server.h"
+#include "server/Server.h"
 #include "c_api/EventManager.h"
 #include "c_api/utils.h"
+#include "ClientSession.h"
 
 volatile bool ServerCluster::run_ = false;
 
