@@ -9,6 +9,7 @@
 #include "ClientSession.h"
 #include "c_api/MasterSocket.h"
 #include "utils/unique_ptr.h"
+#include "config/ServerConfig.h"
 
 class Server {
   private:
@@ -25,6 +26,7 @@ class Server {
 
   private:
     std::string name_;
+    config::ServerConfig *server_config_;
 };
 
 #endif  // WS_SERVER_H
