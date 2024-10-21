@@ -19,14 +19,14 @@ class Server {
 
   public:
     // create master socket, register read callback for master socket in event manager
+    Server(const config::ServerConfig *server_config);
     Server(const std::string& name);
     ~Server();
 
-    const std::string& name() const;
+    const std::string name() const;
 
   private:
-    std::string name_;
-    config::ServerConfig *server_config_;
+    const config::ServerConfig *server_config_;
 };
 
 #endif  // WS_SERVER_H
