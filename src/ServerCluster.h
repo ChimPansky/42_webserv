@@ -4,9 +4,11 @@
 #include <vector>
 
 #include "Server.h"
+#include "c_api/MasterSocket.h"
 #include "config/Config.h"
 #include "utils/shared_ptr.h"
-#include "utils/unique_ptr.h"
+
+class ClientSession;
 
 class ServerCluster {
   public:
@@ -40,10 +42,10 @@ class ServerCluster {
     // Clients
     std::map<int, utils::unique_ptr<ClientSession> > clients_;
     typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
-    // if client is ready to write register wr callback,
-    // if client timed out, rm it from map
+
     void CreateServers_(const config::Config& config);
-    void MapListenersToServer_(const std::vector<std::pair<in_addr_t, in_port_t> >& listeners, utils::shared_ptr<Server> serv);
+    void MapListenersToServer_(const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
+                               utils::shared_ptr<Server> serv);
     int CreateListener_(struct sockaddr_in addr);
     int GetListenerFd_(struct sockaddr_in addr);
     void CheckClients_();
