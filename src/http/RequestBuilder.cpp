@@ -31,8 +31,11 @@ void RequestBuilder::AdjustBufferSize_(size_t bytes_recvd)
 
 void RequestBuilder::Build(size_t bytes_recvd)
 {
+    LOG(DEBUG) << "RQBuilder:: Build(" << bytes_recvd << ")...";
+    LOG(DEBUG) << "parser_.buf_size:" << parser_.buf().size() << "; parser_.end_idx:" << parser_.element_end_idx();
     AdjustBufferSize_(bytes_recvd);
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
+        LOG(DEBUG) << "RQBuilder:: EOB && 0 bytes_recvd...";
         rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;
         return;
@@ -107,6 +110,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
 
 void RequestBuilder::ApplyServerInfo(size_t max_body_size)
 {
+    LOG(DEBUG) << "RQBuilder::ApplyServerInfo: " << max_body_size;
     body_builder_.max_body_size = max_body_size;
     if (parser_.EndOfBuffer()) {
         builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
@@ -411,7 +415,7 @@ bool RequestBuilder::CanBuild_()
 
 void RequestBuilder::NullTerminatorCheck_(char c)
 {
-    if (c == '\0' && build_state_ != BS_BODY_CHUNK_CONTENT) {
+    if (c == '\0' && build_state_ != BS_BODY_CHUNK_CONTENT && build_state_ != BS_BODY_REGULAR) {
         build_state_ = BS_BAD_REQUEST;
     }
 }

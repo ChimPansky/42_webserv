@@ -82,6 +82,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
         PickServerFromCluster(rq_builder_.rq());
         // get info from server here...
         rq_builder_.ApplyServerInfo(1000);
+        // rq_builder_.Build(bytes_recvd);
         return;
     }
     if (rq_builder_.builder_status() == http::RB_DONE) {

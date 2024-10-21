@@ -79,6 +79,7 @@ int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
                                 const FdToCallbackMap& wr_sockets)
 {
     struct epoll_event events[EPOLL_MAX_EVENTS];
+    LOG(DEBUG) << "CheckOnce: epoll_wait...";
     int ready_fds = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, -1);
     if (ready_fds == -1) {
         LOG(ERROR) << "epoll_wait unsuccessful.";
