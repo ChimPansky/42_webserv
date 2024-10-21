@@ -8,7 +8,6 @@
 
 volatile bool ServerCluster::run_ = false;
 
-// testing with one
 ServerCluster::ServerCluster(const config::Config& config)
 {
     c_api::EventManager::init(c_api::MT_EPOLL);
