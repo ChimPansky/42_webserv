@@ -70,6 +70,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
         client_.CloseConnection();
         return;
     }
+    client_.rq_builder_.AdjustBufferSize(bytes_recvd);
     client_.ProcessNewData(bytes_recvd);
 }
 
@@ -79,6 +80,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
     if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
         // get info from server here...
         rq_builder_.ApplyServerInfo(1000);
+        rq_builder_.Build(bytes_recvd);
     }
     if (rq_builder_.builder_status() == http::RB_DONE) {
         c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READ);
