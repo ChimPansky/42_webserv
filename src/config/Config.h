@@ -2,9 +2,15 @@
 #define WS_CONFIG_CONFIG_H
 
 #include "HttpConfig.h"
+#include "ServerConfig.h"
 #include "c_api/multiplexers/IMultiplexer.h"
 
 namespace config {
+
+    typedef std::vector<ServerConfig>::iterator ServerConfIt;
+    typedef std::vector<ServerConfig>::const_iterator ServerConfConstIt;
+    typedef std::vector<std::pair<in_addr_t, in_port_t> >::iterator ListenersConfIt;
+    typedef std::vector<std::pair<in_addr_t, in_port_t> >::const_iterator ListenersConfConstIt;
 
 class Config {
   private:
