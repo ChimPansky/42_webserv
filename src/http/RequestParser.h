@@ -14,7 +14,7 @@ class RequestParser {
 
     std::vector<char>& buf();
     void PrepareToRecvData(size_t recv_size);
-    void AdjustBufferSize_(size_t bytes_recvd);
+    void AdjustBufferSize(size_t bytes_recvd);
 
     char Peek(ssize_t offset = 0) const;
     int CompareBuf_(const char*, size_t len) const;

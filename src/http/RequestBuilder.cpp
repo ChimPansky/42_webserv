@@ -24,14 +24,13 @@ void RequestBuilder::PrepareToRecvData(size_t recv_size)
     parser_.PrepareToRecvData(recv_size);
 }
 
-void RequestBuilder::AdjustBufferSize_(size_t bytes_recvd)
+void RequestBuilder::AdjustBufferSize(size_t bytes_recvd)
 {
-    parser_.AdjustBufferSize_(bytes_recvd);
+    parser_.AdjustBufferSize(bytes_recvd);
 }
 
 void RequestBuilder::Build(size_t bytes_recvd)
 {
-    AdjustBufferSize_(bytes_recvd);
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;
