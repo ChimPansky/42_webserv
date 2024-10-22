@@ -24,14 +24,13 @@ void RequestBuilder::PrepareToRecvData(size_t recv_size)
     parser_.PrepareToRecvData(recv_size);
 }
 
-void RequestBuilder::AdjustBufferSize_(size_t bytes_recvd)
+void RequestBuilder::AdjustBufferSize(size_t bytes_recvd)
 {
-    parser_.AdjustBufferSize_(bytes_recvd);
+    parser_.AdjustBufferSize(bytes_recvd);
 }
 
 void RequestBuilder::Build(size_t bytes_recvd)
 {
-    AdjustBufferSize_(bytes_recvd);
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;
@@ -350,7 +349,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
             std::tolower(parser_[parser_.element_end_idx() - 1]);
         if (CheckForEOL_()) {
             std::pair<bool, size_t> converted_size =
-                utils::HexToNumericNoThrow<size_t>(parser_.ExtractElement(-1));
+                utils::HexToUnsignedNumericNoThrow<size_t>(parser_.ExtractElement(-1));
             if (!converted_size.first) {
                 return BS_BAD_REQUEST;
             }
