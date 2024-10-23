@@ -23,9 +23,10 @@ MAKEFLAGS = j$(nproc)
 ##### TESTERS #####
 C_API_UTILS_TESTER = c_api_utils_tester
 RQ_BUILDER_TESTER = rq_builder_tester
+URI_TESTER = uri_tester
 
 ##### ALL #####
-all: $(C_API_UTILS_TESTER) $(RQ_BUILDER_TESTER)
+all: $(C_API_UTILS_TESTER) $(RQ_BUILDER_TESTER) $(URI_TESTER)
 
 ##### LOGGER Library #####
 LOGGER_FILES = \
@@ -85,6 +86,27 @@ $(RQ_BUILDER_LIB): $(RQ_BUILDER_OBJ)
 $(RQ_BUILDER_TESTER): $(RQ_BUILDER_LIB) $(LOGGER_LIB) $(RQ_BUILDER_TESTER_FILES)
 	$(CXX17) $(CXXFLAGS) $(RQ_BUILDER_TESTER_FILES) $(RQ_BUILDER_LIB) $(LOGGER_LIB) -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(RQ_BUILDER_TESTER)
 	@echo "$(GREEN)Executable $(RQ_BUILDER_TESTER) created!$(DEF_COLOR)"
+
+##### URI_TESTER #####
+URI_FILES = \
+	http/http.cpp
+
+URI_TESTER_FILES = \
+	tests_uri.cpp
+
+URI_SRC = $(addprefix $(SOURCE_DIR)/,$(URI_FILES))
+URI_OBJ = $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(URI_SRC))
+URI_DEP = $(URI_OBJ:%.o=%.d)
+URI_LIB = $(BUILD_DIR)/liburi.a
+
+$(URI_LIB): $(URI_OBJ)
+	@echo "$(CYAN)Creating archive library $(URI_LIB)$(DEF_COLOR)"
+	@ar rcs $@ $^
+	@echo "$(GREEN)$(URI_LIB) created!$(DEF_COLOR)"
+
+$(URI_TESTER): $(URI_LIB) $(LOGGER_LIB) $(URI_TESTER_FILES)
+	$(CXX17) $(CXXFLAGS) $(URI_TESTER_FILES) $(URI_LIB) $(LOGGER_LIB) -I$(HOME)/googletest/googletest/include -L$(HOME)/googletest/build/lib -lgtest -lgtest_main -pthread -o $(URI_TESTER)
+	@echo "$(GREEN)Executable $(URI_TESTER) created!$(DEF_COLOR)"
 
 # TODO: try to fix dependencies, so that changes in headerfiles are recognized
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
