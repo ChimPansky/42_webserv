@@ -30,18 +30,31 @@ class Uri {
     Uri(const Uri& other);
     Uri& operator=(const Uri& other);
     bool operator==(const Uri& other) const;
+    bool operator!=(const Uri& other) const;
     ~Uri() {}
-    bool Good() const;
-    bool Bad() const;
+    bool Good() const { return state_ == URI_GOOD_BIT; };
+    bool Bad() const { return (state_ & URI_BAD_BIT) != 0; };
+    bool Eof() const { return (state_ & URI_EOF_BIT) != 0; };
+    bool Fail() const { return (state_ & (URI_BAD_BIT | URI_FAIL_BIT)) != 0; };
     int ErrorCode() const;
     std::string ToStr() const;
 
+    const std::string& scheme() const { return scheme_; };
+    const std::string& host() const { return host_; };
+    unsigned short port() const { return port_; };
+    const std::string& path() const { return path_; };
+    const std::string& query() const { return query_; };
+    const std::string& fragment() const { return fragment_; };
+
   private:
     enum State {
-        URI_GOOD = 0,
-        URI_TOO_LONG = 414,
-        URI_OTHER_ERROR = 1
+        URI_GOOD_BIT = 0,
+        URI_BAD_BIT = 1L << 0,
+        URI_EOF_BIT = 1L << 2,
+        URI_TOO_LONG_BIT = 1L << 3,
+        URI_FAIL_BIT = 1L << 16
     };
+
     std::string scheme_; // "http", "https"
     std::string host_; // "www.example.com", "192.168.1.1"
     unsigned short port_; // 80, 443
@@ -53,6 +66,8 @@ class Uri {
 
     void ParseStr_(const std::string& raw_uri);
     void Validate_();
+
+    
 
 };
 

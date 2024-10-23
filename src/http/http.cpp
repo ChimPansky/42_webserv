@@ -92,6 +92,10 @@ bool Uri::operator==(const Uri& other) const {
     return scheme_ == other.scheme_ && host_ == other.host_ && port_ == other.port_ && path_ == other.path_ && query_ == other.query_ && fragment_ == other.fragment_;
 }
 
+bool Uri::operator!=(const Uri& other) const {
+    return !(*this == other);
+}
+
 std::string Uri::ToStr() const {
     std::string str;
     if (!scheme_.empty()) {
@@ -115,14 +119,16 @@ std::string Uri::ToStr() const {
     return str;
 }
 
-void Uri::ParseStr_(const std::string& raw_uri) {
-    host_ = raw_uri;
-    port_ = 0;
-    //todo: go through raw_uri and parse
+void Uri::Validate_() {
+    state_ = URI_GOOD_BIT;
 }
 
-void Uri::Validate_() {
-    state_ = URI_GOOD;
+void Uri::ParseStr_(const std::string& raw_uri) {
+    // host_ = raw_uri;
+    // port_ = 0;
+    //todo: go through raw_uri and parse
+    
 }
+
 
 } // namespace http
