@@ -101,7 +101,7 @@ std::string Uri::ToStr() const {
         str += host_;
     }
     if (port_ != 0) {
-        str += ":" + /* todo: NumericToStr(port_) */ std::string("80");
+        str += ":" + /* todo: NumericToStr(port_) */ std::string("");
     }
     if (!path_.empty()) {
         str += path_;
@@ -117,6 +117,7 @@ std::string Uri::ToStr() const {
 
 void Uri::ParseStr_(const std::string& raw_uri) {
     host_ = raw_uri;
+    port_ = 0;
     //todo: go through raw_uri and parse
 }
 
