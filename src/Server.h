@@ -27,7 +27,7 @@ class Server {
 
   private:
     std::string name_;
-    std::vector<std::string>  server_names_;
+    std::vector<std::string> server_names_;
 };
 
 #endif  // WS_SERVER_H
