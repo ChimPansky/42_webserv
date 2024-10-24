@@ -1,9 +1,10 @@
 #include "Uri.hpp"
 #include "http.h"
+#include "utils/utils.h"
 
 namespace http {
 
-Uri::Uri(const std::string& raw_uri) : scheme_(""), host_(""), port_(0), path_(""), query_(""), fragment_("") {
+Uri::Uri(const std::string& raw_uri) : state_(PS_SCHEME), status_(URI_GOOD_BIT), scheme_(""), host_(""), port_(0), path_(""), query_(""), fragment_("") {
     // parse raw_uri
     // scheme://host:port/path?query#fragment
     // scheme://host/path?query#fragment
@@ -65,7 +66,7 @@ Uri::Uri(const std::string& raw_uri) : scheme_(""), host_(""), port_(0), path_("
     // scheme://host#fragment
     // scheme://host:port/#fragment
     // scheme://host/#fragment
-    ParseStr_(raw_uri);
+    ParseRawUri_(raw_uri);
 }
 
 Uri::Uri(const std::string& scheme, const std::string& host, unsigned short port, const std::string& path, const std::string& query, const std::string& fragment)
@@ -121,96 +122,149 @@ std::string Uri::ToStr() const {
 }
 
 void Uri::Validate_() {
-    state_ = URI_GOOD_BIT;
+    status_ = URI_GOOD_BIT;
 }
 
-void Uri::ParseStr_(const std::string& raw_uri) {
+void Uri::ParseRawUri_(const std::string& raw_uri) {
     // host_ = raw_uri;
     // port_ = 0;
     //todo: go through raw_uri and parse
-    size_t pos = 0;
-
-    // scheme
-    size_t scheme_end = raw_uri.find("://");
-    if (scheme_end != std::string::npos) {
-        scheme_ = raw_uri.substr(0, scheme_end);
-        if (scheme_ != "http" && scheme_ != "https") {
-            state_ = URI_BAD_SCHEME_BIT;
-            return;
-        }
-        pos = scheme_end + 3;
-    }
-
-    // host & port
-    size_t host_end = raw_uri.find_first_of(":/?#", pos);
-    if (raw_uri[pos] != '/') {
-        host_ =
-        //host_ = raw_uri.substr(pos, host_end - pos);
-        if (host_end == std::string::npos) {
-            return;
-        }
-        pos = host_end;
-        if (!IsValidHost_(host_)) { // todo: check if valid host
-            state_ = URI_BAD_HOST_BIT;
-            return;
-        }
-        if (raw_uri[pos] == ':') {
-            size_t port_end = raw_uri.find_first_of("/?#", pos + 1);
-            std::string port_str = raw_uri.substr(pos + 1, port_end - pos - 1);
-            std::pair<bool, unsigned short> port = utils::StrToNumericNoThrow<unsigned short>(port_str);
-            if (port.first) {
-                port_ = port.second;
-            }
-            else {
-                state_ = URI_BAD_HOST_BIT;
-                return;
-            }
-            if (port_end == std::string::npos) {
-                return;
-            }
-        }
-    }
-
-    // path
-    if (raw_uri[pos] == '/') {
-        size_t path_end = raw_uri.find_first_of("?#", pos);
-        path_ = raw_uri.substr(pos, path_end - pos);
-        pos = path_end;
-        if (!IsValidPath_(path_)) { // todo: check if valid path
-            state_ = URI_BAD_PATH_BIT;
-            return;
-        }
-        if (path_end == std::string::npos) {
-            return;
-        }
-    }
-
-    // query
-    if (raw_uri[pos] == '?') {
-        size_t query_end = raw_uri.find_first_of("#", pos);
-        query_ = raw_uri.substr(pos + 1, query_end - pos - 1);
-        pos = query_end;
-        if (!IsValidQuery_(query_)) { // todo: check if valid query
-            state_ = URI_BAD_QUERY_BIT;
-            return;
-        }
-        if (query_end == std::string::npos) {
-            return;
-        }
-    }
-
-    // fragment
-    if (raw_uri[pos] == '#') {
-        size_t fragment_end = raw_uri.size();
-        fragment_ = raw_uri.substr(pos + 1, fragment_end - pos - 1);
-        if (!IsValidFragment_(fragment_)) {
-            state_ = URI_BAD_FRAGMENT_BIT;
-            return;
+    raw_uri_pos_ = 0;
+    while (state_ != PS_END && status_ == URI_GOOD_BIT) {
+        switch (state_) {
+            case PS_SCHEME: ParseScheme_(raw_uri); break;
+            case PS_HOST: ParseHost_(raw_uri); break;
+            case PS_PORT: ParsePort_(raw_uri); break;
+            case PS_PATH: ParsePath_(raw_uri); break;
+            case PS_QUERY: ParseQuery_(raw_uri); break;
+            case PS_FRAGMENT: ParseFragment_(raw_uri); break;
+            case PS_END: break;
         }
     }
 }
 
+void Uri::ParseScheme_(const std::string& raw_uri) {
+   // scheme
+    size_t scheme_end = raw_uri.find("://");
+    if (scheme_end == std::string::npos) {
+        state_ = PS_PATH;
+        return;
+    }
+    scheme_ = raw_uri.substr(0, scheme_end);
+    if (scheme_ != "http" && scheme_ != "https") {
+        status_ = URI_BAD_SCHEME_BIT;
+        return;
+    }
+    raw_uri_pos_ = scheme_end + 3;
+    state_ = PS_HOST;
+}
+
+void Uri::ParseHost_(const std::string& raw_uri) {
+    if (EndOfRawUri_(raw_uri)) {
+        status_ = URI_BAD_HOST_BIT;
+        return;
+    }
+    size_t host_end = raw_uri.find_first_of(":/", raw_uri_pos_);
+    if (host_end == std::string::npos) {
+        status_ = URI_BAD_PATH_BIT;
+        return;
+    }
+    host_ = raw_uri.substr(raw_uri_pos_, host_end - raw_uri_pos_);
+    raw_uri_pos_ = host_end;
+    if (!IsValidHost_(host_)) {
+        status_ = URI_BAD_HOST_BIT;
+        return;
+    }
+    if (raw_uri[host_end] == ':') {
+        state_ = PS_PORT;
+        return;
+    }
+    if (raw_uri[host_end] == '/') {
+        state_ = PS_PATH;
+        return;
+    }
+    state_ = PS_END; // should never reach here
+}
+
+void Uri::ParsePort_(const std::string& raw_uri) {
+    if (EndOfRawUri_(raw_uri) || raw_uri[raw_uri_pos_] != ':') {
+        status_ = URI_BAD_PORT_BIT;
+        return;
+    }
+    size_t port_end = raw_uri.find_first_of("/", raw_uri_pos_);
+    if (port_end == std::string::npos) {
+        status_ = URI_BAD_PATH_BIT;
+        return;
+    }
+    std::string port_str = raw_uri.substr(raw_uri_pos_ + 1, port_end - raw_uri_pos_ - 1);
+    std::pair<bool, unsigned short> port = utils::StrToNumericNoThrow<unsigned short>(port_str);
+    if (!port.first) {
+        status_ = URI_BAD_PORT_BIT;
+        return;
+    }
+    port_ = port.second;
+    raw_uri_pos_ = port_end;
+    state_ = PS_PATH;
+}
+
+void Uri::ParsePath_(const std::string& raw_uri) {
+    if (EndOfRawUri_(raw_uri) || raw_uri[raw_uri_pos_] != '/') {
+        status_ = URI_BAD_PATH_BIT;
+        return;
+    }
+    size_t path_end = raw_uri.find_first_of("?#", raw_uri_pos_);
+    if (path_end == std::string::npos) {
+        path_ = raw_uri.substr(raw_uri_pos_);
+        state_ = PS_END;
+        return;
+    }
+    path_ = raw_uri.substr(raw_uri_pos_, path_end - raw_uri_pos_);
+    raw_uri_pos_ = path_end + 1;
+    if (raw_uri[path_end] == '?') {
+        state_ = PS_QUERY;
+        return;
+    }
+    if (raw_uri[path_end] == '#') {
+        state_ = PS_FRAGMENT;
+        return;
+    }
+    state_ = PS_END; // should never reach here
+}
+
+void Uri::ParseQuery_(const std::string& raw_uri) {
+    if (EndOfRawUri_(raw_uri)) {
+        status_ = URI_BAD_QUERY_BIT;
+        return;
+    }
+    size_t query_end = raw_uri.find_first_of("#", raw_uri_pos_);
+    if (query_end == std::string::npos) {
+        query_ = raw_uri.substr(raw_uri_pos_);
+        state_ = PS_END;
+        return;
+    }
+    query_ = raw_uri.substr(raw_uri_pos_, query_end - raw_uri_pos_);
+    raw_uri_pos_ = query_end + 1;
+    if (raw_uri[query_end] == '#') {
+        state_ = PS_FRAGMENT;
+        return;
+    }
+    state_ = PS_END; // should never reach here
+}
+
+void Uri::ParseFragment_(const std::string& raw_uri) {
+    if (EndOfRawUri_(raw_uri)) {
+        status_ = URI_BAD_FRAGMENT_BIT;
+        return;
+    }
+    fragment_ = raw_uri.substr(raw_uri_pos_);
+    state_ = PS_END;
+}
+
 //helpers:
+
+bool Uri::EndOfRawUri_(const std::string& raw_uri) const {
+    return raw_uri_pos_ >= raw_uri.size();
+}
 
 bool Uri::IsValidHostChar_(char c) const {
     return std::isalnum(c) || c == '.' || c == '-' || c == '_';
