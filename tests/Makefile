@@ -89,7 +89,8 @@ $(RQ_BUILDER_TESTER): $(RQ_BUILDER_LIB) $(LOGGER_LIB) $(RQ_BUILDER_TESTER_FILES)
 
 ##### URI_TESTER #####
 URI_FILES = \
-	http/http.cpp
+	http/http.cpp \
+	http/Uri.cpp
 
 URI_TESTER_FILES = \
 	tests_uri.cpp

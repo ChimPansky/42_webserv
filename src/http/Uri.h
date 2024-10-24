@@ -64,7 +64,6 @@ class Uri {
     std::string query_; // consider using a map; "?key1=val1&key2=val2"
     std::string fragment_; // used to jump to specific location on website, e.g. "#section1", "#details", "#dashboard"
 
-
     void Validate_();
     void ParseRawUri_(const std::string& raw_uri);
     void ParseScheme_(const std::string& raw_uri);
@@ -73,7 +72,6 @@ class Uri {
     void ParsePath_(const std::string& raw_uri);
     void ParseQuery_(const std::string& raw_uri);
     void ParseFragment_(const std::string& raw_uri);
-
 
     // helpers:
     bool EndOfRawUri_(const std::string& raw_uri) const;
