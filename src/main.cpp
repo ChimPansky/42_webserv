@@ -13,7 +13,7 @@
 #include <csignal>
 
 #include "ServerCluster.h"
-#include "config/ConfigBuilder.h"
+#include <ConfigBuilder.h>
 
 void StopCluster(int /*signum*/)
 {

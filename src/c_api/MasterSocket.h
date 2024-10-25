@@ -6,7 +6,7 @@
 #include <unistd.h>      // close
 
 #include "ClientSocket.h"
-#include "utils/unique_ptr.h"
+#include <unique_ptr.h>
 
 namespace c_api {
 

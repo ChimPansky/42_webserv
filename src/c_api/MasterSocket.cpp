@@ -1,9 +1,9 @@
 #include "MasterSocket.h"
+#include "c_api_utils.h"
 
 #include <cstring>
 #include <stdexcept>
 
-#include "c_api/utils.h"
 
 namespace {
 int CreateSocket(bool set_nonblock)

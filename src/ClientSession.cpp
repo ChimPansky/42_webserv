@@ -1,10 +1,10 @@
 #include "ClientSession.h"
 
-#include "c_api/EventManager.h"
-#include "c_api/multiplexers/ICallback.h"
-#include "http/RequestBuilder.h"
-#include "utils/logger.h"
-#include "utils/unique_ptr.h"
+#include <EventManager.h>
+#include <multiplexers/ICallback.h>
+#include <RequestBuilder.h>
+#include <logger.h>
+#include <unique_ptr.h>
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0),

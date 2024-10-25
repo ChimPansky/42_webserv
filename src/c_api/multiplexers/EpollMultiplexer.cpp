@@ -4,7 +4,7 @@
 #include <sys/epoll.h>  // for epoll
 #include <unistd.h>     // close
 
-#include "utils/logger.h"
+#include <logger.h>
 
 namespace c_api {
 

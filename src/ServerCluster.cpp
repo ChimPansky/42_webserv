@@ -1,12 +1,12 @@
 #include "ServerCluster.h"
 
-#include "server/Server.h"
+#include <Server.h>
 #include "ClientSession.h"
-#include "c_api/EventManager.h"
-#include "c_api/utils.h"
-#include "config/Config.h"
+#include <EventManager.h>
+#include <c_api_utils.h>
+#include <Config.h>
 
-volatile bool ServerCluster::run_ = false;
+volatile sig_atomic_t ServerCluster::run_ = false;
 
 ServerCluster::ServerCluster(const config::Config& config)
 {

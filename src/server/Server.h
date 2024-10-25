@@ -4,11 +4,11 @@
 #include <vector>
 #include <string>
 
-#include "config/ServerConfig.h"
-#include "config/LocationConfig.h"
-#include "http/Request.h"
-#include "http/Response.h"
-#include <utils/unique_ptr.h>
+#include <ServerConfig.h>
+#include <LocationConfig.h>
+#include <Request.h>
+#include <Response.h>
+#include <unique_ptr.h>
 
 
 class Server {
