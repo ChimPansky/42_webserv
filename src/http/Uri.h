@@ -43,22 +43,17 @@ class Uri {
     };
 
     UriStatus status_;
-
-    size_t raw_uri_pos_;
-
     std::string path_; // "/", "/index.html", "/path/to/file"
     std::string query_; // consider using a map; "?key1=val1&key2=val2"
     std::string fragment_; // used to jump to specific location on website, e.g. "#section1", "#details", "#dashboard"
 
     void Validate_();
     void ParseRawUri_(const std::string& raw_uri);
-    void ParsePath_(const std::string& raw_uri, ParseState& state);
-    void ParseQuery_(const std::string& raw_uri, ParseState& state);
-    void ParseFragment_(const std::string& raw_uri, ParseState& state);
+    void ParsePath_(const std::string& raw_uri, size_t raw_uri_pos, ParseState& state);
+    void ParseQuery_(const std::string& raw_uri, size_t raw_uri_pos, ParseState& state);
+    void ParseFragment_(const std::string& raw_uri, size_t raw_uri_pos, ParseState& state);
 
     // helpers:
-    bool EndOfRawUri_(const std::string& raw_uri) const;
-
     bool IsValidPathChar_(char c) const;
     bool IsValidQueryOrFragmentChar_(char c) const;
 
