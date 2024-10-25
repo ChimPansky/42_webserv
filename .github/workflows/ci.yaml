@@ -48,19 +48,25 @@ jobs:
   compilation_and_tests:
     name: Compilation Test
     runs-on: ubuntu-22.04
-    timeout-minutes: 2
+    timeout-minutes: 10
     strategy:
       fail-fast: false
     steps:
       - name: Checkout source branch of pull request
         uses: actions/checkout@v4
+      # - name: Build Project
+      #   uses: threeal/cmake-action@v2.0.0
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.14'
+      - name: Use cmake
+        run: cmake --version
       - name: Set up test environment
         uses: ./.github/actions/setup
       - name: generate Makefiles
-        run: |
-          mkdir -p build && cd build
-          cmake ..
+        run: mkdir -p build && cd build && cmake ..
       - name: compilation
-        run: make
+        run: cd build && make
       - name: test
-        run: ctest
+        run: cd build && ctest
