@@ -25,3 +25,9 @@ add_test(
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/config_parser_test
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test_data/configs
 )
+
+# Valgrind
+add_test(
+    NAME simple_valgrind_test
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/simple_valgrind.sh "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/conf/webserv.conf" ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
+)

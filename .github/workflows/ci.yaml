@@ -45,7 +45,7 @@ jobs:
           checkAllCommitMessages: 'false' # optional: this checks all commits associated with a pull request
           # accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
         if: (!contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch'))
-  compilation_test:
+  compilation_and_tests:
     name: Compilation Test
     runs-on: ubuntu-22.04
     timeout-minutes: 2
@@ -56,29 +56,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Set up test environment
         uses: ./.github/actions/setup
-      - name: 🔨 Compile with Makefile
+      - name: generate Makefiles
+        run: |
+          mkdir -p build && cd build
+          cmake ..
+      - name: compilation
         run: make
-  basic_valgrind_test:
-    name: Valgrind Test
-    runs-on: ubuntu-22.04
-    timeout-minutes: 2
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Checkout source branch of pull request
-        uses: actions/checkout@v4
-      - name: Set up test environment
-        uses: ./.github/actions/setup
-      - name: 🔨 Compile with Makefile
-        run: make
-      - name: Checking with valgrind
-        run: bash ./.github/scripts/valgrind.sh "./webserv ./conf/webserv.conf" valgr.out
-  combine_compilation_test_result:
-    name: Compilation Test Result
-    needs:
-      - compilation_test
-      - basic_valgrind_test
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Show compilation test results
-        run: echo "Compilation successful"
+      - name: test
+        run: ctest
