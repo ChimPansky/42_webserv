@@ -15,7 +15,6 @@ MAKEFLAGS = -j$(nproc)
 IFLAGS = -I./$(SOURCE_DIR)
 LDFLAGS =
 
-
 FILENAMES = \
 	c_api/multiplexers/EpollMultiplexer.cpp \
 	c_api/multiplexers/IMultiplexer.cpp \
@@ -37,10 +36,10 @@ FILENAMES = \
 	http/Request.cpp \
 	http/RequestBuilder.cpp \
 	http/RequestParser.cpp \
+	server/Server.cpp \
 	utils/logger.cpp \
 	utils/utils.cpp \
 	ClientSession.cpp \
-	Server.cpp \
 	ServerCluster.cpp
 
 SRC = $(addprefix $(SOURCE_DIR)/,$(FILENAMES) main.cpp)
