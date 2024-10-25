@@ -1,9 +1,9 @@
 #include "Server.h"
 #include "IProcessor.h"
 
-Server::Server(const std::string& name) : name_(name) {}
+Server::Server(const config::ServerConfig& cfg) : server_config_(cfg) {}
 
-const std::string& Server::name() { return name_; }
+const std::string& Server::name() const { return server_config_.server_names()[0]; }
 
 bool Server::DoesMatchTheRequest(const http::Request& /*rq*/) const
 {

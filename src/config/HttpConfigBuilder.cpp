@@ -19,39 +19,6 @@ static unsigned int BuildKeepAliveTimeout(const std::vector<std::string>& vals)
     return ParseKeepAliveTimeout(vals[0]);
 }
 
-static unsigned int ParseClientMaxBodySize(const std::string& val, const std::string& unit)
-{
-    unsigned int nb = utils::StrToNumeric<int>(val);
-    if (unit == "KB") {
-        return nb << 10;
-    } else if (unit == "MB") {
-        return nb << 20;
-    } else if (unit == "GB") {
-        return nb << 30;
-    } else if (unit.empty()) {
-        return nb;
-    }
-    throw std::runtime_error("Invalid configuration file: invalid client_max_body_size unit: " +
-                             val);
-}
-
-static unsigned int BuildClientMaxBodySize(const std::vector<std::string>& vals)
-{
-    if (vals.empty()) {
-        return HttpConfig::kDefaultClientMaxBodySize();
-    } else if (vals.size() > 1) {
-        throw std::runtime_error("Invalid configuration file: duplicated client_max_body_size.");
-    }
-    std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
-    if (val_elements.size() == 1) {
-        return ParseClientMaxBodySize(val_elements[0], "");
-    } else if (val_elements.size() == 2) {
-        return ParseClientMaxBodySize(val_elements[0], val_elements[1]);
-    }
-    throw std::runtime_error("Invalid configuration file: invalid client_max_body_size: " +
-                             vals[0]);
-}
-
 static std::map<int, std::string> ParseErrorPages(const std::vector<std::string>& vals)
 {
     std::map<int, std::string> error_pages;
@@ -98,7 +65,7 @@ static std::vector<ServerConfig> BuildServerConfigs(const std::vector<ParsedConf
 bool HttpConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "keepalive_timeout" || key == "client_max_body_size" || key == "error_page" ||
-           key == "root" || key == "index" || key == "autoindex";
+           key == "root" || key == "index" || key == "autoindex" || "client_max_body_size";
 }
 
 bool HttpConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
@@ -125,8 +92,6 @@ HttpConfig HttpConfigBuilder::Build(const ParsedConfig& f,
         }
     }
     unsigned int keepalive_timeout = BuildKeepAliveTimeout(f.FindSetting("keepalive_timeout"));
-    unsigned int client_max_body_size =
-        BuildClientMaxBodySize(f.FindSetting("client_max_body_size"));
     std::map<int, std::string> error_pages = BuildErrorPages(f.FindSetting("error_page"));
 
     InheritedSettings http_inherited_settings = inherited_settings;
@@ -136,12 +101,14 @@ HttpConfig HttpConfigBuilder::Build(const ParsedConfig& f,
         InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
     http_inherited_settings.dir_listing = InheritedSettings::BuildDirListing(
         f.FindSetting("autoindex"), inherited_settings.dir_listing);
+    http_inherited_settings.client_max_body_size = InheritedSettings::BuildClientMaxBodySize(
+        f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);
 
     if (!CheckAllNestings(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
     std::vector<ServerConfig> server_configs =
         BuildServerConfigs(f.nested_configs(), http_inherited_settings);
-    return HttpConfig(keepalive_timeout, client_max_body_size, error_pages, server_configs);
+    return HttpConfig(keepalive_timeout, error_pages, server_configs);
 }
 }  // namespace config

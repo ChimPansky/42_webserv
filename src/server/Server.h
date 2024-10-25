@@ -4,16 +4,12 @@
 #include <vector>
 #include <string>
 
-#include "config/Config.h"
+#include "config/ServerConfig.h"
+#include "config/LocationConfig.h"
 #include "http/Request.h"
 #include "http/Response.h"
 #include <utils/unique_ptr.h>
 
-// TODO rm
-namespace config {
-class ServerBlock{};
-class LocationBlock{};
-}
 
 class Server {
   private:
@@ -23,8 +19,7 @@ class Server {
 
   public:
     // create master socket, register read callback for master socket in event manager
-    Server(const config::ServerBlock&);
-    Server(const std::string& name);
+    Server(const config::ServerConfig&);
 
   public:
     // only check hostname probably.
@@ -38,11 +33,13 @@ class Server {
     // if location is cgi, run cgi process
     // if it is file, read file
 
-    const std::string& name();
+    const std::string& name() const;
+
+    const config::ServerConfig& server_config() const {return server_config_;}
 
   private:
-    std::vector<config::LocationBlock> locations_;
-    std::string name_;
+    std::vector<config::LocationConfig> locations_;
+    config::ServerConfig server_config_;
 };
 
 #endif  // WS_SERVER_SERVER_H

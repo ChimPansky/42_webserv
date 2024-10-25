@@ -22,14 +22,12 @@ class ClientSocket {
     int sockfd() const;
 
     // come up with a better signature for recv/send
-    ssize_t Recv(std::vector<char>& buf, size_t sz = buf_sz_) const;
+    ssize_t Recv(std::vector<char>& buf, size_t sz) const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
-    size_t buf_sz() const; // TODO remove
+    size_t buf_sz() const;  // TODO remove
 
   private:
     int sockfd_;
-    static const size_t buf_sz_ = 666;
-    char buf_[buf_sz_];
 };
 
 }  // namespace c_api

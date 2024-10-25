@@ -55,4 +55,40 @@ const std::string& InheritedSettings::BuildDirListing(const std::vector<std::str
     return ParseDirListing(vals[0]);
 }
 
+const std::string& InheritedSettings::ParseClientMaxBodySize(const std::string& val,
+                                                             const std::string& unit)
+{
+    try {
+        utils::StrToNumeric<int>(val);
+    } catch (const std::invalid_argument& e) {
+        throw std::runtime_error(
+            "Invalid configuration file: invalid client_max_body_size value: " + val);
+    }
+    if (unit == "KB" || unit == "MB" || unit == "GB" || unit.empty()) {
+        return val;
+    }
+    throw std::runtime_error("Invalid configuration file: invalid client_max_body_size unit: " +
+                             val);
+}
+
+const std::string& InheritedSettings::BuildClientMaxBodySize(
+    const std::vector<std::string>& vals, const std::string& inherited_client_max_body_size)
+{
+    if (vals.empty()) {
+        return inherited_client_max_body_size;
+    } else if (vals.size() > 1) {
+        throw std::runtime_error("Invalid configuration file: duplicated client_max_body_size.");
+    }
+    std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
+    if (val_elements.size() == 1) {
+        ParseClientMaxBodySize(val_elements[0], "");
+        return vals[0];
+    } else if (val_elements.size() == 2) {
+        ParseClientMaxBodySize(val_elements[0], val_elements[1]);
+        return vals[0];
+    }
+    throw std::runtime_error("Invalid configuration file: invalid client_max_body_size: " +
+                             vals[0]);
+}
+
 }  // namespace config
