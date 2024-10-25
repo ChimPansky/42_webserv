@@ -100,6 +100,8 @@ clean:
 fclean: clean
 	rm -f $(C_API_UTILS_TESTER) $(RQ_BUILDER_TESTER)
 
-re: fclean all
+re:
+	$(MAKE) fclean
+	$(MAKE) all
 
 .PHONY: all clean fclean re
