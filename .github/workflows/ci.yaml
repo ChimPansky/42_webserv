@@ -46,7 +46,7 @@ jobs:
           # accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
         if: (!contains(github.event.pull_request.title, 'Merge pull request') && !contains(github.event.pull_request.title, 'Merge branch'))
   compilation_and_tests:
-    name: Compilation Test
+    name: Compilation And Test
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     strategy:
@@ -60,10 +60,10 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.14'
-      - name: Use cmake
-        run: cmake --version
       - name: Set up test environment
         uses: ./.github/actions/setup
+      - name: Use cmake
+        run: cmake --version
       - name: generate Makefiles
         run: mkdir -p build && cd build && cmake ..
       - name: compilation
