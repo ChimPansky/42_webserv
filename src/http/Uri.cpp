@@ -4,7 +4,7 @@
 
 namespace http {
 
-Uri::Uri(const std::string& raw_uri) : state_(PS_PATH), status_(URI_GOOD_BIT), path_(""), query_(""), fragment_("") {
+Uri::Uri(const std::string& raw_uri) : status_(URI_GOOD_BIT), path_(""), query_(""), fragment_("") {
     // parse raw_uri
     ParseRawUri_(raw_uri);
 }
@@ -23,6 +23,7 @@ Uri& Uri::operator=(const Uri& other) {
         path_ = other.path_;
         query_ = other.query_;
         fragment_ = other.fragment_;
+        status_ = other.status_;
     }
     return *this;
 }
@@ -57,18 +58,19 @@ void Uri::ParseRawUri_(const std::string& raw_uri) {
     // host_ = raw_uri;
     // port_ = 0;
     //todo: go through raw_uri and parse
+    ParseState state = PS_PATH;
     raw_uri_pos_ = 0;
-    while (state_ != PS_END && status_ == URI_GOOD_BIT) {
-        switch (state_) {
-            case PS_PATH: ParsePath_(raw_uri); break;
-            case PS_QUERY: ParseQuery_(raw_uri); break;
-            case PS_FRAGMENT: ParseFragment_(raw_uri); break;
+    while (state != PS_END && status_ == URI_GOOD_BIT) {
+        switch (state) {
+            case PS_PATH: ParsePath_(raw_uri, state); break;
+            case PS_QUERY: ParseQuery_(raw_uri, state); break;
+            case PS_FRAGMENT: ParseFragment_(raw_uri, state); break;
             case PS_END: break;
         }
     }
 }
 
-void Uri::ParsePath_(const std::string& raw_uri) {
+void Uri::ParsePath_(const std::string& raw_uri, ParseState& state) {
     if (EndOfRawUri_(raw_uri) || raw_uri[raw_uri_pos_] != '/') {
         status_ = URI_BAD_PATH_BIT;
         return;
@@ -76,23 +78,23 @@ void Uri::ParsePath_(const std::string& raw_uri) {
     size_t path_end = raw_uri.find_first_of("?#", raw_uri_pos_);
     if (path_end == std::string::npos) {
         path_ = raw_uri.substr(raw_uri_pos_);
-        state_ = PS_END;
+        state = PS_END;
         return;
     }
     path_ = raw_uri.substr(raw_uri_pos_, path_end - raw_uri_pos_);
     raw_uri_pos_ = path_end + 1;
     if (raw_uri[path_end] == '?') {
-        state_ = PS_QUERY;
+        state = PS_QUERY;
         return;
     }
     if (raw_uri[path_end] == '#') {
-        state_ = PS_FRAGMENT;
+        state = PS_FRAGMENT;
         return;
     }
-    state_ = PS_END; // should never reach here
+    state = PS_END; // should never reach here
 }
 
-void Uri::ParseQuery_(const std::string& raw_uri) {
+void Uri::ParseQuery_(const std::string& raw_uri, ParseState& state) {{
     if (EndOfRawUri_(raw_uri)) {
         status_ = URI_BAD_QUERY_BIT;
         return;
@@ -100,25 +102,25 @@ void Uri::ParseQuery_(const std::string& raw_uri) {
     size_t query_end = raw_uri.find_first_of("#", raw_uri_pos_);
     if (query_end == std::string::npos) {
         query_ = raw_uri.substr(raw_uri_pos_);
-        state_ = PS_END;
+        state = PS_END;
         return;
     }
     query_ = raw_uri.substr(raw_uri_pos_, query_end - raw_uri_pos_);
     raw_uri_pos_ = query_end + 1;
     if (raw_uri[query_end] == '#') {
-        state_ = PS_FRAGMENT;
+        state = PS_FRAGMENT;
         return;
     }
-    state_ = PS_END; // should never reach here
+    state = PS_END; // should never reach here
 }
 
-void Uri::ParseFragment_(const std::string& raw_uri) {
+void Uri::ParseFragment_(const std::string& raw_uri, ParseState& state) {) {
     if (EndOfRawUri_(raw_uri)) {
         status_ = URI_BAD_FRAGMENT_BIT;
         return;
     }
     fragment_ = raw_uri.substr(raw_uri_pos_);
-    state_ = PS_END;
+    state = PS_END;
 }
 
 //helpers:

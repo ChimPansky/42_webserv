@@ -9,13 +9,13 @@ class Uri {
     Uri(const std::string& raw_uri);
     Uri(const std::string& path, const std::string& query, const std::string& fragment);
     Uri(const Uri& other);
+    ~Uri() {}
+
     Uri& operator=(const Uri& other);
     bool operator==(const Uri& other) const;
     bool operator!=(const Uri& other) const;
-    ~Uri() {}
+
     bool Good() const { return status_ == URI_GOOD_BIT; };
-    bool Bad() const { return (status_ & URI_BAD_BIT) != 0; };
-    bool Eof() const { return (status_ & URI_EOF_BIT) != 0; };
     bool Fail() const { return (status_ & (URI_BAD_BIT | URI_FAIL_BIT)) != 0; };
     int ErrorCode() const;
     std::string ToStr() const;
@@ -28,7 +28,6 @@ class Uri {
     enum UriStatus {
         URI_GOOD_BIT = 0,
         URI_BAD_BIT = 1L << 0,
-        URI_EOF_BIT = 1L << 2,
         URI_TOO_LONG_BIT = 1L << 3,
         URI_BAD_PATH_BIT = 1L << 7,
         URI_BAD_QUERY_BIT = 1L << 8,
@@ -43,7 +42,6 @@ class Uri {
         PS_END
     };
 
-    ParseState state_;
     UriStatus status_;
 
     size_t raw_uri_pos_;
@@ -54,9 +52,9 @@ class Uri {
 
     void Validate_();
     void ParseRawUri_(const std::string& raw_uri);
-    void ParsePath_(const std::string& raw_uri);
-    void ParseQuery_(const std::string& raw_uri);
-    void ParseFragment_(const std::string& raw_uri);
+    void ParsePath_(const std::string& raw_uri, ParseState& state);
+    void ParseQuery_(const std::string& raw_uri, ParseState& state);
+    void ParseFragment_(const std::string& raw_uri, ParseState& state);
 
     // helpers:
     bool EndOfRawUri_(const std::string& raw_uri) const;
