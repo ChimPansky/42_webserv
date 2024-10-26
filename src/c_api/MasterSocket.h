@@ -22,6 +22,7 @@ class MasterSocket {
     MasterSocket(const struct sockaddr_in& addr, bool set_nonblock = true);
     ~MasterSocket();
     int sockfd() const;
+    const sockaddr_in& addr_in() const;
     // check result for null!
     utils::unique_ptr<ClientSocket> Accept() const;
     bool IsSameSockAddr(struct sockaddr_in&) const;

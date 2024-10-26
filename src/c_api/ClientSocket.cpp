@@ -11,7 +11,7 @@
 
 namespace c_api {
 
-ClientSocket::ClientSocket(int fd) : sockfd_(fd)
+ClientSocket::ClientSocket(int fd, sockaddr_in addr_in) : sockfd_(fd), addr_in_(addr_in)
 {}
 
 // technically at this point socket must be unbinded
@@ -28,6 +28,10 @@ ClientSocket::~ClientSocket()
 int ClientSocket::sockfd() const
 {
     return sockfd_;
+}
+
+const sockaddr_in& ClientSocket::addr_in() const {
+    return addr_in_;
 }
 
 ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t read_size) const
