@@ -5,9 +5,4 @@ logs
 
 *.o
 *.d
-*.puml
-
-a.out
-webserv
-rq_builder_tester
-c_api_utils_tester
+*.out
