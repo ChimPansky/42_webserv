@@ -7,8 +7,6 @@
 #include <cstddef>
 #include <vector>
 
-
-class Server;
 namespace http {
 
 enum RqBuilderStatus {
