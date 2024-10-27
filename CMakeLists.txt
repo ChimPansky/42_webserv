@@ -17,6 +17,9 @@ FetchContent_MakeAvailable(googletest)
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 98)
 add_compile_options(-Wall -Wextra -Werror)
+add_compile_options(-gdwarf-4)
+# add_compile_options(-fsanitize=address,undefined,leak)
+# add_link_options(-fsanitize=address,undefined,leak)
 
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 

@@ -6,9 +6,11 @@
 #include <vector>
 
 #include <ClientSocket.h>
+#include <Server.h>
 #include <multiplexers/ICallback.h>
 #include <RequestBuilder.h>
 #include <unique_ptr.h>
+#include <shared_ptr.h>
 
 #define CLIENT_RD_CALLBACK_RD_SZ 20
 
@@ -25,7 +27,8 @@ class ClientSession {
     bool IsRequestReady() const;
     void ProcessNewData(size_t bytes_recvd);
     void CloseConnection();
-    void PrepareResponse();  // later: get this from server
+    void PrepareResponse();
+    void ResponseSentCleanup();
     class ClientReadCallback : public c_api::ICallback {
       public:
         ClientReadCallback(ClientSession& client);
@@ -36,20 +39,31 @@ class ClientSession {
     };
     class ClientWriteCallback : public c_api::ICallback {
       public:
-        ClientWriteCallback(ClientSession& client);
+        ClientWriteCallback(ClientSession& client, std::vector<char> buf);
         virtual void Call(int);
 
       private:
         ClientSession& client_;
+        std::vector<char> buf_;
+        size_t buf_send_idx_;
+    };
+    class ClientRsBodyGenCallback : public c_api::ICallback {
+      public:
+        ClientRsBodyGenCallback(ClientSession& client, http::Response::ResponseBuilder& rs_builder);
+        virtual void Call(int);
+
+      private:
+        ClientSession& client_;
+        http::Response::ResponseBuilder& rs_builder_;
     };
 
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
     int master_socket_fd_;   // to choose correct server later
-    std::vector<char> buf_;  // string?
-    size_t buf_send_idx_;
+    utils::shared_ptr<Server> associated_server_;
     http::RequestBuilder rq_builder_;
     http::Request rq_;
+    utils::unique_ptr<http::Response::ResponseBuilder> rs_builder_;
     bool connection_closed_;
 
     // Server* virtual_server; later: set this once request was successfully matched to corresponding server
