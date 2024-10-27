@@ -19,9 +19,10 @@ class ClientSession;
 
 class ServerCluster {
   public:
-    static void Start(const config::Config& config);
-    static void Stop();
-    void PrintServers() const;
+    ServerCluster(const config::Config& config);
+    void Run();
+    static void StopHandler();
+    void PrintDebugInfo() const;
 
   private:
     class MasterSocketCallback : public c_api::ICallback {
@@ -34,7 +35,6 @@ class ServerCluster {
         ServerCluster& cluster_;
     };
 
-    ServerCluster(const config::Config&);
 
     // Sockets
     std::map<int /*fd*/, utils::unique_ptr<c_api::MasterSocket> > sockets_;
@@ -52,7 +52,7 @@ class ServerCluster {
 
     void CreateServers_(const config::Config& config);
     void MapListenersToServer_(const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
-                               utils::shared_ptr<Server> serv);
+                               utils::shared_ptr<Server>& serv);
     int CreateListener_(struct sockaddr_in addr);
     int GetListenerFd_(struct sockaddr_in addr);
     void CheckClients_();

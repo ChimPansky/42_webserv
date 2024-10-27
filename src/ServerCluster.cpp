@@ -6,6 +6,14 @@
 #include <c_api_utils.h>
 #include <Config.h>
 
+namespace {
+void SigIntHandler(int /*signum*/)
+{
+    LOG(INFO) << " SIGINT caught, shutting down...";
+    ServerCluster::StopHandler();
+}
+}
+
 volatile sig_atomic_t ServerCluster::run_ = false;
 
 ServerCluster::ServerCluster(const config::Config& config)
@@ -14,30 +22,28 @@ ServerCluster::ServerCluster(const config::Config& config)
     CreateServers_(config);
 }
 
-// smth like
-void ServerCluster::Start(const config::Config& config)
+void ServerCluster::Run()
 {
-    // register signal for ^C, switch run on that
+    signal(SIGINT, SigIntHandler);
     run_ = true;
-    ServerCluster cluster(config);
     // cluster.PrintServers();
     while (run_) {
         c_api::EventManager::get().CheckOnce();
-        cluster.CheckClients_();
+        CheckClients_();
     }
 }
 
-void ServerCluster::Stop()
+void ServerCluster::StopHandler()
 {
     run_ = false;
 }
 
-void ServerCluster::PrintServers() const
+void ServerCluster::PrintDebugInfo() const
 {
     for (ServersConstIt cit = servers_.begin(); cit != servers_.end(); ++cit) {
-        LOG(INFO) << "Hi, i am Server " << (*cit)->name() << ". My config is: ";
+        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name() << ". My config is: ";
         (*cit)->server_config().Print();
-        LOG(INFO);
+        LOG(DEBUG);
     }
 }
 
@@ -56,18 +62,19 @@ void ServerCluster::CheckClients_()
     }
 }
 
+// Wrap to serverHolder class c'tor probably as well?
+// then server holder will keep servers, the map socket to servers
 void ServerCluster::CreateServers_(const config::Config& config)
 {
     for (config::ServerConfConstIt serv_conf_it = config.http_config().server_configs().begin();
          serv_conf_it != config.http_config().server_configs().end(); ++serv_conf_it) {
-        utils::shared_ptr<Server> serv(new Server(*serv_conf_it));
-        servers_.push_back(serv);
-        MapListenersToServer_(serv_conf_it->listeners(), serv);
+        servers_.push_back(utils::shared_ptr<Server>(new Server(*serv_conf_it)));
+        MapListenersToServer_(serv_conf_it->listeners(), servers_.back());
     }
 }
 
 void ServerCluster::MapListenersToServer_(
-    const std::vector<std::pair<in_addr_t, in_port_t> >& listeners, utils::shared_ptr<Server> serv)
+    const std::vector<std::pair<in_addr_t, in_port_t> >& listeners, utils::shared_ptr<Server>& serv)
 {
     for (config::ListenersConfConstIt l_it = listeners.begin(); l_it != listeners.end(); ++l_it) {
         struct sockaddr_in addr = c_api::GetIPv4SockAddr(l_it->first, l_it->second);
@@ -104,6 +111,7 @@ int ServerCluster::GetListenerFd_(struct sockaddr_in addr)
     return -1;
 }
 
+
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
 {}
@@ -111,18 +119,19 @@ ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster
 // accept, create new client, register read callback for client,
 void ServerCluster::MasterSocketCallback::Call(int fd)
 {
-    SocketsIt acceptor = cluster_.sockets_.find(fd);
-    if (acceptor == cluster_.sockets_.end()) {
+    SocketsIt acceptor_it = cluster_.sockets_.find(fd);
+    if (acceptor_it == cluster_.sockets_.end()) {
         LOG(ERROR) << " this should never happen, no such socket: " << fd;
         return;
     }
-    // utils::shared_ptr<Server> serv = cluster_.sockets_to_servers_[fd][0]; // Choose server
-    // instead
-    utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor->second->Accept();
+    c_api::MasterSocket& acceptor = *acceptor_it->second;
+    utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor.Accept();
     if (!client_sock) {
-        LOG(ERROR) << "error accepting connection on: " << fd;  // add perror
+        LOG(ERROR) << "error accepting connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in());
+        perror("MasterSocket::Accept");
         return;
     }
-    LOG(INFO) << "New incoming connection on: " << fd;
+    LOG(INFO) << "New incoming connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in());
+    LOG(INFO) << "From: " << c_api::PrintIPv4SockAddr(client_sock->addr_in());
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
 }

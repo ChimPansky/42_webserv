@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <netinet/in.h>
 
 namespace c_api {
 
@@ -17,9 +18,10 @@ class ClientSocket {
     ClientSocket& operator=(const ClientSocket&);
 
   public:
-    ClientSocket(int sockfd);
+    ClientSocket(int sockfd, sockaddr_in addr_in);
     ~ClientSocket();
     int sockfd() const;
+    const sockaddr_in& addr_in() const;
 
     // come up with a better signature for recv/send
     ssize_t Recv(std::vector<char>& buf, size_t sz) const;
@@ -28,6 +30,7 @@ class ClientSocket {
 
   private:
     int sockfd_;
+    sockaddr_in addr_in_;
 };
 
 }  // namespace c_api
