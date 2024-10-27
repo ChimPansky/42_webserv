@@ -19,13 +19,15 @@ class ClientSession;
 
 class ServerCluster {
   public:
-    ServerCluster(const config::Config& config);
-    void Run();
+    static void Init(const config::Config& config);
     static void StopHandler();
+    static void Run();
+    static utils::shared_ptr<Server> ChooseServer(int master_fd, const http::Request& rq);
     void PrintDebugInfo() const;
-    utils::shared_ptr<Server> ChooseServer() const;
 
   private:
+    ServerCluster(const config::Config& config);
+
     class MasterSocketCallback : public c_api::ICallback {
       public:
         MasterSocketCallback(ServerCluster& cluster);
@@ -59,6 +61,7 @@ class ServerCluster {
     void CheckClients_();
 
     static volatile sig_atomic_t run_;
+    static utils::unique_ptr<ServerCluster> instance_;
 };
 
 #endif  // WS_SERVER_CLUSTER_H

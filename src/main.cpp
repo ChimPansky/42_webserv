@@ -26,8 +26,8 @@ int main(int ac, char **av) try
     }
 
     config::Config cfg = config::ConfigBuilder::GetConfigFromConfFile(av[1]);
-    ServerCluster cluster(cfg);
-    cluster.Run();
+    ServerCluster::Init(cfg);
+    ServerCluster::Run();
 
     return 0;
 } catch (const std::exception& e) {

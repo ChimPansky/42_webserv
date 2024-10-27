@@ -15,6 +15,19 @@ void SigIntHandler(int /*signum*/)
 }
 
 volatile sig_atomic_t ServerCluster::run_ = false;
+utils::unique_ptr<ServerCluster> ServerCluster::instance_;
+
+void ServerCluster::Init(const config::Config& config) {
+    signal(SIGINT, SigIntHandler);
+    instance_ = utils::unique_ptr<ServerCluster>(new ServerCluster(config));
+}
+
+
+void ServerCluster::StopHandler()
+{
+    run_ = false;
+}
+
 
 ServerCluster::ServerCluster(const config::Config& config)
 {
@@ -22,21 +35,23 @@ ServerCluster::ServerCluster(const config::Config& config)
     CreateServers_(config);
 }
 
+
 void ServerCluster::Run()
 {
-    signal(SIGINT, SigIntHandler);
     run_ = true;
-    // cluster.PrintServers();
+    instance_->PrintDebugInfo();
     while (run_) {
         c_api::EventManager::get().CheckOnce();
-        CheckClients_();
+        instance_->CheckClients_();
     }
 }
 
-void ServerCluster::StopHandler()
+
+utils::shared_ptr<Server> ServerCluster::ChooseServer(int /*master_fd*/, const http::Request& /*rq*/)
 {
-    run_ = false;
+    return instance_->servers_[0];
 }
+
 
 void ServerCluster::PrintDebugInfo() const
 {
