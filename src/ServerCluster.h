@@ -23,6 +23,7 @@ class ServerCluster {
     void Run();
     static void StopHandler();
     void PrintDebugInfo() const;
+    utils::shared_ptr<Server> ChooseServer() const;
 
   private:
     class MasterSocketCallback : public c_api::ICallback {
@@ -47,7 +48,7 @@ class ServerCluster {
     std::map<int /*fd*/, std::vector<utils::shared_ptr<Server> > > sockets_to_servers_;
 
     // Clients
-    std::map<int, utils::unique_ptr<ClientSession> > clients_;
+    std::map<int /*fd*/, utils::unique_ptr<ClientSession> > clients_;
     typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
 
     void CreateServers_(const config::Config& config);
