@@ -26,6 +26,7 @@ void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd) {
     builder.Build(bytes_recvd);
     if (builder.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
         builder.ApplyServerInfo(CLIENT_MAX_BODY_SIZE);
+        builder.Build(bytes_recvd);
     }
 }
 
@@ -38,6 +39,7 @@ bool Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz) {
         //client_.CloseConnection();
         return false;
     }
+    builder.AdjustBufferSize(bytes_recvd);
     ProcessNewData(builder, bytes_recvd);
     return true;
 }
