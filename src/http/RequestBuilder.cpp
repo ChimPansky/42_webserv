@@ -53,8 +53,9 @@ void RequestBuilder::Build(size_t bytes_recvd)
                 build_state_ = CheckForBody_();
                 if (build_state_ == BS_BODY_CHUNK_SIZE ||
                     build_state_ == BS_CHECK_BODY_REGULAR_LENGTH) {
+                    builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
+                    return;
                 }
-                builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
                 break;
             }
             case BS_CHECK_BODY_REGULAR_LENGTH:  build_state_ = CheckBodyRegularLength_(); break;
