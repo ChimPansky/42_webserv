@@ -93,7 +93,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
             return;
         }
         rq_builder_.rq().Print();
-        PrepareResponse();  // for now just echo the request-buf-content
+        PrepareResponse();
     }
 }
 
