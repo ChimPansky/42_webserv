@@ -27,7 +27,7 @@ class Server {
 
     // return response with filled headers
     // if has body, rs is in |not ready| state, and body is updated with callbacks
-    utils::unique_ptr<http::Response> AcceptRequest(const http::Request& rq);
+    utils::unique_ptr<http::Response::ResponseBuilder> AcceptRequest(const http::Request& rq) const;
     // chek the rq, return error possibly
     // find the location, return 404 possibly
     // if location is cgi, run cgi process
@@ -43,3 +43,28 @@ class Server {
 };
 
 #endif  // WS_SERVER_SERVER_H
+
+
+/*
+
+register ClientRecvCallback with client session
+
+ClientRecvCallback when rq is received
+
+choose server for client
+
+server Accept request -> ResponseBodyGenerator or response
+
+if !response:
+
+    register ResponseBodyGenerator callback with client session
+
+    ResponseBodyGenerator callback when body is generated:
+
+    response finalize
+
+Client send response
+
+register ClientSendCallback with response
+
+*/
