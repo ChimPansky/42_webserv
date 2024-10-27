@@ -39,7 +39,7 @@ ServerCluster::ServerCluster(const config::Config& config)
 void ServerCluster::Run()
 {
     run_ = true;
-    instance_->PrintDebugInfo();
+    // instance_->PrintDebugInfo();
     while (run_) {
         c_api::EventManager::get().CheckOnce();
         instance_->CheckClients_();
