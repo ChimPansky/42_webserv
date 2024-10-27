@@ -2,8 +2,6 @@
 
 #include <sys/select.h>
 
-#include "utils/logger.h"
-
 namespace c_api {
 
 int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,

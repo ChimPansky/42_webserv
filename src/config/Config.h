@@ -3,7 +3,8 @@
 
 #include "HttpConfig.h"
 #include "ServerConfig.h"
-#include "c_api/multiplexers/IMultiplexer.h"
+
+#include <multiplexers/IMultiplexer.h>
 
 namespace config {
 

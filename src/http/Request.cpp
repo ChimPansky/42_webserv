@@ -1,7 +1,7 @@
 #include "Request.h"
 
-#include "../utils/logger.h"
-#include "../utils/utils.h"
+#include <logger.h>
+#include <utils.h>
 
 namespace http {
 

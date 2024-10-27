@@ -1,11 +1,12 @@
 #ifndef WS_HTTP_REQUEST_BUILDER_H
 #define WS_HTTP_REQUEST_BUILDER_H
 
+#include "Request.h"
+#include "RequestParser.h"
+
 #include <cstddef>
 #include <vector>
 
-#include "Request.h"
-#include "RequestParser.h"
 
 class Server;
 namespace http {

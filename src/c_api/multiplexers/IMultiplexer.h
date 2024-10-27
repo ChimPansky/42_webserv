@@ -2,7 +2,6 @@
 #define WS_C_API_MULTIPLEXERS_I_MULTIPLEXER_H
 
 #include "ICallback.h"
-#include "utils/shared_ptr.h"
 
 namespace c_api {
 

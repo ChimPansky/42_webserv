@@ -1,13 +1,13 @@
 #include "RequestBuilder.h"
+#include "Request.h"
 
 #include <cctype>
 #include <cstring>
 #include <string>
 #include <vector>
 
-#include "Request.h"
-#include "utils/logger.h"
-#include "utils/utils.h"
+#include <logger.h>
+#include <utils.h>
 
 namespace http {
 

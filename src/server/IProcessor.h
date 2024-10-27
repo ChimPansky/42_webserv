@@ -1,9 +1,9 @@
 #ifndef WS_SERVER_IPROCESSOR_H
 #define WS_SERVER_IPROCESSOR_H
 
-#include "http/Request.h"
-#include "http/Response.h"
-#include "utils/unique_ptr.h"
+#include <Request.h>
+#include <Response.h>
+#include <unique_ptr.h>
 
 namespace config {
 class ServerBlock;

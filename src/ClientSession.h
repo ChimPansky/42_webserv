@@ -5,10 +5,10 @@
 
 #include <vector>
 
-#include "c_api/ClientSocket.h"
-#include "c_api/multiplexers/ICallback.h"
-#include "http/RequestBuilder.h"
-#include "utils/unique_ptr.h"
+#include <ClientSocket.h>
+#include <multiplexers/ICallback.h>
+#include <RequestBuilder.h>
+#include <unique_ptr.h>
 
 #define CLIENT_RD_CALLBACK_RD_SZ 20
 

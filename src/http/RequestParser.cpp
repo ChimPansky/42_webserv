@@ -1,8 +1,8 @@
 #include "RequestParser.h"
+#include "http.h"
 
 #include <cstring>
 
-#include "http.h"
 
 namespace http {
 

@@ -3,15 +3,17 @@
 
 #include <vector>
 
-#include "server/Server.h"
-#include "config/Config.h"
-#include "utils/unique_ptr.h"
-#include "c_api/MasterSocket.h"
-#include "config/Config.h"
-#include "utils/shared_ptr.h"
-#include "c_api/multiplexers/ICallback.h"
-#include "c_api/MasterSocket.h"
+#include <Server.h>
+#include <Config.h>
+#include <unique_ptr.h>
+#include <MasterSocket.h>
+#include <Config.h>
+#include <shared_ptr.h>
+#include <multiplexers/ICallback.h>
+#include <MasterSocket.h>
 #include "ClientSession.h"
+
+#include <signal.h>
 
 class ClientSession;
 
@@ -55,7 +57,7 @@ class ServerCluster {
     int GetListenerFd_(struct sockaddr_in addr);
     void CheckClients_();
 
-    static volatile bool run_;
+    static volatile sig_atomic_t run_;
 };
 
 #endif  // WS_SERVER_CLUSTER_H

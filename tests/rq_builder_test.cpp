@@ -1,8 +1,9 @@
 #include <cstring>
-#include "gtest/gtest.h"
-#include "../src/http/RequestBuilder.h"
+#include <gtest/gtest.h>
+#include <RequestBuilder.h>
 #include <fstream>
 #include <iostream>
+
 #define BODY_14 "Hello, World!!"
 
 #define BODY_1100 "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptat!!!"
@@ -32,7 +33,7 @@ void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd) {
 // Client Callback context
 bool Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz) {
     builder.PrepareToRecvData(read_sz);
-    size_t bytes_recvd = Recv(file, builder.buf(), read_sz);
+    ssize_t bytes_recvd = Recv(file, builder.buf(), read_sz);
     if (bytes_recvd < 0) {
         std::cerr << "Could not read from client: closing connection..." << std::endl;
         //client_.CloseConnection();
@@ -59,7 +60,7 @@ int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read
 
 TEST(ValidWithBody, 1_Bodylen_14) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq1.txt", 50) != 0) {
+    if (BuildRequest(builder, "rq1.txt", 50) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -75,7 +76,7 @@ TEST(ValidWithBody, 1_Bodylen_14) {
 
 TEST(ValidWithBody, 2_One_Chunk_1100) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq2.txt", 10) != 0) {
+    if (BuildRequest(builder, "rq2.txt", 10) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -90,7 +91,7 @@ TEST(ValidWithBody, 2_One_Chunk_1100) {
 
 TEST(ValidWithBody, 3_One_Chunk_1100) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq2.txt", 9) != 0) {
+    if (BuildRequest(builder, "rq2.txt", 9) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -105,7 +106,7 @@ TEST(ValidWithBody, 3_One_Chunk_1100) {
 
 TEST(ValidWithBody, 4_Bodylen_1) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq4.txt", 50) != 0) {
+    if (BuildRequest(builder, "rq4.txt", 50) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -121,7 +122,7 @@ TEST(ValidWithBody, 4_Bodylen_1) {
 
 TEST(ValidWithBody, 5_Chunked_1) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq5.txt", 50) != 0) {
+    if (BuildRequest(builder, "rq5.txt", 50) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -136,7 +137,7 @@ TEST(ValidWithBody, 5_Chunked_1) {
 // Valid without body:
 TEST(ValidWithoutBody, 6_SimpleGet) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq6.txt", 50) != 0) {
+    if (BuildRequest(builder, "rq6.txt", 50) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -150,7 +151,7 @@ TEST(ValidWithoutBody, 6_SimpleGet) {
 
 TEST(ValidWithoutBody, 7_GetWithQuery) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq7.txt", 100) != 0) {
+    if (BuildRequest(builder, "rq7.txt", 100) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -164,7 +165,7 @@ TEST(ValidWithoutBody, 7_GetWithQuery) {
 
 TEST(ValidWithoutBody, 8_GetWithHeaders) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq8.txt", 100) != 0) {
+    if (BuildRequest(builder, "rq8.txt", 100) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -179,7 +180,7 @@ TEST(ValidWithoutBody, 8_GetWithHeaders) {
 
 TEST(InValidWithoutBody, 9_PostWithHeaders) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq9.txt", 80) != 0) {
+    if (BuildRequest(builder, "rq9.txt", 80) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -194,7 +195,7 @@ TEST(InValidWithoutBody, 9_PostWithHeaders) {
 
 TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq10.txt", 50) != 0) {
+    if (BuildRequest(builder, "rq10.txt", 50) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
@@ -208,7 +209,7 @@ TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
 
 TEST(InValidWithoutBody, 11_Incomplete_Method) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq11.txt", 7) != 0) {
+    if (BuildRequest(builder, "rq11.txt", 7) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -216,7 +217,7 @@ TEST(InValidWithoutBody, 11_Incomplete_Method) {
 
 TEST(InValidWithoutBody, 12_Too_Many_Spaces) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq12.txt", 7) != 0) {
+    if (BuildRequest(builder, "rq12.txt", 7) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -225,7 +226,7 @@ TEST(InValidWithoutBody, 12_Too_Many_Spaces) {
 
 TEST(InValidWithoutBody, 13_No_URI) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq13.txt", 10) != 0) {
+    if (BuildRequest(builder, "rq13.txt", 10) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -236,7 +237,7 @@ TEST(InValidWithoutBody, 13_No_URI) {
 
 TEST(InValidWithoutBody, 14_No_Invalid_Version) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq14.txt", 1000) != 0) {
+    if (BuildRequest(builder, "rq14.txt", 1000) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -248,7 +249,7 @@ TEST(InValidWithoutBody, 14_No_Invalid_Version) {
 // when testing this and viewing rq15.txt in editor: careful about VS Code setting "Files: Insert Final Newline"
 TEST(InValidWithoutBody, 15_No_CRLF_After_Version) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq15.txt", 10000) != 0) {
+    if (BuildRequest(builder, "rq15.txt", 10000) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
@@ -259,7 +260,7 @@ TEST(InValidWithoutBody, 15_No_CRLF_After_Version) {
 
 TEST(InValidWithoutBody, 16_Just_LF_After_Version) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq16.txt", 13) != 0) {
+    if (BuildRequest(builder, "rq16.txt", 13) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
@@ -270,7 +271,7 @@ TEST(InValidWithoutBody, 16_Just_LF_After_Version) {
 
 TEST(InValidWithoutBody, 17_Bad_Header_Key) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq17.txt", 9) != 0) {
+    if (BuildRequest(builder, "rq17.txt", 9) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
@@ -281,7 +282,7 @@ TEST(InValidWithoutBody, 17_Bad_Header_Key) {
 
 TEST(InValidWithoutBody, 18_Bad_Header_Key) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq18.txt", 1) != 0) {
+    if (BuildRequest(builder, "rq18.txt", 1) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
@@ -292,7 +293,7 @@ TEST(InValidWithoutBody, 18_Bad_Header_Key) {
 
 TEST(InValidWithoutBody, 19_Bad_Header_Key) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq19.txt", 100) != 0) {
+    if (BuildRequest(builder, "rq19.txt", 100) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -304,7 +305,7 @@ TEST(InValidWithoutBody, 19_Bad_Header_Key) {
 
 TEST(InValidWithoutBody, 20_Bad_Header_Key) {
     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq20.txt", 100) != 0) {
+    if (BuildRequest(builder, "rq20.txt", 100) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -316,7 +317,7 @@ TEST(InValidWithoutBody, 20_Bad_Header_Key) {
 
 TEST(InValidWithoutBody, 21_Bad_Header_Key) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq21.txt", 100) != 0) {
+    if (BuildRequest(builder, "rq21.txt", 100) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -328,7 +329,7 @@ TEST(InValidWithoutBody, 21_Bad_Header_Key) {
 
 TEST(InValidWithoutBody, 22_Missing_Space) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq22.txt", 70) != 0) {
+    if (BuildRequest(builder, "rq22.txt", 70) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -340,7 +341,7 @@ TEST(InValidWithoutBody, 22_Missing_Space) {
 
 TEST(InValidWithoutBody, 23_Missing_Header_Value) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq23.txt", 70) != 0) {
+    if (BuildRequest(builder, "rq23.txt", 70) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -352,7 +353,7 @@ TEST(InValidWithoutBody, 23_Missing_Header_Value) {
 
 TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq24.txt", 10) != 0) {
+    if (BuildRequest(builder, "rq24.txt", 10) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
@@ -373,7 +374,7 @@ TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
 
 TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq50.txt", 1000) != 0) {
+    if (BuildRequest(builder, "rq50.txt", 1000) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -385,7 +386,7 @@ TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus) {
 
 TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq51.txt", 1000) != 0) {
+    if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -397,7 +398,7 @@ TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
 
 TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq52.txt", 1000) != 0) {
+    if (BuildRequest(builder, "rq52.txt", 1000) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -409,7 +410,7 @@ TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
 
 TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
      http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "requests/rq51.txt", 1000) != 0) {
+    if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
@@ -417,9 +418,4 @@ TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
-}
-
-int main (int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }
