@@ -2,10 +2,11 @@ add_library(CApi
     multiplexers/EpollMultiplexer.cpp
     multiplexers/IMultiplexer.cpp
     multiplexers/SelectMultiplexer.cpp
+    c_api_utils.cpp
     ClientSocket.cpp
     EventManager.cpp
     MasterSocket.cpp
-    c_api_utils.cpp
+    ReadSocket.cpp
 )
 
 target_link_libraries(CApi PUBLIC Utils)

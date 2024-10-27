@@ -2,6 +2,7 @@ add_library(Http
     Request.cpp
     RequestBuilder.cpp
     RequestParser.cpp
+    Response.cpp
 )
 
 target_link_libraries(Http PUBLIC Utils)
