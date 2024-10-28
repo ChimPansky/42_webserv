@@ -1,9 +1,9 @@
 #include "MasterSocket.h"
+#include "c_api_utils.h"
 
 #include <cstring>
 #include <stdexcept>
 
-#include "c_api/utils.h"
 
 namespace {
 int CreateSocket(bool set_nonblock)
@@ -53,13 +53,13 @@ MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock) : 
 
 utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
 {
-    struct sockaddr addr = {};
-    socklen_t addr_len = 0;
-    int client_fd = ::accept(sockfd_, &addr, &addr_len);
+    struct sockaddr_in addr = {};
+    socklen_t addr_len = sizeof(addr);
+    int client_fd = ::accept(sockfd_, (struct sockaddr*)&addr, &addr_len);
     if (client_fd < 0) {
         return utils::unique_ptr<ClientSocket>();
     }
-    return utils::unique_ptr<ClientSocket>(new ClientSocket(client_fd));
+    return utils::unique_ptr<ClientSocket>(new ClientSocket(client_fd, addr));
 }
 
 // technically at this point socket must be unbinded
@@ -77,6 +77,11 @@ int MasterSocket::sockfd() const
 {
     return sockfd_;
 }
+
+const sockaddr_in& MasterSocket::addr_in() const {
+    return addr_in_;
+}
+
 
 bool MasterSocket::IsSameSockAddr(struct sockaddr_in& addr) const
 {

@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "utils/unique_ptr.h"
+#include <unique_ptr.h>
 
 namespace c_api {
 

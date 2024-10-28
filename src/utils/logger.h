@@ -59,4 +59,6 @@ class Logger {
     utils::Logger::get().log(severity) << #severity[0] << utils::Logger::dump_time() << " " \
                                        << __FILE__ << ":" << __LINE__ << "] "
 
+#define LOG_IF(severity, condition) if (condition) LOG(severity)
+
 #endif  // WS_UTILS_LOGGER_H

@@ -1,5 +1,5 @@
 # 42_webserv
-42 Coding School webserv
+42 Coding School webserver
 
 
 Summary:

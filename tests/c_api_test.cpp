@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-#include "../src/c_api/utils.cpp"
-#include "arpa/inet.h"
+#include <gtest/gtest.h>
+#include <c_api_utils.cpp>
+#include <arpa/inet.h>
 
 int mult(int a, int b) {
     return a * b;
@@ -29,9 +29,4 @@ TEST(IPv4FromStringTest2, Negative) {
 TEST(IPv4ToStringTest, Positive) {
     in_addr_t ip = inet_addr("127.0.0.1");
     EXPECT_EQ(inet_ntoa(*(in_addr*)&ip), c_api::IPv4ToString(htonl(ip)));
-}
-
-int main (int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

@@ -6,7 +6,7 @@
 #include <stdexcept>      // close
 #include <sstream>      // close
 
-in_addr_t IPv4FromString(const std::string& ip_str)
+inline in_addr_t IPv4FromString(const std::string& ip_str)
 {
     if (ip_str == "localhost") {
         return INADDR_LOOPBACK;
@@ -37,7 +37,7 @@ in_addr_t IPv4FromString(const std::string& ip_str)
 }
 
 
-int CreateAndBindSocket(in_addr_t ip, in_port_t port, bool set_nonblock = true)
+inline int CreateAndBindSocket(in_addr_t ip, in_port_t port, bool set_nonblock = true)
 {
     int sockfd_ = ::socket(/* IPv4 */ AF_INET,
                             /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),

@@ -1,13 +1,13 @@
 #include "RequestBuilder.h"
+#include "Request.h"
 
 #include <cctype>
 #include <cstring>
 #include <string>
 #include <vector>
 
-#include "Request.h"
-#include "utils/logger.h"
-#include "utils/utils.h"
+#include <logger.h>
+#include <utils.h>
 
 namespace http {
 
@@ -24,14 +24,13 @@ void RequestBuilder::PrepareToRecvData(size_t recv_size)
     parser_.PrepareToRecvData(recv_size);
 }
 
-void RequestBuilder::AdjustBufferSize_(size_t bytes_recvd)
+void RequestBuilder::AdjustBufferSize(size_t bytes_recvd)
 {
-    parser_.AdjustBufferSize_(bytes_recvd);
+    parser_.AdjustBufferSize(bytes_recvd);
 }
 
 void RequestBuilder::Build(size_t bytes_recvd)
 {
-    AdjustBufferSize_(bytes_recvd);
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;
@@ -43,27 +42,13 @@ void RequestBuilder::Build(size_t bytes_recvd)
         }
         BuildState old_state = build_state_;
         switch (build_state_) {
-            case BS_METHOD:
-                build_state_ = BuildMethod_();
-                break;
-            case BS_URI:
-                build_state_ = BuildUri_();
-                break;
-            case BS_VERSION:
-                build_state_ = BuildVersion_();
-                break;
-            case BS_BETWEEN_HEADERS:
-                build_state_ = CheckForNextHeader_();
-                break;
-            case BS_HEADER_KEY:
-                build_state_ = BuildHeaderKey_();
-                break;
-            case BS_HEADER_KEY_VAL_SEP:
-                build_state_ = ParseHeaderKeyValSep_();
-                break;
-            case BS_HEADER_VALUE:
-                build_state_ = BuildHeaderValue_();
-                break;
+            case BS_METHOD:             build_state_ = BuildMethod_(); break;
+            case BS_URI:                build_state_ = BuildUri_(); break;
+            case BS_VERSION:            build_state_ = BuildVersion_(); break;
+            case BS_BETWEEN_HEADERS:    build_state_ = CheckForNextHeader_(); break;
+            case BS_HEADER_KEY:         build_state_ = BuildHeaderKey_(); break;
+            case BS_HEADER_KEY_VAL_SEP: build_state_ = ParseHeaderKeyValSep_(); break;
+            case BS_HEADER_VALUE:       build_state_ = BuildHeaderValue_(); break;
             case BS_CHECK_FOR_BODY: {
                 build_state_ = CheckForBody_();
                 if (build_state_ == BS_BODY_CHUNK_SIZE ||
@@ -73,22 +58,12 @@ void RequestBuilder::Build(size_t bytes_recvd)
                 }
                 break;
             }
-            case BS_CHECK_BODY_REGULAR_LENGTH:
-                build_state_ = CheckBodyRegularLength_();
-                break;
-            case BS_BODY_REGULAR:
-                build_state_ = BuildBodyRegular_();
-                break;
-            case BS_BODY_CHUNK_SIZE:
-                build_state_ = BuildBodyChunkSize_();
-                break;
-            case BS_BODY_CHUNK_CONTENT:
-                build_state_ = BuildBodyChunkContent_();
-                break;
+            case BS_CHECK_BODY_REGULAR_LENGTH:  build_state_ = CheckBodyRegularLength_(); break;
+            case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
+            case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
+            case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
             case BS_BAD_REQUEST:
-                break;
-            case BS_END:
-                break;
+            case BS_END: {}
         }
         if (build_state_ != old_state) {
             parser_.StartNewElement();
