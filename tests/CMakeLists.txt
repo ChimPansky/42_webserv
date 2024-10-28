@@ -26,6 +26,14 @@ add_test(
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test_data/configs
 )
 
+# Uri
+add_executable(uri_test uri_test.cpp)
+target_link_libraries(uri_test PRIVATE Http gtest gtest_main)
+add_test(
+    NAME uri_test
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/uri_test
+)
+
 # Valgrind
 add_test(
     NAME simple_valgrind_test

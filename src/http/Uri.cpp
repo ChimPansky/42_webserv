@@ -1,6 +1,7 @@
 #include "Uri.h"
-#include "http.h"
-#include "utils/utils.h"
+#include <http.h>
+#include <utils.h>
+#include <logger.h>
 
 namespace http {
 
@@ -50,9 +51,6 @@ std::string Uri::ToStr() const {
     return str;
 }
 
-void Uri::Validate_() {
-    status_ = URI_GOOD_BIT;
-}
 
 void Uri::ParseRawUri_(const std::string& raw_uri) {
     // host_ = raw_uri;
@@ -68,9 +66,10 @@ void Uri::ParseRawUri_(const std::string& raw_uri) {
             case PS_END: break;
         }
     }
+    Validate_();
 }
 
-void Uri::ParsePath_(const std::string& raw_uri, size_t raw_uri_pos, ParseState& state) {
+void Uri::ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state) {
     if (raw_uri_pos >= raw_uri.size() || raw_uri[raw_uri_pos] != '/') {
         status_ = URI_BAD_PATH_BIT;
         return;
@@ -94,7 +93,8 @@ void Uri::ParsePath_(const std::string& raw_uri, size_t raw_uri_pos, ParseState&
     state = PS_END; // should never reach here
 }
 
-void Uri::ParseQuery_(const std::string& raw_uri, size_t raw_uri_pos, ParseState& state) {
+void Uri::ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state) {
+    LOG(DEBUG) << "raw_uri_pos: " << raw_uri_pos << " raw_uri.size(): " << raw_uri.size();
     if (raw_uri_pos >= raw_uri.size()) {
         status_ = URI_BAD_QUERY_BIT;
         return;
@@ -114,7 +114,7 @@ void Uri::ParseQuery_(const std::string& raw_uri, size_t raw_uri_pos, ParseState
     state = PS_END; // should never reach here
 }
 
-void Uri::ParseFragment_(const std::string& raw_uri, size_t raw_uri_pos, ParseState& state) {
+void Uri::ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state) {
     if (raw_uri_pos >= raw_uri.size()) {
         status_ = URI_BAD_FRAGMENT_BIT;
         return;
@@ -123,16 +123,24 @@ void Uri::ParseFragment_(const std::string& raw_uri, size_t raw_uri_pos, ParseSt
     state = PS_END;
 }
 
-//helpers:
-bool Uri::IsValidPathChar_(char c) const {
-    return std::isalnum(c) || c == '.' || c == '-' || c == '_' || c == '/' || c == '?' || c == '#';
-}
-
-bool Uri::IsValidQueryOrFragmentChar_(char c) const {
-    return std::isalnum(c) || c == '.' || c == '-' || c == '_' || c == '/' || c == '?' || c == '#' || c == '&';
+void Uri::Validate_() {
+    LOG(DEBUG) << "Validate()";
+    if (!IsValidPath_(path_)) {
+        status_ |= URI_BAD_PATH_BIT;
+    }
+    if (!IsValidQuery_(query_)) {
+        status_ |= URI_BAD_QUERY_BIT;
+        LOG(DEBUG) << "bad_query_bit: " << URI_BAD_QUERY_BIT;
+    }
+    if (!IsValidFragment_(fragment_)) {
+        status_ |= URI_BAD_FRAGMENT_BIT;
+    }
 }
 
 bool Uri::IsValidPath_(const std::string& path) const {
+    if (path.empty()) {
+        return false;
+    }
     for (size_t i = 0; i < path.size(); ++i) {
         if (!IsValidPathChar_(path[i])) {   //todo: further checks
             return false;
@@ -141,12 +149,14 @@ bool Uri::IsValidPath_(const std::string& path) const {
     return true;
 }
 
-bool Uri::IsValidQuery_(const std::string& query) const {
+bool Uri::IsValidQuery_(const std::string& query) const { ////
     for (size_t i = 0; i < query.size(); ++i) {
         if (!IsValidQueryOrFragmentChar_(query[i])) {   //todo: further checks
+            LOG(DEBUG) << "Query invalid!";
             return false;
         }
     }
+    LOG(DEBUG) << "Query valid!";
     return true;
 }
 
@@ -157,6 +167,14 @@ bool Uri::IsValidFragment_(const std::string &fragment) const {
         }
     }
     return true;
+}
+
+bool Uri::IsValidPathChar_(char c) const {
+    return std::isalnum(c) || c == '.' || c == '-' || c == '_' || c == '/';
+}
+
+bool Uri::IsValidQueryOrFragmentChar_(char c) const {
+    return std::isalnum(c) || c == '.' || c == '-' || c == '_' || c == '/' || c == '?' || c == '#' || c == '&';
 }
 
 } // namespace http
