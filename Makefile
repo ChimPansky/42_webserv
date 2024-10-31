@@ -21,3 +21,5 @@ re: fclean all
 
 test: build
 	cd build && ctest
+
+.PHONY: all bonus build run fclean re test
