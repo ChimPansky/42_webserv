@@ -7,6 +7,7 @@
 #include "ServerConfig.h"
 
 #include <c_api_utils.h>
+#include <numeric_utils.h>
 
 namespace config {
 
