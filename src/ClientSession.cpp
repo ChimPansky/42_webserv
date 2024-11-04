@@ -8,7 +8,7 @@
 #include "ServerCluster.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
-    : client_sock_(sock), master_socket_fd_(master_sock_fd), connection_closed_(false)
+    : client_sock_(sock), master_socket_fd_(master_sock_fd), connection_closed_(false), read_state_(CS_READ)
 {
     // TODO move from here
     associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
@@ -51,9 +51,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
     }
     // fuck the callback here
     if (rq_builder_.builder_status() == http::RB_DONE) {
-        // TODO:
-        // instead of deleting callback change status of session and read to /dev/null untill empty to get rid of bad data in case of error
-        c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READ);
+        read_state_ = CS_IGNORE;
         rq_builder_.rq().Print();
         // server returns rs with basic headers and status complete/body generation in process + generator func
         rs_builder_ = associated_server_->AcceptRequest(rq_builder_.rq());
@@ -68,7 +66,6 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
 }
 
 
-// SEND RESP
 void ClientSession::PrepareResponse()
 {
     if (c_api::EventManager::get().RegisterCallback(
@@ -83,7 +80,7 @@ void ClientSession::PrepareResponse()
 
 void ClientSession::ResponseSentCleanup() {
     c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_WRITE);
-    // change state to read if keepalive or close connection
+    read_state_ = CS_READ;
 }
 
 
@@ -92,15 +89,26 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
-    client_.rq_builder_.PrepareToRecvData(CLIENT_RD_CALLBACK_RD_SZ);
-    ssize_t bytes_recvd =
-        client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
-    if (bytes_recvd < 0) {
-        client_.CloseConnection();
-        return;
+    if (client_.read_state_ == CS_IGNORE) {
+        std::vector<char> buf;
+        buf.resize(1000);
+        ssize_t bytes_recvd = client_.client_sock_->Recv(buf, 1000);
+        if (bytes_recvd <= 0) {
+            client_.CloseConnection();
+            return;
+        }
+    } else {
+        client_.rq_builder_.PrepareToRecvData(CLIENT_RD_CALLBACK_RD_SZ);
+        ssize_t bytes_recvd =
+            client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
+        // what u gonna do with the closed connection in builder?
+        if (bytes_recvd <= 0) {
+            client_.CloseConnection();
+            return;
+        }
+        client_.rq_builder_.AdjustBufferSize(bytes_recvd);
+        client_.ProcessNewData(bytes_recvd);
     }
-    client_.rq_builder_.AdjustBufferSize(bytes_recvd);
-    client_.ProcessNewData(bytes_recvd);
 }
 
 
