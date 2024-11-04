@@ -92,12 +92,17 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
     if (client_.read_state_ == CS_IGNORE) {
         std::vector<char> buf;
         buf.resize(1000);
-        (void)client_.client_sock_->Recv(buf, 1000);
+        ssize_t bytes_recvd = client_.client_sock_->Recv(buf, 1000);
+        if (bytes_recvd <= 0) {
+            client_.CloseConnection();
+            return;
+        }
     } else {
         client_.rq_builder_.PrepareToRecvData(CLIENT_RD_CALLBACK_RD_SZ);
         ssize_t bytes_recvd =
             client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
-        if (bytes_recvd < 0) {
+        // what u gonna do with the closed connection in builder?
+        if (bytes_recvd <= 0) {
             client_.CloseConnection();
             return;
         }
