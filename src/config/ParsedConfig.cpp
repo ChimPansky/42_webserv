@@ -1,4 +1,5 @@
 #include "ParsedConfig.h"
+#include <str_utils.h>
 
 namespace config {
 

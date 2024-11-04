@@ -2,7 +2,8 @@
 
 #include <stdexcept>
 
-#include <utils.h>
+#include <str_utils.h>
+#include <numeric_utils.h>
 
 namespace config {
 

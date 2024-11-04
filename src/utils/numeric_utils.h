@@ -1,38 +1,18 @@
-#ifndef WS_UTILS_UTILS_H
-#define WS_UTILS_UTILS_H
+#ifndef WS_UTILS_NUMERIC_UTILS_H
+#define WS_UTILS_NUMERIC_UTILS_H
 
-#include <dirent.h>
-#include <netdb.h>
-
-#include <cstddef>
 #include <limits>
 #include <sstream>
-#include <vector>
 
 namespace utils {
 
-std::string ToLowerCase(std::string str);
-
-namespace fs {
-
-std::vector<std::string> SplitLine(const std::string& line);
-bool CheckFileExtension(const std::string& file, const std::string& extention);
-bool ValidPath(const std::string& val);
-bool IsDirectory(const std::string& path);
-std::string Trim(const std::string& str, const std::string& trim_chars);
-
-}  // namespace fs
-
 namespace {
-
 template <typename NumType>
 bool IsSignedType()
 {
     return std::numeric_limits<NumType>::min() != 0;
 }
-
 }
-
 
 template <typename NumType>
 int StrToNumeric(const std::string& str)
@@ -103,10 +83,10 @@ std::string NumericToString(NumType num) {
     ss << num;
     return ss.str();
 }
+}
 
-}  // namespace utils
+#endif  // WS_UTILS_NUMERIC_UTILS_H
 
-#endif  // WS_UTILS_UTILS_H
 
 // #include <iostream>
 
