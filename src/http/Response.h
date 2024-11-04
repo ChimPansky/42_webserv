@@ -7,22 +7,26 @@
 #include <unique_ptr.h>
 #include <stdexcept>
 #include "http.h"
+#include <numeric_utils.h>
+#include <time_utils.h>
 
 namespace http {
 
 enum ResponseCode {
     OK                      = 200,
+    BAD_REQUEST             = 400,
     NOT_FOUND               = 404,
-    SERVER_INTERNAL_ERROR   = 500,
+    INTERNAL_SERVER_ERROR   = 500,
 };
 
 inline const char* ResponseCodeHint(ResponseCode rs_code) {
   switch (rs_code) {
-    case OK:                          return "OK";
-    case NOT_FOUND:                   return "NOT FOUND";
-    case SERVER_INTERNAL_ERROR:       return "SERVER INTERNAL ERROR";
+    case OK:                          return "Ok";
+    case BAD_REQUEST:                 return "Bad Request";
+    case NOT_FOUND:                   return "Not Found";
+    case INTERNAL_SERVER_ERROR:       return "Internal Server Error";
   }
-  throw std::logic_error("unlnown http ver");
+  throw std::logic_error("unlnown http code");
 }
 
 class Response {
@@ -61,6 +65,7 @@ class Response {
     Response(ResponseCode code, http::Version version, const std::map<std::string, std::string>& headers, const std::vector<char>& body);
   public:
     std::vector<char> Dump() const;
+    std::string DumpToStr() const;
   private:
     ResponseCode code_;
     http::Version version_;
@@ -90,20 +95,21 @@ Connection: Closed\n\r\
 </html>\n\r"
 */
 inline utils::unique_ptr<http::Response> GetSimpleValidResponse() {
-      std::map<std::string, std::string> hdrs;
-    hdrs["Date"] = "Mon, 27 Jul 2009 12:28:53 GMT";
-    hdrs["Server"] = "ft_webserv";
-    hdrs["Last-Modified"] = "Wed, 22 Jul 2009 19:15:56 GMT";
-    hdrs["Content-Length"] = "88";
-    hdrs["Content-Type"] = "text/html";
-    hdrs["Connection"] = "Closed";
-
     std::string txt_body =
       "<html>\n\r"
       "<body>\n\r"
       "<h1>Hello, World!</h1>\n\r"
       "</body>\n\r"
       "</html>\n\r";
+
+    std::map<std::string, std::string> hdrs;
+    hdrs["Date"] = utils::GetFormatedTime();
+    hdrs["Server"] = "ft_webserv";
+    hdrs["Last-Modified"] = "Wed, 22 Jul 2009 19:15:56 GMT";
+    hdrs["Content-Length"] = utils::NumericToString(txt_body.size());
+    hdrs["Content-Type"] = "text/html";
+    hdrs["Connection"] = "Closed";
+
     std::vector<char> body;
     std::copy(txt_body.begin(), txt_body.end(), std::back_inserter(body));
     return utils::unique_ptr<http::Response>(new http::Response(http::OK, HTTP_1_1, hdrs, body));

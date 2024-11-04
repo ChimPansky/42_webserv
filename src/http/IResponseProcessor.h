@@ -10,7 +10,7 @@ class ClientSession;
 
 class AResponseProcessor {
   protected:
-    AResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb);
+    AResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb) : response_rdy_cb_(response_rdy_cb) {};
   public:
     virtual ~AResponseProcessor() {};
   protected:
@@ -27,13 +27,32 @@ class HelloWorldResponseProcessor : public AResponseProcessor {
 class GeneratedErrorResponseProcessor : public AResponseProcessor {
   public:
     GeneratedErrorResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb, http::ResponseCode code) : AResponseProcessor(response_rdy_cb) {
+      std::string body_str = GenerateErrorPage_(code);
+      std::vector<char> body;
+      body.reserve(body_str.size());
+      std::copy(body_str.begin(), body_str.end(), std::back_inserter(body));
       std::map<std::string, std::string> hdrs;
       hdrs["Server"] = "ft_webserv";
       hdrs["Date"] = utils::GetFormatedTime();
-      hdrs["Content-Length"] = "88";
       hdrs["Content-Type"] = "text/html";
       hdrs["Connection"] = "Closed";
-      response_rdy_cb_->Call(utils::unique_ptr<http::Response>(new http::Response(code, http::HTTP_1_1, hdrs, std::vector<char>())));
+      response_rdy_cb_->Call(utils::unique_ptr<http::Response>(new http::Response(code, http::HTTP_1_1, hdrs, body)));
+    }
+  private:
+    std::string GenerateErrorPage_(http::ResponseCode code) {
+        std::stringstream ss;
+        ss << "<!DOCTYPE html>\n"
+            << "<html lang=\"en\">"
+            << "<head>"
+            << "<meta charset=\"UTF-8\">"
+            << "<title>" << code << " " << http::ResponseCodeHint(code) << "</title>"
+            << "</head>"
+            << "<body style=\"font-family: Arial, sans-serif; text-align: center; color: black; background-color: white; padding: 20px;\">"
+            << "<h1 style=\"font-size: 48px; margin: 0;\">" << code << "</h1>"
+            << "<p style=\"font-size: 16px; margin: 10px 0;\">" << http::ResponseCodeHint(code) << "</p>"
+            << "</body>"
+            << "</html>";
+        return ss.str();
     }
 };
 

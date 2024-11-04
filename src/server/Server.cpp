@@ -1,5 +1,5 @@
 #include "Server.h"
-// #include "IProcessor.h"
+#include "IResponseProcessor.h"
 
 Server::Server(const config::ServerConfig& cfg) : server_config_(cfg) {}
 
@@ -18,8 +18,16 @@ bool Server::DoesMatchTheRequest(const http::Request& /*rq*/) const
 //     return processor;
 // }
 
-void Server::AcceptRequest(const http::Request& /*rq*/, utils::unique_ptr<http::IResponseCallback> cb) const {
+void Server::AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const {
     // const config::LocationConfig* chosen_loc = &locations_[0];  // choose location with method, host, uri, more?
-    
-    cb->Call(http::GetSimpleValidResponse());
+    // 2 options: rq on creation if rs ready right away calls callback
+    //      if not rdy register callback in event manager with client cb
+    //  or response processor should be owned by client session
+    if (rq.status == http::RQ_GOOD) {
+        HelloWorldResponseProcessor tmp(cb);
+    } else if (rq.status == http::RQ_BAD) {
+        GeneratedErrorResponseProcessor tmp(cb, http::BAD_REQUEST);
+    } else {
+        throw std::logic_error("trying to accept incomplete rq");
+    }
 }

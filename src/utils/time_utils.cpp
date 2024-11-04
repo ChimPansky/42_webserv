@@ -1,8 +1,9 @@
 #include <sstream>
 #include <ctime>
 #include <iomanip>
+#include "time_utils.h"
 
-std::string GetFormatedTime(std::time_t raw_time) {
+std::string utils::GetFormatedTime(std::time_t raw_time) {
     if (0 == raw_time) {
         std::time(&raw_time);  // get currnet time
     }
