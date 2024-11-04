@@ -18,8 +18,8 @@ bool Server::DoesMatchTheRequest(const http::Request& /*rq*/) const
 //     return processor;
 // }
 
-utils::unique_ptr<http::Response::ResponseBuilder> Server::AcceptRequest(const http::Request& /*rq*/) const {
-    // find location, open file/cgi/generate error response
-    return utils::unique_ptr<http::Response::ResponseBuilder>(new http::Response::ResponseBuilder(
-         utils::unique_ptr<http::Response>(new http::Response(http::OK, std::vector<char>()))));
+void Server::AcceptRequest(const http::Request& /*rq*/, utils::unique_ptr<http::IResponseCallback> cb) const {
+    // const config::LocationConfig* chosen_loc = &locations_[0];  // choose location with method, host, uri, more?
+    
+    cb->Call(http::GetSimpleValidResponse());
 }
