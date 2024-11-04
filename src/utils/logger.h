@@ -24,6 +24,18 @@ class Logger {
 
   private:
     Logger(char* log_path = NULL);  // singleton initialisation
+    class NullStream : public std::ostream {
+      public:
+        NullStream() : std::ostream(&nullBuffer) {}
+      private:
+        class NullBuffer : public std::streambuf {
+        public:
+            int overflow(int c) {
+                return c;
+            }
+        };
+        NullBuffer nullBuffer;
+    };
     class LogWrapper {
       public:
         LogWrapper(std::ostream& os, Severity sev);
@@ -44,11 +56,15 @@ class Logger {
     static Logger& get();
     static char* dump_time();
     LogWrapper log(enum Severity sev);
+    void set_severity_threshold(Severity);
 
   private:
     std::ofstream fs_;
     std::ostream* os_;
     std::ostream* es_;
+    NullStream    null_stream_;
+
+    Severity severity_threshold_;
 
     static char format_buf_[LOGGER_TIME_FORMAT_MAX_LEN];
 };
