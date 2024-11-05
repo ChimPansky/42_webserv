@@ -54,27 +54,19 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
         read_state_ = CS_IGNORE;
         rq_builder_.rq().Print();
         // server returns rs with basic headers and status complete/body generation in process + generator func
-        rs_builder_ = associated_server_->AcceptRequest(rq_builder_.rq());
-        if (rs_builder_->Complete()) {
-            PrepareResponse();
-        } else {
-            c_api::EventManager::get().RegisterCallback(
-                rs_builder_->bodygen_sock()->sockfd(), c_api::CT_READ,
-                utils::unique_ptr<c_api::ICallback>(new ClientRsBodyGenCallback(*this, *rs_builder_)));
-        }
+        associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
     }
 }
 
 
-void ClientSession::PrepareResponse()
+void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 {
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,
-            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this, rs_builder_->GetResponse()->Dump()))) != 0) {
+            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this, rs->Dump()))) != 0) {
         LOG(ERROR) << "Could not register write callback for client: "
                     << client_sock_->sockfd();
         CloseConnection();
-        return;
     }
 }
 
@@ -132,17 +124,17 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 }
 
 
-ClientSession::ClientRsBodyGenCallback::ClientRsBodyGenCallback(ClientSession& client, http::Response::ResponseBuilder& rs_builder) :client_(client), rs_builder_(rs_builder) {
+ClientSession::ClientProceedWithResponseCallback::ClientProceedWithResponseCallback(ClientSession& client) :client_(client) {
 }
 
-void ClientSession::ClientRsBodyGenCallback::Call(int /*fd*/) {
-    ssize_t bytes_recvd = rs_builder_.bodygen_sock()->Recv();
-    if (bytes_recvd < 0) {
-        // change rs to 503?
-    } else if (bytes_recvd == 0) {
-        rs_builder_.Finalize();
-        client_.PrepareResponse();
-    } else {
-        rs_builder_.AddToBody(bytes_recvd, rs_builder_.bodygen_sock()->buf());
-    }
+void ClientSession::ClientProceedWithResponseCallback::Call(utils::unique_ptr<http::Response> rs) {
+    client_.PrepareResponse(rs);
+    // ssize_t bytes_recvd = rs_builder_.bodygen_sock()->Recv();
+    // if (bytes_recvd < 0) {
+    //     // change rs to 503?
+    // } else if (bytes_recvd == 0) {
+    //     rs_builder_.Finalize();
+    // } else {
+    //     rs_builder_.AddToBody(bytes_recvd, rs_builder_.bodygen_sock()->buf());
+    // }
 }

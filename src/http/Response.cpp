@@ -1,28 +1,48 @@
+#include <numeric_utils.h>
 #include "Response.h"
+#include <string>
+#include <http.h>
 
 using namespace http;
 
-#include <string>
-
-#define HTTP_RESPONSE \
-    "HTTP/1.1 200 OK\r\n\
-Date: Mon, 27 Jul 2009 12:28:53 GMT\n\r\
-Server: ft_webserv\n\r\
-Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n\r\
-Content-Length: 88\n\r\
-Content-Type: text/html\n\r\
-Connection: Closed\n\r\
-\n\r\
-<html>\n\r\
-<body>\n\r\
-<h1>Hello, World!</h1>\n\r\
-</body>\n\r\
-</html>\n\r"
+Response::Response(ResponseCode code, http::Version version, const std::map<std::string, std::string>& headers, const std::vector<char>& body) : code_(code), version_(version), headers_(headers), body_(body) {}
 
 std::vector<char> Response::Dump() const {
-    (void) code_;
-    std::vector<char> buf;
-    std::string str(HTTP_RESPONSE);
-    std::copy(str.begin(), str.end(), std::back_inserter(buf));
-    return buf;
+    std::string str_dump;
+    str_dump += http::HttpVerToStr(version_);
+    str_dump += " ";
+    str_dump += utils::NumericToString(code_);
+    str_dump += " ";
+    str_dump += ResponseCodeHint(code_);
+    str_dump += http::LineSep();
+    for (std::map<std::string, std::string>::const_iterator it = headers_.begin(); it != headers_.end(); ++it) {
+        str_dump += it->first;
+        str_dump += ": ";
+        str_dump += it->second;
+        str_dump += http::LineSep();
+    }
+    str_dump += http::LineSep();  // if no body?
+    std::vector<char> dump;
+    std::copy(str_dump.begin(), str_dump.end(), std::back_inserter(dump));
+    std::copy(body_.begin(), body_.end(), std::back_inserter(dump));
+    return dump;
+}
+
+std::string Response::DumpToStr() const {
+    std::string str_dump;
+    str_dump += http::HttpVerToStr(version_);
+    str_dump += " ";
+    str_dump += utils::NumericToString(code_);
+    str_dump += " ";
+    str_dump += ResponseCodeHint(code_);
+    str_dump += http::LineSep();
+    for (std::map<std::string, std::string>::const_iterator it = headers_.begin(); it != headers_.end(); ++it) {
+        str_dump += it->first;
+        str_dump += ": ";
+        str_dump += it->second;
+        str_dump += http::LineSep();
+    }
+    str_dump += http::LineSep();  // if no body?
+    std::copy(body_.begin(), body_.end(), std::back_inserter(str_dump));
+    return str_dump;
 }
