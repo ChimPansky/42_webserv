@@ -15,7 +15,7 @@ bonus:
 
 build:
 	$(CMAKE) -S . -B $(BUILD_DIR) && make -C $(BUILD_DIR)
-	mv $(BUILD_DIR)/$(NAME) .
+	cp $(BUILD_DIR)/$(NAME) .
 
 run: build
 	./$(NAME) ./conf/webserv.conf
