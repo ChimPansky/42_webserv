@@ -1,8 +1,10 @@
-NAME = ./build/webserv
+NAME = webserv
 
 CMAKE_ARGS = -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
 CMAKE_BUILD_TYPE_ARG ?= Debug
 CMAKE = cmake $(CMAKE_ARGS) -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE_ARG)
+
+BUILD_DIR = ./build
 
 all: $(NAME) bonus
 
@@ -12,23 +14,21 @@ bonus:
 	@echo no bonus yet
 
 build:
-	$(CMAKE) -S . -B ./build && make -C ./build
+	$(CMAKE) -S . -B $(BUILD_DIR) && make -C $(BUILD_DIR)
+	mv $(BUILD_DIR)/$(NAME) .
 
 run: build
-	./build/webserv ./conf/webserv.conf
+	./$(NAME) ./conf/webserv.conf
 
 clean:
-	mv $(NAME) ./ws_tmp
-	rm -rf ./build
-	mkdir -p build
-	mv ./ws_tmp $(NAME)
+	rm -rf $(BUILD_DIR)
 
-fclean:
-	rm -rf ./build
+fclean: clean
+	rm -f $(NAME)
 
 re: fclean all
 
 test: build
-	cd build && ctest
+	cd $(BUILD_DIR) && ctest
 
 .PHONY: all bonus build run clean fclean re test
