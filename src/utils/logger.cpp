@@ -7,7 +7,7 @@
 
 using namespace utils;
 
-Logger::Logger(char* log_path)
+Logger::Logger(char* log_path) : severity_threshold_(DEBUG)
 {
     if ((log_path && *log_path != '\0')) {
         fs_.open(log_path);
@@ -39,6 +39,9 @@ char* Logger::dump_time()
 
 Logger::LogWrapper Logger::log(enum Severity sev)
 {
+    if (sev < severity_threshold_) {
+        return LogWrapper(null_stream_, sev);
+    }
     std::ostream& os = (sev < WARNING ? *os_ : *es_);
     // possible color:
     // if (dynamic_cast<std::ofstream*>(&os) == NULL) {
@@ -51,6 +54,11 @@ Logger& Logger::get()
 {
     static Logger logger;
     return logger;
+}
+
+void Logger::set_severity_threshold(Severity sev)
+{
+    severity_threshold_ = sev;
 }
 
 char Logger::format_buf_[LOGGER_TIME_FORMAT_MAX_LEN] = {};
