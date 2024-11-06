@@ -4,14 +4,9 @@
 #include <vector>
 #include <multiplexers/ICallback.h>
 #include <ReadSocket.h>
+#include <ResponseCodes.h>
 
 namespace http {
-
-enum ResponseCode {
-    OK                      = 200,
-    NOT_FOUND               = 403,
-    SERVER_INTERNAL_ERROR   = 503,
-};
 
 class Response {
   public:
