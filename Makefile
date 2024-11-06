@@ -24,8 +24,7 @@ clean:
 	find ./build/ -mindepth 1 -maxdepth 1 ! -name '_deps' ! -name $(ROOT_NAME) -exec rm -rf {} +
 
 fclean:
-	rm -rf ./build
-	$(ROOT_NAME)
+	rm -rf ./build $(ROOT_NAME)
 
 re: clean all
 
