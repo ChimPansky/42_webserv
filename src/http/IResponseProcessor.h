@@ -45,11 +45,11 @@ class GeneratedErrorResponseProcessor : public AResponseProcessor {
             << "<html lang=\"en\">"
             << "<head>"
             << "<meta charset=\"UTF-8\">"
-            << "<title>" << code << " " << http::ResponseCodeHint(code) << "</title>"
+            << "<title>" << code << " " << http::GetResponseCodeDescr(code) << "</title>"
             << "</head>"
             << "<body style=\"font-family: Arial, sans-serif; text-align: center; color: black; background-color: white; padding: 20px;\">"
             << "<h1 style=\"font-size: 48px; margin: 0;\">" << code << "</h1>"
-            << "<p style=\"font-size: 16px; margin: 10px 0;\">" << http::ResponseCodeHint(code) << "</p>"
+            << "<p style=\"font-size: 16px; margin: 10px 0;\">" << http::GetResponseCodeDescr(code) << "</p>"
             << "</body>"
             << "</html>";
         return ss.str();

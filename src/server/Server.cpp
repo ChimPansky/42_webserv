@@ -26,7 +26,7 @@ void Server::AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IRes
     if (rq.status == http::RQ_GOOD) {
         HelloWorldResponseProcessor tmp(cb);
     } else if (rq.status == http::RQ_BAD) {
-        GeneratedErrorResponseProcessor tmp(cb, http::BAD_REQUEST);
+        GeneratedErrorResponseProcessor tmp(cb, http::HTTP_BAD_REQUEST);
     } else {
         throw std::logic_error("trying to accept incomplete rq");
     }

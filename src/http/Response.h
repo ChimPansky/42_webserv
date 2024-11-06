@@ -1,33 +1,16 @@
 #ifndef WS_HTTP_RESPONSE_H
 #define WS_HTTP_RESPONSE_H
 
-#include <vector>
+#include <ResponseCodes.h>
 #include <string>
+#include <vector>
 #include <map>
 #include <unique_ptr.h>
-#include <stdexcept>
 #include "http.h"
 #include <numeric_utils.h>
 #include <time_utils.h>
 
 namespace http {
-
-enum ResponseCode {
-    OK                      = 200,
-    BAD_REQUEST             = 400,
-    NOT_FOUND               = 404,
-    INTERNAL_SERVER_ERROR   = 500,
-};
-
-inline const char* ResponseCodeHint(ResponseCode rs_code) {
-  switch (rs_code) {
-    case OK:                          return "Ok";
-    case BAD_REQUEST:                 return "Bad Request";
-    case NOT_FOUND:                   return "Not Found";
-    case INTERNAL_SERVER_ERROR:       return "Internal Server Error";
-  }
-  throw std::logic_error("unlnown http code");
-}
 
 class Response {
   public:
@@ -112,7 +95,7 @@ inline utils::unique_ptr<http::Response> GetSimpleValidResponse() {
 
     std::vector<char> body;
     std::copy(txt_body.begin(), txt_body.end(), std::back_inserter(body));
-    return utils::unique_ptr<http::Response>(new http::Response(http::OK, HTTP_1_1, hdrs, body));
+    return utils::unique_ptr<http::Response>(new http::Response(http::HTTP_OK, HTTP_1_1, hdrs, body));
 }
 
 }  // namespace http

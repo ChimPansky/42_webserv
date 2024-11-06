@@ -13,7 +13,7 @@ std::vector<char> Response::Dump() const {
     str_dump += " ";
     str_dump += utils::NumericToString(code_);
     str_dump += " ";
-    str_dump += ResponseCodeHint(code_);
+    str_dump += http::GetResponseCodeDescr(code_);
     str_dump += http::LineSep();
     for (std::map<std::string, std::string>::const_iterator it = headers_.begin(); it != headers_.end(); ++it) {
         str_dump += it->first;
@@ -34,7 +34,7 @@ std::string Response::DumpToStr() const {
     str_dump += " ";
     str_dump += utils::NumericToString(code_);
     str_dump += " ";
-    str_dump += ResponseCodeHint(code_);
+    str_dump += http::GetResponseCodeDescr(code_);
     str_dump += http::LineSep();
     for (std::map<std::string, std::string>::const_iterator it = headers_.begin(); it != headers_.end(); ++it) {
         str_dump += it->first;
