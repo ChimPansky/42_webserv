@@ -3,6 +3,9 @@ logs
 .cache
 .vscode
 
+
+
 *.o
 *.d
 *.out
+webserv

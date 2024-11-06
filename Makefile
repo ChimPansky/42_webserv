@@ -1,4 +1,6 @@
-NAME = ./build/webserv
+ROOT_NAME = webserv
+NAME = ./build/$(ROOT_NAME)
+DEFAULT_CONF = ./conf/webserv.conf
 
 CMAKE_ARGS = -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
 CMAKE_BUILD_TYPE_ARG ?= Debug
@@ -13,20 +15,19 @@ bonus:
 
 build:
 	$(CMAKE) -S . -B ./build && make -C ./build
+	ln -fs $(NAME) $(ROOT_NAME)
 
 run: build
-	./build/webserv ./conf/webserv.conf
+	$(NAME) $(DEFAULT_CONF)
 
 clean:
-	mv $(NAME) ./ws_tmp
-	rm -rf ./build
-	mkdir -p build
-	mv ./ws_tmp $(NAME)
+	find ./build/ -mindepth 1 -maxdepth 1 ! -name '_deps' ! -name $(ROOT_NAME) -exec rm -rf {} +
 
 fclean:
 	rm -rf ./build
+	$(ROOT_NAME)
 
-re: fclean all
+re: clean all
 
 test: build
 	cd build && ctest

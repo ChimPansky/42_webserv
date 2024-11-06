@@ -7,7 +7,9 @@ set(RESPONSE_CODES_CPP "${GENERATED_OUTPUT_DIR}/ResponseCodes.cpp")
 
 add_custom_command(
     OUTPUT ${RESPONSE_CODES_CPP} ${RESPONSE_CODES_H}
-    COMMAND python3 ${PROJECT_SOURCE_DIR}/resources/response_code_gen.py ${CMAKE_CURRENT_SOURCE_DIR}/http_response_codes.src  ${RESPONSE_CODES_H} ${RESPONSE_CODES_CPP}
+    COMMAND python3 ${PROJECT_SOURCE_DIR}/resources/response_code_gen.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/http_response_codes.src
+        ${RESPONSE_CODES_H} ${RESPONSE_CODES_CPP}
     DEPENDS ${PROJECT_SOURCE_DIR}/resources/response_code_gen.py
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/http_response_codes.src
     COMMENT "Generating ResponseCodes files"
