@@ -36,6 +36,15 @@ add_test(
 
 # Valgrind
 add_test(
-    NAME simple_valgrind_test
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/simple_valgrind.sh "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/conf/webserv.conf" ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
+    NAME valgrind_idle_test
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/valgrind_1_idle_test.sh
+              "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/test_data/valgrind_test.conf"
+              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
+)
+
+add_test(
+    NAME valgrind_single_connection_test
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/valgrind_2_single_connection_test.sh
+              "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/test_data/valgrind_test.conf"
+              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
 )

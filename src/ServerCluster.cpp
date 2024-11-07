@@ -31,7 +31,8 @@ void ServerCluster::StopHandler()
 
 ServerCluster::ServerCluster(const config::Config& config)
 {
-    c_api::EventManager::init(c_api::MT_EPOLL);
+    utils::Logger::get().set_severity_threshold(config.error_log_level());
+    c_api::EventManager::init(config.mx_type());
     CreateServers_(config);
 }
 

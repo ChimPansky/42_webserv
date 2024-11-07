@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <logger.h>
-#include <utils.h>
+#include <numeric_utils.h>
 
 namespace http {
 
@@ -29,8 +29,10 @@ void RequestBuilder::AdjustBufferSize(size_t bytes_recvd)
     parser_.AdjustBufferSize(bytes_recvd);
 }
 
+// TODO: rm bytes_recvd
 void RequestBuilder::Build(size_t bytes_recvd)
 {
+    // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;

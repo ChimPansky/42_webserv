@@ -1,6 +1,8 @@
 #include "LocationConfigBuilder.h"
 
 #include <sys/types.h>
+#include <numeric_utils.h>
+#include <str_utils.h>
 
 namespace config {
 

@@ -1,6 +1,6 @@
 #include "Uri.h"
 #include <http.h>
-#include <utils.h>
+#include <numeric_utils.h>
 #include <logger.h>
 
 namespace http {
@@ -137,6 +137,8 @@ void Uri::Validate_() {
     }
 }
 
+// check valid characters
+// check if .. leads goes 1 level above root of path...
 bool Uri::IsValidPath_(const std::string& path) const {
     if (path.empty()) {
         return false;

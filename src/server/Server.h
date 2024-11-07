@@ -25,13 +25,8 @@ class Server {
     // only check hostname probably.
     bool DoesMatchTheRequest(const http::Request& rq) const;
 
-    // return response with filled headers
-    // if has body, rs is in |not ready| state, and body is updated with callbacks
-    utils::unique_ptr<http::Response::ResponseBuilder> AcceptRequest(const http::Request& rq) const;
-    // chek the rq, return error possibly
-    // find the location, return 404 possibly
-    // if location is cgi, run cgi process
-    // if it is file, read file
+    // has to call IResponseCallback with rs when the last is rdy
+    void AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
 
     const std::string& name() const;
 
