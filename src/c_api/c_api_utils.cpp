@@ -1,5 +1,3 @@
-#include "utils.h"
-
 #include <netinet/in.h>
 
 #include <cstring>
@@ -55,6 +53,17 @@ struct sockaddr_in GetIPv4SockAddr(in_addr_t ip, in_port_t port)
     addr_in.sin_addr.s_addr = ::htonl(ip);
     addr_in.sin_port = ::htons(port);
     return addr_in;
+}
+
+std::string PrintIPv4SockAddr(const sockaddr_in& addr_in)
+{
+    std::stringstream ss;
+    if (addr_in.sin_family != AF_INET) {
+        ss << "Not an IPv4 addr";
+    } else {
+        ss << IPv4ToString(htonl(addr_in.sin_addr.s_addr)) << ":" << htons(addr_in.sin_port) << " " << addr_in.sin_family;
+    }
+    return ss.str();
 }
 
 }  // namespace c_api

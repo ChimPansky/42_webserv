@@ -3,8 +3,9 @@
 #include <stdio.h>      // for perror
 #include <sys/epoll.h>  // for epoll
 #include <unistd.h>     // close
+#include <cstring>     // close
 
-#include "utils/logger.h"
+#include <logger.h>
 
 namespace c_api {
 
@@ -35,8 +36,7 @@ int EpollMultiplexer::RegisterFd(int fd, CallbackType type, const FdToCallbackMa
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
     }
     if (res != 0) {
-        LOG(ERROR) << "epoll_ctl failed: " << fd;
-        perror(NULL);
+        LOG(ERROR) << "epoll_ctl failed: " << strerror(errno);
     }
     return res;
     // fcntl(fd, F_SETFL, O_NONBLOCK);  // not allowed as per subject... figure out if needed
@@ -56,8 +56,7 @@ int EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallback
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
     }
     if (res != 0) {
-        LOG(ERROR) << "epoll_ctl failed: " << fd;
-        perror(NULL);
+        LOG(ERROR) << "epoll_ctl failed: " << strerror(errno);
     }
     return res;
 }
@@ -81,8 +80,12 @@ int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
     struct epoll_event events[EPOLL_MAX_EVENTS];
     int ready_fds = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, -1);
     if (ready_fds == -1) {
-        LOG(ERROR) << "epoll_wait unsuccessful.";
-        return 1;
+        if (errno == EINTR) {
+            return 0;
+        } else {
+            LOG(ERROR) << "epoll_wait unsuccessful: " << strerror(errno);
+            return 1;
+        }
     }
     for (int rdy_fd = 0; rdy_fd < ready_fds; rdy_fd++) {
         struct epoll_event& ev = events[rdy_fd];

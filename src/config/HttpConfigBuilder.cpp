@@ -1,6 +1,8 @@
 #include "HttpConfigBuilder.h"
 
 #include "ServerConfigBuilder.h"
+#include <numeric_utils.h>
+#include <str_utils.h>
 
 namespace config {
 

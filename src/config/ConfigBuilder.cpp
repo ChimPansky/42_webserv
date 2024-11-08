@@ -2,6 +2,7 @@
 
 #include "HttpConfig.h"
 #include "HttpConfigBuilder.h"
+#include <str_utils.h>
 
 namespace config {
 

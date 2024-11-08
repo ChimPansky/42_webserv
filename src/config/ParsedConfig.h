@@ -1,8 +1,6 @@
 #ifndef WS_CONFIG_PARSED_CONFIG_H
 #define WS_CONFIG_PARSED_CONFIG_H
 
-#include <utils/utils.h>
-
 #include <fstream>
 #include <map>
 #include <string>

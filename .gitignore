@@ -1,12 +1,11 @@
 build
+logs
 .cache
 .vscode
 
+
+
 *.o
 *.d
-*.puml
-
-a.out
+*.out
 webserv
-rq_builder_tester
-c_api_utils_tester

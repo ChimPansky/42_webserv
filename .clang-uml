@@ -1,12 +1,14 @@
-compilation_database_dir: .
+compilation_database_dir: ./build
 output_directory: docs
+generate_links:
+  link: "https://github.com/ChimPansky/42_webserv/blob/{{ git.branch }}/{{ element.source.path }}#L{{ element.source.line }}"
+  tooltip: "{{ element.name }}"
 diagrams:
-  myproject_class:
+  uml_diagram:
     type: class
     glob:
-      - src/main.cpp
+      - src/*.cpp
     exclude:
       namespaces:
         - std
-        - uptr
         - utils

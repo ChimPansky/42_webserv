@@ -5,7 +5,10 @@
 #include "LocationConfig.h"
 #include "LocationConfigBuilder.h"
 #include "ServerConfig.h"
-#include "c_api/utils.h"
+
+#include <c_api_utils.h>
+#include <str_utils.h>
+#include <numeric_utils.h>
 
 namespace config {
 

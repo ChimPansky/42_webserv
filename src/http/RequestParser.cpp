@@ -1,8 +1,8 @@
 #include "RequestParser.h"
+#include "http.h"
 
 #include <cstring>
 
-#include "http.h"
 
 namespace http {
 
@@ -21,7 +21,7 @@ void RequestParser::PrepareToRecvData(size_t recv_size)
     buf_.resize(buf_.size() + recv_size);
 }
 
-void RequestParser::AdjustBufferSize_(size_t bytes_recvd)
+void RequestParser::AdjustBufferSize(size_t bytes_recvd)
 {
     if (buf_.size() > old_buf_size_ + bytes_recvd) {
         buf_.resize(old_buf_size_ + bytes_recvd);

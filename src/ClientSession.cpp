@@ -1,14 +1,17 @@
 #include "ClientSession.h"
 
-#include "c_api/EventManager.h"
-#include "c_api/multiplexers/ICallback.h"
-#include "utils/logger.h"
-#include "utils/unique_ptr.h"
+#include <EventManager.h>
+#include <multiplexers/ICallback.h>
+#include <RequestBuilder.h>
+#include <logger.h>
+#include <unique_ptr.h>
+#include "ServerCluster.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
-    : client_sock_(sock), master_socket_fd_(master_sock_fd), buf_send_idx_(0),
-      connection_closed_(false)
+    : client_sock_(sock), master_socket_fd_(master_sock_fd), connection_closed_(false), read_state_(CS_READ)
 {
+    // TODO move from here
+    associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
@@ -33,72 +36,105 @@ bool ClientSession::connection_closed() const
     return connection_closed_;
 }
 
-#include <cstring>
-#define HTTP_RESPONSE \
-    "HTTP/1.1 200 OK\r\n\
-Date: Mon, 27 Jul 2009 12:28:53 GMT\n\r\
-Server: ft_webserv\n\r\
-Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT\n\r\
-Content-Length: 88\n\r\
-Content-Type: text/html\n\r\
-Connection: Closed\n\r\
-\n\r\
-<html>\n\r\
-<body>\n\r\
-<h1>Hello, World!</h1>\n\r\
-</body>\n\r\
-</html>\n\r"
 
-void ClientSession::PrepareResponse()
+// RECV REQUEST
+void ClientSession::ProcessNewData(size_t bytes_recvd)
 {
-    buf_send_idx_ = 0;
-    buf_.resize(sizeof(HTTP_RESPONSE));
-    std::memcpy(buf_.data(), HTTP_RESPONSE, sizeof(HTTP_RESPONSE));
+    rq_builder_.Build(bytes_recvd);
+    // TODO:
+    // turn this into a client callback to exclude dependency of builder on server
+    // server cluster to singleton
+    if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
+        // associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
+        rq_builder_.ApplyServerInfo(1000);  // then this
+        rq_builder_.Build(bytes_recvd);     // and this are obsolete
+    }
+    // fuck the callback here
+    if (rq_builder_.builder_status() == http::RB_DONE) {
+        read_state_ = CS_IGNORE;
+        rq_builder_.rq().Print();
+        // server returns rs with basic headers and status complete/body generation in process + generator func
+        associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
+    }
 }
+
+
+void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
+{
+    if (c_api::EventManager::get().RegisterCallback(
+            client_sock_->sockfd(), c_api::CT_WRITE,
+            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this, rs->Dump()))) != 0) {
+        LOG(ERROR) << "Could not register write callback for client: "
+                    << client_sock_->sockfd();
+        CloseConnection();
+    }
+}
+
+void ClientSession::ResponseSentCleanup() {
+    c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_WRITE);
+    read_state_ = CS_READ;
+}
+
 
 ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
 {}
 
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
-    // assert fd == client_sock.fd
-    long bytes_recvd = client_.client_sock_->Recv(client_.buf_);
-    if (bytes_recvd <= 0) {
-        LOG(ERROR) << "Could not read from client: " << client_.client_sock_->sockfd();
-        client_.CloseConnection();
-        return;
-    }
-    LOG(DEBUG) << "ClientReadCallback::Call: " << bytes_recvd << " bytes recvd from "
-               << client_.client_sock_->sockfd();
-    if (static_cast<size_t>(bytes_recvd) < client_.client_sock_->buf_sz()) {
-        c_api::EventManager::get().DeleteCallback(client_.client_sock_->sockfd(), c_api::CT_READ);
-        if (c_api::EventManager::get().RegisterCallback(
-                client_.client_sock_->sockfd(), c_api::CT_WRITE,
-                utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(client_))) != 0) {
-            LOG(ERROR) << "Could not register write callback for client: "
-                       << client_.client_sock_->sockfd();
+    if (client_.read_state_ == CS_IGNORE) {
+        std::vector<char> buf;
+        buf.resize(1000);
+        ssize_t bytes_recvd = client_.client_sock_->Recv(buf, 1000);
+        if (bytes_recvd <= 0) {
             client_.CloseConnection();
             return;
         }
-        client_.PrepareResponse();
+    } else {
+        client_.rq_builder_.PrepareToRecvData(CLIENT_RD_CALLBACK_RD_SZ);
+        ssize_t bytes_recvd =
+            client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
+        // what u gonna do with the closed connection in builder?
+        if (bytes_recvd <= 0) {
+            client_.CloseConnection();
+            return;
+        }
+        client_.rq_builder_.AdjustBufferSize(bytes_recvd);
+        client_.ProcessNewData(bytes_recvd);
     }
 }
 
-ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client) : client_(client)
+
+ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client, std::vector<char> content) : client_(client), buf_(content), buf_send_idx_(0)
 {}
 
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 {
     // assert fd == client_sock.fd
-    ssize_t bytes_sent = client_.client_sock_->Send(client_.buf_, client_.buf_send_idx_,
-                                                    client_.buf_.size() - client_.buf_send_idx_);
+    ssize_t bytes_sent = client_.client_sock_->Send(buf_, buf_send_idx_,
+                                                    buf_.size() - buf_send_idx_);
     if (bytes_sent <= 0) {
         LOG(ERROR) << "error on send";  // add perror
         client_.CloseConnection();
         return;
     }
-    if (client_.buf_send_idx_ == client_.buf_.size()) {
-        LOG(INFO) << client_.buf_send_idx_ << " bytes sent, close connection";
-        client_.CloseConnection();
+    if (buf_send_idx_ == buf_.size()) {
+        LOG(INFO) << buf_send_idx_ << " bytes sent";
+        client_.ResponseSentCleanup();
     }
+}
+
+
+ClientSession::ClientProceedWithResponseCallback::ClientProceedWithResponseCallback(ClientSession& client) :client_(client) {
+}
+
+void ClientSession::ClientProceedWithResponseCallback::Call(utils::unique_ptr<http::Response> rs) {
+    client_.PrepareResponse(rs);
+    // ssize_t bytes_recvd = rs_builder_.bodygen_sock()->Recv();
+    // if (bytes_recvd < 0) {
+    //     // change rs to 503?
+    // } else if (bytes_recvd == 0) {
+    //     rs_builder_.Finalize();
+    // } else {
+    //     rs_builder_.AddToBody(bytes_recvd, rs_builder_.bodygen_sock()->buf());
+    // }
 }

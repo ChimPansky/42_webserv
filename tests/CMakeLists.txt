@@ -1,0 +1,42 @@
+add_compile_options(-Wno-deprecated)
+
+# c_api
+add_executable(c_api_test c_api_test.cpp)
+target_link_libraries(c_api_test PRIVATE CApi gtest gtest_main)
+add_test(
+    NAME c_api_test
+    COMMAND ./c_api_test
+)
+
+# RequestBuilder
+add_executable(rq_builder_test rq_builder_test.cpp)
+target_link_libraries(rq_builder_test PRIVATE Http gtest gtest_main)
+add_test(
+    NAME rq_builder_test
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/rq_builder_test
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test_data/requests
+)
+
+# ConfigParser
+add_executable(config_parser_test config_parser_test.cpp)
+target_link_libraries(config_parser_test PRIVATE Config gtest gtest_main)
+add_test(
+    NAME config_parser_test
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/config_parser_test
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test_data/configs
+)
+
+# Valgrind
+add_test(
+    NAME valgrind_idle_test
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/valgrind_1_idle_test.sh
+              "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/test_data/valgrind_test.conf"
+              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
+)
+
+add_test(
+    NAME valgrind_single_connection_test
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/valgrind_2_single_connection_test.sh
+              "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/test_data/valgrind_test.conf"
+              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
+)

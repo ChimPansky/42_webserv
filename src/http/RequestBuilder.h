@@ -1,13 +1,12 @@
 #ifndef WS_HTTP_REQUEST_BUILDER_H
 #define WS_HTTP_REQUEST_BUILDER_H
 
-#include <cstddef>
-#include <vector>
-
 #include "Request.h"
 #include "RequestParser.h"
 
-class Server;
+#include <cstddef>
+#include <vector>
+
 namespace http {
 
 enum RqBuilderStatus {
@@ -54,6 +53,7 @@ class RequestBuilder {
   public:
     RequestBuilder();
     void PrepareToRecvData(size_t recv_size);
+    void AdjustBufferSize(size_t bytes_recvd);
     void Build(size_t bytes_recvd);
     void ApplyServerInfo(size_t max_body_size);
     RqBuilderStatus builder_status() const;
@@ -82,7 +82,6 @@ class RequestBuilder {
     BuildState BuildBodyChunkContent_();
 
     // helpers:
-    void AdjustBufferSize_(size_t bytes_recvd);
     bool CanBuild_();
     void NullTerminatorCheck_(char c);
     bool CheckForEOL_() const;

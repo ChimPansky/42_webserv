@@ -1,13 +1,12 @@
+#include <dirent.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
 
 #include <exception>
 #include <iostream>
-#include <stdexcept>
-#include <filesystem>
 #include <vector>
 
-#include "config/ConfigBuilder.h"
+#include <ConfigBuilder.h>
 
 class ConfigInvalidTest : public ::testing::TestWithParam<std::string> {};
 
@@ -47,12 +46,12 @@ std::vector<std::string> GetInvalidConfigFiles(const std::string& directory)
 INSTANTIATE_TEST_SUITE_P(
     InvalidConfigTests,
     ConfigInvalidTest,
-    ::testing::ValuesIn(GetInvalidConfigFiles("test_configs/invalid_configs"))
+    ::testing::ValuesIn(GetInvalidConfigFiles("./invalid_configs"))
 );
 
 TEST(ConfigTest, LoadValidConfig)
 {
-    std::string valid_file = "./test_configs/valid_config.conf";
+    std::string valid_file = "./valid_config.conf";
     char buf[1024];
     std::cout << getcwd(buf, sizeof(buf)) << std::endl;
     config::Config conf = config::ConfigBuilder::GetConfigFromConfFile(valid_file);
@@ -115,7 +114,7 @@ TEST(ConfigTest, LoadValidConfig)
 
 TEST(ConfigTest, MinimumSettingsConfig)
 {
-    std::string valid_file = "test_configs/minimum_settings.conf";
+    std::string valid_file = "./minimum_settings.conf";
     config::Config conf = config::ConfigBuilder::GetConfigFromConfFile(valid_file);
 
     EXPECT_EQ(conf.mx_type(), c_api::MultiplexType::MT_SELECT);
@@ -329,9 +328,3 @@ TEST(ConfigTest, InvalidReturnSetting)
 
     EXPECT_THROW(config::ConfigBuilder::GetConfigFromConfFile(invalid_file), std::exception);
 } */
-
-int main(int argc, char** argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

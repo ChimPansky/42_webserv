@@ -3,17 +3,31 @@
 
 #include <vector>
 
-#include "Server.h"
-#include "config/Config.h"
-#include "utils/shared_ptr.h"
-#include "utils/unique_ptr.h"
+#include <Server.h>
+#include <Config.h>
+#include <unique_ptr.h>
+#include <MasterSocket.h>
+#include <Config.h>
+#include <shared_ptr.h>
+#include <multiplexers/ICallback.h>
+#include <MasterSocket.h>
+#include "ClientSession.h"
+
+#include <signal.h>
+
+class ClientSession;
 
 class ServerCluster {
   public:
-    static void Start(const config::Config& config);
-    static void Stop();
+    static void Init(const config::Config& config);
+    static void StopHandler();
+    static void Run();
+    static utils::shared_ptr<Server> ChooseServer(int master_fd, const http::Request& rq);
+    void PrintDebugInfo() const;
 
   private:
+    ServerCluster(const config::Config& config);
+
     class MasterSocketCallback : public c_api::ICallback {
       public:
         MasterSocketCallback(ServerCluster& cluster);
@@ -24,7 +38,6 @@ class ServerCluster {
         ServerCluster& cluster_;
     };
 
-    ServerCluster(const config::Config&);
 
     // Sockets
     std::map<int /*fd*/, utils::unique_ptr<c_api::MasterSocket> > sockets_;
@@ -32,16 +45,23 @@ class ServerCluster {
 
     // Servers
     std::vector<utils::shared_ptr<Server> > servers_;
+    typedef std::vector<utils::shared_ptr<Server> >::const_iterator ServersConstIt;
+
     std::map<int /*fd*/, std::vector<utils::shared_ptr<Server> > > sockets_to_servers_;
 
     // Clients
-    std::map<int, utils::unique_ptr<ClientSession> > clients_;
+    std::map<int /*fd*/, utils::unique_ptr<ClientSession> > clients_;
     typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
-    // if client is ready to write register wr callback,
-    // if client timed out, rm it from map
-    void CheckClients();
 
-    static volatile bool run_;
+    void CreateServers_(const config::Config& config);
+    void MapListenersToServer_(const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
+                               utils::shared_ptr<Server>& serv);
+    int CreateListener_(struct sockaddr_in addr);
+    int GetListenerFd_(struct sockaddr_in addr);
+    void CheckClients_();
+
+    static volatile sig_atomic_t run_;
+    static utils::unique_ptr<ServerCluster> instance_;
 };
 
 #endif  // WS_SERVER_CLUSTER_H
