@@ -51,15 +51,13 @@ void RequestBuilder::Build(size_t bytes_recvd)
             case BS_HEADER_KEY:         build_state_ = BuildHeaderKey_(); break;
             case BS_HEADER_KEY_VAL_SEP: build_state_ = ParseHeaderKeyValSep_(); break;
             case BS_HEADER_VALUE:       build_state_ = BuildHeaderValue_(); break;
-            case BS_CHECK_FOR_BODY: {
-                build_state_ = CheckForBody_();
-                if (build_state_ == BS_BODY_CHUNK_SIZE ||
-                    build_state_ == BS_CHECK_BODY_REGULAR_LENGTH) {
-                    builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
+            case BS_AFTER_HEADERS: {
+                 build_state_ = BS_CHECK_FOR_BODY;
+                 builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
                     return;
                 }
                 break;
-            }
+            case BS_CHECK_FOR_BODY:     build_state_ = CheckForBody_(); break;
             case BS_CHECK_BODY_REGULAR_LENGTH:  build_state_ = CheckBodyRegularLength_(); break;
             case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
@@ -191,12 +189,12 @@ RequestBuilder::BuildState RequestBuilder::CheckForNextHeader_()
         }
         if (CheckForEOL_()) {
             parser_.Advance();
-            return BS_CHECK_FOR_BODY;
+            return BS_AFTER_HEADERS;
         }
         parser_.Advance();
     }
     if (CheckForEOL_()) {
-        return BS_CHECK_FOR_BODY;
+        return BS_AFTER_HEADERS;
     }
     return BS_BETWEEN_HEADERS;
 }
@@ -406,7 +404,7 @@ bool RequestBuilder::CheckForEOL_() const
 
 bool RequestBuilder::IsParsingState_(BuildState state) const
 {
-    return (state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH);
+    return (state != BS_AFTER_HEADERS && state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH);
 }
 
 }  // namespace http
