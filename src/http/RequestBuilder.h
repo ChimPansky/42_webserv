@@ -37,6 +37,7 @@ class RequestBuilder {
         BS_HEADER_KEY,
         BS_HEADER_KEY_VAL_SEP,
         BS_HEADER_VALUE,
+        BS_AFTER_HEADERS,
         BS_CHECK_FOR_BODY,
         BS_CHECK_BODY_REGULAR_LENGTH,
         BS_BODY_REGULAR,
