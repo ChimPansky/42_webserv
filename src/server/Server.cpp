@@ -11,7 +11,7 @@ Server::Server(const config::ServerConfig& cfg) : server_config_(cfg)
 std::string Server::name() const
 {
     if (server_config_.server_names().empty()) {
-        return std::string("Default_server_name");
+        return std::string();
     }
     return server_config_.server_names()[0];
 }
@@ -64,14 +64,6 @@ std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request&
     }
     return std::make_pair(NO_MATCH, std::string());
 }
-
-// void TestMatch(const std::string& host) {
-//     if (DoesMatchTheRequest(host)) {
-//         std::cout << "Matches: " << host << std::endl;
-//     } else {
-//         std::cout << "Doesn't match: " << host << std::endl;
-//     }
-// }
 
 // int main() {
 
