@@ -11,10 +11,10 @@
 #include <vector>
 
 enum MatchType {
-  NO_MATCH = 0,
-  SUFFIX_MATCH = 1,
-  PREFIX_MATCH = 2,
-  EXACT_MATCH = 3
+    NO_MATCH = 0,
+    SUFFIX_MATCH = 1,
+    PREFIX_MATCH = 2,
+    EXACT_MATCH = 3
 };
 
 class Server {
@@ -35,7 +35,7 @@ class Server {
     void AcceptRequest(const http::Request& rq,
                        utils::unique_ptr<http::IResponseCallback> cb) const;
 
-    const std::string& name() const;
+    std::string name() const;
 
     const config::ServerConfig& server_config() const { return server_config_; }
 

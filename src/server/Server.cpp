@@ -8,7 +8,13 @@
 Server::Server(const config::ServerConfig& cfg) : server_config_(cfg)
 {}
 
-const std::string& Server::name() const { return server_config_.server_names()[0]; }
+std::string Server::name() const
+{
+    if (server_config_.server_names().empty()) {
+        return std::string("Default_server_name");
+    }
+    return server_config_.server_names()[0];
+}
 
 // if returns nullptr, rs is the valid response right away
 // utils::unique_ptr<IProcessor> AcceptRequest(const http::Request& rq, http::Response& rs)
