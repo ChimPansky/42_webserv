@@ -2,9 +2,12 @@
 
 #include <Server.h>
 #include "ClientSession.h"
+#include "shared_ptr.h"
 #include <EventManager.h>
 #include <c_api_utils.h>
 #include <Config.h>
+#include <string>
+#include <iostream>
 
 namespace {
 void SigIntHandler(int /*signum*/)
@@ -48,9 +51,27 @@ void ServerCluster::Run()
 }
 
 
-utils::shared_ptr<Server> ServerCluster::ChooseServer(int /*master_fd*/, const http::Request& /*rq*/)
+utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http::Request& rq)
 {
-    return instance_->servers_[0];
+    std::pair<MatchType, std::string> best_match(NO_MATCH, std::string());
+    utils::shared_ptr<Server>   matched_server;
+
+    std::cout << "Hostname: " << rq.GetHeaderVal("host").second << std::endl;
+    for (ServersConstIt it = instance_->sockets_to_servers_[master_fd].begin(); it != instance_->sockets_to_servers_[master_fd].end(); ++it) {
+
+        std::pair<MatchType, std::string>   match_result = (*it)->MatchedServerName(rq);
+
+        std::cout << "Matched name: " << match_result.second << std::endl;
+        if ((match_result.second.length() > best_match.second.length() && match_result.first == best_match.first) || match_result.first > best_match.first) {
+            best_match = match_result;
+            matched_server = *it;
+        }
+    }
+    if (best_match.second.empty()) {
+        return instance_->sockets_to_servers_[master_fd][0];
+    }
+
+    return matched_server;
 }
 
 

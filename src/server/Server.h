@@ -10,8 +10,15 @@
 #include <Response.h>
 #include <unique_ptr.h>
 
+enum MatchType {
+  NO_MATCH = 0,
+  SUFFIX_MATCH = 1,
+  PREFIX_MATCH = 2,
+  EXACT_MATCH = 3
+};
 
 class Server {
+
   private:
     Server();
     Server(const Server&);
@@ -23,7 +30,7 @@ class Server {
 
   public:
     // only check hostname probably.
-    bool DoesMatchTheRequest(const http::Request& rq) const;
+    std::pair<MatchType, std::string>  MatchedServerName(const http::Request& rq) const;
 
     // has to call IResponseCallback with rs when the last is rdy
     void AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
