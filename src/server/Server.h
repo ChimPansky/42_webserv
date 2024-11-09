@@ -1,14 +1,14 @@
 #ifndef WS_SERVER_SERVER_H
 #define WS_SERVER_SERVER_H
 
-#include <vector>
-#include <string>
-
-#include <ServerConfig.h>
 #include <LocationConfig.h>
 #include <Request.h>
 #include <Response.h>
+#include <ServerConfig.h>
 #include <unique_ptr.h>
+
+#include <string>
+#include <vector>
 
 enum MatchType {
   NO_MATCH = 0,
@@ -18,7 +18,6 @@ enum MatchType {
 };
 
 class Server {
-
   private:
     Server();
     Server(const Server&);
@@ -30,14 +29,15 @@ class Server {
 
   public:
     // only check hostname probably.
-    std::pair<MatchType, std::string>  MatchedServerName(const http::Request& rq) const;
+    std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
 
     // has to call IResponseCallback with rs when the last is rdy
-    void AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+    void AcceptRequest(const http::Request& rq,
+                       utils::unique_ptr<http::IResponseCallback> cb) const;
 
     const std::string& name() const;
 
-    const config::ServerConfig& server_config() const {return server_config_;}
+    const config::ServerConfig& server_config() const { return server_config_; }
 
   private:
     std::vector<config::LocationConfig> locations_;
@@ -45,7 +45,6 @@ class Server {
 };
 
 #endif  // WS_SERVER_SERVER_H
-
 
 /*
 

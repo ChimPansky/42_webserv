@@ -1,9 +1,12 @@
 #include "Server.h"
+
 #include <utility>
+
 #include "IResponseProcessor.h"
 #include "Request.h"
 
-Server::Server(const config::ServerConfig& cfg) : server_config_(cfg) {}
+Server::Server(const config::ServerConfig& cfg) : server_config_(cfg)
+{}
 
 const std::string& Server::name() const { return server_config_.server_names()[0]; }
 
@@ -15,9 +18,11 @@ const std::string& Server::name() const { return server_config_.server_names()[0
 //     return processor;
 // }
 
-void Server::AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const {
-    // const config::LocationConfig* chosen_loc = &locations_[0];  // choose location with method, host, uri, more?
-    // 2 options: rq on creation if rs ready right away calls callback
+void Server::AcceptRequest(const http::Request& rq,
+                           utils::unique_ptr<http::IResponseCallback> cb) const
+{
+    // const config::LocationConfig* chosen_loc = &locations_[0];  // choose location with method,
+    // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
     if (rq.status == http::RQ_GOOD) {
@@ -29,11 +34,11 @@ void Server::AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IRes
     }
 }
 
-std::pair<MatchType, std::string>   Server::MatchedServerName(const http::Request& rq) const
+std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
 {
     typedef std::vector<std::string>::const_iterator NamesIter;
     std::string host = rq.GetHeaderVal("host").second;
-    std::vector<std::string>    server_names_ = server_config_.server_names();
+    std::vector<std::string> server_names_ = server_config_.server_names();
 
     for (NamesIter it = server_names_.begin(); it != server_names_.end(); ++it) {
         std::string server_name = *it;

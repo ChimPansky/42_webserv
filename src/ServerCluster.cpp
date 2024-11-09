@@ -1,13 +1,14 @@
 #include "ServerCluster.h"
 
+#include <Config.h>
+#include <EventManager.h>
 #include <Server.h>
+#include <c_api_utils.h>
+
+#include <string>
+
 #include "ClientSession.h"
 #include "shared_ptr.h"
-#include <EventManager.h>
-#include <c_api_utils.h>
-#include <Config.h>
-#include <string>
-#include <iostream>
 
 namespace {
 void SigIntHandler(int /*signum*/)
@@ -20,17 +21,16 @@ void SigIntHandler(int /*signum*/)
 volatile sig_atomic_t ServerCluster::run_ = false;
 utils::unique_ptr<ServerCluster> ServerCluster::instance_;
 
-void ServerCluster::Init(const config::Config& config) {
+void ServerCluster::Init(const config::Config& config)
+{
     signal(SIGINT, SigIntHandler);
     instance_ = utils::unique_ptr<ServerCluster>(new ServerCluster(config));
 }
-
 
 void ServerCluster::StopHandler()
 {
     run_ = false;
 }
-
 
 ServerCluster::ServerCluster(const config::Config& config)
 {
@@ -38,7 +38,6 @@ ServerCluster::ServerCluster(const config::Config& config)
     c_api::EventManager::init(config.mx_type());
     CreateServers_(config);
 }
-
 
 void ServerCluster::Run()
 {
@@ -50,19 +49,18 @@ void ServerCluster::Run()
     }
 }
 
-
 utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http::Request& rq)
 {
     std::pair<MatchType, std::string> best_match(NO_MATCH, std::string());
-    utils::shared_ptr<Server>   matched_server;
+    utils::shared_ptr<Server> matched_server;
 
-    std::cout << "Hostname: " << rq.GetHeaderVal("host").second << std::endl;
-    for (ServersConstIt it = instance_->sockets_to_servers_[master_fd].begin(); it != instance_->sockets_to_servers_[master_fd].end(); ++it) {
+    for (ServersConstIt it = instance_->sockets_to_servers_[master_fd].begin();
+         it != instance_->sockets_to_servers_[master_fd].end(); ++it) {
+        std::pair<MatchType, std::string> match_result = (*it)->MatchedServerName(rq);
 
-        std::pair<MatchType, std::string>   match_result = (*it)->MatchedServerName(rq);
-
-        std::cout << "Matched name: " << match_result.second << std::endl;
-        if ((match_result.second.length() > best_match.second.length() && match_result.first == best_match.first) || match_result.first > best_match.first) {
+        if ((match_result.second.length() > best_match.second.length() &&
+             match_result.first == best_match.first) ||
+            match_result.first > best_match.first) {
             best_match = match_result;
             matched_server = *it;
         }
@@ -73,7 +71,6 @@ utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http:
 
     return matched_server;
 }
-
 
 void ServerCluster::PrintDebugInfo() const
 {
@@ -148,7 +145,6 @@ int ServerCluster::GetListenerFd_(struct sockaddr_in addr)
     return -1;
 }
 
-
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
 {}
@@ -164,7 +160,8 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     c_api::MasterSocket& acceptor = *acceptor_it->second;
     utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor.Accept();
     if (!client_sock) {
-        LOG(ERROR) << "error accepting connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in());
+        LOG(ERROR) << "error accepting connection on: "
+                   << c_api::PrintIPv4SockAddr(acceptor.addr_in());
         perror("MasterSocket::Accept");
         return;
     }
