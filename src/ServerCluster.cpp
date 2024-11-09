@@ -16,7 +16,7 @@ void SigIntHandler(int /*signum*/)
     LOG(INFO) << " SIGINT caught, shutting down...";
     ServerCluster::StopHandler();
 }
-}
+}  // namespace
 
 volatile sig_atomic_t ServerCluster::run_ = false;
 utils::unique_ptr<ServerCluster> ServerCluster::instance_;
@@ -75,8 +75,8 @@ utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http:
 void ServerCluster::PrintDebugInfo() const
 {
     for (ServersConstIt cit = servers_.begin(); cit != servers_.end(); ++cit) {
-        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name() << ". My config is: ";
-        (*cit)->server_config().Print();
+        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name() << ". My info is: ";
+        (*cit)->Print();
         LOG(DEBUG);
     }
 }

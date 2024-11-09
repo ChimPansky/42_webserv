@@ -36,12 +36,18 @@ class Server {
                        utils::unique_ptr<http::IResponseCallback> cb) const;
 
     std::string name() const;
-
-    const config::ServerConfig& server_config() const { return server_config_; }
+    const std::string& access_log_path() const;
+    Severity access_log_level() const;
+    const std::string& error_log_path() const;
+    const std::vector<config::LocationConfig>& locations() const;
+    void Print() const;
 
   private:
+    std::string access_log_path_;
+    Severity access_log_level_;
+    std::string error_log_path_;
+    std::vector<std::string> server_names_;
     std::vector<config::LocationConfig> locations_;
-    config::ServerConfig server_config_;
 };
 
 #endif  // WS_SERVER_SERVER_H

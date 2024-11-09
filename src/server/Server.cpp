@@ -5,15 +5,38 @@
 #include "IResponseProcessor.h"
 #include "Request.h"
 
-Server::Server(const config::ServerConfig& cfg) : server_config_(cfg)
+Server::Server(const config::ServerConfig& cfg)
+    : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
+      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names()),
+      locations_(cfg.locations())
 {}
 
 std::string Server::name() const
 {
-    if (server_config_.server_names().empty()) {
+    if (server_names_.empty()) {
         return std::string();
     }
-    return server_config_.server_names()[0];
+    return server_names_[0];
+}
+
+const std::string& Server::access_log_path() const
+{
+    return access_log_path_;
+}
+
+Severity Server::access_log_level() const
+{
+    return access_log_level_;
+}
+
+const std::string& Server::error_log_path() const
+{
+    return error_log_path_;
+}
+
+const std::vector<config::LocationConfig>& Server::locations() const
+{
+    return locations_;
 }
 
 // if returns nullptr, rs is the valid response right away
@@ -44,7 +67,6 @@ std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request&
 {
     typedef std::vector<std::string>::const_iterator NamesIter;
     std::string host = rq.GetHeaderVal("host").second;
-    std::vector<std::string> server_names_ = server_config_.server_names();
 
     for (NamesIter it = server_names_.begin(); it != server_names_.end(); ++it) {
         std::string server_name = *it;
@@ -63,6 +85,22 @@ std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request&
         }
     }
     return std::make_pair(NO_MATCH, std::string());
+}
+
+void Server::Print() const
+{
+    LOG(DEBUG) << "\n";
+    LOG(DEBUG) << "--Server information: --";
+    LOG(DEBUG) << "Access log path: " << access_log_path_;
+    LOG(DEBUG) << "Access log level: " << access_log_level_;
+    LOG(DEBUG) << "Error log path: " << error_log_path_;
+    LOG(DEBUG) << "Server names:";
+    for (size_t i = 0; i < server_names_.size(); i++) {
+        LOG(DEBUG) << "  " << server_names_[i];
+    }
+    for (size_t i = 0; i < locations_.size(); i++) {
+        locations_[i].Print();
+    }
 }
 
 // int main() {
