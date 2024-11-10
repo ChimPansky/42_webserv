@@ -44,7 +44,7 @@ class Uri {
 
     int status_;
     std::string path_; // "/", "/index.html", "/path/to/file"
-    std::string query_; // consider using a map; "?key1=val1&key2=val2"
+    std::string query_; 
     std::string fragment_; // used to jump to specific location on website, e.g. "#section1", "#details", "#dashboard"
 
     void Validate_();
