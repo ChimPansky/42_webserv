@@ -8,7 +8,7 @@
 #include <string>
 
 #include "ClientSession.h"
-#include "shared_ptr.h"
+#include <shared_ptr.h>
 
 namespace {
 void SigIntHandler(int /*signum*/)
