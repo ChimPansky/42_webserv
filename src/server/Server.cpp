@@ -1,12 +1,20 @@
 #include "Server.h"
 
+#include <iostream>
 #include <utility>
 
 #include "IResponseProcessor.h"
+#include "Location.h"
 #include "Request.h"
 
 Server::Server(const config::ServerConfig& cfg) : server_config_(cfg)
-{}
+{
+    typedef std::vector<config::LocationConfig>::const_iterator LocationConfigConstIt;
+
+    for (LocationConfigConstIt it = cfg.locations().begin(); it != cfg.locations().end(); ++it) {
+        locations_.push_back(utils::shared_ptr<Location>(new Location(*it)));
+    }
+}
 
 std::string Server::name() const
 {
@@ -14,6 +22,29 @@ std::string Server::name() const
         return std::string();
     }
     return server_config_.server_names()[0];
+}
+
+utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) const
+{
+    std::pair<bool, std::string> best_match(false, std::string());
+    utils::shared_ptr<Location> matched_location;
+
+    std::cout << "URL: " << rq.uri << std::endl;
+    for (LocationsConstIt it = locations_.begin(); it != locations_.end(); ++it) {
+        std::pair<bool, std::string> match_result = (*it)->MatchedRoute(rq);
+
+        if ((match_result.second.length() > best_match.second.length() &&
+             match_result.first == best_match.first) ||
+            match_result.first > best_match.first) {
+            best_match = match_result;
+            matched_location = *it;
+        }
+    }
+    if (best_match.second.empty()) {
+        return utils::shared_ptr<Location>(new Location());
+    }
+    std::cout << "Matched location: " << best_match.second << std::endl;
+    return matched_location;
 }
 
 // if returns nullptr, rs is the valid response right away
@@ -27,7 +58,8 @@ std::string Server::name() const
 void Server::AcceptRequest(const http::Request& rq,
                            utils::unique_ptr<http::IResponseCallback> cb) const
 {
-    // const config::LocationConfig* chosen_loc = &locations_[0];  // choose location with method,
+    const utils::shared_ptr<Location> chosen_loc =
+        ChooseLocation(rq);  // choose location with method,
     // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session

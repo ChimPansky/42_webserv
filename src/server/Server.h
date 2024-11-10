@@ -5,10 +5,13 @@
 #include <Request.h>
 #include <Response.h>
 #include <ServerConfig.h>
+#include <shared_ptr.h>
 #include <unique_ptr.h>
 
 #include <string>
 #include <vector>
+
+#include "Location.h"
 
 enum MatchType {
     NO_MATCH = 0,
@@ -30,7 +33,7 @@ class Server {
   public:
     // only check hostname probably.
     std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
-
+    utils::shared_ptr<Location> ChooseLocation(const http::Request& rq) const;
     // has to call IResponseCallback with rs when the last is rdy
     void AcceptRequest(const http::Request& rq,
                        utils::unique_ptr<http::IResponseCallback> cb) const;
@@ -40,8 +43,10 @@ class Server {
     const config::ServerConfig& server_config() const { return server_config_; }
 
   private:
-    std::vector<config::LocationConfig> locations_;
     config::ServerConfig server_config_;
+
+    std::vector<utils::shared_ptr<Location> > locations_;
+    typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;
 };
 
 #endif  // WS_SERVER_SERVER_H
