@@ -5,6 +5,11 @@
 
 namespace http {
 
+std::ostream& operator<<(std::ostream& out, const Uri& uri) {
+    out << uri.ToStr();
+    return out;
+}
+
 Uri::Uri(const std::string& raw_uri) : status_(URI_GOOD_BIT), path_(""), query_(""), fragment_("") {
     // parse raw_uri
     ParseRawUri_(raw_uri);
@@ -91,7 +96,6 @@ void Uri::ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState
 }
 
 void Uri::ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state) {
-    LOG(DEBUG) << "raw_uri_pos: " << raw_uri_pos << " raw_uri.size(): " << raw_uri.size();
     if (raw_uri_pos >= raw_uri.size()) {
         status_ = URI_BAD_QUERY_BIT;
         return;
@@ -121,13 +125,11 @@ void Uri::ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos, ParseS
 }
 
 void Uri::Validate_() {
-    LOG(DEBUG) << "Validate()";
     if (!IsValidPath_(path_)) {
         status_ |= URI_BAD_PATH_BIT;
     }
     if (!IsValidQuery_(query_)) {
         status_ |= URI_BAD_QUERY_BIT;
-        LOG(DEBUG) << "bad_query_bit: " << URI_BAD_QUERY_BIT;
     }
     if (!IsValidFragment_(fragment_)) {
         status_ |= URI_BAD_FRAGMENT_BIT;
@@ -151,11 +153,9 @@ bool Uri::IsValidPath_(const std::string& path) const {
 bool Uri::IsValidQuery_(const std::string& query) const { ////
     for (size_t i = 0; i < query.size(); ++i) {
         if (!IsValidQueryOrFragmentChar_(query[i])) {   //todo: further checks
-            LOG(DEBUG) << "Query invalid!";
             return false;
         }
     }
-    LOG(DEBUG) << "Query valid!";
     return true;
 }
 
