@@ -87,20 +87,24 @@ std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request&
     return std::make_pair(NO_MATCH, std::string());
 }
 
-void Server::Print() const
+std::string Server::GetInfo() const
 {
-    LOG(DEBUG) << "\n";
-    LOG(DEBUG) << "--Server information: --";
-    LOG(DEBUG) << "Access log path: " << access_log_path_;
-    LOG(DEBUG) << "Access log level: " << access_log_level_;
-    LOG(DEBUG) << "Error log path: " << error_log_path_;
-    LOG(DEBUG) << "Server names:";
+    std::ostringstream oss;
+
+    oss << "\n\t--Server information: --";
+    oss << "\n\tAccess log path: " << access_log_path_;
+    oss << "\n\tAccess log level: " << access_log_level_;
+    oss << "\n\tError log path: " << error_log_path_;
+    oss << "\n\tServer names:";
+
     for (size_t i = 0; i < server_names_.size(); i++) {
-        LOG(DEBUG) << "  " << server_names_[i];
+        oss << " " << server_names_[i];
     }
-    for (size_t i = 0; i < locations_.size(); i++) {
-        locations_[i].Print();
-    }
+    /* for (size_t i = 0; i < locations_.size(); i++) {
+        locations_[i].GetInfo();
+    } */
+
+    return oss.str();
 }
 
 // int main() {

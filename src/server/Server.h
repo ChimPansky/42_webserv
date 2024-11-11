@@ -40,7 +40,7 @@ class Server {
     Severity access_log_level() const;
     const std::string& error_log_path() const;
     const std::vector<config::LocationConfig>& locations() const;
-    void Print() const;
+    std::string GetInfo() const;
 
   private:
     std::string access_log_path_;

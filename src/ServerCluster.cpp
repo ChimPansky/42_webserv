@@ -4,11 +4,11 @@
 #include <EventManager.h>
 #include <Server.h>
 #include <c_api_utils.h>
+#include <shared_ptr.h>
 
 #include <string>
 
 #include "ClientSession.h"
-#include "shared_ptr.h"
 
 namespace {
 void SigIntHandler(int /*signum*/)
@@ -75,8 +75,8 @@ utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http:
 void ServerCluster::PrintDebugInfo() const
 {
     for (ServersConstIt cit = servers_.begin(); cit != servers_.end(); ++cit) {
-        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name() << ". My info is: ";
-        (*cit)->Print();
+        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name()
+                   << ". My config is: " << (*cit)->GetInfo();
         LOG(DEBUG);
     }
 }
