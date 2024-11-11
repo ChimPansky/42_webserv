@@ -9,9 +9,7 @@
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), connection_closed_(false), read_state_(CS_READ)
-{
-    // TODO move from here
-    associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
+{  
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
@@ -45,7 +43,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
     // turn this into a client callback to exclude dependency of builder on server
     // server cluster to singleton
     if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
-        // associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
+        associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
         rq_builder_.ApplyServerInfo(1000);  // then this
         rq_builder_.Build(bytes_recvd);     // and this are obsolete
     }

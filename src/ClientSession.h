@@ -64,7 +64,6 @@ class ClientSession {
     int master_socket_fd_;   // to choose correct server later
     utils::shared_ptr<Server> associated_server_;
     http::RequestBuilder rq_builder_;
-    http::Request rq_;
     bool connection_closed_;
     CsState read_state_;
     // Server* virtual_server; later: set this once request was successfully matched to corresponding server
