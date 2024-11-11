@@ -1,8 +1,6 @@
 #ifndef WS_HTTP_H
 #define WS_HTTP_H
 
-#include <string>
-
 namespace http {
 
 #define RQ_LINE_LEN_LIMIT 8192
@@ -26,8 +24,6 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
     HTTP_3
 };
 
-// todo: move this to utils ?
-std::string UnsignedShortToStr(unsigned short num);
 const char* HttpVerToStr(http::Version ver);
 
 }  // namespace http
