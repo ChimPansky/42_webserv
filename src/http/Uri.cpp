@@ -53,9 +53,6 @@ std::string Uri::ToStr() const {
 
 
 void Uri::ParseRawUri_(const std::string& raw_uri) {
-    // host_ = raw_uri;
-    // port_ = 0;
-    //todo: go through raw_uri and parse
     ParseState state = PS_PATH;
     size_t raw_uri_pos = 0;
     while (state != PS_END && status_ == URI_GOOD_BIT) {
@@ -164,7 +161,7 @@ bool Uri::IsValidQuery_(const std::string& query) const { ////
 
 bool Uri::IsValidFragment_(const std::string &fragment) const {
     for (size_t i = 0; i < fragment.size(); ++i) {
-        if (!IsValidQueryOrFragmentChar_(fragment[i])) {   //todo: further checks
+        if (!IsValidQueryOrFragmentChar_(fragment[i])) {
             return false;
         }
     }
@@ -175,8 +172,11 @@ bool Uri::IsValidPathChar_(char c) const {
     return std::isalnum(c) || c == '.' || c == '-' || c == '_' || c == '/';
 }
 
+// very technically, we dont need to verify the query string, but just pass it on to cgi or wherever...
 bool Uri::IsValidQueryOrFragmentChar_(char c) const {
-    return std::isalnum(c) || c == '.' || c == '-' || c == '_' || c == '/' || c == '?' || c == '#' || c == '&';
+    (void)c;
+    return true; //
+    // return std::isalnum(c) || c == '.' || c == '-' || c == '_' || c == '/' || c == '?' || c == '#' || c == '&';
 }
 
 } // namespace http

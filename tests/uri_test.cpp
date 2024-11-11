@@ -108,29 +108,37 @@ TEST(QueryTests, 1_Test) {
 }
 
 TEST(QueryTests, 2_Test) {
-    http::Uri uri = http::Uri("/path?!");
+    http::Uri uri = http::Uri("/path?a=20&b=30&c=40");
     std::cout << "query: " << uri.query() << std::endl;
     std::cout << "status: " << uri.status() << std::endl;
     ASSERT_EQ(uri.path(), "/path");
-    ASSERT_EQ(uri.query(), "!");
+    ASSERT_EQ(uri.query(), "a=20&b=30&c=40");
     ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), false);
+    ASSERT_EQ(uri.Good(), true);
 }
 
 TEST(FragmentTests, 1_Test) {
+    http::Uri uri = http::Uri("/path#top");
+    ASSERT_EQ(uri.path(), "/path");
+    ASSERT_EQ(uri.query(), "");
+    ASSERT_EQ(uri.fragment(), "top");
+    ASSERT_EQ(uri.Good(), true);
+}
+
+TEST(FragmentTests, 2_Test) {
+    http::Uri uri = http::Uri("/path?#page=4");
+    ASSERT_EQ(uri.path(), "/path");
+    ASSERT_EQ(uri.query(), "");
+    ASSERT_EQ(uri.fragment(), "page=4");
+    ASSERT_EQ(uri.Good(), true);
+}
+
+TEST(FragmentTests, 3_Test) {
     http::Uri uri = http::Uri("/path#\"");
     ASSERT_EQ(uri.path(), "/path");
     ASSERT_EQ(uri.query(), "");
     ASSERT_EQ(uri.fragment(), "\"");
-    ASSERT_EQ(uri.Good(), false);
-}
-
-TEST(FragmentTests, 2_Test) {
-    http::Uri uri = http::Uri("/path?#invalid!");
-    ASSERT_EQ(uri.path(), "/path");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "invalid!");
-    ASSERT_EQ(uri.Good(), false);
+    ASSERT_EQ(uri.Good(), true);
 }
 
 TEST(CopyTests, 1_Test_Copy_Ctor) {
