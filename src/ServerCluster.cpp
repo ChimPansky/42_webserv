@@ -4,11 +4,11 @@
 #include <EventManager.h>
 #include <Server.h>
 #include <c_api_utils.h>
+#include <shared_ptr.h>
 
 #include <string>
 
 #include "ClientSession.h"
-#include <shared_ptr.h>
 
 namespace {
 void SigIntHandler(int /*signum*/)
@@ -16,7 +16,7 @@ void SigIntHandler(int /*signum*/)
     LOG(INFO) << " SIGINT caught, shutting down...";
     ServerCluster::StopHandler();
 }
-}
+}  // namespace
 
 volatile sig_atomic_t ServerCluster::run_ = false;
 utils::unique_ptr<ServerCluster> ServerCluster::instance_;
@@ -65,11 +65,8 @@ utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http:
             matched_server = *it;
         }
     }
-    if (best_match.second.empty()) {
-        return instance_->sockets_to_servers_[master_fd][0];
-    }
-
-    return matched_server;
+    return best_match.first == NO_MATCH ? instance_->sockets_to_servers_[master_fd][0]
+                                        : matched_server;
 }
 
 void ServerCluster::PrintDebugInfo() const
