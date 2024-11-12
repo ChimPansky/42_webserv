@@ -22,20 +22,20 @@ std::pair<bool /*header_key_found*/, std::string /*header_value*/> Request::GetH
 std::string Request::ToString() const
 {
     std::ostringstream ret;
-    ret << "---Request---\n"
-        << "Status: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good")) << "\n"
-        << "Method: " << method << "\n"
-        << "URI: " << uri << "\n"
-        << "Version: " << version << "\n"
-        << "~Headers~\n";
+    ret << "---Request---"
+        << "\n\tStatus: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"))
+        << "\n\tMethod: " << method
+        << "\n\tURI: " << uri
+        << "\n\tVersion: " << version
+        << "\n\t~Headers~";
 
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
          it != headers.end(); ++it) {
-        ret << it->first << ": " << it->second << "\n";
+        ret << "\n\t" << it->first << ": " << it->second;
     }
 
-    ret << "Body size: " << body.size() << "\n"
-        << "Body: " << std::string(body.data(), body.size()) << "\n";
+    ret << "\n\tBody size: " << body.size()
+        << "\n\tBody: " << std::string(body.data(), body.size());
 
     return ret.str();
 }
