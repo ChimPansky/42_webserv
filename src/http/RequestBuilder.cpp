@@ -12,7 +12,7 @@
 namespace http {
 
 RequestBuilder::RequestBuilder()
-    : builder_status_(RB_BUILDING), has_matched_server_(false), build_state_(BS_METHOD), body_builder_(&rq_.body)
+    : builder_status_(RB_BUILDING), build_state_(BS_METHOD), body_builder_(&rq_.body)
 {}
 
 RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char>* rq_body)
@@ -31,7 +31,7 @@ void RequestBuilder::AdjustBufferSize(size_t bytes_recvd)
 
 bool RequestBuilder::CanBuild_()
 {
-    if (build_state_ == BS_END) {
+    if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
         return false;
     }
     if (build_state_ == BS_BODY_REGULAR && parser_.ElementLen() > 0) {
@@ -73,8 +73,8 @@ void RequestBuilder::Build(size_t bytes_recvd)
             case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
             case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
-            case BS_BAD_REQUEST:                build_state_ = HandleBadRequest_(); break;
-            case BS_END: {}
+            case BS_BAD_REQUEST: break;
+            case BS_END: break;
         }
         if (builder_status_ == RB_NEED_TO_MATCH_SERVER) {
             LOG(DEBUG) << "NEED_TO_MATCH_SERVER -> break out of Build-Loop";
@@ -85,20 +85,17 @@ void RequestBuilder::Build(size_t bytes_recvd)
         }
     }
     if (build_state_ == BS_END) {
-        if (rq_.status != RQ_BAD) {
-            rq_.status = RQ_GOOD;
-        }
+        rq_.status = RQ_GOOD;
+        builder_status_ = RB_DONE;
+    }
+    if (build_state_ == BS_BAD_REQUEST) {
+        rq_.status = RQ_BAD;
         builder_status_ = RB_DONE;
     }
 }
 
 void RequestBuilder::ApplyServerInfo(size_t max_body_size)
 {
-    has_matched_server_ = true;
-    if (rq_.status == RQ_BAD) {
-        build_state_ = BS_END;
-        return;
-    }
     body_builder_.max_body_size = max_body_size;
     if (parser_.EndOfBuffer()) {
         builder_status_ = RB_NEED_DATA_FROM_CLIENT;
@@ -394,17 +391,6 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
         parser_.Advance();
     }
     return BS_BODY_CHUNK_CONTENT;
-}
-
-RequestBuilder::BuildState RequestBuilder::HandleBadRequest_()
-{
-    rq_.status = RQ_BAD;
-    if (!has_matched_server_) {
-        builder_status_ = RB_NEED_TO_MATCH_SERVER;
-        return BS_BAD_REQUEST;
-    } else {
-        return BS_END;
-    }
 }
 
 void RequestBuilder::NullTerminatorCheck_(char c)
