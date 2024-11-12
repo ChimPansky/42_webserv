@@ -9,6 +9,7 @@ namespace http {
 // to be decided later: do we need to add user info, host, port beforehand?
 class Uri {
   public:
+    Uri() {};
     Uri(const std::string& raw_uri);
     Uri(const std::string& path, const std::string& query, const std::string& fragment);
     Uri(const Uri& rhs);
@@ -64,6 +65,10 @@ class Uri {
     bool IsValidQuery_(const std::string& query) const;
     bool IsValidFragment_(const std::string& fragment) const;
 };
+
+std::ostream& operator<<(std::ostream& out, const Uri& uri);
+
 } // namespace http
+
 
 #endif // WS_HTTP_URI_H

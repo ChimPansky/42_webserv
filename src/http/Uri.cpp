@@ -5,6 +5,12 @@
 
 namespace http {
 
+
+std::ostream& operator<<(std::ostream& out, const Uri& uri) {
+    out << uri.ToStr();
+    return out;
+}
+
 Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
     ParseState state = PS_PATH;
     size_t raw_uri_pos = 0;
