@@ -28,7 +28,6 @@ struct Request {
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;
-    void Print() const;
     std::string ToString() const;
 };
 
