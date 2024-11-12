@@ -5,7 +5,7 @@
 
 namespace http {
 
-Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT), path_(""), query_(""), fragment_("") {
+Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
     ParseState state = PS_PATH;
     size_t raw_uri_pos = 0;
     while (state != PS_END && validity_state_ == URI_GOOD_BIT) {
