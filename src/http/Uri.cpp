@@ -6,8 +6,17 @@
 namespace http {
 
 Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT), path_(""), query_(""), fragment_("") {
-    // parse raw_uri
-    ParseRawUri_(raw_uri);
+    ParseState state = PS_PATH;
+    size_t raw_uri_pos = 0;
+    while (state != PS_END && validity_state_ == URI_GOOD_BIT) {
+        switch (state) {
+            case PS_PATH: ParsePath_(raw_uri, raw_uri_pos, state); break;
+            case PS_QUERY: ParseQuery_(raw_uri, raw_uri_pos, state); break;
+            case PS_FRAGMENT: ParseFragment_(raw_uri, raw_uri_pos, state); break;
+            case PS_END: break;
+        }
+    }
+    Validate_();
 }
 
 Uri::Uri(const std::string& path, const std::string& query, const std::string& fragment)
@@ -49,21 +58,6 @@ std::string Uri::ToStr() const {
         str += "#" + fragment_;
     }
     return str;
-}
-
-
-void Uri::ParseRawUri_(const std::string& raw_uri) {
-    ParseState state = PS_PATH;
-    size_t raw_uri_pos = 0;
-    while (state != PS_END && validity_state_ == URI_GOOD_BIT) {
-        switch (state) {
-            case PS_PATH: ParsePath_(raw_uri, raw_uri_pos, state); break;
-            case PS_QUERY: ParseQuery_(raw_uri, raw_uri_pos, state); break;
-            case PS_FRAGMENT: ParseFragment_(raw_uri, raw_uri_pos, state); break;
-            case PS_END: break;
-        }
-    }
-    Validate_();
 }
 
 void Uri::ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state) {

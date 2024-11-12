@@ -52,7 +52,6 @@ class Uri {
     std::string fragment_; // used to jump to specific location on website, e.g. "#section1", "#details", "#dashboard"
 
     void Validate_();
-    void ParseRawUri_(const std::string& raw_uri);
     void ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state);
     void ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state);
     void ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state);
