@@ -24,7 +24,7 @@ ssize_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz) {
 // Client Context
 void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd) {
     builder.Build(bytes_recvd);
-    if (builder.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
+    if (builder.builder_status() == http::RB_NEED_TO_MATCH_SERVER) {
         builder.ApplyServerInfo(CLIENT_MAX_BODY_SIZE);
         builder.Build(bytes_recvd);
     }

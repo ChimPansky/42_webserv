@@ -10,6 +10,9 @@
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), connection_closed_(false), read_state_(CS_READ)
 {  
+    // chose server right away (first that matches master_socket), so that we even have a server if the request is malformed
+    // ChooseServer will be called again in ProcessNewData
+    associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/); 
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
@@ -39,10 +42,7 @@ bool ClientSession::connection_closed() const
 void ClientSession::ProcessNewData(size_t bytes_recvd)
 {
     rq_builder_.Build(bytes_recvd);
-    // TODO:
-    // turn this into a client callback to exclude dependency of builder on server
-    // server cluster to singleton
-    if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
+    if (rq_builder_.builder_status() == http::RB_NEED_TO_MATCH_SERVER) {
         associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
         rq_builder_.ApplyServerInfo(1000);  // then this
         rq_builder_.Build(bytes_recvd);     // and this are obsolete
@@ -92,7 +92,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
         ssize_t bytes_recvd =
             client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
         // what u gonna do with the closed connection in builder?
-        if (bytes_recvd <= 0) {
+        if (bytes_recvd < 0) {
             client_.CloseConnection();
             return;
         }

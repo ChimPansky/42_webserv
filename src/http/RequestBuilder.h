@@ -12,7 +12,7 @@ namespace http {
 enum RqBuilderStatus {
     RB_BUILDING,
     RB_NEED_DATA_FROM_CLIENT,
-    RB_NEED_INFO_FROM_SERVER,
+    RB_NEED_TO_MATCH_SERVER,
     RB_DONE
 };
 
@@ -64,6 +64,7 @@ class RequestBuilder {
   private:
     Request rq_;
     RqBuilderStatus builder_status_;
+    bool has_matched_server_;
     RequestParser parser_;
     BuildState build_state_;
     std::string header_key_;

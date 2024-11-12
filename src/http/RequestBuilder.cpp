@@ -29,6 +29,21 @@ void RequestBuilder::AdjustBufferSize(size_t bytes_recvd)
     parser_.AdjustBufferSize(bytes_recvd);
 }
 
+bool RequestBuilder::CanBuild_()
+{
+    if (build_state_ == BS_END) {
+        return false;
+    }
+    if (build_state_ == BS_BODY_REGULAR && parser_.ElementLen() > 0) {
+        return true;
+    }
+    if (IsParsingState_(build_state_) && parser_.EndOfBuffer()) {
+        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
+        return false;
+    }
+    return true;
+}
+
 // TODO: rm bytes_recvd
 void RequestBuilder::Build(size_t bytes_recvd)
 {
@@ -53,7 +68,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
             case BS_HEADER_VALUE:       build_state_ = BuildHeaderValue_(); break;
             case BS_AFTER_HEADERS: {
                  build_state_ = BS_CHECK_FOR_BODY;
-                 builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
+                 builder_status_ = RB_NEED_TO_MATCH_SERVER;
                     return;
                 }
                 break;
@@ -62,17 +77,25 @@ void RequestBuilder::Build(size_t bytes_recvd)
             case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
             case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
-            case BS_BAD_REQUEST:
+            case BS_BAD_REQUEST: {
+                rq_.status = RQ_BAD;
+                LOG(DEBUG) << "Switch case Bad Request -> rq_.status = RQ_BAD";
+                if (!has_matched_server_) {
+                    LOG(DEBUG) << "switch to need to match server and return";
+                    builder_status_ = RB_NEED_TO_MATCH_SERVER;
+                    return;
+                } else {
+                    LOG(DEBUG) << "matched server -> switch to done";
+                    build_state_ = BS_END;
+                }
+            }
             case BS_END: {}
         }
         if (build_state_ != old_state) {
             parser_.StartNewElement();
         }
     }
-    if (build_state_ == BS_BAD_REQUEST) {
-        rq_.status = RQ_BAD;
-    }
-    if (build_state_ == BS_END) {
+    if (build_state_ == BS_END && rq_.status != RQ_BAD) {
         rq_.status = RQ_GOOD;
     }
     if (rq_.status != RQ_INCOMPLETE) {
@@ -82,6 +105,10 @@ void RequestBuilder::Build(size_t bytes_recvd)
 
 void RequestBuilder::ApplyServerInfo(size_t max_body_size)
 {
+    has_matched_server_ = true;
+    if (rq_.status == RQ_BAD) {
+        return;
+    }
     body_builder_.max_body_size = max_body_size;
     if (parser_.EndOfBuffer()) {
         builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
@@ -125,6 +152,7 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
             return BS_BAD_REQUEST;
         }
         parser_.Advance(1);
+        // Fix: EndOfBuffer and no new bytes coming in --> endless loop
     }
     return BS_METHOD;
 }
@@ -367,21 +395,6 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
         parser_.Advance();
     }
     return BS_BODY_CHUNK_CONTENT;
-}
-
-bool RequestBuilder::CanBuild_()
-{
-    if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
-        return false;
-    }
-    if (build_state_ == BS_BODY_REGULAR && parser_.ElementLen() > 0) {
-        return true;
-    }
-    if (IsParsingState_(build_state_) && parser_.EndOfBuffer()) {
-        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
-        return false;
-    }
-    return true;
 }
 
 void RequestBuilder::NullTerminatorCheck_(char c)
