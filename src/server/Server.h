@@ -7,9 +7,6 @@
 #include <ServerConfig.h>
 #include <unique_ptr.h>
 
-#include <string>
-#include <vector>
-
 enum MatchType {
     NO_MATCH = 0,
     SUFFIX_MATCH = 1,
@@ -29,6 +26,8 @@ class Server {
 
   public:
     // only check hostname probably.
+    static std::pair<MatchType, std::string> MatchHostName(const std::string& host,
+                                                           const std::vector<std::string>&);
     std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
 
     // has to call IResponseCallback with rs when the last is rdy

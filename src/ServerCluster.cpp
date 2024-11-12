@@ -65,11 +65,8 @@ utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http:
             matched_server = *it;
         }
     }
-    if (best_match.second.empty()) {
-        return instance_->sockets_to_servers_[master_fd][0];
-    }
-
-    return matched_server;
+    return best_match.first == NO_MATCH ? instance_->sockets_to_servers_[master_fd][0]
+                                        : matched_server;
 }
 
 void ServerCluster::PrintDebugInfo() const

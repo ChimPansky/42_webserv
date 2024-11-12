@@ -1,9 +1,8 @@
-#include "Server.h"
+#include <IResponseProcessor.h>
+#include <Request.h>
+#include <Server.h>
 
 #include <utility>
-
-#include "IResponseProcessor.h"
-#include "Request.h"
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
@@ -63,12 +62,13 @@ void Server::AcceptRequest(const http::Request& rq,
     }
 }
 
-std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
+std::pair<MatchType, std::string> Server::MatchHostName(
+    const std::string& host, const std::vector<std::string>& server_names)
 {
     typedef std::vector<std::string>::const_iterator NamesIter;
-    std::string host = rq.GetHeaderVal("host").second;
+    std::pair<MatchType, std::string> best_match = std::make_pair(NO_MATCH, std::string());
 
-    for (NamesIter it = server_names_.begin(); it != server_names_.end(); ++it) {
+    for (NamesIter it = server_names.begin(); it != server_names.end(); ++it) {
         std::string server_name = *it;
 
         if (host == server_name) {
@@ -76,15 +76,15 @@ std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request&
         } else if (server_name[0] == '*' && host.size() >= server_name.size() &&
                    host.compare(host.size() - (server_name.size() - 1), server_name.size() - 1,
                                 server_name.substr(1)) == 0) {
-            return std::make_pair(PREFIX_MATCH, server_name);
+            best_match = std::make_pair(PREFIX_MATCH, server_name);
         } else if (server_name[server_name.size() - 1] == '*' &&
                    host.size() >= server_name.size() && server_name.size() > 2 &&
                    host.compare(0, server_name.size() - 1, server_name, 0,
                                 server_name.size() - 1) == 0) {
-            return std::make_pair(SUFFIX_MATCH, server_name);
+            best_match = std::make_pair(SUFFIX_MATCH, server_name);
         }
     }
-    return std::make_pair(NO_MATCH, std::string());
+    return best_match;
 }
 
 std::string Server::GetInfo() const
@@ -107,32 +107,7 @@ std::string Server::GetInfo() const
     return oss.str();
 }
 
-// int main() {
-
-//     std::cout << "Match:" << std::endl;
-//     TestMatch("server1");  // should match
-//     TestMatch("server2");  // should match
-//     TestMatch("server3");  // should match
-
-//     TestMatch("sub.sub.example.com");  // should match
-
-//     // prefix match
-//     TestMatch("www.example.com");  // should match
-//     TestMatch("shop.example.com"); // should match
-//     std::cout << std::endl << "Don't match:" << std::endl;
-//     TestMatch("example.com");      // shouldn't match
-
-//     TestMatch("server123");   // shouldn't match
-//     TestMatch("serverx");     // shouldn't match
-//     TestMatch("serversuffix");// shouldn't match
-
-//     TestMatch("randomhost");  // shouldn't match
-//     TestMatch("example.org"); // shouldn't match
-
-//     TestMatch("");  // shouldn't match
-//     TestMatch("wwwexample.com");  // shouldn't match
-//     TestMatch("www.examplecom");  // shouldn't match
-
-//     TestMatch("example.co");       // shouldn't match
-//     TestMatch("sub.example.co");   // shouldn't match
-// }
+std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
+{
+    return MatchHostName(rq.GetHeaderVal("host").second, server_names_);
+}
