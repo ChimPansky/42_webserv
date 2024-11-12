@@ -142,7 +142,7 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
             return BS_BAD_REQUEST;
         }
         parser_.Advance(1);
-        // Fix: EndOfBuffer and no new bytes coming in --> endless loop
+        // TODO: Fix EndOfBuffer() && no new bytes coming in --> endless loop
     }
     return BS_METHOD;
 }

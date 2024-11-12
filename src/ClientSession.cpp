@@ -114,7 +114,8 @@ ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client, s
 {}
 
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
-{    // assert fd == client_sock.fd
+{    
+    // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(buf_, buf_send_idx_,
                                                     buf_.size() - buf_send_idx_);
     if (bytes_sent <= 0) {
