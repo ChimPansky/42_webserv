@@ -7,6 +7,9 @@ namespace http {
 // Uri consists of: path, query, fragment
 // e.g. /path/to/file?query1=1&query2=2#section1 
 // to be decided later: do we need to add user info, host, port beforehand?
+// query and fragment can be defined by ? and # respectively. a defined query or fragment can 
+// be empty or non-empty: "/path?#section1", "/path?query1=1#"
+
 class Uri {
   public:
     Uri() {};
@@ -25,8 +28,8 @@ class Uri {
     int status() const { return validity_state_; };
 
     const std::string& path() const { return path_; };
-    const std::string& query() const { return query_; };
-    const std::string& fragment() const { return fragment_; };
+    const std::string& query() const { return query_.second; };
+    const std::string& fragment() const { return fragment_.second; };
 
   private:
   // todo: dont forget to use...
@@ -41,9 +44,9 @@ class Uri {
     };
 
     int validity_state_;
-    std::string path_; // "/", "/index.html", "/path/to/file"
-    std::string query_; 
-    std::string fragment_; // used to jump to specific location on website, e.g. "#section1", "#details", "#dashboard"
+    std::string path_;
+    std::pair<bool /*defined*/, std::string /*value*/> query_; 
+    std::pair<bool /*defined*/, std::string /*value*/> fragment_;
 
     void Validate_();
     void ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos);

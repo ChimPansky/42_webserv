@@ -21,8 +21,13 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
     Validate_();
 }
 
-Uri::Uri(const std::string& path, const std::string& query, const std::string& fragment)
-    : path_(path), query_(query), fragment_(fragment) {
+Uri::Uri(const std::string& path, const std::string& query, const std::string& fragment) : path_(path) {
+    if (!query.empty()) {
+        query_ = std::make_pair(true, query);
+    }
+    if (!fragment.empty()) {
+        fragment_ = std::make_pair(true, fragment);
+    }
     Validate_(); // todo: check if valid and set state if error
 }
 
@@ -53,11 +58,11 @@ std::string Uri::ToStr() const {
     if (!path_.empty()) {
         str += path_;
     }
-    if (!query_.empty()) {
-        str += "?" + query_;
+    if (query_.first) {
+        str += "?" + query_.second;
     }
-    if (!fragment_.empty()) {
-        str += "#" + fragment_;
+    if (fragment_.first) {
+        str += "#" + fragment_.second;
     }
     return str;
 }
@@ -80,20 +85,53 @@ void Uri::ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos) {
     if (!Good() || raw_uri_pos >= raw_uri.size() || raw_uri[raw_uri_pos] != '?') {
         return;
     }
+    query_.first = true;
     size_t start_pos = raw_uri_pos + 1;
     raw_uri_pos = raw_uri.find_first_of("#", start_pos);
     if (raw_uri_pos == std::string::npos) {
-        query_ = raw_uri.substr(start_pos);
+        query_.second = raw_uri.substr(start_pos);
     }
-    query_ = raw_uri.substr(start_pos, raw_uri_pos - start_pos);
+    query_.second = raw_uri.substr(start_pos, raw_uri_pos - start_pos);
 }
 
 void Uri::ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos) {
     if (!Good() || raw_uri_pos >= raw_uri.size() || raw_uri[raw_uri_pos] != '#') {
         return;
     }
-    fragment_ = raw_uri.substr(raw_uri_pos + 1);
+    fragment_.first = true;
+    fragment_.second = raw_uri.substr(raw_uri_pos + 1);
 }
+
+// Normalize():
+//    1.  The input buffer is initialized with the now-appended path
+//        components and the output buffer is initialized to the empty
+//        string.
+
+//    2.  While the input buffer is not empty, loop as follows:
+
+//        A.  If the input buffer begins with a prefix of "../" or "./",
+//            then remove that prefix from the input buffer; otherwise,
+
+//        B.  if the input buffer begins with a prefix of "/./" or "/.",
+//            where "." is a complete path segment, then replace that
+//            prefix with "/" in the input buffer; otherwise,
+
+//        C.  if the input buffer begins with a prefix of "/../" or "/..",
+//            where ".." is a complete path segment, then replace that
+//            prefix with "/" in the input buffer and remove the last
+//            segment and its preceding "/" (if any) from the output
+//            buffer; otherwise,
+
+//        D.  if the input buffer consists only of "." or "..", then remove
+//            that from the input buffer; otherwise,
+
+//        E.  move the first path segment in the input buffer to the end of
+//            the output buffer, including the initial "/" character (if
+//            any) and any subsequent characters up to, but not including,
+//            the next "/" character or the end of the input buffer.
+
+//    3.  Finally, the output buffer is returned as the result of
+//        remove_dot_segments.
 
 void Uri::Validate_() {
     if (!Good()) {
@@ -102,10 +140,10 @@ void Uri::Validate_() {
     if (!IsValidPath_(path_)) {
         validity_state_ |= URI_BAD_PATH_BIT;
     }
-    if (!IsValidQuery_(query_)) {
+    if (query_.first && !IsValidQuery_(query_.second)) {
         validity_state_ |= URI_BAD_QUERY_BIT;
     }
-    if (!IsValidFragment_(fragment_)) {
+    if (fragment_.first && !IsValidFragment_(fragment_.second)) {
         validity_state_ |= URI_BAD_FRAGMENT_BIT;
     }
 }
