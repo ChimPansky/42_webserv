@@ -3,6 +3,7 @@
 #include <RequestBuilder.h>
 #include <fstream>
 #include <iostream>
+#include <logger.h>
 
 #define BODY_14 "Hello, World!!"
 
@@ -45,6 +46,7 @@ bool Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz) {
 }
 
 int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read_size = 10) {
+    utils::Logger::get().set_severity_threshold(INFO);
     std::ifstream file(rq_path);
     if (!file.is_open()) {
         std::cerr << "Could not open Request File: " << rq_path << std::endl;

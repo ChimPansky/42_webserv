@@ -2,6 +2,7 @@
 
 #include <Server.h>
 #include "ClientSession.h"
+#include "logger.h"
 #include <EventManager.h>
 #include <c_api_utils.h>
 #include <Config.h>
