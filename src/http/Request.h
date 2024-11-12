@@ -28,8 +28,7 @@ struct Request {
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;
-    void Print() const;
-    void BodyPrint() const;
+    std::string ToString() const;
 };
 
 }  // namespace http

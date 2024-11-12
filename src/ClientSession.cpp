@@ -50,7 +50,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
     // fuck the callback here
     if (rq_builder_.builder_status() == http::RB_DONE) {
         read_state_ = CS_IGNORE;
-        rq_builder_.rq().Print();
+        LOG(DEBUG) << rq_builder_.rq().ToString();
         // server returns rs with basic headers and status complete/body generation in process + generator func
         associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
     }

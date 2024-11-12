@@ -2,6 +2,7 @@
 
 #include <logger.h>
 #include <str_utils.h>
+#include <sstream>
 
 namespace http {
 
@@ -18,30 +19,25 @@ std::pair<bool /*header_key_found*/, std::string /*header_value*/> Request::GetH
     return std::make_pair(false, "");
 }
 
-void Request::Print() const
+std::string Request::ToString() const
 {
-    LOG(DEBUG) << "---Request---";
-    LOG(DEBUG) << "Status: "
-               << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"));
-    LOG(DEBUG) << "Method: " << method;
-    LOG(DEBUG) << "URI: " << uri;
-    LOG(DEBUG) << "Version: " << version;
-    LOG(DEBUG) << "\n";
-    LOG(DEBUG) << "~Headers~";
+    std::ostringstream ret;
+    ret << "---Request---"
+        << "\n\tStatus: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"))
+        << "\n\tMethod: " << method
+        << "\n\tURI: " << uri
+        << "\n\tVersion: " << version
+        << "\n\t~Headers~";
+
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
          it != headers.end(); ++it) {
-        LOG(DEBUG) << "|" << it->first << "|: |" << it->second << "|";
+        ret << "\n\t" << it->first << ": " << it->second;
     }
-    LOG(DEBUG) << "Body size: " << body.size();
-    LOG(DEBUG) << "Body: ";
-    BodyPrint();
-    LOG(DEBUG) << "\n";
-}
 
-void Request::BodyPrint() const {
-    for (std::vector<char>::const_iterator it = body.begin(); it != body.end(); ++it) {
-        LOG(DEBUG) << *it;
-    }
+    ret << "\n\tBody size: " << body.size()
+        << "\n\tBody: " << std::string(body.data(), body.size());
+
+    return ret.str();
 }
 
 }  // namespace http
