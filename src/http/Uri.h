@@ -40,22 +40,15 @@ class Uri {
         URI_FAIL_BIT = 1L << 16
     };
 
-    enum ParseState {
-        PS_PATH,
-        PS_QUERY,
-        PS_FRAGMENT,
-        PS_END
-    };
-
     int validity_state_;
     std::string path_; // "/", "/index.html", "/path/to/file"
     std::string query_; 
     std::string fragment_; // used to jump to specific location on website, e.g. "#section1", "#details", "#dashboard"
 
     void Validate_();
-    void ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state);
-    void ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state);
-    void ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state);
+    void ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos);
+    void ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos);
+    void ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos);
 
     // helpers:
     bool IsValidPathChar_(char c) const;

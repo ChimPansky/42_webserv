@@ -104,7 +104,7 @@ TEST(QueryTests, 1_Test) {
     EXPECT_EQ(uri.path(), "/");
     EXPECT_EQ(uri.query(), "");
     EXPECT_EQ(uri.fragment(), "");
-    EXPECT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(QueryTests, 2_Test) {
