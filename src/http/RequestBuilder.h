@@ -77,11 +77,13 @@ class RequestBuilder {
     BuildState BuildHeaderKey_();
     BuildState ParseHeaderKeyValSep_();
     BuildState BuildHeaderValue_();
+    BuildState NeedToMatchServer_();
     BuildState CheckForBody_();
     BuildState CheckBodyRegularLength_();
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();
+    BuildState HandleBadRequest_();
 
     // helpers:
     bool CanBuild_();
