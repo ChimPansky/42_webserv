@@ -26,6 +26,14 @@ add_test(
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test_data/configs
 )
 
+# ServerMatching
+add_executable(server_matching server_matching_test.cpp)
+target_link_libraries(server_matching PRIVATE Server gtest gtest_main)
+add_test(
+    NAME server_matching
+    COMMAND ./server_matching
+)
+
 # Valgrind
 add_test(
     NAME valgrind_idle_test
