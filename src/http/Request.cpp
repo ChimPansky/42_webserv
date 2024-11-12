@@ -2,10 +2,11 @@
 
 #include <logger.h>
 #include <str_utils.h>
+#include "ResponseCodes.h"
 
 namespace http {
 
-Request::Request() : status(RQ_INCOMPLETE), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
+Request::Request() : status(RQ_INCOMPLETE), error_code(HTTP_BAD_REQUEST), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
 {}
 
 std::pair<bool /*header_key_found*/, std::string /*header_value*/> Request::GetHeaderVal(
@@ -23,6 +24,7 @@ void Request::Print() const
     LOG(DEBUG) << "---Request---";
     LOG(DEBUG) << "Status: "
                << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"));
+    LOG(DEBUG) << "Code: " << error_code;
     LOG(DEBUG) << "Method: " << method;
     LOG(DEBUG) << "URI: " << uri;
     LOG(DEBUG) << "Version: " << version;

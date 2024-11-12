@@ -152,8 +152,12 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 RequestBuilder::BuildState RequestBuilder::BuildUri_()
 {
     while (!parser_.EndOfBuffer()) {
-        if (parser_.ExceededLineLimit() || parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
-            return BS_BAD_REQUEST;  // todo: 414 Request-URI Too Long
+        if (parser_.ExceededLineLimit()) {
+            return BS_BAD_REQUEST; 
+        }
+        if (parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
+            rq_.error_code = HTTP_URI_TOO_LONG;
+            return BS_BAD_REQUEST;
         }
         if (parser_.Peek() == ' ') {
             if (parser_.ElementLen() > 1) {
