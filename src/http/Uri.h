@@ -4,27 +4,31 @@
 #include <string>
 namespace http {
 
+// Uri consists of: path, query, fragment
+// e.g. /path/to/file?query1=1&query2=2#section1 
+// to be decided later: do we need to add user info, host, port beforehand?
 class Uri {
   public:
     Uri(const std::string& raw_uri);
     Uri(const std::string& path, const std::string& query, const std::string& fragment);
-    Uri(const Uri& other);
+    Uri(const Uri& rhs);
     ~Uri() {}
 
-    Uri& operator=(const Uri& other);
-    bool operator==(const Uri& other) const;
-    bool operator!=(const Uri& other) const;
+    Uri& operator=(const Uri& rhs);
+    bool operator==(const Uri& rhs) const;
+    bool operator!=(const Uri& rhs) const;
 
-    bool Good() const { return status_ == URI_GOOD_BIT; };
+    bool Good() const { return validity_state_ == URI_GOOD_BIT; };
     std::string ToStr() const;
 
-    int status() const { return status_; };
+    int status() const { return validity_state_; };
 
     const std::string& path() const { return path_; };
     const std::string& query() const { return query_; };
     const std::string& fragment() const { return fragment_; };
 
   private:
+  // todo: dont forget to use...
     enum UriStatus {
         URI_GOOD_BIT = 0,
         URI_BAD_BIT = 1L << 0,
@@ -42,7 +46,7 @@ class Uri {
         PS_END
     };
 
-    int status_;
+    int validity_state_;
     std::string path_; // "/", "/index.html", "/path/to/file"
     std::string query_; 
     std::string fragment_; // used to jump to specific location on website, e.g. "#section1", "#details", "#dashboard"

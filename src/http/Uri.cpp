@@ -5,7 +5,7 @@
 
 namespace http {
 
-Uri::Uri(const std::string& raw_uri) : status_(URI_GOOD_BIT), path_(""), query_(""), fragment_("") {
+Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT), path_(""), query_(""), fragment_("") {
     // parse raw_uri
     ParseRawUri_(raw_uri);
 }
@@ -15,26 +15,26 @@ Uri::Uri(const std::string& path, const std::string& query, const std::string& f
     Validate_(); // todo: check if valid and set state if error
 }
 
-Uri::Uri(const Uri& other) {
-    *this = other;
+Uri::Uri(const Uri& rhs) {
+    *this = rhs;
 }
 
-Uri& Uri::operator=(const Uri& other) {
-    if (this != &other) {
-        path_ = other.path_;
-        query_ = other.query_;
-        fragment_ = other.fragment_;
-        status_ = other.status_;
+Uri& Uri::operator=(const Uri& rhs) {
+    if (this != &rhs) {
+        path_ = rhs.path_;
+        query_ = rhs.query_;
+        fragment_ = rhs.fragment_;
+        validity_state_ = rhs.validity_state_;
     }
     return *this;
 }
 
-bool Uri::operator==(const Uri& other) const {
-    return path_ == other.path_ && query_ == other.query_ && fragment_ == other.fragment_;
+bool Uri::operator==(const Uri& rhs) const {
+    return path_ == rhs.path_ && query_ == rhs.query_ && fragment_ == rhs.fragment_;
 }
 
-bool Uri::operator!=(const Uri& other) const {
-    return !(*this == other);
+bool Uri::operator!=(const Uri& rhs) const{
+    return !(*this == rhs);
 }
 
 std::string Uri::ToStr() const {
@@ -55,7 +55,7 @@ std::string Uri::ToStr() const {
 void Uri::ParseRawUri_(const std::string& raw_uri) {
     ParseState state = PS_PATH;
     size_t raw_uri_pos = 0;
-    while (state != PS_END && status_ == URI_GOOD_BIT) {
+    while (state != PS_END && validity_state_ == URI_GOOD_BIT) {
         switch (state) {
             case PS_PATH: ParsePath_(raw_uri, raw_uri_pos, state); break;
             case PS_QUERY: ParseQuery_(raw_uri, raw_uri_pos, state); break;
@@ -68,7 +68,7 @@ void Uri::ParseRawUri_(const std::string& raw_uri) {
 
 void Uri::ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state) {
     if (raw_uri_pos >= raw_uri.size() || raw_uri[raw_uri_pos] != '/') {
-        status_ = URI_BAD_PATH_BIT;
+        validity_state_ = URI_BAD_PATH_BIT;
         return;
     }
     size_t path_end = raw_uri.find_first_of("?#", raw_uri_pos);
@@ -87,12 +87,12 @@ void Uri::ParsePath_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState
         state = PS_FRAGMENT;
         return;
     }
-    state = PS_END; // should never reach here
+    throw std::logic_error("Error in path-parsing logic in http::Uri");
 }
 
 void Uri::ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state) {
     if (raw_uri_pos >= raw_uri.size()) {
-        status_ = URI_BAD_QUERY_BIT;
+        validity_state_ = URI_BAD_QUERY_BIT;
         return;
     }
     size_t query_end = raw_uri.find_first_of("#", raw_uri_pos);
@@ -107,12 +107,12 @@ void Uri::ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos, ParseStat
         state = PS_FRAGMENT;
         return;
     }
-    state = PS_END; // should never reach here
+    throw std::logic_error("Error in query-parsing logic in http::Uri");
 }
 
 void Uri::ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos, ParseState& state) {
     if (raw_uri_pos >= raw_uri.size()) {
-        status_ = URI_BAD_FRAGMENT_BIT;
+        validity_state_ = URI_BAD_FRAGMENT_BIT;
         return;
     }
     fragment_ = raw_uri.substr(raw_uri_pos);
@@ -121,13 +121,13 @@ void Uri::ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos, ParseS
 
 void Uri::Validate_() {
     if (!IsValidPath_(path_)) {
-        status_ |= URI_BAD_PATH_BIT;
+        validity_state_ |= URI_BAD_PATH_BIT;
     }
     if (!IsValidQuery_(query_)) {
-        status_ |= URI_BAD_QUERY_BIT;
+        validity_state_ |= URI_BAD_QUERY_BIT;
     }
     if (!IsValidFragment_(fragment_)) {
-        status_ |= URI_BAD_FRAGMENT_BIT;
+        validity_state_ |= URI_BAD_FRAGMENT_BIT;
     }
 }
 

@@ -4,8 +4,8 @@
 
 TEST(BasicTests, 1_Test) {
     http::Uri uri = http::Uri("/path/to/file?a=20&b=30#fragment");
-    ASSERT_EQ(http::Uri(uri.path(), uri.query(), uri.fragment()), uri);
-    ASSERT_EQ(uri.Good(), true);
+    EXPECT_EQ(http::Uri(uri.path(), uri.query(), uri.fragment()), uri);
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(BasicTests, 2_Test) {
@@ -14,131 +14,131 @@ TEST(BasicTests, 2_Test) {
     std::cout << "path: " << uri.path() << std::endl;
     std::cout << "query: " << uri.query() << std::endl;
     std::cout << "fragment: " << uri.fragment() << std::endl;
-    ASSERT_EQ("/path/to/file", uri.path());
-    ASSERT_EQ("a=20&b=30", uri.query());
-    ASSERT_EQ("fragment", uri.fragment());
-    ASSERT_EQ(uri.Good(), true);
+    EXPECT_EQ("/path/to/file", uri.path());
+    EXPECT_EQ("a=20&b=30", uri.query());
+    EXPECT_EQ("fragment", uri.fragment());
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(BasicTests, 3_Test) {
     http::Uri uri = http::Uri("/path/to/file?a=20&b=30#fragment");
-    ASSERT_EQ("/path/to/file?a=20&b=30#fragment", uri.ToStr());
-    ASSERT_EQ(uri.Good(), true);
+    EXPECT_EQ("/path/to/file?a=20&b=30#fragment", uri.ToStr());
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(BasicTests, 4_Test) {
     http::Uri uri = http::Uri("path/to/file?a=20&b=30#fragment");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(BasicTests, 5_Test) {
     http::Uri uri = http::Uri("");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(BasicTests, 6_Test) {
     http::Uri uri = http::Uri(".");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(BasicTests, 7_Test) {
     http::Uri uri = http::Uri("/");
-    ASSERT_EQ(uri.path(), "/");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), true);
+    EXPECT_EQ(uri.path(), "/");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(BasicTests, 8_Test) {
     http::Uri uri = http::Uri("?");
-    ASSERT_EQ(uri.path(), "");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.path(), "");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(BasicTests, 9_Test) {
     http::Uri uri = http::Uri("#");
-    ASSERT_EQ(uri.path(), "");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.path(), "");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(BasicTests, 10_Test) {
     http::Uri uri = http::Uri(" ");
-    ASSERT_EQ(uri.path(), "");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.path(), "");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(BasicTests, 11_Test) {
     http::Uri uri = http::Uri("abc");
-    ASSERT_EQ(uri.path(), "");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.path(), "");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(PathTests, 1_Test) {
     http::Uri uri = http::Uri("[");
-    ASSERT_EQ(uri.path(), "");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.path(), "");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(PathTests, 2_Test) {
     http::Uri uri = http::Uri("\"");
-    ASSERT_EQ(uri.path(), "");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.path(), "");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(QueryTests, 1_Test) {
     http::Uri uri = http::Uri("/?");
     std::cout << "query: " << uri.query() << std::endl;
     std::cout << "status: " << uri.status() << std::endl;
-    ASSERT_EQ(uri.path(), "/");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), false);
+    EXPECT_EQ(uri.path(), "/");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), false);
 }
 
 TEST(QueryTests, 2_Test) {
     http::Uri uri = http::Uri("/path?a=20&b=30&c=40");
     std::cout << "query: " << uri.query() << std::endl;
     std::cout << "status: " << uri.status() << std::endl;
-    ASSERT_EQ(uri.path(), "/path");
-    ASSERT_EQ(uri.query(), "a=20&b=30&c=40");
-    ASSERT_EQ(uri.fragment(), "");
-    ASSERT_EQ(uri.Good(), true);
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "a=20&b=30&c=40");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(FragmentTests, 1_Test) {
     http::Uri uri = http::Uri("/path#top");
-    ASSERT_EQ(uri.path(), "/path");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "top");
-    ASSERT_EQ(uri.Good(), true);
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "top");
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(FragmentTests, 2_Test) {
     http::Uri uri = http::Uri("/path?#page=4");
-    ASSERT_EQ(uri.path(), "/path");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "page=4");
-    ASSERT_EQ(uri.Good(), true);
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "page=4");
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(FragmentTests, 3_Test) {
     http::Uri uri = http::Uri("/path#\"");
-    ASSERT_EQ(uri.path(), "/path");
-    ASSERT_EQ(uri.query(), "");
-    ASSERT_EQ(uri.fragment(), "\"");
-    ASSERT_EQ(uri.Good(), true);
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "\"");
+    EXPECT_EQ(uri.Good(), true);
 }
 
 TEST(CopyTests, 1_Test_Copy_Ctor) {
@@ -146,8 +146,8 @@ TEST(CopyTests, 1_Test_Copy_Ctor) {
     http::Uri uri2 = uri1;
     http::Uri uri3(uri1);
     http::Uri uri4("/path/to/file2");
-    ASSERT_EQ(uri1, uri2);
-    ASSERT_EQ(uri1, uri3);
-    ASSERT_EQ(uri2, uri3);
-    ASSERT_NE(uri1, uri4);
+    EXPECT_EQ(uri1, uri2);
+    EXPECT_EQ(uri1, uri3);
+    EXPECT_EQ(uri2, uri3);
+    EXPECT_NE(uri1, uri4);
 }
