@@ -24,8 +24,10 @@ void Server::AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IRes
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
     if (rq.status == http::RQ_GOOD) {
+        LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
         HelloWorldResponseProcessor tmp(cb);
     } else if (rq.status == http::RQ_BAD) {
+        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.error_code;
         GeneratedErrorResponseProcessor tmp(cb, rq.error_code);
     } else {
         throw std::logic_error("trying to accept incomplete rq");
