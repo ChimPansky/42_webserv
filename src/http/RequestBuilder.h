@@ -64,7 +64,6 @@ class RequestBuilder {
   private:
     Request rq_;
     RqBuilderStatus builder_status_;
-    bool has_matched_server_;
     RequestParser parser_;
     BuildState build_state_;
     std::string header_key_;
@@ -83,7 +82,6 @@ class RequestBuilder {
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();
-    BuildState HandleBadRequest_();
 
     // helpers:
     bool CanBuild_();
