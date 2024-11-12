@@ -5,15 +5,11 @@
 #include <RequestBuilder.h>
 #include <logger.h>
 #include <unique_ptr.h>
-#include "Request.h"
 #include "ServerCluster.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), connection_closed_(false), read_state_(CS_READ)
 {  
-    // chose server right away (first that matches master_socket), so that we even have a server if the request is malformed
-    // ChooseServer will be called again in ProcessNewData
-    //associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/); 
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
@@ -46,21 +42,17 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
     if (rq_builder_.builder_status() == http::RB_NEED_TO_MATCH_SERVER) {
         LOG(DEBUG) << "ProcessNewData: Client " << client_sock_->sockfd() << " chooses Server on Mastersocket: " << master_socket_fd_;
         associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
-        if (associated_server_) {
-            LOG(DEBUG) << "Matched Server: " << associated_server_;
-        } else {
-            LOG(DEBUG) << "Matched Server: NULL (this is bad)";
-        }
         rq_builder_.ApplyServerInfo(1000);  // then this
         rq_builder_.Build(bytes_recvd);     // and this are obsolete
     }
-    // fuck the callback here
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request (" << ((rq_builder_.rq().status == http::RQ_GOOD) ? "GOOD)" : "BAD)") << " -> Accept on Server...";
         read_state_ = CS_IGNORE;
         //rq_builder_.rq().Print();
         // server returns rs with basic headers and status complete/body generation in process + generator func
-        associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
+        if (associated_server_) { // just to make sure we never dereference NULL...
+            associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
+        }
     }
 }
 
@@ -104,7 +96,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
             client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
         // what u gonna do with the closed connection in builder?
         LOG(DEBUG) << "RdCB::Call (not ignored) bytes_recvd: " << bytes_recvd << " from: " << client_.client_sock_->sockfd();;
-        // what if read-size == length of (invalid) request? 
+        // TODO: what if read-size == length of (invalid) request? 
         // we need to recv 0 bytes and forward it to builder in order to realize its bad:
         // read_size == 10 && rq == "GET / HTTP"
         if (bytes_recvd <= 0) {
@@ -112,7 +104,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
             client_.CloseConnection();
             return;
         }
-        client_.rq_builder_.AdjustBufferSize(std::max(bytes_recvd, (ssize_t)0));
+        client_.rq_builder_.AdjustBufferSize(bytes_recvd);
         client_.ProcessNewData(bytes_recvd);
     }
 }
