@@ -12,7 +12,7 @@ namespace http {
 enum RqBuilderStatus {
     RB_BUILDING,
     RB_NEED_DATA_FROM_CLIENT,
-    RB_NEED_INFO_FROM_SERVER,
+    RB_NEED_TO_MATCH_SERVER,
     RB_DONE
 };
 
@@ -76,6 +76,7 @@ class RequestBuilder {
     BuildState BuildHeaderKey_();
     BuildState ParseHeaderKeyValSep_();
     BuildState BuildHeaderValue_();
+    BuildState NeedToMatchServer_();
     BuildState CheckForBody_();
     BuildState CheckBodyRegularLength_();
     BuildState BuildBodyRegular_();
@@ -87,6 +88,7 @@ class RequestBuilder {
     void NullTerminatorCheck_(char c);
     bool CheckForEOL_() const;
     bool IsParsingState_(BuildState state) const;
+    BuildState Error_(RqStatus status);
 };
 
 }  // namespace http

@@ -46,3 +46,7 @@ std::string Response::DumpToStr() const {
     std::copy(body_.begin(), body_.end(), std::back_inserter(str_dump));
     return str_dump;
 }
+
+const std::map<std::string, std::string>& Response::headers() const {
+    return headers_;
+}

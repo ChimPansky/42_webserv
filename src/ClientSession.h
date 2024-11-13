@@ -21,14 +21,14 @@ class ClientSession {
     ClientSession();
 
   public:
-    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock, int master_sock_fd);
+    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock, int master_sock_fd, utils::shared_ptr<Server> default_server);
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
     void ProcessNewData(size_t bytes_recvd);
     void CloseConnection();
     void PrepareResponse(utils::unique_ptr<http::Response> rs);
-    void ResponseSentCleanup();
+    void ResponseSentCleanup(bool close_connection);
     class ClientReadCallback : public c_api::ICallback {
       public:
         ClientReadCallback(ClientSession& client);
@@ -39,13 +39,14 @@ class ClientSession {
     };
     class ClientWriteCallback : public c_api::ICallback {
       public:
-        ClientWriteCallback(ClientSession& client, std::vector<char> buf);
+        ClientWriteCallback(ClientSession& client, std::vector<char> buf, bool close_after_sending_rs_);
         virtual void Call(int);
 
       private:
         ClientSession& client_;
         std::vector<char> buf_;
         size_t buf_send_idx_;
+        bool close_after_sending_rs_;
     };
     class ClientProceedWithResponseCallback : public http::IResponseCallback {
       public:
