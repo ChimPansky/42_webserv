@@ -1,10 +1,11 @@
-#include "Location.h"
+#include <Location.h>
 
-#include "LocationConfig.h"
+#include <sstream>
 
 Location::Location()
-    : route_("/", false), allowed_methods_(config::LocationConfig::kDefaultAllowedMethods()),
-      redirect_(0, ""), is_cgi_(false), cgi_paths_(), cgi_extensions_(),
+    : route_(config::LocationConfig::kDefaultRoute()),
+      allowed_methods_(config::LocationConfig::kDefaultAllowedMethods()), redirect_(0, ""),
+      is_cgi_(false), cgi_paths_(), cgi_extensions_(),
       root_dir_(config::LocationConfig::kDefaultRootDir()),
       default_file_(config::LocationConfig::kDefaultIndexFile()),
       client_max_body_size_(config::LocationConfig::kDefaultClientMaxBodySize())
@@ -17,17 +18,62 @@ Location::Location(const config::LocationConfig& cfg)
       client_max_body_size_(cfg.client_max_body_size())
 {}
 
-std::pair<bool, std::string> Location::MatchedRoute(const http::Request& rq) const
+std::pair<bool, std::string> Location::MatchUriPath(const std::string& path,
+                                                    const std::pair<std::string, bool>& route)
 {
-    std::string path = rq.uri;
-    std::string best_match = route_.first;
-
-    if (path == route_.first && route_.second) {
-        return std::make_pair(true, route_.first);
-    } else if (path == route_.first && !route_.second) {
-        return std::make_pair(false, route_.first);
-    } else if (path.compare(0, route_.first.size(), route_.first) == 0) {
-        return std::make_pair(false, route_.first);
+    if (path == route.first && route.second) {
+        return std::make_pair(true, route.first);
+    } else if (path == route.first && !route.second) {
+        return std::make_pair(false, route.first);
+    } else if (path.compare(0, route.first.size(), route.first) == 0 && !route.second) {
+        return std::make_pair(false, route.first);
     }
     return std::make_pair(false, std::string());
+}
+
+std::pair<bool, std::string> Location::MatchedRoute(const http::Request& rq) const
+{
+    return MatchUriPath(rq.uri.path(), route_);
+}
+
+std::string Location::GetInfo() const
+{
+    std::ostringstream oss;
+
+    oss << "\n"
+        << "--Location configuration: --\n"
+        << "Route: " << route_.first << " " << (route_.second ? "(exact match)" : "(prefix match)")
+        << "\n"
+        << "Allowed methods: ";
+    for (size_t i = 0; i < allowed_methods_.size(); ++i) {
+        oss << "  " << allowed_methods_[i];
+    }
+    oss << "\n"
+        << "Redirect: ";
+    if (redirect_.first != 0) {
+        oss << redirect_.first << " " << redirect_.second;
+    } else {
+        oss << "None";
+    }
+    oss << "\n"
+        << "CGI: " << (is_cgi_ ? "enabled" : "disabled") << "\n"
+        << "CGI paths: ";
+    for (size_t i = 0; i < cgi_paths_.size(); ++i) {
+        oss << "  " << cgi_paths_[i];
+    }
+    oss << "\n"
+        << "CGI extensions: ";
+    for (size_t i = 0; i < cgi_extensions_.size(); ++i) {
+        oss << "  " << cgi_extensions_[i];
+    }
+    oss << "\n"
+        << "Root directory: " << root_dir_ << "\n"
+        << "Default files: ";
+    for (size_t i = 0; i < default_file_.size(); ++i) {
+        oss << "  " << default_file_[i];
+    }
+    oss << "\n"
+        << "Client max body size: " << client_max_body_size_ << " bytes\n";
+
+    return oss.str();
 }

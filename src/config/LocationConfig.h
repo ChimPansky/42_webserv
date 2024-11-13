@@ -1,13 +1,13 @@
 #ifndef WS_LOCATIONCONFIG_H
 #define WS_LOCATIONCONFIG_H
 
+#include <logger.h>
 #include <netinet/in.h>
 #include <unistd.h>
 
 #include <string>
+#include <utility>
 #include <vector>
-
-#include <logger.h>
 
 namespace config {
 
@@ -69,6 +69,10 @@ class LocationConfig {
         default_cgi_extensions.push_back(".py");
         default_cgi_extensions.push_back(".php");
         return default_cgi_extensions;
+    }
+    static inline std::pair<std::string, bool> kDefaultRoute()
+    {
+        return std::make_pair("/", false);
     }
 
     void Print() const;

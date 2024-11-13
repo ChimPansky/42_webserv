@@ -1,6 +1,7 @@
-#include <iostream>
 #include <IResponseProcessor.h>
 #include <Server.h>
+
+#include <iostream>
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
@@ -41,7 +42,6 @@ utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) cons
     std::pair<bool, std::string> best_match(false, std::string());
     utils::shared_ptr<Location> matched_location;
 
-    std::cout << "URL: " << rq.uri << std::endl;
     for (LocationsConstIt it = locations_.begin(); it != locations_.end(); ++it) {
         std::pair<bool, std::string> match_result = (*it)->MatchedRoute(rq);
 
@@ -52,11 +52,8 @@ utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) cons
             matched_location = *it;
         }
     }
-    if (best_match.second.empty()) {
-        return utils::shared_ptr<Location>(new Location());
-    }
-    std::cout << "Matched location: " << best_match.second << std::endl;
-    return (best_match.second.empty() ? utils::shared_ptr<Location>(new Location()) : matched_location);
+    return (best_match.second.empty() ? utils::shared_ptr<Location>(new Location())
+                                      : matched_location);
 }
 
 // if returns nullptr, rs is the valid response right away
@@ -127,9 +124,9 @@ std::string Server::GetInfo() const
     for (size_t i = 0; i < server_names_.size(); i++) {
         oss << " " << server_names_[i];
     }
-    /* for (size_t i = 0; i < locations_.size(); i++) {
-        locations_[i].GetInfo();
-    } */
+    for (size_t i = 0; i < locations_.size(); i++) {
+        locations_[i]->GetInfo();
+    }
 
     return oss.str();
 }

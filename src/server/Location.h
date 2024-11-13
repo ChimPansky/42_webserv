@@ -19,7 +19,9 @@ class Location {
   public:
     Location();
     Location(const config::LocationConfig&);
-    std::pair<bool /* is exact match */, std::string> MatchedRoute(const http::Request& rq) const;
+    static std::pair<bool /* is exact match */, std::string> MatchUriPath(
+        const std::string& path, const std::pair<std::string, bool>& route);
+    std::pair<bool, std::string> MatchedRoute(const http::Request& rq) const;
     const std::pair<std::string, /* is exact match */ bool>& route() const;
     const std::vector<config::LocationConfig::Method>& allowed_methods() const;
     const std::pair<int, std::string>& redirect() const;
@@ -29,6 +31,7 @@ class Location {
     const std::string& root_dir() const;
     const std::vector<std::string>& default_file() const;
     unsigned int client_max_body_size() const;
+    std::string GetInfo() const;
 };
 
 #endif  // WS_SERVER_LOCATION_H
