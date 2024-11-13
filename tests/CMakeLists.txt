@@ -34,6 +34,14 @@ add_test(
     COMMAND ./server_matching
 )
 
+# Uri
+add_executable(uri_test uri_test.cpp)
+target_link_libraries(uri_test PRIVATE Http gtest gtest_main)
+add_test(
+    NAME uri_test
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/uri_test
+)
+
 # Valgrind
 add_test(
     NAME valgrind_idle_test

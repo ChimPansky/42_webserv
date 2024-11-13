@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "http.h"
+#include <http.h>
+#include <Uri.h>
 
 namespace http {
 
@@ -21,7 +22,7 @@ struct Request {
 
     RqStatus status;
     Method method;
-    std::string uri;  // todo: change to struct/class
+    http::Uri uri;
     Version version;
     std::map<std::string, std::string> headers;
     std::vector<char> body;
