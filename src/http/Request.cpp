@@ -23,7 +23,7 @@ std::string Request::ToString() const
 {
     std::ostringstream ret;
     ret << "---Request---"
-        << "\n\tStatus: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"))
+        << "\n\tStatus: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_GOOD ? "GOOD" : "Bad"))
         << "\n\tMethod: " << method
         << "\n\tURI: " << uri
         << "\n\tVersion: " << version

@@ -5,6 +5,7 @@
 #include <Response.h>
 #include <unique_ptr.h>
 #include <time_utils.h>
+#include <logger.h>
 
 class ClientSession;
 

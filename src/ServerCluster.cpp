@@ -2,6 +2,7 @@
 
 #include <Server.h>
 #include "ClientSession.h"
+#include "logger.h"
 #include <EventManager.h>
 #include <c_api_utils.h>
 #include <Config.h>
@@ -50,6 +51,7 @@ void ServerCluster::Run()
 
 utils::shared_ptr<Server> ServerCluster::ChooseServer(int /*master_fd*/, const http::Request& /*rq*/)
 {
+    LOG(DEBUG) << "Choosing server " << instance_->servers_[0];
     return instance_->servers_[0];
 }
 
@@ -149,5 +151,5 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     }
     LOG(INFO) << "New incoming connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in());
     LOG(INFO) << "From: " << c_api::PrintIPv4SockAddr(client_sock->addr_in());
-    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
+    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd, cluster_.sockets_to_servers_[acceptor.sockfd()][0]));
 }

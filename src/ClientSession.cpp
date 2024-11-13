@@ -7,9 +7,9 @@
 #include <unique_ptr.h>
 #include "ServerCluster.h"
 
-ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
-    : client_sock_(sock), master_socket_fd_(master_sock_fd), connection_closed_(false), read_state_(CS_READ)
-{
+ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd, utils::shared_ptr<Server> default_server)
+    : client_sock_(sock), master_socket_fd_(master_sock_fd), associated_server_(default_server), connection_closed_(false), read_state_(CS_READ)
+{  
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
@@ -39,20 +39,23 @@ bool ClientSession::connection_closed() const
 void ClientSession::ProcessNewData(size_t bytes_recvd)
 {
     rq_builder_.Build(bytes_recvd);
-    // TODO:
-    // turn this into a client callback to exclude dependency of builder on server
-    // server cluster to singleton
-    if (rq_builder_.builder_status() == http::RB_NEED_INFO_FROM_SERVER) {
+    if (rq_builder_.builder_status() == http::RB_NEED_TO_MATCH_SERVER) {
+        LOG(DEBUG) << "ProcessNewData: Client " << client_sock_->sockfd() << " chooses Server on Mastersocket: " << master_socket_fd_;
         associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
         rq_builder_.ApplyServerInfo(1000);  // then this
         rq_builder_.Build(bytes_recvd);     // and this are obsolete
     }
-    // fuck the callback here
     if (rq_builder_.builder_status() == http::RB_DONE) {
+        LOG(DEBUG) << "ProcessNewData: Done reading Request (" << ((rq_builder_.rq().status == http::RQ_GOOD) ? "GOOD)" : "BAD)") << " -> Accept on Server...";
         read_state_ = CS_IGNORE;
         LOG(DEBUG) << rq_builder_.rq().ToString();
         // server returns rs with basic headers and status complete/body generation in process + generator func
-        associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
+        if (associated_server_) { // just to make sure we never dereference NULL...
+            associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
+        }
+        else {
+            throw std::logic_error("trying to accept forward rq to non-existent server");
+        }
     }
 }
 
@@ -84,11 +87,14 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
+    LOG(DEBUG) << "ClientReadCallback::Call";
     if (client_.read_state_ == CS_IGNORE) {
         std::vector<char> buf;
         buf.resize(1000);
         ssize_t bytes_recvd = client_.client_sock_->Recv(buf, 1000);
+        LOG(DEBUG) << "RdCB::Call (ignored) bytes_recvd: " << bytes_recvd << " from: " << client_.client_sock_->sockfd();
         if (bytes_recvd <= 0) {
+            LOG(DEBUG) << "Client disconnected -> terminating Session";
             client_.CloseConnection();
             return;
         }
@@ -97,7 +103,12 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
         ssize_t bytes_recvd =
             client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
         // what u gonna do with the closed connection in builder?
+        LOG(DEBUG) << "RdCB::Call (not ignored) bytes_recvd: " << bytes_recvd << " from: " << client_.client_sock_->sockfd();;
+        // TODO: what if read-size == length of (invalid) request? 
+        // we need to recv 0 bytes and forward it to builder in order to realize its bad:
+        // read_size == 10 && rq == "GET / HTTP"
         if (bytes_recvd <= 0) {
+            LOG(DEBUG) << "Client disconnected -> terminating Session";
             client_.CloseConnection();
             return;
         }
@@ -111,7 +122,8 @@ ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client, s
 {}
 
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
-{
+{    
+    LOG(DEBUG) << "ClientWriteCallback::Call";
     // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(buf_, buf_send_idx_,
                                                     buf_.size() - buf_send_idx_);
@@ -131,6 +143,7 @@ ClientSession::ClientProceedWithResponseCallback::ClientProceedWithResponseCallb
 }
 
 void ClientSession::ClientProceedWithResponseCallback::Call(utils::unique_ptr<http::Response> rs) {
+    LOG(DEBUG) << "ClientProceedWithResponseCallback::Call -> client_.PrepareResponse";
     client_.PrepareResponse(rs);
     // ssize_t bytes_recvd = rs_builder_.bodygen_sock()->Recv();
     // if (bytes_recvd < 0) {

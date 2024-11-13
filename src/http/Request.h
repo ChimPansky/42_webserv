@@ -5,14 +5,16 @@
 #include <string>
 #include <vector>
 
-#include "http.h"
+#include <http.h>
+#include <ResponseCodes.h>
 
 namespace http {
 
 enum RqStatus {
-    RQ_INCOMPLETE,
-    RQ_BAD,
-    RQ_GOOD
+    RQ_INCOMPLETE = 0,
+    RQ_GOOD = HTTP_OK,
+    RQ_BAD = HTTP_BAD_REQUEST,
+    RQ_URI_TOO_LONG = HTTP_URI_TOO_LONG
 };
 
 class RequestBuilder;
