@@ -21,7 +21,7 @@ class ClientSession {
     ClientSession();
 
   public:
-    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock, int master_sock_fd);
+    ClientSession(utils::unique_ptr<c_api::ClientSocket> client_sock, int master_sock_fd, utils::shared_ptr<Server> default_server);
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;

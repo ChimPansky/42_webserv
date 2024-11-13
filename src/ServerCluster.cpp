@@ -150,5 +150,5 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     }
     LOG(INFO) << "New incoming connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in());
     LOG(INFO) << "From: " << c_api::PrintIPv4SockAddr(client_sock->addr_in());
-    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd));
+    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd, cluster_.sockets_to_servers_[acceptor.sockfd()][0]));
 }
