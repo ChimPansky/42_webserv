@@ -3,6 +3,7 @@
 #include <RequestBuilder.h>
 #include <fstream>
 #include <iostream>
+#include "ResponseCodes.h"
 #include <logger.h>
 
 #define BODY_14 "Hello, World!!"
@@ -411,7 +412,7 @@ TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
 }
 
 TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
-     http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
         FAIL();
     }
@@ -420,4 +421,14 @@ TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
+}
+
+TEST(InvalidUri, 60_Uri_too_long) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq60.txt", 1000) != 0) {
+        FAIL();
+    }
+    ASSERT_EQ(http::HTTP_POST, builder.rq().method);
+    ASSERT_EQ("", builder.rq().uri);
+    ASSERT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
 }

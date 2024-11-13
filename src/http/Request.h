@@ -11,9 +11,10 @@
 namespace http {
 
 enum RqStatus {
-    RQ_INCOMPLETE,
-    RQ_BAD,
-    RQ_GOOD
+    RQ_INCOMPLETE = 0,
+    RQ_GOOD = HTTP_OK,
+    RQ_BAD = HTTP_BAD_REQUEST,
+    RQ_URI_TOO_LONG = HTTP_URI_TOO_LONG
 };
 
 class RequestBuilder;
@@ -21,7 +22,6 @@ struct Request {
     Request();
 
     RqStatus status;
-    ResponseCode error_code;
     Method method;
     std::string uri;  // todo: change to struct/class
     Version version;
