@@ -64,7 +64,7 @@ TEST(ValidWithBody, 1_Bodylen_14) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     ASSERT_EQ("14", builder.rq().GetHeaderVal("content-length").second);
@@ -80,7 +80,7 @@ TEST(ValidWithBody, 2_One_Chunk_1100) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/upload", builder.rq().uri);
+    ASSERT_EQ("/upload", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
     ASSERT_EQ((unsigned long)1100, builder.rq().body.size());
@@ -95,7 +95,7 @@ TEST(ValidWithBody, 3_One_Chunk_1100) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/upload", builder.rq().uri);
+    ASSERT_EQ("/upload", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
     ASSERT_EQ((unsigned long)1100, builder.rq().body.size());
@@ -110,7 +110,7 @@ TEST(ValidWithBody, 4_Bodylen_1) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     ASSERT_EQ("1", builder.rq().GetHeaderVal("content-length").second);
@@ -126,7 +126,7 @@ TEST(ValidWithBody, 5_Chunked_1) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/upload", builder.rq().uri);
+    ASSERT_EQ("/upload", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_0, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
     const char *str = "L";
@@ -141,7 +141,7 @@ TEST(ValidWithoutBody, 6_SimpleGet) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     ASSERT_EQ("", builder.rq().GetHeaderVal("content-length").second);
@@ -155,7 +155,7 @@ TEST(ValidWithoutBody, 7_GetWithQuery) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/search?q=example", builder.rq().uri);
+    ASSERT_EQ("/search?q=example", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("www.search.com", builder.rq().GetHeaderVal("host").second);
     ASSERT_EQ("", builder.rq().GetHeaderVal("content-length").second);
@@ -169,7 +169,7 @@ TEST(ValidWithoutBody, 8_GetWithHeaders) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/products", builder.rq().uri);
+    ASSERT_EQ("/products", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("shop.example.com", builder.rq().GetHeaderVal("host").second);
     ASSERT_EQ("application/json", builder.rq().GetHeaderVal("accept").second);
@@ -184,7 +184,7 @@ TEST(InValidWithoutBody, 9_PostWithHeaders) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/submit", builder.rq().uri);
+    ASSERT_EQ("/submit", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     ASSERT_EQ("application/x-www-form-urlencoded", builder.rq().GetHeaderVal("content-type").second);
@@ -199,7 +199,7 @@ TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
-    ASSERT_EQ("/items/123", builder.rq().uri);
+    ASSERT_EQ("/items/123", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_0, builder.rq().version);
     ASSERT_EQ("api.items.com", builder.rq().GetHeaderVal("host").second);
     ASSERT_EQ("Bearer some_token", builder.rq().GetHeaderVal("authorization").second);
@@ -230,7 +230,7 @@ TEST(InValidWithoutBody, 13_No_URI) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_TRUE(builder.rq().uri.empty());
+    ASSERT_TRUE(builder.rq().uri.ToStr().empty());
     ASSERT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
 }
@@ -241,7 +241,7 @@ TEST(InValidWithoutBody, 14_No_Invalid_Version) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/upload", builder.rq().uri);
+    ASSERT_EQ("/upload", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
 }
@@ -253,7 +253,7 @@ TEST(InValidWithoutBody, 15_No_CRLF_After_Version) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
-    ASSERT_EQ("/upload/subfolder1/subfolder2", builder.rq().uri);
+    ASSERT_EQ("/upload/subfolder1/subfolder2", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
 }
@@ -264,7 +264,7 @@ TEST(InValidWithoutBody, 16_Just_LF_After_Version) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
-    ASSERT_EQ("/upload/subfolder1/subfolder2", builder.rq().uri);
+    ASSERT_EQ("/upload/subfolder1/subfolder2", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
 }
@@ -275,7 +275,7 @@ TEST(InValidWithoutBody, 17_Bad_Header_Key) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
-    ASSERT_EQ("/upload/subfolder1/subfolder2", builder.rq().uri);
+    ASSERT_EQ("/upload/subfolder1/subfolder2", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_2, builder.rq().version);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
 }
@@ -286,7 +286,7 @@ TEST(InValidWithoutBody, 18_Bad_Header_Key) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_DELETE, builder.rq().method);
-    ASSERT_EQ("/upload/subfolder1/subfolder2", builder.rq().uri);
+    ASSERT_EQ("/upload/subfolder1/subfolder2", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_2, builder.rq().version);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
 }
@@ -297,7 +297,7 @@ TEST(InValidWithoutBody, 19_Bad_Header_Key) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_FALSE(builder.rq().GetHeaderVal("Host!").first);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -309,7 +309,7 @@ TEST(InValidWithoutBody, 20_Bad_Header_Key) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_FALSE(builder.rq().GetHeaderVal("Host-").first);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -321,7 +321,7 @@ TEST(InValidWithoutBody, 21_Bad_Header_Key) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_FALSE(builder.rq().GetHeaderVal("Host ").first);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -333,7 +333,7 @@ TEST(InValidWithoutBody, 22_Missing_Space) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_FALSE(builder.rq().GetHeaderVal("host").first);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -345,7 +345,7 @@ TEST(InValidWithoutBody, 23_Missing_Header_Value) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_FALSE(builder.rq().GetHeaderVal("host").first);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -357,7 +357,7 @@ TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_GET, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_FALSE(builder.rq().GetHeaderVal("host").first);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -378,7 +378,7 @@ TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -390,7 +390,7 @@ TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -402,7 +402,7 @@ TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
@@ -414,7 +414,7 @@ TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
         FAIL();
     }
     ASSERT_EQ(http::HTTP_POST, builder.rq().method);
-    ASSERT_EQ("/", builder.rq().uri);
+    ASSERT_EQ("/", builder.rq().uri.ToStr());
     ASSERT_EQ(http::HTTP_1_1, builder.rq().version);
     ASSERT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
     ASSERT_EQ(http::RQ_BAD, builder.rq().status);
