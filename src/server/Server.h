@@ -1,15 +1,18 @@
 #ifndef WS_SERVER_SERVER_H
 #define WS_SERVER_SERVER_H
 
-#include <vector>
-#include <string>
-
-#include <ServerConfig.h>
 #include <LocationConfig.h>
 #include <Request.h>
 #include <Response.h>
+#include <ServerConfig.h>
 #include <unique_ptr.h>
 
+enum MatchType {
+    NO_MATCH = 0,
+    SUFFIX_MATCH = 1,
+    PREFIX_MATCH = 2,
+    EXACT_MATCH = 3
+};
 
 class Server {
   private:
@@ -23,22 +26,30 @@ class Server {
 
   public:
     // only check hostname probably.
-    bool DoesMatchTheRequest(const http::Request& rq) const;
+    static std::pair<MatchType, std::string> MatchHostName(const std::string& host,
+                                                           const std::vector<std::string>&);
+    std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
 
     // has to call IResponseCallback with rs when the last is rdy
-    void AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+    void AcceptRequest(const http::Request& rq,
+                       utils::unique_ptr<http::IResponseCallback> cb) const;
 
-    const std::string& name() const;
-
-    const config::ServerConfig& server_config() const {return server_config_;}
+    std::string name() const;
+    const std::string& access_log_path() const;
+    Severity access_log_level() const;
+    const std::string& error_log_path() const;
+    const std::vector<config::LocationConfig>& locations() const;
+    std::string GetInfo() const;
 
   private:
+    std::string access_log_path_;
+    Severity access_log_level_;
+    std::string error_log_path_;
+    std::vector<std::string> server_names_;
     std::vector<config::LocationConfig> locations_;
-    config::ServerConfig server_config_;
 };
 
 #endif  // WS_SERVER_SERVER_H
-
 
 /*
 

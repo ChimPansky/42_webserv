@@ -1,19 +1,13 @@
 #ifndef WS_SERVER_CLUSTER_H
 #define WS_SERVER_CLUSTER_H
 
-#include <vector>
-
+#include <Config.h>
+#include <MasterSocket.h>
 #include <Server.h>
-#include <Config.h>
-#include <unique_ptr.h>
-#include <MasterSocket.h>
-#include <Config.h>
 #include <shared_ptr.h>
-#include <multiplexers/ICallback.h>
-#include <MasterSocket.h>
-#include "ClientSession.h"
-
 #include <signal.h>
+
+#include "ClientSession.h"
 
 class ClientSession;
 

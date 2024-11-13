@@ -1,10 +1,7 @@
 #include "ServerCluster.h"
 
-#include <Server.h>
-#include "ClientSession.h"
 #include <EventManager.h>
 #include <c_api_utils.h>
-#include <Config.h>
 
 namespace {
 void SigIntHandler(int /*signum*/)
@@ -12,22 +9,21 @@ void SigIntHandler(int /*signum*/)
     LOG(INFO) << " SIGINT caught, shutting down...";
     ServerCluster::StopHandler();
 }
-}
+}  // namespace
 
 volatile sig_atomic_t ServerCluster::run_ = false;
 utils::unique_ptr<ServerCluster> ServerCluster::instance_;
 
-void ServerCluster::Init(const config::Config& config) {
+void ServerCluster::Init(const config::Config& config)
+{
     signal(SIGINT, SigIntHandler);
     instance_ = utils::unique_ptr<ServerCluster>(new ServerCluster(config));
 }
-
 
 void ServerCluster::StopHandler()
 {
     run_ = false;
 }
-
 
 ServerCluster::ServerCluster(const config::Config& config)
 {
@@ -35,7 +31,6 @@ ServerCluster::ServerCluster(const config::Config& config)
     c_api::EventManager::init(config.mx_type());
     CreateServers_(config);
 }
-
 
 void ServerCluster::Run()
 {
@@ -47,18 +42,31 @@ void ServerCluster::Run()
     }
 }
 
-
-utils::shared_ptr<Server> ServerCluster::ChooseServer(int /*master_fd*/, const http::Request& /*rq*/)
+utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http::Request& rq)
 {
-    return instance_->servers_[0];
-}
+    std::pair<MatchType, std::string> best_match(NO_MATCH, std::string());
+    utils::shared_ptr<Server> matched_server;
 
+    for (ServersConstIt it = instance_->sockets_to_servers_[master_fd].begin();
+         it != instance_->sockets_to_servers_[master_fd].end(); ++it) {
+        std::pair<MatchType, std::string> match_result = (*it)->MatchedServerName(rq);
+
+        if ((match_result.second.length() > best_match.second.length() &&
+             match_result.first == best_match.first) ||
+            match_result.first > best_match.first) {
+            best_match = match_result;
+            matched_server = *it;
+        }
+    }
+    return (best_match.first == NO_MATCH ? instance_->sockets_to_servers_[master_fd][0]
+                                         : matched_server);
+}
 
 void ServerCluster::PrintDebugInfo() const
 {
     for (ServersConstIt cit = servers_.begin(); cit != servers_.end(); ++cit) {
-        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name() << ". My config is: ";
-        (*cit)->server_config().Print();
+        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name()
+                   << ". My config is: " << (*cit)->GetInfo();
         LOG(DEBUG);
     }
 }
@@ -127,7 +135,6 @@ int ServerCluster::GetListenerFd_(struct sockaddr_in addr)
     return -1;
 }
 
-
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
     : cluster_(cluster)
 {}
@@ -143,7 +150,8 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     c_api::MasterSocket& acceptor = *acceptor_it->second;
     utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor.Accept();
     if (!client_sock) {
-        LOG(ERROR) << "error accepting connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in());
+        LOG(ERROR) << "error accepting connection on: "
+                   << c_api::PrintIPv4SockAddr(acceptor.addr_in());
         perror("MasterSocket::Accept");
         return;
     }
