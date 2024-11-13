@@ -16,9 +16,35 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
     ParsePath_(raw_uri, raw_uri_pos);
     ParseQuery_(raw_uri, raw_uri_pos);
     ParseFragment_(raw_uri, raw_uri_pos);
+    std::pair<bool, std::string> decoded_str = PercentDecode_(path_);
+    if (!decoded_str.first) {
+        validity_state_ |= URI_BAD_PATH_BIT;
+        return;
+    }
+    path_ = decoded_str.second;
+
+    if (query_.first) {
+        decoded_str = PercentDecode_(query_.second);
+        if (!decoded_str.first) {
+            validity_state_ |= URI_BAD_QUERY_BIT;
+            return;
+        }
+        query_.second = decoded_str.second;
+    }
+
+    if (fragment_.first) {
+        decoded_str = PercentDecode_(fragment_.second);
+        if (!decoded_str.first) {
+            validity_state_ |= URI_BAD_FRAGMENT_BIT;
+            return;
+        }
+        fragment_.second = decoded_str.second;
+    }
+
+
     // Decode();
     // Normalize();
-    Validate_();
+    //Validate_();
 }
 
 Uri::Uri(const std::string& path, const std::string& query, const std::string& fragment) : path_(path) {
@@ -100,6 +126,28 @@ void Uri::ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos) {
     }
     fragment_.first = true;
     fragment_.second = raw_uri.substr(raw_uri_pos + 1);
+}
+
+std::pair<bool /*valid*/, std::string> Uri::PercentDecode_(const std::string& str) const {
+    std::string decoded;
+    std::pair<bool, unsigned short> ascii;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (str[i] == '%') {
+            if (i + 2 >= str.size()) {
+                return std::pair<bool, std::string>(false, "");
+            }
+            ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
+            if (!ascii.first) {
+                LOG(DEBUG) << "Uri::PercentDecode_: bad hex: " << str.substr(i + 1, 2);
+                return std::pair<bool, std::string>(false, "");
+            }
+            decoded += static_cast<char>(ascii.second);
+            i += 2;
+        } else {
+            decoded += str[i];
+        }
+    }
+    return std::pair<bool, std::string>(true, decoded);
 }
 
 // Normalize():

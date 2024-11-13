@@ -151,3 +151,55 @@ TEST(CopyTests, 1_Test_Copy_Ctor) {
     EXPECT_EQ(uri2, uri3);
     EXPECT_NE(uri1, uri4);
 }
+
+TEST(DecodeTests, 1_Test_Path) {
+    http::Uri uri = http::Uri("/path%20to%20file");
+    EXPECT_EQ(uri.path(), "/path to file");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(DecodeTests, 2_Test_Path) {
+    http::Uri uri = http::Uri("/path%");
+    EXPECT_EQ(uri.Good(), false);
+}
+
+TEST(DecodeTests, 3_Test_Path) {
+    http::Uri uri = http::Uri("/path%2");
+    EXPECT_EQ(uri.Good(), false);
+}
+
+TEST(DecodeTests, 4_Test_Path) {
+    http::Uri uri = http::Uri("/path%2g");
+    EXPECT_EQ(uri.Good(), false);
+}
+
+TEST(DecodeTests, 5_Test_Path) {
+    http::Uri uri = http::Uri("/path%%");
+    EXPECT_EQ(uri.Good(), false);
+}
+
+TEST(DecodeTests, 6_Test_Path) {
+    http::Uri uri = http::Uri("/path%20%20%20");
+    EXPECT_EQ(uri.path(), "/path   ");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(DecodeTests, 11_Test_Query) {
+    http::Uri uri = http::Uri("/path?a=20%20&b=30%20");
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "a=20 &b=30 ");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(DecodeTests, 20_Test_Fragment) {
+    http::Uri uri = http::Uri("/path#top%20");
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "top ");
+    EXPECT_EQ(uri.Good(), true);
+}
