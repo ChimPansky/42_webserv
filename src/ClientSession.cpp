@@ -53,8 +53,9 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
         // server returns rs with basic headers and status complete/body generation in process + generator func
         if (associated_server_) { // just to make sure we never dereference NULL...
             associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
-        } else {
-            LOG(ERROR) << "Associated Server is NULL...";
+        }
+        else {
+            throw std::logic_error("trying to accept forward rq to non-existent server");
         }
     }
 }
