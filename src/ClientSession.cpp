@@ -9,7 +9,7 @@
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), connection_closed_(false), read_state_(CS_READ)
-{  
+{
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this))) != 0) {
@@ -59,18 +59,23 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
 
 void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 {
+    std::map<std::string, std::string>::const_iterator conn_it = rs->headers().find("connection");
+    bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,
-            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this, rs->Dump()))) != 0) {
+            utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this, rs->Dump(), close_connection))) != 0) {
         LOG(ERROR) << "Could not register write callback for client: "
                     << client_sock_->sockfd();
         CloseConnection();
     }
 }
 
-void ClientSession::ResponseSentCleanup() {
+void ClientSession::ResponseSentCleanup(bool close_connection) {
     c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_WRITE);
     read_state_ = CS_READ;
+    if (close_connection) {
+        connection_closed_ = true;
+    }
 }
 
 
@@ -102,7 +107,7 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
 }
 
 
-ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client, std::vector<char> content) : client_(client), buf_(content), buf_send_idx_(0)
+ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client, std::vector<char> content, bool close_connection) : client_(client), buf_(content), buf_send_idx_(0), close_after_sending_rs_(close_connection)
 {}
 
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
@@ -117,7 +122,7 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
     }
     if (buf_send_idx_ == buf_.size()) {
         LOG(INFO) << buf_send_idx_ << " bytes sent";
-        client_.ResponseSentCleanup();
+        client_.ResponseSentCleanup(close_after_sending_rs_);
     }
 }
 
