@@ -1,5 +1,6 @@
 #include "Server.h"
 #include "IResponseProcessor.h"
+#include "Request.h"
 
 Server::Server(const config::ServerConfig& cfg) : server_config_(cfg) {}
 
@@ -26,10 +27,10 @@ void Server::AcceptRequest(const http::Request& rq, utils::unique_ptr<http::IRes
     if (rq.status == http::RQ_GOOD) {
         LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
         HelloWorldResponseProcessor tmp(cb);
-    } else if (rq.status == http::RQ_BAD) {
+    } else if (rq.status == http::RQ_INCOMPLETE) {
+        throw std::logic_error("trying to accept incomplete rq");
+    } else {
         LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
         GeneratedErrorResponseProcessor tmp(cb, (http::ResponseCode)rq.status);
-    } else {
-        throw std::logic_error("trying to accept incomplete rq");
     }
 }
