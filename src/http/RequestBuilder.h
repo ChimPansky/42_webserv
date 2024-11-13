@@ -88,6 +88,7 @@ class RequestBuilder {
     void NullTerminatorCheck_(char c);
     bool CheckForEOL_() const;
     bool IsParsingState_(BuildState state) const;
+    BuildState Error_(RqStatus status);
 };
 
 }  // namespace http

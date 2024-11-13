@@ -51,6 +51,7 @@ void ServerCluster::Run()
 
 utils::shared_ptr<Server> ServerCluster::ChooseServer(int /*master_fd*/, const http::Request& /*rq*/)
 {
+    LOG(DEBUG) << "Choosing server " << instance_->servers_[0];
     return instance_->servers_[0];
 }
 

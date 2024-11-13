@@ -54,12 +54,16 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
         if (associated_server_) { // just to make sure we never dereference NULL...
             associated_server_->AcceptRequest(rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(new ClientProceedWithResponseCallback(*this)));
         }
+        else {
+            throw std::logic_error("trying to accept forward rq to non-existent server");
+        }
     }
 }
 
 
 void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 {
+    LOG(DEBUG) << "PrepareResponse -> register write callback for client: " << client_sock_->sockfd();
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,
             utils::unique_ptr<c_api::ICallback>(new ClientWriteCallback(*this, rs->Dump()))) != 0) {
@@ -116,6 +120,7 @@ ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client, s
 
 void ClientSession::ClientWriteCallback::Call(int /*fd*/)
 {    
+    LOG(DEBUG) << "ClientWriteCallback::Call";
     // assert fd == client_sock.fd
     ssize_t bytes_sent = client_.client_sock_->Send(buf_, buf_send_idx_,
                                                     buf_.size() - buf_send_idx_);
@@ -135,6 +140,7 @@ ClientSession::ClientProceedWithResponseCallback::ClientProceedWithResponseCallb
 }
 
 void ClientSession::ClientProceedWithResponseCallback::Call(utils::unique_ptr<http::Response> rs) {
+    LOG(DEBUG) << "ClientProceedWithResponseCallback::Call -> client_.PrepareResponse";
     client_.PrepareResponse(rs);
     // ssize_t bytes_recvd = rs_builder_.bodygen_sock()->Recv();
     // if (bytes_recvd < 0) {

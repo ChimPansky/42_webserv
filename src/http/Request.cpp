@@ -2,6 +2,7 @@
 
 #include <logger.h>
 #include <str_utils.h>
+#include "ResponseCodes.h"
 
 namespace http {
 
@@ -22,7 +23,7 @@ void Request::Print() const
 {
     LOG(DEBUG) << "---Request---";
     LOG(DEBUG) << "Status: "
-               << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_BAD ? "Bad" : "Good"));
+               << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_GOOD ? "Good" : "Bad"));
     LOG(DEBUG) << "Method: " << method;
     LOG(DEBUG) << "URI: " << uri;
     LOG(DEBUG) << "Version: " << version;

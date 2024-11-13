@@ -1,5 +1,6 @@
 #include "RequestBuilder.h"
 #include "Request.h"
+#include "ResponseCodes.h"
 
 #include <cctype>
 #include <cstring>
@@ -84,12 +85,10 @@ void RequestBuilder::Build(size_t bytes_recvd)
             parser_.StartNewElement();
         }
     }
-    if (build_state_ == BS_END) {
-        rq_.status = RQ_GOOD;
-        builder_status_ = RB_DONE;
-    }
-    if (build_state_ == BS_BAD_REQUEST) {
-        rq_.status = RQ_BAD;
+    if (build_state_ == BS_END || build_state_ == BS_BAD_REQUEST) {
+        if (build_state_ == BS_END) {
+            rq_.status = RQ_GOOD;
+        }
         builder_status_ = RB_DONE;
     }
 }
@@ -136,7 +135,7 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
             return BS_URI;
         }
         if (parser_.ElementLen() > 7) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         parser_.Advance(1);
         // TODO: Fix EndOfBuffer() && no new bytes coming in --> endless loop
@@ -149,8 +148,11 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 RequestBuilder::BuildState RequestBuilder::BuildUri_()
 {
     while (!parser_.EndOfBuffer()) {
-        if (parser_.ExceededLineLimit() || parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
-            return BS_BAD_REQUEST;  // todo: 414 Request-URI Too Long
+        if (parser_.ExceededLineLimit()) {
+            return Error_(RQ_BAD); 
+        }
+        if (parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
+            return Error_(RQ_URI_TOO_LONG);
         }
         if (parser_.Peek() == ' ') {
             if (parser_.ElementLen() > 1) {
@@ -158,7 +160,7 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_()
                 parser_.Advance();
                 return BS_VERSION;
             } else {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             }
         }
         parser_.Advance();
@@ -189,7 +191,7 @@ RequestBuilder::BuildState RequestBuilder::BuildVersion_()
             return BS_BETWEEN_HEADERS;
         }
         if (parser_.ElementLen() > 10) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         parser_.Advance();
     }
@@ -220,7 +222,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_()
         char c = parser_.Peek();
         if (c == ':') {
             if (parser_.ElementLen() == 1) {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             } else {
                 header_key_ = parser_.ExtractElement();
                 parser_.Advance();
@@ -229,7 +231,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_()
                 return BS_HEADER_KEY_VAL_SEP;
             }
         } else if (!(std::isalnum(c) || (parser_.ElementLen() > 1 && c == '-'))) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         parser_[parser_.element_end_idx()] = std::tolower(parser_[parser_.element_end_idx()]);
         parser_.Advance();
@@ -245,7 +247,7 @@ RequestBuilder::BuildState RequestBuilder::ParseHeaderKeyValSep_()
             continue;
         }
         if (parser_.ElementLen() < 2) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         return BS_HEADER_VALUE;
     }
@@ -263,11 +265,11 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderValue_()
             return BS_BETWEEN_HEADERS;
         }
         if (parser_.ElementLen() > 1 && parser_.Peek(-1) == EOL_CARRIAGE_RETURN) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         if (c != EOL_CARRIAGE_RETURN &&
             !std::isprint(c)) {  // TODO: additional checks for valid characters...
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         parser_.Advance();
     }
@@ -287,7 +289,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
     std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
     std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
     if (content_length.first && transfer_encoding.first) {
-        return BS_BAD_REQUEST;
+        return Error_(RQ_BAD);
     }
     if (transfer_encoding.second == "chunked") {
         body_builder_.chunked = true;
@@ -301,11 +303,11 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
                 content_length_num.second;  // TODO: content-length limits?
             return BS_CHECK_BODY_REGULAR_LENGTH;
         } else {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
     }
     if (rq_.method == HTTP_POST) {
-        return BS_BAD_REQUEST;
+        return Error_(RQ_BAD);
     }
     return BS_END;
 }
@@ -313,7 +315,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
 RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_()
 {
     if (body_builder_.remaining_length > body_builder_.max_body_size) {
-        return BS_BAD_REQUEST;
+        return Error_(RQ_BAD);
     }
     body_builder_.body->resize(body_builder_.remaining_length);
     return BS_BODY_REGULAR;
@@ -347,12 +349,12 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
             std::pair<bool, size_t> converted_size =
                 utils::HexToUnsignedNumericNoThrow<size_t>(parser_.ExtractElement(-1));
             if (!converted_size.first) {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             }
             body_builder_.remaining_length =
                 converted_size.second;  // TODO: check for chunk size limits
             if (rq_.body.size() + body_builder_.remaining_length > body_builder_.max_body_size) {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             }
             if (body_builder_.remaining_length == 0) {
                 return BS_END;
@@ -374,7 +376,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
     while (!parser_.EndOfBuffer() && parser_.ElementLen() <= body_builder_.remaining_length + 2) {
         if (CheckForEOL_()) {
             if (parser_.ElementLen() - 2 != body_builder_.remaining_length) {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             }
             size_t old_sz = body_builder_.body->size();
             body_builder_.body->resize(old_sz + body_builder_.remaining_length);
@@ -410,6 +412,11 @@ bool RequestBuilder::CheckForEOL_() const
 bool RequestBuilder::IsParsingState_(BuildState state) const
 {
     return (state != BS_AFTER_HEADERS && state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH);
+}
+
+RequestBuilder::BuildState RequestBuilder::Error_(RqStatus status) {
+    rq_.status = status;
+    return BS_BAD_REQUEST;
 }
 
 }  // namespace http
