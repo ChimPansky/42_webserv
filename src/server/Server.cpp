@@ -1,8 +1,5 @@
 #include <IResponseProcessor.h>
-#include <Request.h>
 #include <Server.h>
-
-#include <utility>
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),

@@ -1,14 +1,7 @@
 #include "ServerCluster.h"
 
-#include <Config.h>
 #include <EventManager.h>
-#include <Server.h>
 #include <c_api_utils.h>
-#include <shared_ptr.h>
-
-#include <string>
-
-#include "ClientSession.h"
 
 namespace {
 void SigIntHandler(int /*signum*/)
