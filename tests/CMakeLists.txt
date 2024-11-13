@@ -26,6 +26,22 @@ add_test(
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test_data/configs
 )
 
+# ServerMatching
+add_executable(server_matching server_matching_test.cpp)
+target_link_libraries(server_matching PRIVATE Server gtest gtest_main)
+add_test(
+    NAME server_matching
+    COMMAND ./server_matching
+)
+
+# Uri
+add_executable(uri_test uri_test.cpp)
+target_link_libraries(uri_test PRIVATE Http gtest gtest_main)
+add_test(
+    NAME uri_test
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/uri_test
+)
+
 # Valgrind
 add_test(
     NAME valgrind_idle_test
