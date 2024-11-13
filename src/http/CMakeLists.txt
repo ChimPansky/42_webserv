@@ -21,6 +21,7 @@ add_library(Http
     RequestBuilder.cpp
     RequestParser.cpp
     Response.cpp
+    Uri.cpp
     ${RESPONSE_CODES_CPP}  # RESPONSE_CODES_CPP is the output of custom command, which creates implicit dependency on that command
 )
 

@@ -1,6 +1,7 @@
 #ifndef WS_SERVER_SERVER_H
 #define WS_SERVER_SERVER_H
 
+#include <Location.h>
 #include <LocationConfig.h>
 #include <Request.h>
 #include <Response.h>
@@ -8,10 +9,6 @@
 #include <shared_ptr.h>
 #include <unique_ptr.h>
 
-#include <string>
-#include <vector>
-
-#include "Location.h"
 
 enum MatchType {
     NO_MATCH = 0,
@@ -32,6 +29,8 @@ class Server {
 
   public:
     // only check hostname probably.
+    static std::pair<MatchType, std::string> MatchHostName(const std::string& host,
+                                                           const std::vector<std::string>&);
     std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
     utils::shared_ptr<Location> ChooseLocation(const http::Request& rq) const;
     // has to call IResponseCallback with rs when the last is rdy
@@ -39,11 +38,17 @@ class Server {
                        utils::unique_ptr<http::IResponseCallback> cb) const;
 
     std::string name() const;
-
-    const config::ServerConfig& server_config() const { return server_config_; }
+    const std::string& access_log_path() const;
+    Severity access_log_level() const;
+    const std::string& error_log_path() const;
+    const std::vector<config::LocationConfig>& locations() const;
+    std::string GetInfo() const;
 
   private:
-    config::ServerConfig server_config_;
+    std::string access_log_path_;
+    Severity access_log_level_;
+    std::string error_log_path_;
+    std::vector<std::string> server_names_;
 
     std::vector<utils::shared_ptr<Location> > locations_;
     typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;

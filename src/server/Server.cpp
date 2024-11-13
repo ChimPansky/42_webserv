@@ -1,13 +1,10 @@
-#include "Server.h"
-
 #include <iostream>
-#include <utility>
+#include <IResponseProcessor.h>
+#include <Server.h>
 
-#include "IResponseProcessor.h"
-#include "Location.h"
-#include "Request.h"
-
-Server::Server(const config::ServerConfig& cfg) : server_config_(cfg)
+Server::Server(const config::ServerConfig& cfg)
+    : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
+      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names())
 {
     typedef std::vector<config::LocationConfig>::const_iterator LocationConfigConstIt;
 
@@ -18,10 +15,25 @@ Server::Server(const config::ServerConfig& cfg) : server_config_(cfg)
 
 std::string Server::name() const
 {
-    if (server_config_.server_names().empty()) {
+    if (server_names_.empty()) {
         return std::string();
     }
-    return server_config_.server_names()[0];
+    return server_names_[0];
+}
+
+const std::string& Server::access_log_path() const
+{
+    return access_log_path_;
+}
+
+Severity Server::access_log_level() const
+{
+    return access_log_level_;
+}
+
+const std::string& Server::error_log_path() const
+{
+    return error_log_path_;
 }
 
 utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) const
@@ -44,7 +56,7 @@ utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) cons
         return utils::shared_ptr<Location>(new Location());
     }
     std::cout << "Matched location: " << best_match.second << std::endl;
-    return matched_location;
+    return (best_match.second.empty() ? utils::shared_ptr<Location>(new Location()) : matched_location);
 }
 
 // if returns nullptr, rs is the valid response right away
@@ -72,13 +84,13 @@ void Server::AcceptRequest(const http::Request& rq,
     }
 }
 
-std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
+std::pair<MatchType, std::string> Server::MatchHostName(
+    const std::string& host, const std::vector<std::string>& server_names)
 {
     typedef std::vector<std::string>::const_iterator NamesIter;
-    std::string host = rq.GetHeaderVal("host").second;
-    std::vector<std::string> server_names_ = server_config_.server_names();
+    std::pair<MatchType, std::string> best_match = std::make_pair(NO_MATCH, std::string());
 
-    for (NamesIter it = server_names_.begin(); it != server_names_.end(); ++it) {
+    for (NamesIter it = server_names.begin(); it != server_names.end(); ++it) {
         std::string server_name = *it;
 
         if (host == server_name) {
@@ -86,43 +98,38 @@ std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request&
         } else if (server_name[0] == '*' && host.size() >= server_name.size() &&
                    host.compare(host.size() - (server_name.size() - 1), server_name.size() - 1,
                                 server_name.substr(1)) == 0) {
-            return std::make_pair(PREFIX_MATCH, server_name);
+            best_match = std::make_pair(PREFIX_MATCH, server_name);
         } else if (server_name[server_name.size() - 1] == '*' &&
                    host.size() >= server_name.size() && server_name.size() > 2 &&
                    host.compare(0, server_name.size() - 1, server_name, 0,
                                 server_name.size() - 1) == 0) {
-            return std::make_pair(SUFFIX_MATCH, server_name);
+            best_match = std::make_pair(SUFFIX_MATCH, server_name);
         }
     }
-    return std::make_pair(NO_MATCH, std::string());
+    return best_match;
 }
 
-// int main() {
+std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
+{
+    return MatchHostName(rq.GetHeaderVal("host").second, server_names_);
+}
 
-//     std::cout << "Match:" << std::endl;
-//     TestMatch("server1");  // should match
-//     TestMatch("server2");  // should match
-//     TestMatch("server3");  // should match
+std::string Server::GetInfo() const
+{
+    std::ostringstream oss;
 
-//     TestMatch("sub.sub.example.com");  // should match
+    oss << "\n\t--Server information: --";
+    oss << "\n\tAccess log path: " << access_log_path_;
+    oss << "\n\tAccess log level: " << access_log_level_;
+    oss << "\n\tError log path: " << error_log_path_;
+    oss << "\n\tServer names:";
 
-//     // prefix match
-//     TestMatch("www.example.com");  // should match
-//     TestMatch("shop.example.com"); // should match
-//     std::cout << std::endl << "Don't match:" << std::endl;
-//     TestMatch("example.com");      // shouldn't match
+    for (size_t i = 0; i < server_names_.size(); i++) {
+        oss << " " << server_names_[i];
+    }
+    /* for (size_t i = 0; i < locations_.size(); i++) {
+        locations_[i].GetInfo();
+    } */
 
-//     TestMatch("server123");   // shouldn't match
-//     TestMatch("serverx");     // shouldn't match
-//     TestMatch("serversuffix");// shouldn't match
-
-//     TestMatch("randomhost");  // shouldn't match
-//     TestMatch("example.org"); // shouldn't match
-
-//     TestMatch("");  // shouldn't match
-//     TestMatch("wwwexample.com");  // shouldn't match
-//     TestMatch("www.examplecom");  // shouldn't match
-
-//     TestMatch("example.co");       // shouldn't match
-//     TestMatch("sub.example.co");   // shouldn't match
-// }
+    return oss.str();
+}
