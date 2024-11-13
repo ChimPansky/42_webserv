@@ -4,15 +4,38 @@
 
 #include <utility>
 
-Server::Server(const config::ServerConfig& cfg) : server_config_(cfg)
+Server::Server(const config::ServerConfig& cfg)
+    : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
+      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names()),
+      locations_(cfg.locations())
 {}
 
 std::string Server::name() const
 {
-    if (server_config_.server_names().empty()) {
+    if (server_names_.empty()) {
         return std::string();
     }
-    return server_config_.server_names()[0];
+    return server_names_[0];
+}
+
+const std::string& Server::access_log_path() const
+{
+    return access_log_path_;
+}
+
+Severity Server::access_log_level() const
+{
+    return access_log_level_;
+}
+
+const std::string& Server::error_log_path() const
+{
+    return error_log_path_;
+}
+
+const std::vector<config::LocationConfig>& Server::locations() const
+{
+    return locations_;
 }
 
 // if returns nullptr, rs is the valid response right away
@@ -64,7 +87,27 @@ std::pair<MatchType, std::string> Server::MatchHostName(
     return best_match;
 }
 
+std::string Server::GetInfo() const
+{
+    std::ostringstream oss;
+
+    oss << "\n\t--Server information: --";
+    oss << "\n\tAccess log path: " << access_log_path_;
+    oss << "\n\tAccess log level: " << access_log_level_;
+    oss << "\n\tError log path: " << error_log_path_;
+    oss << "\n\tServer names:";
+
+    for (size_t i = 0; i < server_names_.size(); i++) {
+        oss << " " << server_names_[i];
+    }
+    /* for (size_t i = 0; i < locations_.size(); i++) {
+        locations_[i].GetInfo();
+    } */
+
+    return oss.str();
+}
+
 std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
 {
-    return MatchHostName(rq.GetHeaderVal("host").second, server_config_.server_names());
+    return MatchHostName(rq.GetHeaderVal("host").second, server_names_);
 }
