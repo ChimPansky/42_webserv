@@ -1,9 +1,8 @@
 
 #include "Server.h"
+
 #include "IResponseProcessor.h"
 #include "Request.h"
-
-#include <iostream>
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
@@ -41,21 +40,21 @@ const std::string& Server::error_log_path() const
 
 utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) const
 {
-    std::pair<bool, std::string> best_match(false, std::string());
+    std::pair<std::string, bool> best_match(std::string(), false);
     utils::shared_ptr<Location> matched_location;
 
     for (LocationsConstIt it = locations_.begin(); it != locations_.end(); ++it) {
-        std::pair<bool, std::string> match_result = (*it)->MatchedRoute(rq);
+        std::pair<std::string, bool> match_result = (*it)->MatchedRoute(rq);
 
-        if ((match_result.second.length() > best_match.second.length() &&
-             match_result.first == best_match.first) ||
-            match_result.first > best_match.first) {
+        if ((match_result.first.length() > best_match.first.length() &&
+             match_result.second == best_match.second) ||
+            match_result.second > best_match.second) {
             best_match = match_result;
             matched_location = *it;
         }
     }
-    return (best_match.second.empty() ? utils::shared_ptr<Location>(new Location())
-                                      : matched_location);
+    return (best_match.first.empty() ? utils::shared_ptr<Location>(new Location())
+                                     : matched_location);
 }
 
 // if returns nullptr, rs is the valid response right away

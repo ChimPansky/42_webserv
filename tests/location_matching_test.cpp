@@ -6,55 +6,54 @@ TEST(LocationTest, ExactMatch)
 {
     std::pair<std::string, bool /* is exact match */> route("/path", true);
 
-    std::pair<bool, std::string> result = Location::MatchUriPath("/path", route);
-    EXPECT_EQ(result.first, true);
-    EXPECT_EQ(result.second, "/path");
+    std::pair<std::string, bool> result = Location::MatchUriPath("/path", route);
+    EXPECT_EQ(result.first, "/path");
+    EXPECT_EQ(result.second, true);
 
     result = Location::MatchUriPath("/pathh", route);
-    EXPECT_EQ(result.first, false);
-    EXPECT_EQ(result.second, "");
+    EXPECT_EQ(result.first, "");
+    EXPECT_EQ(result.second, false);
 }
 
 TEST(LocationTest, PrefixMatch)
 {
     std::pair<std::string, bool /* is exact match */> route("/path", false);
 
-    std::pair<bool, std::string> result = Location::MatchUriPath("/path/to/resource", route);
-    EXPECT_EQ(result.first, false);
-    EXPECT_EQ(result.second, "/path");
+    std::pair<std::string, bool> result = Location::MatchUriPath("/path/to/resource", route);
+    EXPECT_EQ(result.first, "/path");
+    EXPECT_EQ(result.second, false);
 
     result = Location::MatchUriPath("/path", route);
-    EXPECT_EQ(result.first, false);
-    EXPECT_EQ(result.second, "/path");
+    EXPECT_EQ(result.first, "/path");
+    EXPECT_EQ(result.second, false);
 }
 
 TEST(LocationTest, NoMatch)
 {
     std::pair<std::string, bool /* is exact match */> route("/path", true);
 
-    std::pair<bool, std::string> result = Location::MatchUriPath("/pat", route);
-    EXPECT_EQ(result.first, false);
-    EXPECT_EQ(result.second, "");
+    std::pair<std::string, bool> result = Location::MatchUriPath("/pat", route);
+    EXPECT_EQ(result.first, "");
+    EXPECT_EQ(result.second, false);
 
     result = Location::MatchUriPath("/path/to/resource", route);
-    EXPECT_EQ(result.first, false);
-    EXPECT_EQ(result.second, "");
+    EXPECT_EQ(result.first, "");
+    EXPECT_EQ(result.second, false);
 }
-
 
 TEST(LocationTest, NoPrefixMatch)
 {
     std::pair<std::string, bool /* is exact match */> route("/path", false);
 
-    std::pair<bool, std::string> result = Location::MatchUriPath("/other/path", route);
-    EXPECT_EQ(result.first, false);
-    EXPECT_EQ(result.second, "");
+    std::pair<std::string, bool> result = Location::MatchUriPath("/other/path", route);
+    EXPECT_EQ(result.first, "");
+    EXPECT_EQ(result.second, false);
 
     result = Location::MatchUriPath("/pathto/resource", route);
-    EXPECT_EQ(result.first, false);
-    EXPECT_EQ(result.second, "");
+    EXPECT_EQ(result.first, "");
+    EXPECT_EQ(result.second, false);
 
     result = Location::MatchUriPath("/pat", route);
-    EXPECT_EQ(result.first, false);
-    EXPECT_EQ(result.second, "");
+    EXPECT_EQ(result.first, "");
+    EXPECT_EQ(result.second, false);
 }

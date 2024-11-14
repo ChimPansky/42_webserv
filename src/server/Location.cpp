@@ -43,22 +43,23 @@ unsigned int Location::client_max_body_size() const
     return client_max_body_size_;
 }
 
-std::pair<bool, std::string> Location::MatchUriPath(const std::string& path,
-                                                    const std::pair<std::string, bool>& route)
+std::pair<std::string /* path in uri */, bool /* is exact match */> Location::MatchUriPath(
+    const std::string& path, const std::pair<std::string, bool>& route)
 {
     const std::string& route_path = route.first;
     bool is_exact_match = route.second;
 
     if (path == route_path) {
-        return std::make_pair(is_exact_match, route_path);
+        return std::make_pair(route_path, is_exact_match);
     } else if (!is_exact_match && path.compare(0, route_path.size(), route_path) == 0 &&
                path[route_path.size()] == '/') {
-        return std::make_pair(false, route_path);
+        return std::make_pair(route_path, false);
     }
-    return std::make_pair(false, std::string());
+    return std::make_pair(std::string(), false);
 }
 
-std::pair<bool, std::string> Location::MatchedRoute(const http::Request& rq) const
+std::pair<std::string /* path in uri */, bool /* is exact match */> Location::MatchedRoute(
+    const http::Request& rq) const
 {
     return MatchUriPath(rq.uri.path(), route_);
 }

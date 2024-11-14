@@ -13,7 +13,8 @@ namespace config {
 
 class LocationConfig {
   private:
-    std::pair<int, std::string> InitRedirect(const std::pair<int, std::string>& value);
+    std::pair<int /* status code */, std::string /* new route */> InitRedirect(
+        const std::pair<int, std::string>& value);
 
   public:
     enum Method {
@@ -21,17 +22,17 @@ class LocationConfig {
         POST,
         DELETE
     };
-    LocationConfig(const std::pair<std::string, /* is exact match */ bool>& route,
+    LocationConfig(const std::pair<std::string /* path */, bool /* is exact match */>& route,
                    const std::vector<Method>& allowed_methods,
-                   const std::pair<int, std::string>& redirect,
+                   const std::pair<int /* status code */, std::string /* new route */>& redirect,
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
                    const std::vector<std::string>& default_file, bool dir_listing,
                    unsigned int client_max_body_size);
 
-    const std::pair<std::string, /* is exact match */ bool>& route() const;
+    const std::pair<std::string /* path */, /* is exact match */ bool>& route() const;
     const std::vector<Method>& allowed_methods() const;
-    const std::pair<int, std::string>& redirect() const;
+    const std::pair<int /* status code */, std::string /* new route */>& redirect() const;
     bool is_cgi() const;
     const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
@@ -70,7 +71,7 @@ class LocationConfig {
         default_cgi_extensions.push_back(".php");
         return default_cgi_extensions;
     }
-    static inline std::pair<std::string, bool> kDefaultRoute()
+    static inline std::pair<std::string /* path */, bool /* is exact match */> kDefaultRoute()
     {
         return std::make_pair("/", false);
     }
@@ -78,7 +79,7 @@ class LocationConfig {
     void Print() const;
 
   private:
-    std::pair<std::string, bool> route_;
+    std::pair<std::string /* path */, bool /* is exact match */> route_;
     std::vector<Method> allowed_methods_;
     std::pair<int /* status code */, std::string /* new route */> redirect_;
     bool is_cgi_;

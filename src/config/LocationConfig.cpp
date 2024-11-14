@@ -2,21 +2,20 @@
 
 namespace config {
 
-LocationConfig::LocationConfig(const std::pair<std::string, bool>& route,
-                               const std::vector<Method>& allowed_methods,
-                               const std::pair<int, std::string>& redirect,
-                               const std::vector<std::string>& cgi_paths,
-                               const std::vector<std::string>& cgi_extensions,
-                               const std::string& root_dir,
-                               const std::vector<std::string>& default_file, bool dir_listing,
-                               unsigned int client_max_body_size)
+LocationConfig::LocationConfig(
+    const std::pair<std::string /* path */, bool /* is exact match */>& route,
+    const std::vector<Method>& allowed_methods,
+    const std::pair<int /* status code */, std::string /* new route */>& redirect,
+    const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,
+    const std::string& root_dir, const std::vector<std::string>& default_file, bool dir_listing,
+    unsigned int client_max_body_size)
     : route_(route), allowed_methods_(allowed_methods), redirect_(InitRedirect(redirect)),
       is_cgi_(route.first == "/cgi-bin/" || route.first == "/cgi-bin"), cgi_paths_(cgi_paths),
       cgi_extensions_(cgi_extensions), root_dir_(root_dir), default_file_(default_file),
       dir_listing_(dir_listing), client_max_body_size_(client_max_body_size)
 {}
 
-const std::pair<std::string, bool>& LocationConfig::route() const
+const std::pair<std::string /* path */, bool /* is exact match */>& LocationConfig::route() const
 {
     return route_;
 }
@@ -26,7 +25,8 @@ const std::vector<LocationConfig::Method>& LocationConfig::allowed_methods() con
     return allowed_methods_;
 }
 
-const std::pair<int, std::string>& LocationConfig::redirect() const
+const std::pair<int /* status code */, std::string /* new route */>& LocationConfig::redirect()
+    const
 {
     return redirect_;
 }
@@ -66,7 +66,8 @@ unsigned int LocationConfig::client_max_body_size() const
     return client_max_body_size_;
 }
 
-std::pair<int, std::string> LocationConfig::InitRedirect(const std::pair<int, std::string>& value)
+std::pair<int /* status code */, std::string /* new route */> LocationConfig::InitRedirect(
+    const std::pair<int, std::string>& value)
 {
     if (value.first < 300 || value.first > 399) {
         throw std::runtime_error("Invalid configuration file: invalid redirect status code.");
