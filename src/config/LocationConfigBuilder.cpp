@@ -4,8 +4,6 @@
 #include <str_utils.h>
 #include <sys/types.h>
 
-#include "http.h"
-
 namespace config {
 
 static std::pair<std::string, bool> ParseRoute(const std::vector<std::string>& vals)

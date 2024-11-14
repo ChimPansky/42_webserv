@@ -50,7 +50,6 @@ class LocationConfig {
     {
         std::vector<http::Method> default_methods;
         default_methods.push_back(http::HTTP_GET);
-        default_methods.push_back(http::HTTP_POST);
         return default_methods;
     }
     static inline std::vector<std::string> kDefaultCgiPath()
