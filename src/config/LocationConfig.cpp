@@ -3,7 +3,7 @@
 namespace config {
 
 LocationConfig::LocationConfig(const std::pair<std::string, bool>& route,
-                               const std::vector<Method>& allowed_methods,
+                               const std::vector<http::Method>& allowed_methods,
                                const std::pair<int, std::string>& redirect,
                                const std::vector<std::string>& cgi_paths,
                                const std::vector<std::string>& cgi_extensions,
@@ -21,7 +21,7 @@ const std::pair<std::string, bool>& LocationConfig::route() const
     return route_;
 }
 
-const std::vector<LocationConfig::Method>& LocationConfig::allowed_methods() const
+const std::vector<http::Method>& LocationConfig::allowed_methods() const
 {
     return allowed_methods_;
 }
