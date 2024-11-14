@@ -4,6 +4,8 @@
 #include <logger.h>
 #include <cstring>
 
+#include <iostream>
+
 namespace http {
 
 
@@ -41,10 +43,12 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
         }
         fragment_.second = decoded_str.second;
     }
-
-
-    // Decode();
-    // Normalize();
+    std::pair<bool, std::string> normalized_path = Normalize_(path_);
+    if (!normalized_path.first) {
+        validity_state_ |= URI_BAD_PATH_BIT;
+        return;
+    }
+    path_ = normalized_path.second;
     //Validate_();
 }
 
@@ -153,6 +157,67 @@ std::pair<bool /*valid*/, std::string> Uri::PercentDecode_(const std::string& st
         }
     }
     return std::pair<bool, std::string>(true, decoded);
+}
+
+std::pair<bool /*valid*/, std::string> Uri::Normalize_(std::string input) const {
+    std::string normalized;
+    int dir_level = 0;
+    while (!input.empty()) {
+        std::cout << "input: " << input << std::endl;/////////////7
+        if (input.compare(0, 3, "../") == 0) {
+            input.erase(0, 3);
+        }
+        else if (input.compare(0, 2, "./") == 0) {
+            input.erase(0, 2);
+        }
+        else if (input.compare(0, 3, "/./") == 0) {
+            input.erase(1, 2);
+        }
+        else if (input.compare(0, 2, "/.") == 0) {
+            input.erase(1, 1);
+        } 
+        else if (input.compare(0, 4, "/../") == 0) {
+            input.erase(0, 3);
+            size_t last_segment = normalized.find_last_of('/');
+            if (last_segment != std::string::npos) {
+                normalized.erase(last_segment);
+            }
+            else {
+                normalized.clear();
+            }
+            dir_level--;
+        }
+        else if (input.compare(0, 3, "/..") == 0) {
+            input.erase(1, 2);
+            size_t last_segment = normalized.find_last_of('/');
+            if (last_segment != std::string::npos) {
+                normalized.erase(last_segment);
+            }
+            else {
+                normalized.clear();
+            }
+            dir_level--;
+        }
+        else if (input == "." || input == "..") {
+            input.clear();
+        }
+        else {
+            size_t next_segment = input.find_first_of('/');
+            if (next_segment != std::string::npos) {
+                normalized += input.substr(0, next_segment);
+                input.erase(0, next_segment);
+            }
+            else {
+                normalized += input;
+                input.clear();
+            }
+            dir_level++;
+        }
+        if (dir_level < 0) {
+            return std::pair<bool, std::string>(false, "");
+        }
+    }
+    return std::pair<bool, std::string>(true, normalized);
 }
 
 // Normalize():

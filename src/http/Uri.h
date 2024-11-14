@@ -54,6 +54,7 @@ class Uri {
     void ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos);
 
     std::pair<bool /*valid*/, std::string> PercentDecode_(const std::string& str, const char* ignore_set = NULL) const;
+    std::pair<bool /*valid*/, std::string> Normalize_(std::string str) const;
 
     // helpers:
     bool IsValidPathChar_(char c) const;

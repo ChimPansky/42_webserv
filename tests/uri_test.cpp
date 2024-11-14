@@ -211,3 +211,11 @@ TEST(DecodeTests, 20_Test_Fragment) {
     EXPECT_EQ(uri.fragment(), "top ");
     EXPECT_EQ(uri.Good(), true);
 }
+
+TEST(NormalizeTests, 30_Test_Path) {
+    http::Uri uri = http::Uri("/../");
+    EXPECT_EQ(uri.path(), "/../");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), false);
+}
