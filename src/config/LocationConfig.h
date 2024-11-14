@@ -1,6 +1,7 @@
 #ifndef WS_LOCATIONCONFIG_H
 #define WS_LOCATIONCONFIG_H
 
+#include <http.h>
 #include <logger.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -16,13 +17,8 @@ class LocationConfig {
     std::pair<int, std::string> InitRedirect(const std::pair<int, std::string>& value);
 
   public:
-    enum Method {
-        GET,
-        POST,
-        DELETE
-    };
     LocationConfig(const std::pair<std::string, /* is exact match */ bool>& route,
-                   const std::vector<Method>& allowed_methods,
+                   const std::vector<http::Method>& allowed_methods,
                    const std::pair<int, std::string>& redirect,
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
@@ -30,7 +26,7 @@ class LocationConfig {
                    unsigned int client_max_body_size);
 
     const std::pair<std::string, /* is exact match */ bool>& route() const;
-    const std::vector<Method>& allowed_methods() const;
+    const std::vector<http::Method>& allowed_methods() const;
     const std::pair<int, std::string>& redirect() const;
     bool is_cgi() const;
     const std::vector<std::string>& cgi_paths() const;
@@ -50,11 +46,11 @@ class LocationConfig {
         return default_file;
     }
     static inline bool kDefaultDirListing() { return false; }
-    static inline std::vector<Method> kDefaultAllowedMethods()
+    static inline std::vector<http::Method> kDefaultAllowedMethods()
     {
-        std::vector<Method> default_methods;
-        default_methods.push_back(GET);
-        default_methods.push_back(POST);
+        std::vector<http::Method> default_methods;
+        default_methods.push_back(http::HTTP_GET);
+        default_methods.push_back(http::HTTP_POST);
         return default_methods;
     }
     static inline std::vector<std::string> kDefaultCgiPath()
@@ -79,7 +75,7 @@ class LocationConfig {
 
   private:
     std::pair<std::string, bool> route_;
-    std::vector<Method> allowed_methods_;
+    std::vector<http::Method> allowed_methods_;
     std::pair<int /* status code */, std::string /* new route */> redirect_;
     bool is_cgi_;
     std::vector<std::string> cgi_paths_;

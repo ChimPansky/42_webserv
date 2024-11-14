@@ -77,17 +77,17 @@ TEST(ConfigTest, LoadValidConfig)
                 if (location_conf.route().first == "/docs/") {
                     EXPECT_EQ(location_conf.root_dir(), "/docs");
                     EXPECT_EQ(location_conf.allowed_methods()[0],
-                              config::LocationConfig::Method::GET);
+                              http::Method::HTTP_GET);
                     EXPECT_EQ(location_conf.allowed_methods()[1],
-                              config::LocationConfig::Method::POST);
+                              http::Method::HTTP_POST);
                     EXPECT_EQ(location_conf.client_max_body_size(), 5 << 20);  // 5 MB in bytes
                 } else if (location_conf.route().first == "/error_pages/") {
                     EXPECT_EQ(location_conf.root_dir(), "/docs");
                     EXPECT_EQ(location_conf.dir_listing(), true);
                     EXPECT_EQ(location_conf.allowed_methods()[0],
-                              config::LocationConfig::Method::GET);
+                              http::Method::HTTP_GET);
                     EXPECT_EQ(location_conf.allowed_methods()[1],
-                              config::LocationConfig::Method::POST);
+                              http::Method::HTTP_POST);
                     EXPECT_EQ(location_conf.client_max_body_size(), 4 << 20);
                 }
             }

@@ -1,8 +1,10 @@
 #include "LocationConfigBuilder.h"
 
-#include <sys/types.h>
 #include <numeric_utils.h>
 #include <str_utils.h>
+#include <sys/types.h>
+
+#include "http.h"
 
 namespace config {
 
@@ -33,17 +35,17 @@ static std::pair<std::string, bool> BuildRoute(const std::string& vals)
 }
 
 // TODO : Location config::Get -> http::Get/ HOWTO?
-static std::vector<LocationConfig::Method> ParseAllowedMethods(const std::vector<std::string>& vals)
+static std::vector<http::Method> ParseAllowedMethods(const std::vector<std::string>& vals)
 {
-    std::vector<LocationConfig::Method> allowed_methods;
+    std::vector<http::Method> allowed_methods;
 
     for (size_t i = 0; i < vals.size(); i++) {
         if (vals[i] == "GET") {
-            allowed_methods.push_back(LocationConfig::GET);
+            allowed_methods.push_back(http::HTTP_GET);
         } else if (vals[i] == "POST") {
-            allowed_methods.push_back(LocationConfig::POST);
+            allowed_methods.push_back(http::HTTP_POST);
         } else if (vals[i] == "DELETE") {
-            allowed_methods.push_back(LocationConfig::DELETE);
+            allowed_methods.push_back(http::HTTP_DELETE);
         } else {
             throw std::runtime_error("Invalid configuration file: invalid method: " + vals[i]);
         }
@@ -51,7 +53,7 @@ static std::vector<LocationConfig::Method> ParseAllowedMethods(const std::vector
     return allowed_methods;
 }
 
-static std::vector<LocationConfig::Method> BuildAllowedMethods(const std::vector<std::string>& vals)
+static std::vector<http::Method> BuildAllowedMethods(const std::vector<std::string>& vals)
 {
     std::vector<std::string> allowed_methods;
     if (vals.empty()) {
@@ -225,8 +227,7 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
         }
     }
     std::pair<std::string, bool> route = BuildRoute(f.nesting_lvl_descr());
-    std::vector<LocationConfig::Method> allowed_methods =
-        BuildAllowedMethods(f.FindSetting("limit_except"));
+    std::vector<http::Method> allowed_methods = BuildAllowedMethods(f.FindSetting("limit_except"));
     std::pair<int, std::string> redirect = BuildRedirect(f.FindSetting("return"));
     std::vector<std::string> cgi_paths = BuildCgiPaths(f.FindSetting("cgi_path"));
     std::vector<std::string> cgi_extensions = BuildCgiExtensions(f.FindSetting("cgi_extension"));
