@@ -1,5 +1,7 @@
-#include <IResponseProcessor.h>
-#include <Server.h>
+
+#include "Server.h"
+#include "IResponseProcessor.h"
+#include "Request.h"
 
 #include <iostream>
 
@@ -73,11 +75,13 @@ void Server::AcceptRequest(const http::Request& rq,
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
     if (rq.status == http::RQ_GOOD) {
+        LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
         HelloWorldResponseProcessor tmp(cb);
-    } else if (rq.status == http::RQ_BAD) {
-        GeneratedErrorResponseProcessor tmp(cb, http::HTTP_BAD_REQUEST);
-    } else {
+    } else if (rq.status == http::RQ_INCOMPLETE) {
         throw std::logic_error("trying to accept incomplete rq");
+    } else {
+        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
+        GeneratedErrorResponseProcessor tmp(cb, (http::ResponseCode)rq.status);
     }
 }
 

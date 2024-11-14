@@ -5,6 +5,7 @@
 #include <Response.h>
 #include <unique_ptr.h>
 #include <time_utils.h>
+#include <logger.h>
 
 class ClientSession;
 
@@ -35,7 +36,8 @@ class GeneratedErrorResponseProcessor : public AResponseProcessor {
       hdrs["Server"] = "ft_webserv";
       hdrs["Date"] = utils::GetFormatedTime();
       hdrs["Content-Type"] = "text/html";
-      hdrs["Connection"] = "Closed";
+      // hdrs["Connection"] = "Closed";
+      hdrs["Content-Length"] = utils::NumericToString(body.size());
       response_rdy_cb_->Call(utils::unique_ptr<http::Response>(new http::Response(code, http::HTTP_1_1, hdrs, body)));
     }
   private:

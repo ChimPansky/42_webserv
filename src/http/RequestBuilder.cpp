@@ -1,5 +1,6 @@
 #include "RequestBuilder.h"
 #include "Request.h"
+#include "ResponseCodes.h"
 
 #include <cctype>
 #include <cstring>
@@ -29,9 +30,25 @@ void RequestBuilder::AdjustBufferSize(size_t bytes_recvd)
     parser_.AdjustBufferSize(bytes_recvd);
 }
 
+bool RequestBuilder::CanBuild_()
+{
+    if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
+        return false;
+    }
+    if (build_state_ == BS_BODY_REGULAR && parser_.ElementLen() > 0) {
+        return true;
+    }
+    if (IsParsingState_(build_state_) && parser_.EndOfBuffer()) {
+        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
+        return false;
+    }
+    return true;
+}
+
 // TODO: rm bytes_recvd
 void RequestBuilder::Build(size_t bytes_recvd)
 {
+    LOG(DEBUG) << "RequestBuilder::Build";
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = RQ_BAD;
@@ -51,31 +68,27 @@ void RequestBuilder::Build(size_t bytes_recvd)
             case BS_HEADER_KEY:         build_state_ = BuildHeaderKey_(); break;
             case BS_HEADER_KEY_VAL_SEP: build_state_ = ParseHeaderKeyValSep_(); break;
             case BS_HEADER_VALUE:       build_state_ = BuildHeaderValue_(); break;
-            case BS_AFTER_HEADERS: {
-                 build_state_ = BS_CHECK_FOR_BODY;
-                 builder_status_ = http::RB_NEED_INFO_FROM_SERVER;
-                    return;
-                }
-                break;
+            case BS_AFTER_HEADERS:      build_state_ = NeedToMatchServer_(); break;
             case BS_CHECK_FOR_BODY:     build_state_ = CheckForBody_(); break;
             case BS_CHECK_BODY_REGULAR_LENGTH:  build_state_ = CheckBodyRegularLength_(); break;
             case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
             case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
-            case BS_BAD_REQUEST:
-            case BS_END: {}
+            case BS_BAD_REQUEST: break;
+            case BS_END: break;
+        }
+        if (builder_status_ == RB_NEED_TO_MATCH_SERVER) {
+            LOG(DEBUG) << "NEED_TO_MATCH_SERVER -> break out of Build-Loop";
+            return;
         }
         if (build_state_ != old_state) {
             parser_.StartNewElement();
         }
     }
-    if (build_state_ == BS_BAD_REQUEST) {
-        rq_.status = RQ_BAD;
-    }
-    if (build_state_ == BS_END) {
-        rq_.status = RQ_GOOD;
-    }
-    if (rq_.status != RQ_INCOMPLETE) {
+    if (build_state_ == BS_END || build_state_ == BS_BAD_REQUEST) {
+        if (build_state_ == BS_END) {
+            rq_.status = RQ_GOOD;
+        }
         builder_status_ = RB_DONE;
     }
 }
@@ -84,9 +97,9 @@ void RequestBuilder::ApplyServerInfo(size_t max_body_size)
 {
     body_builder_.max_body_size = max_body_size;
     if (parser_.EndOfBuffer()) {
-        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
+        builder_status_ = RB_NEED_DATA_FROM_CLIENT;
     } else {
-        builder_status_ = http::RB_BUILDING;
+        builder_status_ = RB_BUILDING;
     }
 }
 
@@ -122,7 +135,7 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
             return BS_URI;
         }
         if (parser_.ElementLen() > 7) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         parser_.Advance(1);
     }
@@ -134,8 +147,11 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 RequestBuilder::BuildState RequestBuilder::BuildUri_()
 {
     while (!parser_.EndOfBuffer()) {
-        if (parser_.ExceededLineLimit() || parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
-            return BS_BAD_REQUEST;  // todo: 414 Request-URI Too Long
+        if (parser_.ExceededLineLimit()) {
+            return Error_(RQ_BAD); 
+        }
+        if (parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
+            return Error_(RQ_URI_TOO_LONG);
         }
         if (parser_.Peek() == ' ') {
             if (parser_.ElementLen() > 1) {
@@ -143,7 +159,7 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_()
                 parser_.Advance();
                 return BS_VERSION;
             } else {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             }
         }
         parser_.Advance();
@@ -174,7 +190,7 @@ RequestBuilder::BuildState RequestBuilder::BuildVersion_()
             return BS_BETWEEN_HEADERS;
         }
         if (parser_.ElementLen() > 10) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         parser_.Advance();
     }
@@ -205,7 +221,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_()
         char c = parser_.Peek();
         if (c == ':') {
             if (parser_.ElementLen() == 1) {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             } else {
                 header_key_ = parser_.ExtractElement();
                 parser_.Advance();
@@ -214,7 +230,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_()
                 return BS_HEADER_KEY_VAL_SEP;
             }
         } else if (!(std::isalnum(c) || (parser_.ElementLen() > 1 && c == '-'))) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         parser_[parser_.element_end_idx()] = std::tolower(parser_[parser_.element_end_idx()]);
         parser_.Advance();
@@ -230,7 +246,7 @@ RequestBuilder::BuildState RequestBuilder::ParseHeaderKeyValSep_()
             continue;
         }
         if (parser_.ElementLen() < 2) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         return BS_HEADER_VALUE;
     }
@@ -248,15 +264,20 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderValue_()
             return BS_BETWEEN_HEADERS;
         }
         if (parser_.ElementLen() > 1 && parser_.Peek(-1) == EOL_CARRIAGE_RETURN) {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         if (c != EOL_CARRIAGE_RETURN &&
             !std::isprint(c)) {  // TODO: additional checks for valid characters...
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
         parser_.Advance();
     }
     return BS_HEADER_VALUE;
+}
+
+RequestBuilder::BuildState RequestBuilder::NeedToMatchServer_() {
+    builder_status_ = http::RB_NEED_TO_MATCH_SERVER;
+    return BS_CHECK_FOR_BODY;
 }
 
 RequestBuilder::BuildState RequestBuilder::CheckForBody_()
@@ -267,7 +288,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
     std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
     std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
     if (content_length.first && transfer_encoding.first) {
-        return BS_BAD_REQUEST;
+        return Error_(RQ_BAD);
     }
     if (transfer_encoding.second == "chunked") {
         body_builder_.chunked = true;
@@ -281,11 +302,11 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
                 content_length_num.second;  // TODO: content-length limits?
             return BS_CHECK_BODY_REGULAR_LENGTH;
         } else {
-            return BS_BAD_REQUEST;
+            return Error_(RQ_BAD);
         }
     }
     if (rq_.method == HTTP_POST) {
-        return BS_BAD_REQUEST;
+        return Error_(RQ_BAD);
     }
     return BS_END;
 }
@@ -293,7 +314,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
 RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_()
 {
     if (body_builder_.remaining_length > body_builder_.max_body_size) {
-        return BS_BAD_REQUEST;
+        return Error_(RQ_BAD);
     }
     body_builder_.body->resize(body_builder_.remaining_length);
     return BS_BODY_REGULAR;
@@ -327,12 +348,12 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
             std::pair<bool, size_t> converted_size =
                 utils::HexToUnsignedNumericNoThrow<size_t>(parser_.ExtractElement(-1));
             if (!converted_size.first) {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             }
             body_builder_.remaining_length =
                 converted_size.second;  // TODO: check for chunk size limits
             if (rq_.body.size() + body_builder_.remaining_length > body_builder_.max_body_size) {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             }
             if (body_builder_.remaining_length == 0) {
                 return BS_END;
@@ -354,7 +375,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
     while (!parser_.EndOfBuffer() && parser_.ElementLen() <= body_builder_.remaining_length + 2) {
         if (CheckForEOL_()) {
             if (parser_.ElementLen() - 2 != body_builder_.remaining_length) {
-                return BS_BAD_REQUEST;
+                return Error_(RQ_BAD);
             }
             size_t old_sz = body_builder_.body->size();
             body_builder_.body->resize(old_sz + body_builder_.remaining_length);
@@ -367,21 +388,6 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
         parser_.Advance();
     }
     return BS_BODY_CHUNK_CONTENT;
-}
-
-bool RequestBuilder::CanBuild_()
-{
-    if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
-        return false;
-    }
-    if (build_state_ == BS_BODY_REGULAR && parser_.ElementLen() > 0) {
-        return true;
-    }
-    if (IsParsingState_(build_state_) && parser_.EndOfBuffer()) {
-        builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
-        return false;
-    }
-    return true;
 }
 
 void RequestBuilder::NullTerminatorCheck_(char c)
@@ -405,6 +411,11 @@ bool RequestBuilder::CheckForEOL_() const
 bool RequestBuilder::IsParsingState_(BuildState state) const
 {
     return (state != BS_AFTER_HEADERS && state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH);
+}
+
+RequestBuilder::BuildState RequestBuilder::Error_(RqStatus status) {
+    rq_.status = status;
+    return BS_BAD_REQUEST;
 }
 
 }  // namespace http

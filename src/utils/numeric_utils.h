@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <sstream>
+#include "logger.h"
 
 namespace utils {
 
