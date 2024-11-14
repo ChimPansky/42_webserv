@@ -1,5 +1,5 @@
 #include "Uri.h"
-#include <http.h>
+#include "http.h"
 #include <numeric_utils.h>
 #include <logger.h>
 #include <cstring>
@@ -163,7 +163,8 @@ std::pair<bool /*valid*/, std::string> Uri::Normalize_(std::string input) const 
     std::string normalized;
     int dir_level = 0;
     while (!input.empty()) {
-        std::cout << "input: " << input << std::endl;/////////////7
+        std::cout << "input: " << input << std::endl;
+        std::cout << "normalized: " << normalized << std::endl;
         if (input.compare(0, 3, "../") == 0) {
             input.erase(0, 3);
         }
@@ -202,14 +203,20 @@ std::pair<bool /*valid*/, std::string> Uri::Normalize_(std::string input) const 
             input.clear();
         }
         else {
-            size_t next_segment = input.find_first_of('/');
-            if (next_segment != std::string::npos) {
-                normalized += input.substr(0, next_segment);
-                input.erase(0, next_segment);
+            if (input[0] == '/') {
+                normalized += '/';
+                input.erase(0, 1);
             }
             else {
-                normalized += input;
-                input.clear();
+                size_t next_segment = input.find_first_of('/');
+                if (next_segment != std::string::npos) {
+                    normalized += input.substr(0, next_segment);
+                    input.erase(0, next_segment);
+                }
+                else {
+                    normalized += input;
+                    input.clear();
+                }
             }
             dir_level++;
         }
@@ -310,3 +317,9 @@ bool Uri::IsValidQueryOrFragmentChar_(char c) const {
 }
 
 } // namespace http
+
+int main() {
+    http::Uri uri("/path?query1=1#");
+    std::cout << uri.path() << std::endl;
+    return 0;
+}
