@@ -18,12 +18,12 @@ Location::Location(const config::LocationConfig& cfg)
       client_max_body_size_(cfg.client_max_body_size())
 {}
 
-const std::pair<std::string, bool>& Location::route() const
+const std::pair<std::string /* path */, bool /* is exact match */>& Location::route() const
 {
     return route_;
 }
 
-const std::pair<int, std::string>& Location::redirect() const
+const std::pair<int /* status code */, std::string /* new route */>& Location::redirect() const
 {
     return redirect_;
 }
