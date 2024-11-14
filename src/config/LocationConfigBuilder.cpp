@@ -32,7 +32,6 @@ static std::pair<std::string, bool> BuildRoute(const std::string& vals)
     return ParseRoute(route_elements);
 }
 
-// TODO : Location config::Get -> http::Get/ HOWTO?
 static std::vector<http::Method> ParseAllowedMethods(const std::vector<std::string>& vals)
 {
     std::vector<http::Method> allowed_methods;
