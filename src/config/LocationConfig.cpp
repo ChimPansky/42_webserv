@@ -4,7 +4,7 @@ namespace config {
 
 LocationConfig::LocationConfig(
     const std::pair<std::string /* path */, bool /* is exact match */>& route,
-    const std::vector<Method>& allowed_methods,
+    const std::vector<http::Method>& allowed_methods,
     const std::pair<int /* status code */, std::string /* new route */>& redirect,
     const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,
     const std::string& root_dir, const std::vector<std::string>& default_file, bool dir_listing,
@@ -20,7 +20,7 @@ const std::pair<std::string /* path */, bool /* is exact match */>& LocationConf
     return route_;
 }
 
-const std::vector<LocationConfig::Method>& LocationConfig::allowed_methods() const
+const std::vector<http::Method>& LocationConfig::allowed_methods() const
 {
     return allowed_methods_;
 }

@@ -13,5 +13,6 @@ add_library(Config
 
 target_link_libraries(Config PUBLIC Utils)
 target_link_libraries(Config PUBLIC CApi)
+target_link_libraries(Config PUBLIC Http)
 
 target_include_directories(Config PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
