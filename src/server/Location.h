@@ -1,8 +1,10 @@
 #ifndef WS_SERVER_LOCATION_H
 #define WS_SERVER_LOCATION_H
 
+#include <IResponseProcessor.h>
 #include <LocationConfig.h>
 #include <Request.h>
+#include <unique_ptr.h>
 
 class Location {
   private:
@@ -14,6 +16,7 @@ class Location {
     std::vector<std::string> cgi_extensions_;
     std::string root_dir_;
     std::vector<std::string> default_file_;
+    bool dir_listing_;
     unsigned int client_max_body_size_;
 
   public:
@@ -25,13 +28,12 @@ class Location {
     const std::pair<std::string, /* is exact match */ bool>& route() const;
     const std::vector<config::LocationConfig::Method>& allowed_methods() const;
     const std::pair<int, std::string>& redirect() const;
-    bool is_cgi() const;
-    const std::vector<std::string>& cgi_paths() const;
-    const std::vector<std::string>& cgi_extensions() const;
     const std::string& root_dir() const;
     const std::vector<std::string>& default_file() const;
     unsigned int client_max_body_size() const;
     std::string GetInfo() const;
+    utils::unique_ptr<AResponseProcessor> GetResponseProcessor(
+        utils::unique_ptr<http::IResponseCallback> response_rdy_cb, const http::Request& rq) const;
 };
 
 #endif  // WS_SERVER_LOCATION_H

@@ -34,6 +34,14 @@ add_test(
     COMMAND ./server_matching
 )
 
+# LocationMatching
+add_executable(location_matching location_matching_test.cpp)
+target_link_libraries(location_matching PRIVATE Server gtest gtest_main)
+add_test(
+    NAME location_matching
+    COMMAND ./location_matching
+)
+
 # Uri
 add_executable(uri_test uri_test.cpp)
 target_link_libraries(uri_test PRIVATE Http gtest gtest_main)

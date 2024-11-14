@@ -18,15 +18,42 @@ Location::Location(const config::LocationConfig& cfg)
       client_max_body_size_(cfg.client_max_body_size())
 {}
 
+const std::pair<std::string, bool>& Location::route() const
+{
+    return route_;
+}
+
+const std::pair<int, std::string>& Location::redirect() const
+{
+    return redirect_;
+}
+
+const std::string& Location::root_dir() const
+{
+    return root_dir_;
+}
+
+const std::vector<std::string>& Location::default_file() const
+{
+    return default_file_;
+}
+
+unsigned int Location::client_max_body_size() const
+{
+    return client_max_body_size_;
+}
+
 std::pair<bool, std::string> Location::MatchUriPath(const std::string& path,
                                                     const std::pair<std::string, bool>& route)
 {
-    if (path == route.first && route.second) {
-        return std::make_pair(true, route.first);
-    } else if (path == route.first && !route.second) {
-        return std::make_pair(false, route.first);
-    } else if (path.compare(0, route.first.size(), route.first) == 0 && !route.second) {
-        return std::make_pair(false, route.first);
+    const std::string& route_path = route.first;
+    bool is_exact_match = route.second;
+
+    if (path == route_path) {
+        return std::make_pair(is_exact_match, route_path);
+    } else if (!is_exact_match && path.compare(0, route_path.size(), route_path) == 0 &&
+               path[route_path.size()] == '/') {
+        return std::make_pair(false, route_path);
     }
     return std::make_pair(false, std::string());
 }
@@ -76,4 +103,24 @@ std::string Location::GetInfo() const
         << "Client max body size: " << client_max_body_size_ << " bytes\n";
 
     return oss.str();
+}
+
+utils::unique_ptr<AResponseProcessor> Location::GetResponseProcessor(
+    utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq) const
+{
+    if (is_cgi_) {
+        // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq, cgi_paths,
+        // cgi_extensions, root_dir));
+    } else if (dir_listing_) {
+        // return utils::unique_ptr<AResponseProcessor>(new DirListingResponseProcessor(cb, rq,
+        // root_dir));
+    } else if (rq.status == http::RQ_GOOD) {
+        LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
+        return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
+    } else if (rq.status == http::RQ_INCOMPLETE) {
+        throw std::logic_error("trying to accept incomplete rq");
+    }
+    LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
+    return utils::unique_ptr<AResponseProcessor>(
+        new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
 }
