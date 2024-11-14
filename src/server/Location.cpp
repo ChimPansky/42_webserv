@@ -1,4 +1,4 @@
-#include <Location.h>
+#include "Location.h"
 
 #include <sstream>
 
@@ -109,19 +109,19 @@ std::string Location::GetInfo() const
 utils::unique_ptr<AResponseProcessor> Location::GetResponseProcessor(
     utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq) const
 {
-    if (is_cgi_) {
+    if (rq.status == http::RQ_INCOMPLETE) {
+        throw std::logic_error("trying to accept incomplete rq");
+    } else if (rq.status != http::RQ_GOOD) {
+        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
+        return utils::unique_ptr<AResponseProcessor>(
+            new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
+    } else if (is_cgi_) {
         // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq, cgi_paths,
         // cgi_extensions, root_dir));
     } else if (dir_listing_) {
         // return utils::unique_ptr<AResponseProcessor>(new DirListingResponseProcessor(cb, rq,
         // root_dir));
-    } else if (rq.status == http::RQ_GOOD) {
-        LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
-        return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
-    } else if (rq.status == http::RQ_INCOMPLETE) {
-        throw std::logic_error("trying to accept incomplete rq");
     }
-    LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-    return utils::unique_ptr<AResponseProcessor>(
-        new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
+    LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
+    return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
 }
