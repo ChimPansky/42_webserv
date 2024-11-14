@@ -188,6 +188,14 @@ TEST(DecodeTests, 6_Test_Path) {
     EXPECT_EQ(uri.Good(), true);
 }
 
+TEST(DecodeTests, 7_Test_Path) {
+    http::Uri uri = http::Uri("/folder%2F1/hello%20world%20?some_query=5#some_fragment");
+    EXPECT_EQ(uri.path(), "/folder%2F1/hello world ");
+    EXPECT_EQ(uri.query(), "some_query=5");
+    EXPECT_EQ(uri.fragment(), "some_fragment");
+    EXPECT_EQ(uri.Good(), true);
+}
+
 TEST(DecodeTests, 11_Test_Query) {
     http::Uri uri = http::Uri("/path?a=20%20&b=30%20");
     EXPECT_EQ(uri.path(), "/path");

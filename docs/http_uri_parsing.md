@@ -1,6 +1,6 @@
 1. separate raw_uri into (scheme, authority, host, port,) path, query and fragment
 2. ProcessPath():
-   1. DecodePercentages()
+   1. DecodePercentages() (for path dont decode "%2F" since it represents '/' and can be problematic)
    2. CheckForInvalidPathChars()
    3. Normalize():
       1. multiple "///" collapse to "/"

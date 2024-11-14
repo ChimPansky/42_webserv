@@ -2,6 +2,7 @@
 #include <http.h>
 #include <numeric_utils.h>
 #include <logger.h>
+#include <cstring>
 
 namespace http {
 
@@ -16,7 +17,7 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
     ParsePath_(raw_uri, raw_uri_pos);
     ParseQuery_(raw_uri, raw_uri_pos);
     ParseFragment_(raw_uri, raw_uri_pos);
-    std::pair<bool, std::string> decoded_str = PercentDecode_(path_);
+    std::pair<bool, std::string> decoded_str = PercentDecode_(path_, "/");
     if (!decoded_str.first) {
         validity_state_ |= URI_BAD_PATH_BIT;
         return;
@@ -128,7 +129,7 @@ void Uri::ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos) {
     fragment_.second = raw_uri.substr(raw_uri_pos + 1);
 }
 
-std::pair<bool /*valid*/, std::string> Uri::PercentDecode_(const std::string& str) const {
+std::pair<bool /*valid*/, std::string> Uri::PercentDecode_(const std::string& str, const char* ignore_set) const {
     std::string decoded;
     std::pair<bool, unsigned short> ascii;
     for (size_t i = 0; i < str.size(); ++i) {
@@ -138,8 +139,12 @@ std::pair<bool /*valid*/, std::string> Uri::PercentDecode_(const std::string& st
             }
             ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
             if (!ascii.first) {
-                LOG(DEBUG) << "Uri::PercentDecode_: bad hex: " << str.substr(i + 1, 2);
                 return std::pair<bool, std::string>(false, "");
+            }
+            if (ignore_set && strchr(ignore_set, static_cast<char>(ascii.second))) {
+                decoded += str.substr(i, 3);
+                i += 2;
+                continue;
             }
             decoded += static_cast<char>(ascii.second);
             i += 2;
