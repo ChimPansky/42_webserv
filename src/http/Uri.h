@@ -54,9 +54,12 @@ class Uri {
     void ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos);
 
     std::pair<bool /*valid*/, std::string> PercentDecode_(const std::string& str, const char* ignore_set = NULL) const;
-    std::pair<bool /*valid*/, std::string> Normalize_(std::string str) const;
+    std::pair<bool /*valid*/, std::string> Normalize_(const std::string& str) const;
+    std::string CollapseChars_(const std::string& str, char c) const;
 
     // helpers:
+    void RemoveLastSegment_(std::string& path) const;
+    void MoveSegmentToOutput_(std::string& input, std::string& output) const ;
     bool IsValidPathChar_(char c) const;
     bool IsValidQueryOrFragmentChar_(char c) const;
 

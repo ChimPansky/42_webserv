@@ -48,7 +48,7 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
         validity_state_ |= URI_BAD_PATH_BIT;
         return;
     }
-    path_ = normalized_path.second;
+    path_ = CollapseChars_(normalized_path.second, '/'); 
     //Validate_();
 }
 
@@ -159,104 +159,117 @@ std::pair<bool /*valid*/, std::string> Uri::PercentDecode_(const std::string& st
     return std::pair<bool, std::string>(true, decoded);
 }
 
-std::pair<bool /*valid*/, std::string> Uri::Normalize_(std::string input) const {
-    std::string normalized;
+void Uri::RemoveLastSegment_(std::string& path) const {
+    size_t last_slash = path.find_last_of('/');
+    if (last_slash == std::string::npos) {
+        return;
+    }
+    path.erase(last_slash);
+}
+
+void Uri::MoveSegmentToOutput_(std::string& input, std::string& output) const {
+    size_t end_of_segment = input.find('/', 1);
+    if (end_of_segment == std::string::npos) {
+        output += input;
+        input.clear();
+    } 
+    else {
+        output += input.substr(0, end_of_segment);
+        input.erase(0, end_of_segment);
+    }
+}
+
+std::pair<bool /*valid*/, std::string> Uri::Normalize_(const std::string& str) const {
     int dir_level = 0;
+    std::string input = str;
+    std::string output;
     while (!input.empty()) {
-        std::cout << "input: " << input << std::endl;
-        std::cout << "normalized: " << normalized << std::endl;
         if (input.compare(0, 3, "../") == 0) {
             input.erase(0, 3);
+            dir_level--;
         }
         else if (input.compare(0, 2, "./") == 0) {
             input.erase(0, 2);
         }
+        else if (input == "/.."  || input.compare(0, 4, "/../") == 0) {
+            size_t erase_len = (input == "/.." ? 2 : 3);
+            input.erase(1, erase_len);
+            RemoveLastSegment_(output);
+            dir_level--;
+        }
         else if (input.compare(0, 3, "/./") == 0) {
             input.erase(1, 2);
         }
-        else if (input.compare(0, 2, "/.") == 0) {
+        else if (input == "/.") {
             input.erase(1, 1);
-        } 
-        else if (input.compare(0, 4, "/../") == 0) {
-            input.erase(0, 3);
-            size_t last_segment = normalized.find_last_of('/');
-            if (last_segment != std::string::npos) {
-                normalized.erase(last_segment);
-            }
-            else {
-                normalized.clear();
-            }
-            dir_level--;
         }
-        else if (input.compare(0, 3, "/..") == 0) {
-            input.erase(1, 2);
-            size_t last_segment = normalized.find_last_of('/');
-            if (last_segment != std::string::npos) {
-                normalized.erase(last_segment);
-            }
-            else {
-                normalized.clear();
-            }
-            dir_level--;
-        }
-        else if (input == "." || input == "..") {
+        else if (input == ".") {
             input.clear();
         }
+        else if (input == "..") {
+            input.clear();
+            dir_level--;
+        }
         else {
-            if (input[0] == '/') {
-                normalized += '/';
-                input.erase(0, 1);
-            }
-            else {
-                size_t next_segment = input.find_first_of('/');
-                if (next_segment != std::string::npos) {
-                    normalized += input.substr(0, next_segment);
-                    input.erase(0, next_segment);
-                }
-                else {
-                    normalized += input;
-                    input.clear();
-                }
-            }
+            MoveSegmentToOutput_(input, output);
             dir_level++;
         }
         if (dir_level < 0) {
             return std::pair<bool, std::string>(false, "");
         }
     }
-    return std::pair<bool, std::string>(true, normalized);
+    return std::pair<bool, std::string>(true, output);
 }
 
-// Normalize():
-//    1.  The input buffer is initialized with the now-appended path
-//        components and the output buffer is initialized to the empty
-//        string.
+std::string Uri::CollapseChars_(const std::string& str, char c) const {
+    std::string collapsed;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (str[i] == c) {
+            if (i + 1 < str.size() && str[i + 1] == c) {
+                continue;
+            }
+        }
+        collapsed += str[i];
+    }
+    return collapsed;
+}
 
-//    2.  While the input buffer is not empty, loop as follows:
+/*
+ Normalize():
+    1.  The input buffer is initialized with the now-appended path
+        components and the output buffer is initialized to the empty
+        string.
 
-//        A.  If the input buffer begins with a prefix of "../" or "./",
-//            then remove that prefix from the input buffer; otherwise,
-
-//        B.  if the input buffer begins with a prefix of "/./" or "/.",
-//            where "." is a complete path segment, then replace that
-//            prefix with "/" in the input buffer; otherwise,
-
-//        C.  if the input buffer begins with a prefix of "/../" or "/..",
-//            where ".." is a complete path segment, then replace that
-//            prefix with "/" in the input buffer and remove the last
-//            segment and its preceding "/" (if any) from the output
-//            buffer; otherwise,
-
-//        D.  if the input buffer consists only of "." or "..", then remove
-//            that from the input buffer; otherwise,
-
-//        E.  move the first path segment in the input buffer to the end of
-//            the output buffer, including the initial "/" character (if
-//            any) and any subsequent characters up to, but not including,
-//            the next "/" character or the end of the input buffer.
-
-//    3.  Finally, the output buffer is returned as the result of
-//        remove_dot_segments.
+    2.  While (!input.empty() {
+            If (input begins with ../") {
+                erase prefix from input;
+                dir_level--;
+            }
+            else if (input begins with "./") {
+                erase prefix from input;
+            }
+            else if (input begins with "/./" or "/.") {
+                replace prefix with "/" in input;
+            }
+            else if (input begins with "/../" or "/..") {
+                replace prefix with "/" in input;
+                remove the last segment and its preceding "/" (if any) from output;
+                dir_level--;
+            }
+            else if (input == "." or input == "..") {
+                remove that from input;
+            }
+            else {
+                cut and append first path segment from input to output.
+                the first path sement from input is defined as: including the initial "/" character (if any) and any subsequent characters up to, but not including the next "/" character or up to the end of input.
+                dir_level++;
+            }
+            if dir_level < 0 {
+                return "error";
+            }
+        }
+        return output;
+*/
 
 void Uri::Validate_() {
     if (!Good()) {
@@ -317,9 +330,3 @@ bool Uri::IsValidQueryOrFragmentChar_(char c) const {
 }
 
 } // namespace http
-
-int main() {
-    http::Uri uri("/path?query1=1#");
-    std::cout << uri.path() << std::endl;
-    return 0;
-}

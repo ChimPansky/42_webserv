@@ -213,9 +213,141 @@ TEST(DecodeTests, 20_Test_Fragment) {
 }
 
 TEST(NormalizeTests, 30_Test_Path) {
-    http::Uri uri = http::Uri("/../");
-    EXPECT_EQ(uri.path(), "/../");
-    EXPECT_EQ(uri.query(), "");
-    EXPECT_EQ(uri.fragment(), "");
+    http::Uri uri = http::Uri("");
     EXPECT_EQ(uri.Good(), false);
+}
+
+TEST(NormalizeTests, 31_Test_Path) {
+    http::Uri uri = http::Uri("/");
+    EXPECT_EQ(uri.path(), "/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 32_Test_Path) {
+    http::Uri uri = http::Uri("/.");
+    EXPECT_EQ(uri.path(), "/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 33_Test_Path) {
+    http::Uri uri = http::Uri("/abc/.");
+    EXPECT_EQ(uri.path(), "/abc/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 34_Test_Path) {
+    http::Uri uri = http::Uri("/abc/./def");
+    EXPECT_EQ(uri.path(), "/abc/def");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 35_Test_Path) {
+    http::Uri uri = http::Uri("/abc/./def/.");
+    EXPECT_EQ(uri.path(), "/abc/def/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 36_Test_Path) {
+    http::Uri uri = http::Uri("/./abc");
+    EXPECT_EQ(uri.path(), "/abc");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 37_Test_Path) {
+    http::Uri uri = http::Uri("/.");
+    EXPECT_EQ(uri.path(), "/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 38_Test_Path) {
+    http::Uri uri = http::Uri("/./");
+    EXPECT_EQ(uri.path(), "/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 39_Test_Path) {
+    http::Uri uri = http::Uri("..");
+    EXPECT_EQ(uri.Good(), false);
+}
+
+TEST(NormalizeTests, 40_Test_Path) {
+    http::Uri uri = http::Uri(".");
+    EXPECT_EQ(uri.Good(), false);
+}
+
+TEST(NormalizeTests, 41_Test_Path) {
+    http::Uri uri = http::Uri("/abc/def/../ghi/../jkl");
+    EXPECT_EQ(uri.path(), "/abc/jkl");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 42_Test_Path) {
+    http::Uri uri = http::Uri("/abc%2Fdef/ghi/../jkl/");
+    EXPECT_EQ(uri.path(), "/abc%2Fdef/jkl/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 43_Test_Path) {
+    http::Uri uri = http::Uri("/abc%2Fdef/ghi/../jkl");
+    EXPECT_EQ(uri.path(), "/abc%2Fdef/jkl");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 44_Test_Path) {
+    http::Uri uri = http::Uri("/abc%2Fdef/ghi/../jkl%2F");
+    EXPECT_EQ(uri.path(), "/abc%2Fdef/jkl%2F");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 45_Test_Path) {
+    http::Uri uri = http::Uri("/abc%2Fdef/ghi/../jkl%2Fmno");
+    EXPECT_EQ(uri.path(), "/abc%2Fdef/jkl%2Fmno");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 46_Test_Path) {
+    http::Uri uri = http::Uri("/abc%2Fdef/ghi/../jkl%2Fmno/../../../../");
+    EXPECT_EQ(uri.Good(), false);
+}
+
+TEST(NormalizeTests, 47_Test_Path) {
+    http::Uri uri = http::Uri("/abc/def/../ghi/../../jkl");
+    EXPECT_EQ(uri.path(), "/jkl");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(CollapseTests, 50_Test_Collapse) {
+    http::Uri uri = http::Uri("/////");
+    EXPECT_EQ(uri.path(), "/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(CollapseTests, 51_Test_Collapse) {
+    http::Uri uri = http::Uri("/");
+    EXPECT_EQ(uri.path(), "/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(CollapseTests, 52_Test_Collapse) {
+    http::Uri uri = http::Uri("/abc/def//");
+    EXPECT_EQ(uri.path(), "/abc/def/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(CollapseTests, 53_Test_Collapse) {
+    http::Uri uri = http::Uri("/abc/def//ghi");
+    EXPECT_EQ(uri.path(), "/abc/def/ghi");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(CollapseTests, 54_Test_Collapse) {
+    http::Uri uri = http::Uri("///////abc/def//ghi//");
+    EXPECT_EQ(uri.path(), "/abc/def/ghi/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(CollapseTests, 55_Test_Collapse) {
+    http::Uri uri = http::Uri("/%2F//////abc/def//ghi//jkl");
+    EXPECT_EQ(uri.path(), "/%2F/abc/def/ghi/jkl");
+    EXPECT_EQ(uri.Good(), true);
 }
