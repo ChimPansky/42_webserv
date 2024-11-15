@@ -5,7 +5,7 @@
 Location::Location(const config::LocationConfig& cfg)
     : route_(cfg.route()), allowed_methods_(cfg.allowed_methods()), redirect_(cfg.redirect()),
       is_cgi_(cfg.is_cgi()), cgi_paths_(cfg.cgi_paths()), cgi_extensions_(cfg.cgi_extensions()),
-      root_dir_(cfg.root_dir()), default_file_(cfg.default_file()),
+      root_dir_(cfg.root_dir()), default_files_(cfg.default_files()),
       client_max_body_size_(cfg.client_max_body_size())
 {}
 
@@ -39,9 +39,9 @@ const std::string& Location::root_dir() const
     return root_dir_;
 }
 
-const std::vector<std::string>& Location::default_file() const
+const std::vector<std::string>& Location::default_files() const
 {
-    return default_file_;
+    return default_files_;
 }
 
 bool    Location::dir_listing() const
@@ -109,8 +109,8 @@ std::string Location::GetInfo() const
     oss << "\n"
         << "Root directory: " << root_dir_ << "\n"
         << "Default files: ";
-    for (size_t i = 0; i < default_file_.size(); ++i) {
-        oss << "  " << default_file_[i];
+    for (size_t i = 0; i < default_files_.size(); ++i) {
+        oss << "  " << default_files_[i];
     }
     oss << "\n"
         << "Client max body size: " << client_max_body_size_ << " bytes\n";

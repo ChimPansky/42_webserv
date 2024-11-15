@@ -15,7 +15,7 @@ class Location {
     std::vector<std::string> cgi_paths_;
     std::vector<std::string> cgi_extensions_;
     std::string root_dir_;
-    std::vector<std::string> default_file_;
+    std::vector<std::string> default_files_;
     bool dir_listing_;
     unsigned int client_max_body_size_;
 
@@ -32,7 +32,7 @@ class Location {
     const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
     const std::string& root_dir() const;
-    const std::vector<std::string>& default_file() const;
+    const std::vector<std::string>& default_files() const;
     bool  dir_listing() const;
     unsigned int client_max_body_size() const;
     std::string GetInfo() const;

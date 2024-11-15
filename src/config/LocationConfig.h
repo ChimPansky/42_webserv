@@ -23,7 +23,7 @@ class LocationConfig {
                    const std::pair<int /* status code */, std::string /* new route */>& redirect,
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
-                   const std::vector<std::string>& default_file, bool dir_listing,
+                   const std::vector<std::string>& default_files, bool dir_listing,
                    unsigned int client_max_body_size);
 
     const std::pair<std::string /* path */, /* is exact match */ bool>& route() const;
@@ -33,7 +33,7 @@ class LocationConfig {
     const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
     const std::string& root_dir() const;
-    const std::vector<std::string>& default_file() const;
+    const std::vector<std::string>& default_files() const;
     bool dir_listing() const;
     unsigned int client_max_body_size() const;
     static inline int kDefaultRedirectCode() { return 301; }
@@ -42,9 +42,9 @@ class LocationConfig {
     static inline unsigned int kDefaultClientMaxBodySize() { return 2ul << 20; }
     static inline std::vector<std::string> kDefaultIndexFile()
     {
-        std::vector<std::string> default_file;
-        default_file.push_back("index.html");
-        return default_file;
+        std::vector<std::string> default_files;
+        default_files.push_back("index.html");
+        return default_files;
     }
     static inline bool kDefaultDirListing() { return false; }
     static inline std::vector<http::Method> kDefaultAllowedMethods()
@@ -81,7 +81,7 @@ class LocationConfig {
     std::vector<std::string> cgi_paths_;
     std::vector<std::string> cgi_extensions_;
     std::string root_dir_;
-    std::vector<std::string> default_file_;
+    std::vector<std::string> default_files_;
     bool dir_listing_;
     unsigned int client_max_body_size_;
 };

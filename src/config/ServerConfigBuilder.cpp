@@ -213,8 +213,8 @@ ServerConfig ServerConfigBuilder::Build(const ParsedConfig& f,
     InheritedSettings server_inherited_settings = InheritedSettings();
     server_inherited_settings.root =
         InheritedSettings::BuildRootDir(f.FindSetting("root"), inherited_settings.root);
-    server_inherited_settings.def_file =
-        InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
+    server_inherited_settings.def_files =
+        InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     server_inherited_settings.dir_listing = InheritedSettings::BuildDirListing(
         f.FindSetting("autoindex"), inherited_settings.dir_listing);
     server_inherited_settings.client_max_body_size = InheritedSettings::BuildClientMaxBodySize(

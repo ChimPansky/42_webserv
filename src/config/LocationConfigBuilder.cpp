@@ -137,12 +137,12 @@ static const std::string BuildRootDir(const std::vector<std::string>& vals,
 }
 
 static std::vector<std::string> BuildDefaultFile(const std::vector<std::string>& vals,
-                                                 const std::vector<std::string>& inherited_def_file)
+                                                 const std::vector<std::string>& inherited_def_files)
 {
-    if (vals.empty() && inherited_def_file.empty()) {
+    if (vals.empty() && inherited_def_files.empty()) {
         return LocationConfig::kDefaultIndexFile();
     }
-    return InheritedSettings::BuildDefaultFile(vals, inherited_def_file);
+    return InheritedSettings::BuildDefaultFile(vals, inherited_def_files);
 }
 
 static bool ParseDirListing(const std::string& vals)
@@ -230,7 +230,7 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
     std::vector<std::string> cgi_extensions = BuildCgiExtensions(f.FindSetting("cgi_extension"));
     std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_settings.root);
     std::vector<std::string> default_file =
-        BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
+        BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
     unsigned int client_max_body_size = BuildClientMaxBodySize(
         f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);

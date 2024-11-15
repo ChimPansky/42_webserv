@@ -99,8 +99,8 @@ HttpConfig HttpConfigBuilder::Build(const ParsedConfig& f,
     InheritedSettings http_inherited_settings = inherited_settings;
     http_inherited_settings.root =
         InheritedSettings::BuildRootDir(f.FindSetting("root"), inherited_settings.root);
-    http_inherited_settings.def_file =
-        InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
+    http_inherited_settings.def_files =
+        InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     http_inherited_settings.dir_listing = InheritedSettings::BuildDirListing(
         f.FindSetting("autoindex"), inherited_settings.dir_listing);
     http_inherited_settings.client_max_body_size = InheritedSettings::BuildClientMaxBodySize(

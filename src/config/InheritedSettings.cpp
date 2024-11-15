@@ -21,12 +21,12 @@ const std::string& InheritedSettings::BuildRootDir(const std::vector<std::string
 }
 
 std::vector<std::string> InheritedSettings::BuildDefaultFile(
-    const std::vector<std::string>& vals, const std::vector<std::string>& inherited_def_file)
+    const std::vector<std::string>& vals, const std::vector<std::string>& inherited_def_files)
 {
     std::vector<std::string> default_files;
 
     if (vals.empty()) {
-        return inherited_def_file;
+        return inherited_def_files;
     }
     for (size_t i = 0; i < vals.size(); i++) {
         if (vals[i].empty()) {
