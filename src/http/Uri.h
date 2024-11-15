@@ -5,9 +5,9 @@
 namespace http {
 
 // Uri consists of: path, query, fragment
-// e.g. /path/to/file?query1=1&query2=2#section1 
+// e.g. /path/to/file?query1=1&query2=2#section1
 // to be decided later: do we need to add user info, host, port beforehand?
-// query and fragment can be defined by ? and # respectively. a defined query or fragment can 
+// query and fragment can be defined by ? and # respectively. a defined query or fragment can
 // be empty or non-empty: "/path?#section1", "/path?query1=1#"
 
 class Uri {
@@ -40,12 +40,11 @@ class Uri {
         URI_BAD_PATH_BIT = 1L << 7,
         URI_BAD_QUERY_BIT = 1L << 8,
         URI_BAD_FRAGMENT_BIT = 1L << 9,
-        URI_FAIL_BIT = 1L << 16
     };
 
     int validity_state_;
     std::string path_;
-    std::pair<bool /*defined*/, std::string /*value*/> query_; 
+    std::pair<bool /*defined*/, std::string /*value*/> query_;
     std::pair<bool /*defined*/, std::string /*value*/> fragment_;
 
     void Validate_();

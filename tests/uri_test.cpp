@@ -204,11 +204,43 @@ TEST(DecodeTests, 11_Test_Query) {
     EXPECT_EQ(uri.Good(), true);
 }
 
+TEST(DecodeTests, 12_Test_Query) {
+    http::Uri uri = http::Uri("/path?a=20%20&b=30%20&c=some%2Fpath");
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "a=20 &b=30 &c=some/path");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), true);
+}
+
 TEST(DecodeTests, 20_Test_Fragment) {
     http::Uri uri = http::Uri("/path#top%20");
     EXPECT_EQ(uri.path(), "/path");
     EXPECT_EQ(uri.query(), "");
     EXPECT_EQ(uri.fragment(), "top ");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(DecodeTests, 21_Test_Fragment) {
+    http::Uri uri = http::Uri("/path#some%2Ffragment");
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "some/fragment");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(DecodeTests, 22_Test_Fragment) {
+    http::Uri uri = http::Uri("/path#top%01");
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "top\x01");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(DecodeTests, 23_Test_Fragment) {
+    http::Uri uri = http::Uri("/path#%0Aabc");
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "");
+    EXPECT_EQ(uri.fragment(), "\x0A" "abc");
     EXPECT_EQ(uri.Good(), true);
 }
 

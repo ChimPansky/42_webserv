@@ -1,13 +1,9 @@
 #include "Uri.h"
-#include "http.h"
 #include <numeric_utils.h>
 #include <logger.h>
 #include <cstring>
 
-#include <iostream>
-
 namespace http {
-
 
 std::ostream& operator<<(std::ostream& out, const Uri& uri) {
     out << uri.ToStr();
@@ -48,7 +44,7 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
         validity_state_ |= URI_BAD_PATH_BIT;
         return;
     }
-    path_ = CollapseChars_(normalized_path.second, '/'); 
+    path_ = CollapseChars_(normalized_path.second, '/');
     //Validate_();
 }
 
@@ -159,26 +155,6 @@ std::pair<bool /*valid*/, std::string> Uri::PercentDecode_(const std::string& st
     return std::pair<bool, std::string>(true, decoded);
 }
 
-void Uri::RemoveLastSegment_(std::string& path) const {
-    size_t last_slash = path.find_last_of('/');
-    if (last_slash == std::string::npos) {
-        return;
-    }
-    path.erase(last_slash);
-}
-
-void Uri::MoveSegmentToOutput_(std::string& input, std::string& output) const {
-    size_t end_of_segment = input.find('/', 1);
-    if (end_of_segment == std::string::npos) {
-        output += input;
-        input.clear();
-    } 
-    else {
-        output += input.substr(0, end_of_segment);
-        input.erase(0, end_of_segment);
-    }
-}
-
 std::pair<bool /*valid*/, std::string> Uri::Normalize_(const std::string& str) const {
     int dir_level = 0;
     std::string input = str;
@@ -221,6 +197,26 @@ std::pair<bool /*valid*/, std::string> Uri::Normalize_(const std::string& str) c
     return std::pair<bool, std::string>(true, output);
 }
 
+void Uri::RemoveLastSegment_(std::string& path) const {
+    size_t last_slash = path.find_last_of('/');
+    if (last_slash == std::string::npos) {
+        return;
+    }
+    path.erase(last_slash);
+}
+
+void Uri::MoveSegmentToOutput_(std::string& input, std::string& output) const {
+    size_t end_of_segment = input.find('/', 1);
+    if (end_of_segment == std::string::npos) {
+        output += input;
+        input.clear();
+    }
+    else {
+        output += input.substr(0, end_of_segment);
+        input.erase(0, end_of_segment);
+    }
+}
+
 std::string Uri::CollapseChars_(const std::string& str, char c) const {
     std::string collapsed;
     for (size_t i = 0; i < str.size(); ++i) {
@@ -233,43 +229,6 @@ std::string Uri::CollapseChars_(const std::string& str, char c) const {
     }
     return collapsed;
 }
-
-/*
- Normalize():
-    1.  The input buffer is initialized with the now-appended path
-        components and the output buffer is initialized to the empty
-        string.
-
-    2.  While (!input.empty() {
-            If (input begins with ../") {
-                erase prefix from input;
-                dir_level--;
-            }
-            else if (input begins with "./") {
-                erase prefix from input;
-            }
-            else if (input begins with "/./" or "/.") {
-                replace prefix with "/" in input;
-            }
-            else if (input begins with "/../" or "/..") {
-                replace prefix with "/" in input;
-                remove the last segment and its preceding "/" (if any) from output;
-                dir_level--;
-            }
-            else if (input == "." or input == "..") {
-                remove that from input;
-            }
-            else {
-                cut and append first path segment from input to output.
-                the first path sement from input is defined as: including the initial "/" character (if any) and any subsequent characters up to, but not including the next "/" character or up to the end of input.
-                dir_level++;
-            }
-            if dir_level < 0 {
-                return "error";
-            }
-        }
-        return output;
-*/
 
 void Uri::Validate_() {
     if (!Good()) {
@@ -287,7 +246,6 @@ void Uri::Validate_() {
 }
 
 // check valid characters
-// check if .. leads goes 1 level above root of path...
 bool Uri::IsValidPath_(const std::string& path) const {
     if (path.empty()) {
         return false;
@@ -300,7 +258,7 @@ bool Uri::IsValidPath_(const std::string& path) const {
     return true;
 }
 
-bool Uri::IsValidQuery_(const std::string& query) const { ////
+bool Uri::IsValidQuery_(const std::string& query) const {
     for (size_t i = 0; i < query.size(); ++i) {
         if (!IsValidQueryOrFragmentChar_(query[i])) {   //todo: further checks
             return false;
