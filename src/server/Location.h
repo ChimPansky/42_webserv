@@ -28,12 +28,12 @@ class Location {
     const std::pair<std::string /* path */, bool /* is exact match */>& route() const;
     const std::vector<http::Method>& allowed_methods() const;
     const std::pair<int /* status code */, std::string /* new route */>& redirect() const;
-    bool  is_cgi() const;
+    bool is_cgi() const;
     const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
     const std::string& root_dir() const;
     const std::vector<std::string>& default_files() const;
-    bool  dir_listing() const;
+    bool dir_listing() const;
     unsigned int client_max_body_size() const;
     std::string GetInfo() const;
 };

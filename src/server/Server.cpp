@@ -111,7 +111,8 @@ std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request&
 }
 
 utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
-    utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq, utils::shared_ptr<Location> loc) const
+    utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq,
+    utils::shared_ptr<Location> loc) const
 {
     if (rq.status == http::RQ_INCOMPLETE) {
         throw std::logic_error("trying to accept incomplete rq");

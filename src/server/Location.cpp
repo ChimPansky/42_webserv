@@ -19,7 +19,7 @@ const std::pair<int /* status code */, std::string /* new route */>& Location::r
     return redirect_;
 }
 
-bool    Location::is_cgi() const
+bool Location::is_cgi() const
 {
     return is_cgi_;
 }
@@ -44,7 +44,7 @@ const std::vector<std::string>& Location::default_files() const
     return default_files_;
 }
 
-bool    Location::dir_listing() const
+bool Location::dir_listing() const
 {
     return dir_listing_;
 }
