@@ -21,7 +21,6 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
         return;
     }
     path_ = decoded_str.second;
-
     if (query_.first) {
         decoded_str = PercentDecode_(query_.second);
         if (!decoded_str.first) {
@@ -30,7 +29,6 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT) {
         }
         query_.second = decoded_str.second;
     }
-
     if (fragment_.first) {
         decoded_str = PercentDecode_(fragment_.second);
         if (!decoded_str.first) {
@@ -55,7 +53,7 @@ Uri::Uri(const std::string& path, const std::string& query, const std::string& f
     if (!fragment.empty()) {
         fragment_ = std::make_pair(true, fragment);
     }
-    Validate_(); // todo: check if valid and set state if error
+    //Validate_(); // todo: check if valid and set state if error
 }
 
 Uri::Uri(const Uri& rhs) {
