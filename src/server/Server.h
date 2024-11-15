@@ -38,11 +38,11 @@ class Server {
                        utils::unique_ptr<http::IResponseCallback> cb) const;
 
     std::string name() const;
+    const std::vector<std::string>& server_names() const;
     const std::string& access_log_path() const;
     Severity access_log_level() const;
     const std::string& error_log_path() const;
-    const std::vector<config::LocationConfig>& locations() const;
-    std::string GetInfo() const;
+    const std::vector<utils::shared_ptr<Location> >& locations() const;
 
   private:
     std::string access_log_path_;
@@ -58,6 +58,8 @@ class Server {
         utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq,
         utils::shared_ptr<Location> loc) const;
 };
+
+std::ostream& operator<<(std::ostream& oss, const Server& server);
 
 #endif  // WS_SERVER_SERVER_H
 

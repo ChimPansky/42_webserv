@@ -35,7 +35,8 @@ class Location {
     const std::vector<std::string>& default_files() const;
     bool dir_listing() const;
     unsigned int client_max_body_size() const;
-    std::string GetInfo() const;
 };
+
+std::ostream& operator<<(std::ostream& oss, const Location& loc);
 
 #endif  // WS_SERVER_LOCATION_H

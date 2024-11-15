@@ -20,6 +20,11 @@ std::string Server::name() const
     return server_names_[0];
 }
 
+const std::vector<std::string>& Server::server_names() const
+{
+    return server_names_;
+}
+
 const std::string& Server::access_log_path() const
 {
     return access_log_path_;
@@ -33,6 +38,11 @@ Severity Server::access_log_level() const
 const std::string& Server::error_log_path() const
 {
     return error_log_path_;
+}
+
+const std::vector<utils::shared_ptr<Location> >& Server::locations() const
+{
+    return locations_;
 }
 
 utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) const
@@ -135,22 +145,19 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
 }
 
-std::string Server::GetInfo() const
+std::ostream& operator<<(std::ostream& oss, const Server& server)
 {
-    std::ostringstream oss;
-
     oss << "\n\t--Server information: --";
-    oss << "\n\tAccess log path: " << access_log_path_;
-    oss << "\n\tAccess log level: " << access_log_level_;
-    oss << "\n\tError log path: " << error_log_path_;
+    oss << "\n\tAccess log path: " << server.access_log_path();
+    oss << "\n\tAccess log level: " << server.access_log_level();
+    oss << "\n\tError log path: " << server.error_log_path();
     oss << "\n\tServer names:";
 
-    for (size_t i = 0; i < server_names_.size(); i++) {
-        oss << " " << server_names_[i];
+    for (size_t i = 0; i < server.server_names().size(); i++) {
+        oss << " " << server.server_names()[i];
     }
-    for (size_t i = 0; i < locations_.size(); i++) {
-        locations_[i]->GetInfo();
+    for (size_t i = 0; i < server.locations().size(); i++) {
+        oss << *(server.locations()[i]);
     }
-
-    return oss.str();
+    return oss;
 }

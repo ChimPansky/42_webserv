@@ -65,8 +65,7 @@ utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http:
 void ServerCluster::PrintDebugInfo() const
 {
     for (ServersConstIt cit = servers_.begin(); cit != servers_.end(); ++cit) {
-        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name()
-                   << ". My config is: " << (*cit)->GetInfo();
+        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name() << ". My config is: " << *(*cit);
         LOG(DEBUG);
     }
 }
@@ -157,5 +156,6 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     }
     LOG(INFO) << "New incoming connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in());
     LOG(INFO) << "From: " << c_api::PrintIPv4SockAddr(client_sock->addr_in());
-    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(new ClientSession(client_sock, fd, cluster_.sockets_to_servers_[acceptor.sockfd()][0]));
+    cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(
+        new ClientSession(client_sock, fd, cluster_.sockets_to_servers_[acceptor.sockfd()][0]));
 }
