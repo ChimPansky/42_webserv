@@ -348,38 +348,105 @@ TEST(NormalizeTests, 47_Test_Path) {
     EXPECT_EQ(uri.Good(), true);
 }
 
-TEST(CollapseTests, 50_Test_Collapse) {
+TEST(NormalizeTests, 48_Test_Path) {
+    http::Uri uri = http::Uri("/a/b/..c/");
+    EXPECT_EQ(uri.path(), "/a/b/..c/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 49_Test_Path) {
+    http::Uri uri = http::Uri("/a/b/.c/");
+    EXPECT_EQ(uri.path(), "/a/b/.c/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(NormalizeTests, 50_Test_Path) {
+    http::Uri uri = http::Uri("/a/./b/.c/");
+    EXPECT_EQ(uri.path(), "/a/b/.c/");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(CollapseTests, 60_Test_Collapse) {
     http::Uri uri = http::Uri("/////");
     EXPECT_EQ(uri.path(), "/");
     EXPECT_EQ(uri.Good(), true);
 }
 
-TEST(CollapseTests, 51_Test_Collapse) {
+TEST(CollapseTests, 61_Test_Collapse) {
     http::Uri uri = http::Uri("/");
     EXPECT_EQ(uri.path(), "/");
     EXPECT_EQ(uri.Good(), true);
 }
 
-TEST(CollapseTests, 52_Test_Collapse) {
+TEST(CollapseTests, 62_Test_Collapse) {
     http::Uri uri = http::Uri("/abc/def//");
     EXPECT_EQ(uri.path(), "/abc/def/");
     EXPECT_EQ(uri.Good(), true);
 }
 
-TEST(CollapseTests, 53_Test_Collapse) {
+TEST(CollapseTests, 63_Test_Collapse) {
     http::Uri uri = http::Uri("/abc/def//ghi");
     EXPECT_EQ(uri.path(), "/abc/def/ghi");
     EXPECT_EQ(uri.Good(), true);
 }
 
-TEST(CollapseTests, 54_Test_Collapse) {
+TEST(CollapseTests, 64_Test_Collapse) {
     http::Uri uri = http::Uri("///////abc/def//ghi//");
     EXPECT_EQ(uri.path(), "/abc/def/ghi/");
     EXPECT_EQ(uri.Good(), true);
 }
 
-TEST(CollapseTests, 55_Test_Collapse) {
+TEST(CollapseTests, 65_Test_Collapse) {
     http::Uri uri = http::Uri("/%2F//////abc/def//ghi//jkl");
     EXPECT_EQ(uri.path(), "/%2F/abc/def/ghi/jkl");
     EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(ComparisonTests, 80_Test_Comparison) {
+    http::Uri uri1 = http::Uri("/a/b/c/%7Bfoo%7D");
+    http::Uri uri2 = http::Uri("/a/./b/../b/%63/%7bfoo%7d");
+    EXPECT_EQ(uri1, uri2);
+}
+
+TEST(ComparisonTests, 81_Test_Comparison) {
+    http::Uri uri1 = http::Uri("/a/b/c/%7Bfoo%7D");
+    http::Uri uri2 = http::Uri("/a/./b/../b/%63/%7bfoo%7d");
+    EXPECT_EQ(uri1, uri2);
+}
+
+TEST(ComparisonTests, 82_Test_Comparison) {
+    http::Uri uri1 = http::Uri("/a/b/%2E%2E/c/d");
+    http::Uri uri2 = http::Uri("/a/c/d");
+    EXPECT_EQ(uri1, uri2);
+}
+
+TEST(ComparisonTests, 83_Test_Comparison) {
+    http::Uri uri1 = http::Uri("/a/%2e/b");
+    http::Uri uri2 = http::Uri("/a/b");
+    EXPECT_EQ(uri1, uri2);
+}
+
+TEST(ComparisonTests, 84_Test_Comparison) {
+    http::Uri uri1 = http::Uri("/a/b/.././c");
+    http::Uri uri2 = http::Uri("/a/c");
+    EXPECT_EQ(uri1, uri2);
+}
+
+
+TEST(ComparisonTests, 86_Test_Comparison) {
+    http::Uri uri1 = http::Uri("/a/b/c/%41");
+    http::Uri uri2 = http::Uri("/a/b/c/A");
+    EXPECT_EQ(uri1, uri2);
+}
+
+// TEST(ComparisonTests, 87_Test_Comparison) {
+//     http::Uri uri1 = http::Uri("/a/b/%7e");
+//     http::Uri uri2 = http::Uri("/a/b/~");
+//     EXPECT_EQ(uri1, uri2);
+// }
+
+TEST(ComparisonTests, 88_Test_Comparison) {
+    http::Uri uri1 = http::Uri("/a/b/c//d/");
+    http::Uri uri2 = http::Uri("/a/b/c/d/");
+    EXPECT_EQ(uri1, uri2);
 }
