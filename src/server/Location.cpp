@@ -2,15 +2,6 @@
 
 #include <sstream>
 
-Location::Location()
-    : route_(config::LocationConfig::kDefaultRoute()),
-      allowed_methods_(config::LocationConfig::kDefaultAllowedMethods()), redirect_(0, ""),
-      is_cgi_(false), cgi_paths_(), cgi_extensions_(),
-      root_dir_(config::LocationConfig::kDefaultRootDir()),
-      default_file_(config::LocationConfig::kDefaultIndexFile()),
-      client_max_body_size_(config::LocationConfig::kDefaultClientMaxBodySize())
-{}
-
 Location::Location(const config::LocationConfig& cfg)
     : route_(cfg.route()), allowed_methods_(cfg.allowed_methods()), redirect_(cfg.redirect()),
       is_cgi_(cfg.is_cgi()), cgi_paths_(cfg.cgi_paths()), cgi_extensions_(cfg.cgi_extensions()),
@@ -28,6 +19,21 @@ const std::pair<int /* status code */, std::string /* new route */>& Location::r
     return redirect_;
 }
 
+bool    Location::is_cgi() const
+{
+    return is_cgi_;
+}
+
+const std::vector<std::string>& Location::cgi_paths() const
+{
+    return cgi_paths_;
+}
+
+const std::vector<std::string>& Location::cgi_extensions() const
+{
+    return cgi_extensions_;
+}
+
 const std::string& Location::root_dir() const
 {
     return root_dir_;
@@ -37,6 +43,12 @@ const std::vector<std::string>& Location::default_file() const
 {
     return default_file_;
 }
+
+bool    Location::dir_listing() const
+{
+    return dir_listing_;
+}
+
 
 unsigned int Location::client_max_body_size() const
 {
@@ -104,24 +116,4 @@ std::string Location::GetInfo() const
         << "Client max body size: " << client_max_body_size_ << " bytes\n";
 
     return oss.str();
-}
-
-utils::unique_ptr<AResponseProcessor> Location::GetResponseProcessor(
-    utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq) const
-{
-    if (rq.status == http::RQ_INCOMPLETE) {
-        throw std::logic_error("trying to accept incomplete rq");
-    } else if (rq.status != http::RQ_GOOD) {
-        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-        return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
-    } else if (is_cgi_) {
-        // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq, cgi_paths,
-        // cgi_extensions, root_dir));
-    } else if (dir_listing_) {
-        // return utils::unique_ptr<AResponseProcessor>(new DirListingResponseProcessor(cb, rq,
-        // root_dir));
-    }
-    LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
-    return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
 }

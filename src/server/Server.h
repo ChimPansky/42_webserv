@@ -54,6 +54,8 @@ class Server {
     typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;
 
     utils::shared_ptr<Location> ChooseLocation(const http::Request& rq) const;
+    utils::unique_ptr<AResponseProcessor> GetResponseProcessor(
+    utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq, utils::shared_ptr<Location> loc) const;
 };
 
 #endif  // WS_SERVER_SERVER_H

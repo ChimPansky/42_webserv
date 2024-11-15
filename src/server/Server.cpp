@@ -1,9 +1,6 @@
 
 #include "Server.h"
 
-#include "IResponseProcessor.h"
-#include "Request.h"
-
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
       error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names())
@@ -53,8 +50,7 @@ utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) cons
             matched_location = *it;
         }
     }
-    return (best_match.first.empty() ? utils::shared_ptr<Location>(new Location())
-                                     : matched_location);
+    return (best_match.first.empty() ? utils::shared_ptr<Location>(NULL) : matched_location);
 }
 
 // if returns nullptr, rs is the valid response right away
@@ -112,6 +108,30 @@ std::pair<MatchType, std::string> Server::MatchHostName(
 std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
 {
     return MatchHostName(rq.GetHeaderVal("host").second, server_names_);
+}
+
+utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
+    utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq, utils::shared_ptr<Location> loc) const
+{
+    if (rq.status == http::RQ_INCOMPLETE) {
+        throw std::logic_error("trying to accept incomplete rq");
+    } else if (rq.status != http::RQ_GOOD) {
+        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
+        return utils::unique_ptr<AResponseProcessor>(
+            new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
+    } else if (!loc) {
+        LOG(DEBUG) << "RQ_BAD -> Send Error Response with 404";
+        return utils::unique_ptr<AResponseProcessor>(
+            new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)404));
+    } else if (loc->is_cgi()) {
+        // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq, cgi_paths,
+        // cgi_extensions, root_dir));
+    } else if (loc->dir_listing()) {
+        // return utils::unique_ptr<AResponseProcessor>(new DirListingResponseProcessor(cb, rq,
+        // root_dir));
+    }
+    LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
+    return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
 }
 
 std::string Server::GetInfo() const
