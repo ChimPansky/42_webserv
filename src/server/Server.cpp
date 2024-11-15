@@ -131,9 +131,9 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         return utils::unique_ptr<AResponseProcessor>(
             new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
     } else if (!loc) {
-        LOG(DEBUG) << "RQ_BAD -> Send Error Response with 404";
+        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
         return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)404));
+            new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
     } else if (loc->is_cgi()) {
         // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq, cgi_paths,
         // cgi_extensions, root_dir));
