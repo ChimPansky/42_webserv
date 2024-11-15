@@ -183,9 +183,6 @@ bool ServerConfigBuilder::IsKeyAllowed(const std::string& key) const
 
 bool ServerConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
 {
-    if (f.nested_configs().empty()) {
-        return false;
-    }
     for (std::vector<ParsedConfig>::const_iterator it = f.nested_configs().begin();
          it != f.nested_configs().end(); ++it) {
         if (it->nesting_lvl_descr().empty() || it->nesting_lvl() != "location") {
