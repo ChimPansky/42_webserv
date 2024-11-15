@@ -12,7 +12,7 @@ namespace http {
 
 class Uri {
   public:
-    Uri() {};
+    Uri(){};
     Uri(const std::string& raw_uri);
     Uri(const std::string& path, const std::string& query, const std::string& fragment);
     Uri(const Uri& rhs);
@@ -32,7 +32,7 @@ class Uri {
     const std::string& fragment() const { return fragment_.second; };
 
   private:
-  // todo: dont forget to use...
+    // todo: dont forget to use...
     enum UriStatus {
         URI_GOOD_BIT = 0,
         URI_BAD_BIT = 1L << 0,
@@ -52,13 +52,14 @@ class Uri {
     void ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos);
     void ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos);
 
-    std::pair<bool /*valid*/, std::string> PercentDecode_(const std::string& str, const char* ignore_set = NULL) const;
+    std::pair<bool /*valid*/, std::string> PercentDecode_(const std::string& str,
+                                                          const char* ignore_set = NULL) const;
     std::pair<bool /*valid*/, std::string> Normalize_(const std::string& str) const;
     std::string CollapseChars_(const std::string& str, char c) const;
 
     // helpers:
     void RemoveLastSegment_(std::string& path) const;
-    void MoveSegmentToOutput_(std::string& input, std::string& output) const ;
+    void MoveSegmentToOutput_(std::string& input, std::string& output) const;
     bool IsValidPathChar_(char c) const;
     bool IsValidQueryOrFragmentChar_(char c) const;
 
@@ -69,7 +70,6 @@ class Uri {
 
 std::ostream& operator<<(std::ostream& out, const Uri& uri);
 
-} // namespace http
+}  // namespace http
 
-
-#endif // WS_HTTP_URI_H
+#endif  // WS_HTTP_URI_H
