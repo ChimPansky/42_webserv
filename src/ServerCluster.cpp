@@ -65,7 +65,8 @@ utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http:
 void ServerCluster::PrintDebugInfo() const
 {
     for (ServersConstIt cit = servers_.begin(); cit != servers_.end(); ++cit) {
-        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name() << ". My config is: " << *(*cit);
+        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name()
+                   << ". My config is: " << (*cit)->GetDebugString();
         LOG(DEBUG);
     }
 }

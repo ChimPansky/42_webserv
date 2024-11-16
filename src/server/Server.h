@@ -1,12 +1,9 @@
 #ifndef WS_SERVER_SERVER_H
 #define WS_SERVER_SERVER_H
 
-#include <LocationConfig.h>
-#include <Request.h>
 #include <Response.h>
 #include <ServerConfig.h>
 #include <shared_ptr.h>
-#include <unique_ptr.h>
 
 #include "Location.h"
 
@@ -43,6 +40,7 @@ class Server {
     Severity access_log_level() const;
     const std::string& error_log_path() const;
     const std::vector<utils::shared_ptr<Location> >& locations() const;
+    std::string GetDebugString() const;
 
   private:
     std::string access_log_path_;
@@ -58,8 +56,6 @@ class Server {
         utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq,
         utils::shared_ptr<Location> loc) const;
 };
-
-std::ostream& operator<<(std::ostream& oss, const Server& server);
 
 #endif  // WS_SERVER_SERVER_H
 

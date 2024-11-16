@@ -79,42 +79,44 @@ std::pair<std::string /* path in uri */, bool /* is exact match */> Location::Ma
     return MatchUriPath(rq.uri.path(), route_);
 }
 
-std::ostream& operator<<(std::ostream& oss, const Location& loc)
+std::string Location::GetDebugString() const
 {
+    std::ostringstream oss;
+
     oss << "\n"
         << "--Location configuration: --\n"
-        << "Route: " << loc.route().first << " "
-        << (loc.route().second ? "(exact match)" : "(prefix match)") << "\n"
+        << "Route: " << route_.first << " " << (route_.second ? "(exact match)" : "(prefix match)")
+        << "\n"
         << "Allowed methods: ";
-    for (size_t i = 0; i < loc.allowed_methods().size(); ++i) {
-        oss << "  " << loc.allowed_methods()[i];
+    for (size_t i = 0; i < allowed_methods_.size(); ++i) {
+        oss << "  " << allowed_methods_[i];
     }
     oss << "\n"
         << "Redirect: ";
-    if (loc.redirect().first != 0) {
-        oss << loc.redirect().first << " " << loc.redirect().second;
+    if (redirect_.first != 0) {
+        oss << redirect_.first << " " << redirect_.second;
     } else {
         oss << "None";
     }
     oss << "\n"
-        << "CGI: " << (loc.is_cgi() ? "enabled" : "disabled") << "\n"
+        << "CGI: " << (is_cgi_ ? "enabled" : "disabled") << "\n"
         << "CGI paths: ";
-    for (size_t i = 0; i < loc.cgi_paths().size(); ++i) {
-        oss << "  " << loc.cgi_paths()[i];
+    for (size_t i = 0; i < cgi_paths_.size(); ++i) {
+        oss << "  " << cgi_paths_[i];
     }
     oss << "\n"
         << "CGI extensions: ";
-    for (size_t i = 0; i < loc.cgi_extensions().size(); ++i) {
-        oss << "  " << loc.cgi_extensions()[i];
+    for (size_t i = 0; i < cgi_extensions_.size(); ++i) {
+        oss << "  " << cgi_extensions_[i];
     }
     oss << "\n"
-        << "Root directory: " << loc.root_dir() << "\n"
+        << "Root directory: " << root_dir() << "\n"
         << "Default files: ";
-    for (size_t i = 0; i < loc.default_files().size(); ++i) {
-        oss << "  " << loc.default_files()[i];
+    for (size_t i = 0; i < default_files_.size(); ++i) {
+        oss << "  " << default_files_[i];
     }
     oss << "\n"
-        << "Client max body size: " << loc.client_max_body_size() << " bytes\n";
+        << "Client max body size: " << client_max_body_size() << " bytes\n";
 
-    return oss;
+    return oss.str();
 }

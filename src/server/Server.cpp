@@ -145,19 +145,21 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
 }
 
-std::ostream& operator<<(std::ostream& oss, const Server& server)
+std::string Server::GetDebugString() const
 {
+    std::ostringstream oss;
+
     oss << "\n\t--Server information: --";
-    oss << "\n\tAccess log path: " << server.access_log_path();
-    oss << "\n\tAccess log level: " << server.access_log_level();
-    oss << "\n\tError log path: " << server.error_log_path();
+    oss << "\n\tAccess log path: " << access_log_path_;
+    oss << "\n\tAccess log level: " << access_log_level_;
+    oss << "\n\tError log path: " << error_log_path_;
     oss << "\n\tServer names:";
 
-    for (size_t i = 0; i < server.server_names().size(); i++) {
-        oss << " " << server.server_names()[i];
+    for (size_t i = 0; i < server_names_.size(); i++) {
+        oss << " " << server_names_[i];
     }
-    for (size_t i = 0; i < server.locations().size(); i++) {
-        oss << *(server.locations()[i]);
+    for (size_t i = 0; i < locations().size(); i++) {
+        oss << locations_[i]->GetDebugString();
     }
-    return oss;
+    return oss.str();
 }
