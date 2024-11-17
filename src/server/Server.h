@@ -31,8 +31,8 @@ class Server {
                                                            const std::vector<std::string>&);
     std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
     // has to call IResponseCallback with rs when the last is rdy
-    utils::unique_ptr<AResponseProcessor> AcceptRequest(
-        const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+    void AcceptRequest(const http::Request& rq,
+                       utils::unique_ptr<http::IResponseCallback> cb) const;
 
     std::string name() const;
     const std::vector<std::string>& server_names() const;
@@ -52,9 +52,6 @@ class Server {
     typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;
 
     utils::shared_ptr<Location> ChooseLocation(const http::Request& rq) const;
-    utils::unique_ptr<AResponseProcessor> GetResponseProcessor(
-        utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq,
-        utils::shared_ptr<Location> loc) const;
 };
 
 #endif  // WS_SERVER_SERVER_H

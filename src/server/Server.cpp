@@ -120,31 +120,6 @@ std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request&
     return MatchHostName(rq.GetHeaderVal("host").second, server_names_);
 }
 
-utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
-    utils::unique_ptr<http::IResponseCallback> cb, const http::Request& rq,
-    utils::shared_ptr<Location> loc) const
-{
-    if (rq.status == http::RQ_INCOMPLETE) {
-        throw std::logic_error("trying to accept incomplete rq");
-    } else if (rq.status != http::RQ_GOOD) {
-        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-        return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
-    } else if (!loc) {
-        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
-        return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
-    } else if (loc->is_cgi()) {
-        // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq, cgi_paths,
-        // cgi_extensions, root_dir));
-    } else if (loc->dir_listing()) {
-        // return utils::unique_ptr<AResponseProcessor>(new DirListingResponseProcessor(cb, rq,
-        // root_dir));
-    }
-    LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
-    return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
-}
-
 std::string Server::GetDebugString() const
 {
     std::ostringstream oss;
