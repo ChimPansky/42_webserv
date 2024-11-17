@@ -7,7 +7,7 @@ Location::Location(const config::LocationConfig& cfg)
       client_max_body_size_(cfg.client_max_body_size())
 {}
 
-const std::pair<std::string /* path */, bool /* is exact match */>& Location::route() const
+const std::pair<std::string /*path*/, bool /*is_exact_match*/>& Location::route() const
 {
     return route_;
 }
@@ -17,7 +17,7 @@ const std::vector<http::Method>& Location::allowed_methods() const
     return allowed_methods_;
 }
 
-const std::pair<int /* status code */, std::string /* new route */>& Location::redirect() const
+const std::pair<int /*status_code*/, std::string /*new_route*/>& Location::redirect() const
 {
     return redirect_;
 }
@@ -58,7 +58,7 @@ unsigned int Location::client_max_body_size() const
     return client_max_body_size_;
 }
 
-std::pair<std::string /* path in uri */, bool /* is exact match */> Location::MatchUriPath(
+std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> Location::MatchUriPath(
     const std::string& path, const std::pair<std::string, bool>& route)
 {
     const std::string& route_path = route.first;
@@ -73,7 +73,7 @@ std::pair<std::string /* path in uri */, bool /* is exact match */> Location::Ma
     return std::make_pair(std::string(), false);
 }
 
-std::pair<std::string /* path in uri */, bool /* is exact match */> Location::MatchedRoute(
+std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> Location::MatchedRoute(
     const http::Request& rq) const
 {
     return MatchUriPath(rq.uri.path(), route_);

@@ -9,13 +9,13 @@
 class Location {
   public:
     Location(const config::LocationConfig&);
-    static std::pair<std::string /* path in uri */, bool /* is exact match */> MatchUriPath(
+    static std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> MatchUriPath(
         const std::string& path, const std::pair<std::string, bool>& route);
-    std::pair<std::string /* path in uri */, bool /* is exact match */> MatchedRoute(
+    std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> MatchedRoute(
         const http::Request& rq) const;
-    const std::pair<std::string /* path */, bool /* is exact match */>& route() const;
+    const std::pair<std::string /*path*/, bool /*is_exact_match*/>& route() const;
     const std::vector<http::Method>& allowed_methods() const;
-    const std::pair<int /* status code */, std::string /* new route */>& redirect() const;
+    const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect() const;
     bool is_cgi() const;
     const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
@@ -26,9 +26,9 @@ class Location {
     std::string GetDebugString() const;
 
   private:
-    std::pair<std::string /* path */, bool /* is exact match */> route_;
+    std::pair<std::string /*path*/, bool /*is_exact_match*/> route_;
     std::vector<http::Method> allowed_methods_;
-    std::pair<int /* status code */, std::string /* new route */> redirect_;
+    std::pair<int /*status_code*/, std::string /*new_route*/> redirect_;
     bool is_cgi_;
     std::vector<std::string> cgi_paths_;
     std::vector<std::string> cgi_extensions_;

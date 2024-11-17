@@ -47,7 +47,7 @@ const std::vector<utils::shared_ptr<Location> >& Server::locations() const
 
 utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) const
 {
-    std::pair<std::string, bool> best_match(std::string(), false);
+    std::pair<std::string /*route*/, bool /*is_exact_match*/> best_match(std::string(), false);
     utils::shared_ptr<Location> matched_location;
 
     for (LocationsConstIt it = locations_.begin(); it != locations_.end(); ++it) {

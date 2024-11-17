@@ -3,9 +3,9 @@
 namespace config {
 
 LocationConfig::LocationConfig(
-    const std::pair<std::string /* path */, bool /* is exact match */>& route,
+    const std::pair<std::string /*path*/, bool /*is_exact_match*/>& route,
     const std::vector<http::Method>& allowed_methods,
-    const std::pair<int /* status code */, std::string /* new route */>& redirect,
+    const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect,
     const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,
     const std::string& root_dir, const std::vector<std::string>& default_files, bool dir_listing,
     unsigned int client_max_body_size)
@@ -15,7 +15,7 @@ LocationConfig::LocationConfig(
       dir_listing_(dir_listing), client_max_body_size_(client_max_body_size)
 {}
 
-const std::pair<std::string /* path */, bool /* is exact match */>& LocationConfig::route() const
+const std::pair<std::string /*path*/, bool /*is_exact_match*/>& LocationConfig::route() const
 {
     return route_;
 }
@@ -25,7 +25,7 @@ const std::vector<http::Method>& LocationConfig::allowed_methods() const
     return allowed_methods_;
 }
 
-const std::pair<int /* status code */, std::string /* new route */>& LocationConfig::redirect()
+const std::pair<int /*status_code*/, std::string /*new_route*/>& LocationConfig::redirect()
     const
 {
     return redirect_;
@@ -66,7 +66,7 @@ unsigned int LocationConfig::client_max_body_size() const
     return client_max_body_size_;
 }
 
-std::pair<int /* status code */, std::string /* new route */> LocationConfig::InitRedirect(
+std::pair<int /*status_code*/, std::string /*new_route*/> LocationConfig::InitRedirect(
     const std::pair<int, std::string>& value)
 {
     if (value.first < 300 || value.first > 399) {
