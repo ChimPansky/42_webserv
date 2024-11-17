@@ -10,6 +10,7 @@ namespace http {
 // query and fragment can be defined by ? and # respectively. a defined query or fragment can
 // be empty or non-empty: "/path?#section1", "/path?query1=1#"
 
+
 class Uri {
   public:
     Uri(){};
@@ -42,6 +43,9 @@ class Uri {
         URI_BAD_FRAGMENT_BIT = 1L << 9,
     };
 
+    static const char* unreserved;
+    static const char* gen_delims;
+    static const char* sub_delims;
     int validity_state_;
     std::string path_;
     std::pair<bool /*defined*/, std::string /*value*/> query_;
@@ -55,6 +59,9 @@ class Uri {
     std::pair<bool /*valid*/, std::string> PercentDecode_(const std::string& str,
                                                           const char* ignore_set = NULL) const;
     std::pair<bool /*valid*/, std::string> Normalize_(const std::string& str) const;
+    //Normalize should do the following 3:
+    //RemoveDotSegments();
+    //makeEncodedHexToUpper(); %2f -> %2F
     std::string CollapseChars_(const std::string& str, char c) const;
 
     // helpers:

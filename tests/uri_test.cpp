@@ -14,10 +14,6 @@ TEST(BasicTests, 1_Test)
 TEST(BasicTests, 2_Test)
 {
     http::Uri uri = http::Uri("/path/to/file?a=20&b=30#fragment");
-    std::cout << uri.ToStr() << std::endl;
-    std::cout << "path: " << uri.path() << std::endl;
-    std::cout << "query: " << uri.query() << std::endl;
-    std::cout << "fragment: " << uri.fragment() << std::endl;
     EXPECT_EQ("/path/to/file", uri.path());
     EXPECT_EQ("a=20&b=30", uri.query());
     EXPECT_EQ("fragment", uri.fragment());
@@ -115,8 +111,6 @@ TEST(PathTests, 2_Test)
 TEST(QueryTests, 1_Test)
 {
     http::Uri uri = http::Uri("/?");
-    std::cout << "query: " << uri.query() << std::endl;
-    std::cout << "status: " << uri.status() << std::endl;
     EXPECT_EQ(uri.path(), "/");
     EXPECT_EQ(uri.query(), "");
     EXPECT_EQ(uri.fragment(), "");
@@ -126,8 +120,6 @@ TEST(QueryTests, 1_Test)
 TEST(QueryTests, 2_Test)
 {
     http::Uri uri = http::Uri("/path?a=20&b=30&c=40");
-    std::cout << "query: " << uri.query() << std::endl;
-    std::cout << "status: " << uri.status() << std::endl;
     EXPECT_EQ(uri.path(), "/path");
     EXPECT_EQ(uri.query(), "a=20&b=30&c=40");
     EXPECT_EQ(uri.fragment(), "");
@@ -235,9 +227,18 @@ TEST(DecodeTests, 11_Test_Query)
 
 TEST(DecodeTests, 12_Test_Query)
 {
-    http::Uri uri = http::Uri("/path?a=20%20&b=30%20&c=some%2Fpath");
+    http::Uri uri = http::Uri("/path?a=20&b=hello%20world&c=some%2Fpath");
     EXPECT_EQ(uri.path(), "/path");
-    EXPECT_EQ(uri.query(), "a=20 &b=30 &c=some/path");
+    EXPECT_EQ(uri.query(), "a=20&b=hello world&c=some/path");
+    EXPECT_EQ(uri.fragment(), "");
+    EXPECT_EQ(uri.Good(), true);
+}
+
+TEST(DecodeTests, 13_Test_Query)
+{
+    http::Uri uri = http::Uri("/path?a=20&cartoon=Tom%20%26%20Jerry&c=some%2Fpath");
+    EXPECT_EQ(uri.path(), "/path");
+    EXPECT_EQ(uri.query(), "a=20&cartoon=Tom %26 Jerry&c=some/path");
     EXPECT_EQ(uri.fragment(), "");
     EXPECT_EQ(uri.Good(), true);
 }

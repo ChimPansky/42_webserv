@@ -13,6 +13,11 @@ std::ostream& operator<<(std::ostream& out, const Uri& uri)
     return out;
 }
 
+const char* Uri::unreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~";
+const char* Uri::gen_delims = ":/?#[]@";
+const char* Uri::sub_delims = "!$&'()*+,;=";
+
+
 Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT)
 {
     size_t raw_uri_pos = 0;
@@ -26,7 +31,7 @@ Uri::Uri(const std::string& raw_uri) : validity_state_(URI_GOOD_BIT)
     }
     path_ = decoded_str.second;
     if (query_.first) {
-        decoded_str = PercentDecode_(query_.second);
+        decoded_str = PercentDecode_(query_.second, "&");
         if (!decoded_str.first) {
             validity_state_ |= URI_BAD_QUERY_BIT;
             return;
