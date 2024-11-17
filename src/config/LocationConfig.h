@@ -1,6 +1,7 @@
 #ifndef WS_LOCATIONCONFIG_H
 #define WS_LOCATIONCONFIG_H
 
+#include <ResponseCodes.h>
 #include <http.h>
 #include <logger.h>
 #include <netinet/in.h>
@@ -36,7 +37,7 @@ class LocationConfig {
     const std::vector<std::string>& default_files() const;
     bool dir_listing() const;
     unsigned int client_max_body_size() const;
-    static inline int kDefaultRedirectCode() { return 301; }
+    static inline int kDefaultRedirectCode() { return http::HTTP_MOVED_PERMANENTLY; }
     static inline const char* kDefaultRedirectPath() { return "/new_location"; }
     static inline const char* kDefaultRootDir() { return "/docs"; }
     static inline unsigned int kDefaultClientMaxBodySize() { return 2ul << 20; }
