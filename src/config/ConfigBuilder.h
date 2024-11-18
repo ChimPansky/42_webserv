@@ -13,7 +13,7 @@ namespace config {
 class ConfigBuilder : public IConfigBuilder<Config> {
   private:
     bool IsKeyAllowed(const std::string& key) const;
-    bool CheckAllNestings(const ParsedConfig& f) const;
+    bool AreNestingsValid(const ParsedConfig& f) const;
 
   public:
     typedef c_api::MultiplexType MxType;

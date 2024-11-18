@@ -136,8 +136,8 @@ static const std::string BuildRootDir(const std::vector<std::string>& vals,
     return InheritedSettings::BuildRootDir(vals, inherited_root);
 }
 
-static std::vector<std::string> BuildDefaultFile(const std::vector<std::string>& vals,
-                                                 const std::vector<std::string>& inherited_def_files)
+static std::vector<std::string> BuildDefaultFile(
+    const std::vector<std::string>& vals, const std::vector<std::string>& inherited_def_files)
 {
     if (vals.empty() && inherited_def_files.empty()) {
         return LocationConfig::kDefaultIndexFile();
@@ -206,7 +206,7 @@ bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
            "client_max_body_size";
 }
 
-bool LocationConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
+bool LocationConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
 {
     if (!f.nested_configs().empty()) {
         return false;
@@ -235,7 +235,7 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
     unsigned int client_max_body_size = BuildClientMaxBodySize(
         f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);
 
-    if (!CheckAllNestings(f)) {
+    if (!AreNestingsValid(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
     return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, root_dir,

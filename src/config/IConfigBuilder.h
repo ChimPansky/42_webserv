@@ -14,7 +14,7 @@ template <class ConfigType>
 class IConfigBuilder {
   protected:
     virtual bool IsKeyAllowed(const std::string& key) const = 0;
-    virtual bool CheckAllNestings(const ParsedConfig& f) const = 0;
+    virtual bool AreNestingsValid(const ParsedConfig& f) const = 0;
 
   public:
     virtual ConfigType Build(const ParsedConfig& f,

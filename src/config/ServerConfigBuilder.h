@@ -13,7 +13,7 @@ namespace config {
 class ServerConfigBuilder : public IConfigBuilder<ServerConfig> {
   private:
     bool IsKeyAllowed(const std::string& key) const;
-    bool CheckAllNestings(const ParsedConfig& f) const;
+    bool AreNestingsValid(const ParsedConfig& f) const;
 
   public:
     ServerConfig Build(const ParsedConfig& f, const InheritedSettings& inherited_settings) const;
