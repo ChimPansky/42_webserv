@@ -1,11 +1,12 @@
 #ifndef WS_SERVER_SERVER_H
 #define WS_SERVER_SERVER_H
 
-#include <LocationConfig.h>
-#include <Request.h>
 #include <Response.h>
 #include <ServerConfig.h>
-#include <unique_ptr.h>
+#include <shared_ptr.h>
+
+#include "Location.h"
+
 
 enum MatchType {
     NO_MATCH = 0,
@@ -29,24 +30,28 @@ class Server {
     static std::pair<MatchType, std::string> MatchHostName(const std::string& host,
                                                            const std::vector<std::string>&);
     std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
-
     // has to call IResponseCallback with rs when the last is rdy
     void AcceptRequest(const http::Request& rq,
                        utils::unique_ptr<http::IResponseCallback> cb) const;
 
     std::string name() const;
+    const std::vector<std::string>& server_names() const;
     const std::string& access_log_path() const;
     Severity access_log_level() const;
     const std::string& error_log_path() const;
-    const std::vector<config::LocationConfig>& locations() const;
-    std::string GetInfo() const;
+    const std::vector<utils::shared_ptr<Location> >& locations() const;
+    std::string GetDebugString() const;
 
   private:
     std::string access_log_path_;
     Severity access_log_level_;
     std::string error_log_path_;
     std::vector<std::string> server_names_;
-    std::vector<config::LocationConfig> locations_;
+
+    std::vector<utils::shared_ptr<Location> > locations_;
+    typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;
+
+    utils::shared_ptr<Location> ChooseLocation(const http::Request& rq) const;
 };
 
 #endif  // WS_SERVER_SERVER_H

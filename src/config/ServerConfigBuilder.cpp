@@ -1,14 +1,14 @@
 #include "ServerConfigBuilder.h"
 
+#include <c_api_utils.h>
+#include <numeric_utils.h>
+#include <str_utils.h>
+
 #include <stdexcept>
 
 #include "LocationConfig.h"
 #include "LocationConfigBuilder.h"
 #include "ServerConfig.h"
-
-#include <c_api_utils.h>
-#include <str_utils.h>
-#include <numeric_utils.h>
 
 namespace config {
 
@@ -181,11 +181,8 @@ bool ServerConfigBuilder::IsKeyAllowed(const std::string& key) const
            key == "root" || key == "index" || key == "autoindex" || "client_max_body_size";
 }
 
-bool ServerConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
+bool ServerConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
 {
-    if (f.nested_configs().empty()) {
-        return false;
-    }
     for (std::vector<ParsedConfig>::const_iterator it = f.nested_configs().begin();
          it != f.nested_configs().end(); ++it) {
         if (it->nesting_lvl_descr().empty() || it->nesting_lvl() != "location") {
@@ -213,14 +210,14 @@ ServerConfig ServerConfigBuilder::Build(const ParsedConfig& f,
     InheritedSettings server_inherited_settings = InheritedSettings();
     server_inherited_settings.root =
         InheritedSettings::BuildRootDir(f.FindSetting("root"), inherited_settings.root);
-    server_inherited_settings.def_file =
-        InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
+    server_inherited_settings.def_files =
+        InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     server_inherited_settings.dir_listing = InheritedSettings::BuildDirListing(
         f.FindSetting("autoindex"), inherited_settings.dir_listing);
     server_inherited_settings.client_max_body_size = InheritedSettings::BuildClientMaxBodySize(
         f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);
 
-    if (!CheckAllNestings(f)) {
+    if (!AreNestingsValid(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
     std::vector<LocationConfig> location_configs =

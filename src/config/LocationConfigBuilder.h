@@ -13,7 +13,7 @@ namespace config {
 class LocationConfigBuilder : public IConfigBuilder<LocationConfig> {
   private:
     bool IsKeyAllowed(const std::string& key) const;
-    bool CheckAllNestings(const ParsedConfig& f) const;
+    bool AreNestingsValid(const ParsedConfig& f) const;
 
   public:
     LocationConfig Build(const ParsedConfig& f, const InheritedSettings& inherited_settings) const;

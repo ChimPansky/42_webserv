@@ -1,8 +1,8 @@
 #include "LocationConfigBuilder.h"
 
-#include <sys/types.h>
 #include <numeric_utils.h>
 #include <str_utils.h>
+#include <sys/types.h>
 
 namespace config {
 
@@ -32,18 +32,17 @@ static std::pair<std::string, bool> BuildRoute(const std::string& vals)
     return ParseRoute(route_elements);
 }
 
-// TODO : Location config::Get -> http::Get/ HOWTO?
-static std::vector<LocationConfig::Method> ParseAllowedMethods(const std::vector<std::string>& vals)
+static std::vector<http::Method> ParseAllowedMethods(const std::vector<std::string>& vals)
 {
-    std::vector<LocationConfig::Method> allowed_methods;
+    std::vector<http::Method> allowed_methods;
 
     for (size_t i = 0; i < vals.size(); i++) {
         if (vals[i] == "GET") {
-            allowed_methods.push_back(LocationConfig::GET);
+            allowed_methods.push_back(http::HTTP_GET);
         } else if (vals[i] == "POST") {
-            allowed_methods.push_back(LocationConfig::POST);
+            allowed_methods.push_back(http::HTTP_POST);
         } else if (vals[i] == "DELETE") {
-            allowed_methods.push_back(LocationConfig::DELETE);
+            allowed_methods.push_back(http::HTTP_DELETE);
         } else {
             throw std::runtime_error("Invalid configuration file: invalid method: " + vals[i]);
         }
@@ -51,7 +50,7 @@ static std::vector<LocationConfig::Method> ParseAllowedMethods(const std::vector
     return allowed_methods;
 }
 
-static std::vector<LocationConfig::Method> BuildAllowedMethods(const std::vector<std::string>& vals)
+static std::vector<http::Method> BuildAllowedMethods(const std::vector<std::string>& vals)
 {
     std::vector<std::string> allowed_methods;
     if (vals.empty()) {
@@ -137,13 +136,13 @@ static const std::string BuildRootDir(const std::vector<std::string>& vals,
     return InheritedSettings::BuildRootDir(vals, inherited_root);
 }
 
-static std::vector<std::string> BuildDefaultFile(const std::vector<std::string>& vals,
-                                                 const std::vector<std::string>& inherited_def_file)
+static std::vector<std::string> BuildDefaultFile(
+    const std::vector<std::string>& vals, const std::vector<std::string>& inherited_def_files)
 {
-    if (vals.empty() && inherited_def_file.empty()) {
+    if (vals.empty() && inherited_def_files.empty()) {
         return LocationConfig::kDefaultIndexFile();
     }
-    return InheritedSettings::BuildDefaultFile(vals, inherited_def_file);
+    return InheritedSettings::BuildDefaultFile(vals, inherited_def_files);
 }
 
 static bool ParseDirListing(const std::string& vals)
@@ -207,7 +206,7 @@ bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
            "client_max_body_size";
 }
 
-bool LocationConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
+bool LocationConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
 {
     if (!f.nested_configs().empty()) {
         return false;
@@ -225,19 +224,18 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
         }
     }
     std::pair<std::string, bool> route = BuildRoute(f.nesting_lvl_descr());
-    std::vector<LocationConfig::Method> allowed_methods =
-        BuildAllowedMethods(f.FindSetting("limit_except"));
+    std::vector<http::Method> allowed_methods = BuildAllowedMethods(f.FindSetting("limit_except"));
     std::pair<int, std::string> redirect = BuildRedirect(f.FindSetting("return"));
     std::vector<std::string> cgi_paths = BuildCgiPaths(f.FindSetting("cgi_path"));
     std::vector<std::string> cgi_extensions = BuildCgiExtensions(f.FindSetting("cgi_extension"));
     std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_settings.root);
     std::vector<std::string> default_file =
-        BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
+        BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
     unsigned int client_max_body_size = BuildClientMaxBodySize(
         f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);
 
-    if (!CheckAllNestings(f)) {
+    if (!AreNestingsValid(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
     return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, root_dir,

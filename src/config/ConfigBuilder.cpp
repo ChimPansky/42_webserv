@@ -1,8 +1,9 @@
 #include "ConfigBuilder.h"
 
+#include <str_utils.h>
+
 #include "HttpConfig.h"
 #include "HttpConfigBuilder.h"
-#include <str_utils.h>
 
 namespace config {
 
@@ -67,7 +68,7 @@ bool ConfigBuilder::IsKeyAllowed(const std::string& key) const
     return key == "use" || key == "error_log";
 }
 
-bool ConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
+bool ConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
 {
     if (f.nested_configs().size() != 1) {
         return false;
@@ -93,7 +94,7 @@ Config ConfigBuilder::Build(const ParsedConfig& f,
     ConfigBuilder::MxType mx_type = BuildMxType(f.FindSetting("use"));
     std::pair<std::string, Severity> error_log = BuildErrorLog(f.FindSetting("error_log"));
 
-    if (!CheckAllNestings(f)) {
+    if (!AreNestingsValid(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
     HttpConfigBuilder http_builder;

@@ -1,13 +1,16 @@
 
 #include "Server.h"
-#include "IResponseProcessor.h"
-#include "Request.h"
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
-      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names()),
-      locations_(cfg.locations())
-{}
+      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names())
+{
+    typedef std::vector<config::LocationConfig>::const_iterator LocationConfigConstIt;
+
+    for (LocationConfigConstIt it = cfg.locations().begin(); it != cfg.locations().end(); ++it) {
+        locations_.push_back(utils::shared_ptr<Location>(new Location(*it)));
+    }
+}
 
 std::string Server::name() const
 {
@@ -15,6 +18,11 @@ std::string Server::name() const
         return std::string();
     }
     return server_names_[0];
+}
+
+const std::vector<std::string>& Server::server_names() const
+{
+    return server_names_;
 }
 
 const std::string& Server::access_log_path() const
@@ -32,9 +40,27 @@ const std::string& Server::error_log_path() const
     return error_log_path_;
 }
 
-const std::vector<config::LocationConfig>& Server::locations() const
+const std::vector<utils::shared_ptr<Location> >& Server::locations() const
 {
     return locations_;
+}
+
+utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) const
+{
+    std::pair<std::string /*route*/, bool /*is_exact_match*/> best_match(std::string(), false);
+    utils::shared_ptr<Location> matched_location;
+
+    for (LocationsConstIt it = locations_.begin(); it != locations_.end(); ++it) {
+        std::pair<std::string, bool> match_result = (*it)->MatchedRoute(rq);
+
+        if ((match_result.first.length() > best_match.first.length() &&
+             match_result.second == best_match.second) ||
+            match_result.second > best_match.second) {
+            best_match = match_result;
+            matched_location = *it;
+        }
+    }
+    return (best_match.first.empty() ? utils::shared_ptr<Location>(NULL) : matched_location);
 }
 
 // if returns nullptr, rs is the valid response right away
@@ -48,7 +74,8 @@ const std::vector<config::LocationConfig>& Server::locations() const
 void Server::AcceptRequest(const http::Request& rq,
                            utils::unique_ptr<http::IResponseCallback> cb) const
 {
-    // const config::LocationConfig* chosen_loc = &locations_[0];  // choose location with method,
+    const utils::shared_ptr<Location> chosen_loc =
+        ChooseLocation(rq);  // choose location with method,
     // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
@@ -88,7 +115,12 @@ std::pair<MatchType, std::string> Server::MatchHostName(
     return best_match;
 }
 
-std::string Server::GetInfo() const
+std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
+{
+    return MatchHostName(rq.GetHeaderVal("host").second, server_names_);
+}
+
+std::string Server::GetDebugString() const
 {
     std::ostringstream oss;
 
@@ -101,14 +133,8 @@ std::string Server::GetInfo() const
     for (size_t i = 0; i < server_names_.size(); i++) {
         oss << " " << server_names_[i];
     }
-    /* for (size_t i = 0; i < locations_.size(); i++) {
-        locations_[i].GetInfo();
-    } */
-
+    for (size_t i = 0; i < locations().size(); i++) {
+        oss << locations_[i]->GetDebugString();
+    }
     return oss.str();
-}
-
-std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
-{
-    return MatchHostName(rq.GetHeaderVal("host").second, server_names_);
 }

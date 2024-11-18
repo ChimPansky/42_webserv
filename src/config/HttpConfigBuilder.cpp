@@ -1,8 +1,9 @@
 #include "HttpConfigBuilder.h"
 
-#include "ServerConfigBuilder.h"
 #include <numeric_utils.h>
 #include <str_utils.h>
+
+#include "ServerConfigBuilder.h"
 
 namespace config {
 
@@ -70,7 +71,7 @@ bool HttpConfigBuilder::IsKeyAllowed(const std::string& key) const
            key == "root" || key == "index" || key == "autoindex" || "client_max_body_size";
 }
 
-bool HttpConfigBuilder::CheckAllNestings(const ParsedConfig& f) const
+bool HttpConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
 {
     if (f.nested_configs().empty()) {
         return false;
@@ -99,14 +100,14 @@ HttpConfig HttpConfigBuilder::Build(const ParsedConfig& f,
     InheritedSettings http_inherited_settings = inherited_settings;
     http_inherited_settings.root =
         InheritedSettings::BuildRootDir(f.FindSetting("root"), inherited_settings.root);
-    http_inherited_settings.def_file =
-        InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_file);
+    http_inherited_settings.def_files =
+        InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     http_inherited_settings.dir_listing = InheritedSettings::BuildDirListing(
         f.FindSetting("autoindex"), inherited_settings.dir_listing);
     http_inherited_settings.client_max_body_size = InheritedSettings::BuildClientMaxBodySize(
         f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);
 
-    if (!CheckAllNestings(f)) {
+    if (!AreNestingsValid(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
     std::vector<ServerConfig> server_configs =
