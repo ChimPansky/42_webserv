@@ -520,3 +520,10 @@ TEST(ComparisonTests, 88_Test_Comparison)
     http::Uri uri2 = http::Uri("/a/b/c/d/");
     EXPECT_EQ(uri1, uri2);
 }
+
+
+// TEST(SubUriTests, 100_Test_SubUri) {
+//     http::Uri uri = http::Uri("https://streaming-cdn.ad-balancer.at/kubrik/magenta-business24/xmas24/Apple/ORF/300x600_understitial_mab_xmas24-applesujet/index.html?clicktag=https%3A%2F%2Fad13.adfarm1.adition.com%2Fredi%3Flid%3D7438641180675802342%26gdpr%3D1%26gdpr%5Fconsent%3DCQGe7YAQGe7YAAHABBENBLFgAPPgAAAAAACYHVQIQADAAVAAyACCAE4AUAAsABkADSAIgAjQBNAE4APwAgQBCACoAGqAQgAiYBFgCcAF1AMCAYoA%2DwCNQEtAK%5FAW0AvMBjIDGwGWAOaAdUAAAAglABgACCoQoADAAEFQikAGAAIKhEIAMAAQVCGAAYAAgqEOgAwABBUIJABgACCoRaADAAEFQgAA.fnwAAAAAAAAA%26gdpr%5Fpd%3D0%26userid%3D7417098294784427237%26sid%3D4403101%26kid%3D6855662%26bid%3D21157265%26c%3D47003%26keyword%3D%26sr%3D184%26clickurl%3Dhttps%3A%2F%2Fad.doubleclick.net%2Fddm%2Ftrackclk%2FN187802.140834ORF.AT%2FB32715437.407267501%3Bdc_trk_aid%3D599201899%3Bdc_trk_cid%3D115441215%3Bdc_lat%3D%3Bdc_rdid%3D%3Btag_for_child_directed_treatment%3D%3Btfua%3D%3Bgdpr%3D%25gdpr%25%3Bgdpr_consent%3D%25gdpr_consent%3A755%25%3Bltd%3D%3Bdc_tdv%3D1");
+//     EXPECT_EQ(uri.path(), "/abc%2Fdef/jkl%2F");
+//     EXPECT_EQ(uri.Good(), true);
+// }
