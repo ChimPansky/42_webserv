@@ -52,16 +52,13 @@ URI:
   `segment-nz = 1*pchar`
   `hier-part = "//" authority path-abempty / path-absolute / path-rootless / path-empty`
   `absolute-URI  = scheme ":" hier-part [ "?" query ]`
-* Relative Reference:
+* **Relative Reference**:
   `relative-ref  = relative-part [ "?" query ] [ "#" fragment ]`
-  `relative-part = "//" authority path-abempty / path-absolute / path-noscheme / path-empty```
-* Absolut-Path:
+  `relative-part = "//" authority path-abempty / path-absolute / path-noscheme / path-empty`
+* **Absolut-Path**:
   an absolute path is a relative reference that begins with a single slash character.
 
- 
 A request-line begins with a method token, followed by a single space (SP), the request-target, and another single space (SP), and ends with the protocol version.
-
-
 
 `request-line   = method SP request-target SP HTTP-version`
 
