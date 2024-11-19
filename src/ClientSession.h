@@ -2,14 +2,13 @@
 #define WS_CLIENT_H
 
 #include <ClientSocket.h>
+#include <IResponseProcessor.h>
 #include <RequestBuilder.h>
 #include <Server.h>
 #include <multiplexers/ICallback.h>
 #include <shared_ptr.h>
 #include <sys/types.h>
 #include <unique_ptr.h>
-
-#include "IResponseProcessor.h"
 
 #define CLIENT_RD_CALLBACK_RD_SZ 20
 
@@ -64,14 +63,12 @@ class ClientSession {
         CS_IGNORE
     };
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
-    int master_socket_fd_;  // to choose correct server later
+    int master_socket_fd_;
     utils::shared_ptr<Server> associated_server_;
     utils::unique_ptr<AResponseProcessor> response_processor_;
     http::RequestBuilder rq_builder_;
     bool connection_closed_;
     CsState read_state_;
-    // Server* virtual_server; later: set this once request was successfully matched to
-    // corresponding server
 };
 
 #endif  // WS_CLIENT_H
