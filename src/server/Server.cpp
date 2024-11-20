@@ -1,6 +1,9 @@
 
 #include "Server.h"
 
+#include "Request.h"
+#include "shared_ptr.h"
+
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
       error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names())
@@ -74,18 +77,31 @@ utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) cons
 utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
+    switch (rq.status) {
+        case http::RQ_INCOMPLETE:
+            throw std::logic_error("trying to accept incomplete rq");
+        case http::RQ_BAD:
+            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
+            return utils::unique_ptr<AResponseProcessor>(
+                new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
+        case http::RQ_URI_TOO_LONG:
+            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
+            return utils::unique_ptr<AResponseProcessor>(
+                new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
+        case http::RQ_GOOD:
+            return GetResponseProcessor(rq, cb);
+    }
+}
+
+utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
+    const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
+{
     const utils::shared_ptr<Location> chosen_loc =
         ChooseLocation(rq);  // choose location with method,
     // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
-    if (rq.status == http::RQ_INCOMPLETE) {
-        throw std::logic_error("trying to accept incomplete rq");
-    } else if (rq.status != http::RQ_GOOD) {
-        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-        return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
-    } else if (!chosen_loc) {
+    if (!chosen_loc) {
         LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
         return utils::unique_ptr<AResponseProcessor>(
             new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
