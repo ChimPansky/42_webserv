@@ -1,7 +1,10 @@
 #include "ClientSession.h"
 
 #include <EventManager.h>
+#include <RequestBuilder.h>
 #include <logger.h>
+#include <multiplexers/ICallback.h>
+#include <unique_ptr.h>
 
 #include "ServerCluster.h"
 
