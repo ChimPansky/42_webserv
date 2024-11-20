@@ -37,11 +37,12 @@ URI:
   `path-absolute = "/" [ segment-nz * ( "/" segment ) ]` ; begins with "/" but not "//"
   `path-rootless`	`= segment-nz *( "/" segment )`	  ; begins with a segment
   `path-empty = 0 `						  ; zero characters
+  `absolute-path = 1*( "/" segment )`      ; begins with "/" and is followed by zero or more path segments
 * **Query**:
   `query         = *( pchar / "/" / "?" )`
 * **Fragment**:
   `fragment      = *( pchar / "/" / "?" )`
-* **Absolute-URI**:
+* **Absolute-URI**: (scheme, authority, path and optional query)
   `gen-delims = ":" / "/" / "?" / "#" / "[" / "]" / "@"`
   `sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="`
   `unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"`
@@ -49,7 +50,7 @@ URI:
   `pct-encoded   = "%" HEXDIG HEXDIG`
   `pchar = unreserved / pct-encoded / sub-delimbs / ":" / "@"`
   `segment = *pchar`
-  `segment-nz = 1*pchar`
+  `segment-nz = 1*pchar  ` ; non-zero-length segment
   `hier-part = "//" authority path-abempty / path-absolute / path-rootless / path-empty`
   `absolute-URI  = scheme ":" hier-part [ "?" query ]`
 * **Relative Reference**:
@@ -71,29 +72,25 @@ The Request-Target can be in one of 4 forms:
 | RFC9912/3.2.1 | origin-form<br />(most common) | For requests to origin-servers. All requests to origin-servers<br />(except methods CONNECT/OPTIONS) have to use this form.                                                                                                                                                                                                                  | origin-form    = absolute-path [ "?" query ]<br />"GET /where?q=now HTTP/1.1"<br />"GET / HTTP/1.1"    |
 | RFC9912/3.2.2 | absolute-form                  | For requests to proxy-servers. All requests to origin-servers<br />(except methods CONNECT/OPTIONS) have to use this form.<br />The <br />Even though it's not intended, Origin-Servers **MUST** **accept** absolute-form.<br />The host of targets in absolute-form **overrides** the value in the host-header field. | absolute-form  = absolute-URI<br />"GET http://www.example.org/pub/WWW/<br />TheProject.html HTTP/1.1" |
 | RFC9912/3.2.3 | authority-form                 | Only for CONNECT method. Request-target consists of only host + port.                                                                                                                                                                                                                                                                       | authority-form = uri-host ":" port<br />"CONNECT www.example.com:7070"                                 |
-| RFC9912/3.2.4 | asterisk-form                  | Only for OPTIONS method. Request-target == "*".<br />Used to retrieve a list of supported Methods from server.                                                                                                                                                                                                                               | asterisk-form  = "*"<br />"OPTIONS * HTTP/1.1"                                                         |
+| RFC9912/3.2.4 | asterisk-form                  | Only for OPTIONS method. Request-target == "*".<br />Used to retrieve a list of supported Methods from server.                                                                                                                                                                                                                               | asterisk-form  = "*"<br />"OPTIONS * HTTP/1.1"|                                                        |
 
-Since we only need to handle GET/POST/DELETE methods, we can already discard authority- and asterisk-form.
+Since we only need to handle GET/POST/DELETE methods, we can already **discard authority- and asterisk-form**.
 Even though we are implementing a origin-server, we still need to be able to accept request-targets in absolute-form;
-Best way to do this is to extract the host portion from the request-target and override the value of the host-header field.
+Best way to do this is to **extract the host portion** from the request-target and **override** the value of the **host-header** field.
 
 When parsing the request-target string (the string between method and version in the first line of request), we should proceed as follows:
-TODO: adapt process below...
 
-1. separate request-target into (scheme, authority, host, port,) path, query and fragment
-2. ProcessPath():
+1. Separate request using the delimiters from  `gen-delims`  into optional scheme, authority (mandatory only if scheme was specified; consisting of optional userinfo, host, optional port), path, optional query. Convert the scheme to lower-case as we read it. If we encounter a fragment, thats a BAD_REQUEST since it should not be sent to servers (its only relevant on the client level, for example for chrome to scroll down to a specific position on a requested html page).
+2. Check Scheme: If it is anything other than "http://" -> BAD_REQUEST CONTINUE_HERE...
+3. ProcessPath():
+4. DecodePercentages()
+5. CheckForInvalidPathChars()
+6. Normalize():
 
-   1. DecodePercentages()
-   2. CheckForInvalidPathChars()
-   3. Normalize():
-      1. multiple "///" collapse to "/"
-      2. "./" can be removed
-      3. "../" deletes previous folder from uri (work with stack containing of strings that represent a folder each. if "../" leads to level that is above root -> ERROR (path traversing...)
-3. ProcessQuery():
+   1. multiple "///" collapse to "/"
+   2. "./" can be removed
+   3. "../" deletes previous folder from uri (work with stack containing of strings that represent a folder each. if "../" leads to level that is above root -> ERROR (path traversing...)
+7. ProcessQuery():
 
    1. DecodePercentages()
    2. CheckForInvalidQueryChars()
-4. ProcessFragment()
-
-   1. DecodePercentages()
-   2. CheckForInvalidFramentChars()
