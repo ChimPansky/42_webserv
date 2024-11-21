@@ -59,11 +59,17 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: '3.22.1'
+          cmake-version: '3.14'
       - name: Set up test environment
         uses: ./.github/actions/setup
       - name: Use cmake
         run: cmake --version
+      - name: Set up Clang 12
+        uses: actions/setup-clang@v1
+        with:
+          clang-version: 12
+      - name: Check Clang Version
+        run: clang --version && cc --version && c++ --version
       - name: generate Makefiles
         run: mkdir -p build && cd build && cmake ..
       - name: compilation
