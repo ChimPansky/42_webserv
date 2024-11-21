@@ -7,6 +7,9 @@
 #include "IResponseProcessor.h"
 
 class FileProcessor : public AResponseProcessor {
+  private:
+    std::string ReadFile_();
+    std::string GetContentType(const std::string& file); // return mime type based on extension (mb move to utils)
   public:
     // change back to config
     FileProcessor(const std::string& file_path,
@@ -33,12 +36,10 @@ class FileProcessor : public AResponseProcessor {
         response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
             new http::Response(http::HTTP_OK, http::HTTP_1_1, hdrs, body)));
     }
-
     ~FileProcessor() { close(fd_); };
 
   private:
     int fd_;
-    std::string ReadFile_();
 };
 
 #endif  // WS_HTTP_FILE_PROCESSOR_H

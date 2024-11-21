@@ -6,14 +6,12 @@
 #include <unique_ptr.h>
 #include <time_utils.h>
 #include <logger.h>
-#include <string>
 
 class ClientSession;
 
 class AResponseProcessor {
   protected:
     AResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb) : response_rdy_cb_(response_rdy_cb) {};
-    std::string GetContentType(const std::string& file); // return mime type based on extension (mb move to utils)
   public:
     virtual ~AResponseProcessor() {};
   protected:
