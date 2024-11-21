@@ -65,9 +65,19 @@ jobs:
       - name: Use cmake
         run: cmake --version
       - name: Set up Clang 12
-        uses: actions/setup-clang@v1
-        with:
-          clang-version: 12
+        run: |
+          mkdir -p $HOME/clang
+          cd $HOME/clang
+          # Download Clang 12
+          curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-20.04.tar.xz
+          tar -xf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-20.04.tar.xz
+          # Rename clang and clang++ to cc and c++
+          mv clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-20.04/bin/clang $HOME/clang/bin/cc
+          mv clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-20.04/bin/clang++ $HOME/clang/bin/c++
+          # Set environment variables for CC and CXX
+          echo "export CC=$HOME/clang/bin/cc" >> $GITHUB_ENV
+          echo "export CXX=$HOME/clang/bin/c++" >> $GITHUB_ENV
+          echo "export PATH=$HOME/clang/bin:$PATH" >> $GITHUB_ENV
       - name: Check Clang Version
         run: clang --version && cc --version && c++ --version
       - name: generate Makefiles
