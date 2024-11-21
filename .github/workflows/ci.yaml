@@ -65,7 +65,7 @@ jobs:
       - name: Use cmake
         run: cmake --version
       - name: generate Makefiles
-        run: mkdir -p build && cd build && cmake ..
+        run: mkdir -p build && cd build && cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++ ..
       - name: compilation
         run: cd build && make
       - name: test
