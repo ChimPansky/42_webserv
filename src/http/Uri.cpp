@@ -96,6 +96,7 @@ bool Uri::operator!=(const Uri& rhs) const
 std::string Uri::ToStr() const
 {
     std::string str;
+    if ()
     if (!path_.empty()) {
         str += path_;
     }

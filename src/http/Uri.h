@@ -31,6 +31,7 @@ class Uri {
     const std::string& scheme() const { return scheme_.second; };
     const std::string& user_info() const { return user_info_.second; };
     const std::string& host() const { return host_.second; };
+    unsigned short port() const { return port_.second; };
     const std::string& path() const { return path_; };
     const std::string& query() const { return query_.second; };
     const std::string& fragment() const { return fragment_.second; };
