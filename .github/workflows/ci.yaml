@@ -64,14 +64,10 @@ jobs:
         uses: ./.github/actions/setup
       - name: Use cmake
         run: cmake --version
-      - name: Install Clang 12
-        run: sudo apt update && sudo apt install -y clang-12
-      - name: Set CC and CXX to Clang 12
+      - name: Set CC and CXX to Clang
         run: |
-          echo "CC=clang-12" >> $GITHUB_ENV
-          echo "CXX=clang++-12" >> $GITHUB_ENV
-      - name: Check Clang Version
-        run: clang --version && cc --version && c++ --version
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
       - name: generate Makefiles
         run: mkdir -p build && cd build && cmake ..
       - name: compilation
