@@ -64,8 +64,10 @@ jobs:
         uses: ./.github/actions/setup
       - name: Use cmake
         run: cmake --version
+      - name: Verify Compiler
+        run: cc --version && c++ --version
       - name: generate Makefiles
-        run: mkdir -p build && cd build && cmake -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++ ..
+        run: mkdir -p build && cd build && cmake ..
       - name: compilation
         run: cd build && make
       - name: test
