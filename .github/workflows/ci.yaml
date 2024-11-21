@@ -59,13 +59,11 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: '3.14'
+          cmake-version: '3.22.1'
       - name: Set up test environment
         uses: ./.github/actions/setup
       - name: Use cmake
         run: cmake --version
-      - name: Verify Compiler
-        run: cc --version && c++ --version
       - name: generate Makefiles
         run: mkdir -p build && cd build && cmake ..
       - name: compilation

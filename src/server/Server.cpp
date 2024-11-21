@@ -91,7 +91,7 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
         case http::RQ_GOOD:
             return GetResponseProcessor(rq, cb);
     }
-    throw std::logic_error("unknown rq status");  // temporary - to silence compiler
+    // throw std::logic_error("unknown rq status");  // temporary - to silence compiler
 }
 
 utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
