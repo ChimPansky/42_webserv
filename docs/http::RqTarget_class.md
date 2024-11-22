@@ -1,6 +1,6 @@
 # -class http::RqTarget
 
-URI:
+#### URI:
 
 ```
          foo://example.com:8042/over/there?name=ferret#nose
@@ -12,7 +12,16 @@ URI:
          urn:example:animal:ferret:nose
 ```
 
-**Clarifications**:
+#### Request-Target:
+
+`request-line   = method SP request-target SP HTTP-version `
+examples:
+`GET /www/search?name=john HTTP/1.1
+POST www.example.com:4242/upload/images HTTP/1.1`
+
+**Request-Target is **NOT** the same as URI!
+
+### Clarifications**:
 
 * **URI** (Unified Resource Identifier): the thing that is typed into the address bar of a browser; the argument of curl,...
 * **Request-Target**: Generally a subset of the URI.
@@ -66,8 +75,6 @@ URI:
 A request-line begins with a method token, followed by a single space (SP), the request-target, and another single space (SP), and ends with the protocol version.
 
 `request-line   = method SP request-target SP HTTP-version`
-
-Request-Target is **NOT** the same as URI!
 
 The Request-Target can be in one of 4 forms:
 
