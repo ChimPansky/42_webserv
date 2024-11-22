@@ -1,6 +1,5 @@
 #include "RqTarget.h"
 
-#include <numeric_utils.h>
 #include <str_utils.h>
 
 #include <cstring>
@@ -30,26 +29,7 @@ RqTarget::RqTarget(const std::string& raw_target) : validity_state_(TARGET_GOOD)
     ParsePath_(raw_target, raw_target_pos);
     ParseQuery_(raw_target, raw_target_pos);
     ParseFragment_(raw_target, raw_target_pos);
-    std::pair<bool, std::string> decoded_str = PercentDecode_(path_.second, kUnreserved);
-    if (!decoded_str.first) {
-        validity_state_ |= TARGET_BAD_PATH;
-        return;
-    }
-    path_.second = decoded_str.second;
-    if (query_.first) {
-        decoded_str = PercentDecode_(query_.second, kUnreserved);
-        if (!decoded_str.first) {
-            validity_state_ |= TARGET_BAD_QUERY;
-            return;
-        }
-        query_.second = decoded_str.second;
-    }
-    std::pair<bool, std::string> normalized_path = RemoveDotSegments_(path_.second);
-    if (!normalized_path.first) {
-        validity_state_ |= TARGET_BAD_PATH;
-        return;
-    }
-    path_.second = CollapseSlashes_(normalized_path.second);
+    Normalize_();
     Validate_();
 }
 
@@ -76,7 +56,7 @@ RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, cons
     if (!fragment.empty()) {
         fragment_ = std::make_pair(true, fragment);
     }
-    // Normalize()??
+    Normalize_();
     Validate_();
 }
 
@@ -273,22 +253,39 @@ void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_
     fragment_.second = raw_target.substr(raw_target_pos + 1);
 }
 
+void RqTarget::Normalize_() {
+    // todo: decide if we want to support percentdecoding for host
+    if (path_.first) {
+        path_.second = PercentDecode_(path_.second);
+        ConvertEncodedHexToUpper_(path_.second);
+        path_.second = CollapseSlashes_(path_.second);
+        std::pair<bool, std::string> dot_segment_free_path = RemoveDotSegments_(path_.second);
+        if (dot_segment_free_path.first) {
+            path_.second = dot_segment_free_path.second;
+        }
+        else { // directory traversal detected -> BAD_REQUEST
+            validity_state_ |= TARGET_BAD_PATH;
+        }
+    }
+    if (query_.first) { // todo: check if we need to decode other chars than unreserved (for example '&', '=',...)
+        query_.second = PercentDecode_(query_.second);
+        ConvertEncodedHexToUpper_(query_.second);
+    }
+}
+
 // todo: move this to utils or into separate class Encoder/Decoder with static methods and reserved/unreserved character-sets
-std::pair<bool /*valid*/, std::string> RqTarget::PercentDecode_(const std::string& str,
+std::string RqTarget::PercentDecode_(const std::string& str,
                                                            const char* decode_set) const
 {
+    if (!decode_set || decode_set[0] == '\0') {
+        return str;
+    }
     std::string decoded;
     std::pair<bool, unsigned short> ascii;
     for (size_t i = 0; i < str.size(); ++i) {
-        if (str[i] == '%') {
-            if (i + 2 >= str.size()) {
-                return std::pair<bool, std::string>(false, "");
-            }
+        if (str[i] == '%' && i + 2 >= str.size()) {
             ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
-            if (!ascii.first) {
-                return std::pair<bool, std::string>(false, "");
-            }
-            if (decode_set && strchr(decode_set, static_cast<char>(ascii.second))) {
+            if (ascii.first && strchr(decode_set, static_cast<char>(ascii.second))) {
                 decoded += static_cast<char>(ascii.second);
             }
             else {
@@ -299,7 +296,7 @@ std::pair<bool /*valid*/, std::string> RqTarget::PercentDecode_(const std::strin
             decoded += str[i];
         }
     }
-    return std::pair<bool, std::string>(true, decoded);
+    return decoded;
 }
 
 std::pair<bool /*valid*/, std::string> RqTarget::RemoveDotSegments_(const std::string& str) const
@@ -373,9 +370,18 @@ std::string RqTarget::CollapseSlashes_(const std::string& str) const
     return collapsed;
 }
 
+void RqTarget::ConvertEncodedHexToUpper_(std::string& str)
+{
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (str[i] == '%' && i + 2 < str.size()) {
+            str[i + 1] = std::toupper(str[i + 1]);
+            str[i + 2] = std::toupper(str[i + 2]);
+        }
+    }
+}
+
 void RqTarget::Validate_()
 {
-    validity_state_ = TARGET_GOOD;
     if (scheme_.first) {
         ValidateScheme_();
     }
@@ -421,8 +427,13 @@ void RqTarget::ValidateHost_()
     if (host_.second.empty()) {
         validity_state_ |= TARGET_BAD_HOST;
     }
-    // todo: further checks
-    // check that it doesnt contain reserved characters (delimiters)
+    for (size_t i = 0; i < host_.second.size(); ++i) {
+        const char *str = host_.second.c_str() + i;
+        if (!IsValidContent_(str)) {
+            validity_state_ |= TARGET_BAD_HOST;
+            return;
+        }
+    }
 }
 
 void RqTarget::ValidatePort_()
@@ -494,6 +505,7 @@ bool RqTarget::IsEncodedOctet_(const char* str) const
     if (!std::isxdigit(str[1]) || !std::isxdigit(str[2])) {
         return false;
     }
+    return true;
 }
 
 bool RqTarget::IsUnreservedChar_(char c) const

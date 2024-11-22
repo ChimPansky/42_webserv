@@ -28,8 +28,8 @@ URI:
     `userinfo    = *( unreserved / pct-encoded / sub-delims / ":" )`
   * **Host:**
     `IPvFuture   = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )`
-
-    `host        = (IPv6address / IPvFuture) / IPv4address / reg-name`
+    `reg-name    = *( unreserved / pct-encoded / sub-delims )`
+    `host        = (IPv6address / IPvFuture) / IPv4address / reg-name `
   * **Port**:
     port          = *DIGIT
 * **Path:**

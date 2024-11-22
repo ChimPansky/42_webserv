@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <string>
+#include <numeric_utils.h>
 namespace http {
 
 /* RqTarget class:
@@ -45,7 +46,6 @@ class RqTarget {
     const std::string& user_info() const { return user_info_.second; };
     const std::string& host() const { return host_.second; };
     const std::string& port() const { return port_.second; };
-    unsigned short port() const { return utils::StrToNumericNoThrow<unsigned short>(port_.second).second; };
     const std::string& path() const { return path_.second; };
     const std::string& query() const { return query_.second; };
     const std::string& fragment() const { return fragment_.second; };
@@ -89,13 +89,15 @@ class RqTarget {
     void ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos);
     void ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos);
 
-    std::pair<bool /*valid*/, std::string> PercentDecode_(const std::string& str,
-                                                          const char* ignore_set = NULL) const;
-    std::pair<bool /*valid*/, std::string> RemoveDotSegments_(const std::string& str) const;
-    //Normalize should do the following 3:
+    // normalize components: decode safe-to-decode chars, convert encoded hex to upper, remove dot segments and collapse slashes in path
+    void Normalize_();
+    std::string PercentDecode_(const std::string& str, const char* decode_set = kUnreserved) const;
+    void ConvertEncodedHexToUpper_(std::string& str);
+    std::pair<bool /*no_directory_traversal*/, std::string> RemoveDotSegments_(const std::string& str) const;
+    std::string CollapseSlashes_(const std::string& str) const;
+    // should do the following 3:
     //RemoveDotSegments();
     //makeEncodedHexToUpper(); %2f -> %2F
-    std::string CollapseSlashes_(const std::string& str) const;
 
     // helpers:
     void RemoveLastSegment_(std::string& path) const;
