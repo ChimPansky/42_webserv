@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "IResponseProcessor.h"
+#include "ResponseCodes.h"
 
 class FileProcessor : public AResponseProcessor {
   private:
@@ -18,10 +19,12 @@ class FileProcessor : public AResponseProcessor {
     {
         if (access(file_path.c_str(), F_OK) == -1) {
             // return 404
+            GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND);
         }
         fd_ = open(file_path.c_str(), O_RDONLY);
         if (fd_ == -1) {
-            // return 403
+            // return 50x
+            GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR);
         }
         std::string body_str = ReadFile_();
         std::vector<char> body;
