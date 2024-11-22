@@ -1,16 +1,16 @@
-#ifndef WS_HTTP_FILE_PROCESSOR_H
-#define WS_HTTP_FILE_PROCESSOR_H
+#ifndef WS_SERVER_FILE_PROCESSOR_H
+#define WS_SERVER_FILE_PROCESSOR_H
 
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "IResponseProcessor.h"
+#include "AResponseProcessor.h"
 #include "ResponseCodes.h"
 
 class FileProcessor : public AResponseProcessor {
   private:
     std::string ReadFile_();
-    std::string GetContentType(const std::string& file); // return mime type based on extension (mb move to utils)
+    std::string GetContentType(const std::string& file); // return mime type based on extension (mb move to utils later)
   public:
     // change back to config
     FileProcessor(const std::string& file_path,
@@ -31,8 +31,6 @@ class FileProcessor : public AResponseProcessor {
         body.reserve(body_str.size());
         std::copy(body_str.begin(), body_str.end(), std::back_inserter(body));
         std::map<std::string, std::string> hdrs;
-        hdrs["Server"] = "ft_webserv";
-        hdrs["Date"] = utils::GetFormatedTime();
         hdrs["Content-Type"] = GetContentType(file_path);
         // hdrs["Connection"] = "Closed";
         hdrs["Content-Length"] = utils::NumericToString(body.size());
@@ -45,4 +43,4 @@ class FileProcessor : public AResponseProcessor {
     int fd_;
 };
 
-#endif  // WS_HTTP_FILE_PROCESSOR_H
+#endif  // WS_SERVER_FILE_PROCESSOR_H

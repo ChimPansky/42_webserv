@@ -1,5 +1,5 @@
-#ifndef WS_SERVER_IPROCESSOR_H
-#define WS_SERVER_IPROCESSOR_H
+#ifndef WS_SERVER_ARESPONSE_PROCESSOR_H
+#define WS_SERVER_ARESPONSE_PROCESSOR_H
 
 #include <Request.h>
 #include <Response.h>
@@ -81,4 +81,4 @@ class GeneratedErrorResponseProcessor : public AResponseProcessor {
 // };
 
 
-#endif  // WS_SERVER_IPROCESSOR_H
+#endif  // WS_SERVER_ARESPONSE_PROCESSOR_H
