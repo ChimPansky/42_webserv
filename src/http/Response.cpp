@@ -50,3 +50,8 @@ std::string Response::DumpToStr() const {
 const std::map<std::string, std::string>& Response::headers() const {
     return headers_;
 }
+
+void  Response::set_headers(const std::map<std::string, std::string>& hdrs)
+{
+    headers_ = hdrs;
+}

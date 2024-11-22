@@ -35,6 +35,7 @@ class Server {
         const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
     utils::unique_ptr<AResponseProcessor> GetResponseProcessor(
         const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+    void  FillResponseHeaders(utils::unique_ptr<http::Response> rs) const;
 
     std::string name() const;
     const std::vector<std::string>& server_names() const;
