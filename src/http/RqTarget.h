@@ -45,6 +45,7 @@ class RqTarget {
     const std::string& user_info() const { return user_info_.second; };
     const std::string& host() const { return host_.second; };
     const std::string& port() const { return port_.second; };
+    unsigned short port() const { return utils::StrToNumericNoThrow<unsigned short>(port_.second).second; };
     const std::string& path() const { return path_.second; };
     const std::string& query() const { return query_.second; };
     const std::string& fragment() const { return fragment_.second; };
@@ -66,9 +67,9 @@ class RqTarget {
         TARGET_HAS_FRAGMENT = 1L << 10,
     };
 
-    static const char* unreserved;
-    static const char* gen_delims;
-    static const char* sub_delims;
+    static const char* kUnreserved;
+    static const char* kGenDelims;
+    static const char* kSubDelims;
     int validity_state_;
     UriComponent scheme_;
     UriComponent user_info_;
@@ -94,18 +95,20 @@ class RqTarget {
     //Normalize should do the following 3:
     //RemoveDotSegments();
     //makeEncodedHexToUpper(); %2f -> %2F
-    std::string CollapseChars_(const std::string& str, char c) const;
+    std::string CollapseSlashes_(const std::string& str) const;
 
     // helpers:
     void RemoveLastSegment_(std::string& path) const;
     void MoveSegmentToOutput_(std::string& input, std::string& output) const;
-    bool IsValidPathChar_(char c) const;
-    bool IsValidQueryOrFragmentChar_(char c) const;
 
     void ValidateScheme_();
-    bool IsValidPath_(const std::string& path) const;
-    bool IsValidQuery_(const std::string& query) const;
-    bool IsValidFragment_(const std::string& fragment) const;
+    void ValidateHost_();
+    void ValidatePort_();
+    void ValidatePath_();
+    void ValidateQuery_();
+    bool IsValidContent_(const char *str) const;
+    bool IsEncodedOctet_(const char *str) const;
+    bool IsUnreservedChar_(char c) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const RqTarget& RqTarget);

@@ -48,7 +48,7 @@ URI:
   `unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"`
   `reserved = gen-delims / sub-delims `
   `pct-encoded   = "%" HEXDIG HEXDIG`
-  `pchar = unreserved / pct-encoded / sub-delimbs / ":" / "@"`
+  `pchar = unreserved / pct-encoded / sub-delims / ":" / "@"`
   `segment = *pchar`
   `segment-nz = 1*pchar  ` ; non-zero-length segment
   `hier-part = "//" authority path-abempty / path-absolute / path-rootless / path-empty`
@@ -72,7 +72,7 @@ The Request-Target can be in one of 4 forms:
 | RFC9912/3.2.1 | origin-form<br />(most common) | For requests to origin-servers. All requests to origin-servers<br />(except methods CONNECT/OPTIONS) have to use this form.                                                                                                                                                                                                                  | origin-form    = absolute-path [ "?" query ]<br />"GET /where?q=now HTTP/1.1"<br />"GET / HTTP/1.1"    |
 | RFC9912/3.2.2 | absolute-form                  | For requests to proxy-servers. All requests to origin-servers<br />(except methods CONNECT/OPTIONS) have to use this form.<br />The <br />Even though it's not intended, Origin-Servers **MUST** **accept** absolute-form.<br />The host of targets in absolute-form **overrides** the value in the host-header field. | absolute-form  = absolute-URI<br />"GET http://www.example.org/pub/WWW/<br />TheProject.html HTTP/1.1" |
 | RFC9912/3.2.3 | authority-form                 | Only for CONNECT method. Request-target consists of only host + port.                                                                                                                                                                                                                                                                       | authority-form = uri-host ":" port<br />"CONNECT www.example.com:7070"                                 |
-| RFC9912/3.2.4 | asterisk-form                  | Only for OPTIONS method. Request-target == "*".<br />Used to retrieve a list of supported Methods from server.                                                                                                                                                                                                                               | asterisk-form  = "*"<br />"OPTIONS * HTTP/1.1"|                                                        |
+| RFC9912/3.2.4 | asterisk-form                  | Only for OPTIONS method. Request-target == "*".<br />Used to retrieve a list of supported Methods from server.                                                                                                                                                                                                                               | asterisk-form  = "*"<br />"OPTIONS * HTTP/1.1"                                                         |
 
 Since we only need to handle GET/POST/DELETE methods, we can already **discard authority- and asterisk-form**.
 Even though we are implementing a origin-server, we still need to be able to accept request-targets in absolute-form;
