@@ -254,7 +254,11 @@ void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_
 }
 
 void RqTarget::Normalize_() {
-    // todo: decide if we want to support percentdecoding for host
+    // todo decoding: check if decoding-set is same for host, path and query
+    if (host_.first) {
+        host_.second = PercentDecode_(host_.second);
+        ConvertEncodedHexToUpper_(host_.second);
+    }
     if (path_.first) {
         path_.second = PercentDecode_(path_.second);
         ConvertEncodedHexToUpper_(path_.second);
@@ -267,13 +271,13 @@ void RqTarget::Normalize_() {
             validity_state_ |= TARGET_BAD_PATH;
         }
     }
-    if (query_.first) { // todo: check if we need to decode other chars than unreserved (for example '&', '=',...)
+    if (query_.first) {
         query_.second = PercentDecode_(query_.second);
         ConvertEncodedHexToUpper_(query_.second);
     }
 }
 
-// todo: move this to utils or into separate class Encoder/Decoder with static methods and reserved/unreserved character-sets
+// todo: decide if we also need to be able to decode chars from reserved-set (for example if query contains a request-target: "/path?link=http%3A%2F%2Fwww.example.com%2Fsearch%3Fq%3Dtest")
 std::string RqTarget::PercentDecode_(const std::string& str,
                                                            const char* decode_set) const
 {
@@ -463,7 +467,7 @@ void RqTarget::ValidatePath_()
     }
     for (size_t i = 0; i < path_.second.size(); ++i) {
         const char *str = path_.second.c_str() + i;
-        if (!IsValidContent_(str) && *str != '/') {
+        if (!IsValidContent_(str) && std::strchr(":@/", *str) != NULL) {
             validity_state_ |= TARGET_BAD_PATH;
             return;
         }
@@ -481,7 +485,7 @@ void RqTarget::ValidateQuery_()
     }
     for (size_t i = 0; i < query_.second.size(); ++i) {
         const char *str = query_.second.c_str() + i;
-        if (!IsValidContent_(str) && *str != '&' && *str != '=' && *str != ';') { // todo: add more chars
+        if (!IsValidContent_(str) && std::strchr(":@/?", *str) != NULL) {
             validity_state_ |= TARGET_BAD_PATH;
             return;
         }
@@ -490,8 +494,7 @@ void RqTarget::ValidateQuery_()
 
 bool RqTarget::IsValidContent_(const char* str) const
 {
-
-    return IsEncodedOctet_(str) || IsUnreservedChar_(*str);
+    return IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) != NULL;
 }
 
 bool RqTarget::IsEncodedOctet_(const char* str) const

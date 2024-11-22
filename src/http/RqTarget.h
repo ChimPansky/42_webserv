@@ -10,16 +10,16 @@ namespace http {
  Request Target is the string that comes after the method and before the version in the request line. Example: "GET /path/to/file?query1=1&query2=2 HTTP/1.1"
  We need to handle 2 kinds of targets:
     1. Absolute path: /path[?query] (slash followed by zero or more path segments and an optional query). example: /path/to/file?query1=1&query2=2
-    2. Absolute URI: scheme://[user_info@]host[:port]/path[?query][#fragment] (scheme followed by host followed by optional port followed by absolute path. example: http://www.example.com/path/to/file?query1=1&query2=2
+    2. Absolute URI: scheme://host[:port]/path[?query] (scheme followed by host followed by optional port followed by absolute path followed by optional query. example: http://www.example.com/path/to/file?query1=1&query2=2
 
     - Mostly we handle RqTargets in first form, but according to RFC we also need to be able to accept Requests with Targets in second form (Requests to Proxy servers).
     - The host and port information in the second form will then override the value of the host header field and will be used to choose a Server from the ServerCluster.
 
     in order to make the target comparable to other targets, we need to normalize it. Normalization includes:
     - Store scheme and host in lower-case since they are case-insensitive.
-    - Percent-decode the path and query components. Only decode unreserved characters, leave reserved characters (chars that are used as delimiters like %2F for /, %3F for ?,...) as is.
-    - Remove dot-segments from the path component.
+    - Percent-decode the host, path and query components. Only decode unreserved characters, leave reserved characters (chars that are used as delimiters like %2F for /, %3F for ?,...) as is (might need to change this later - host and query may have different decoding rules).
     - Make the encoded hex characters in the path and query components uppercase.
+    - Remove dot-segments from the path component.
     - Collapse sequences of slashes in the path-component.
 
 */
@@ -50,10 +50,8 @@ class RqTarget {
     const std::string& query() const { return query_.second; };
     const std::string& fragment() const { return fragment_.second; };
 
-    typedef std::pair<bool /*component_defined*/, std::string /*value*/> UriComponent;
 
   private:
-    // todo: dont forget to use...
     enum RqTargetStatus {
         TARGET_GOOD = 0,
         TARGET_BAD = 1L << 0,
@@ -71,13 +69,15 @@ class RqTarget {
     static const char* kGenDelims;
     static const char* kSubDelims;
     int validity_state_;
-    UriComponent scheme_;
-    UriComponent user_info_;
-    UriComponent host_;
-    UriComponent port_;
-    UriComponent path_;
-    UriComponent query_;
-    UriComponent fragment_;
+    
+    typedef std::pair<bool /*component_defined*/, std::string /*value*/> Component;
+    Component scheme_;
+    Component user_info_;
+    Component host_;
+    Component port_;
+    Component path_;
+    Component query_;
+    Component fragment_;
 
     void Validate_();
     bool ExtractComponent();
@@ -95,9 +95,6 @@ class RqTarget {
     void ConvertEncodedHexToUpper_(std::string& str);
     std::pair<bool /*no_directory_traversal*/, std::string> RemoveDotSegments_(const std::string& str) const;
     std::string CollapseSlashes_(const std::string& str) const;
-    // should do the following 3:
-    //RemoveDotSegments();
-    //makeEncodedHexToUpper(); %2f -> %2F
 
     // helpers:
     void RemoveLastSegment_(std::string& path) const;

@@ -1,4 +1,4 @@
-Source: RFC 9112
+# -class http::RqTarget
 
 URI:
 
@@ -12,7 +12,7 @@ URI:
          urn:example:animal:ferret:nose
 ```
 
-**Clarification of terms**:
+**Clarifications**:
 
 * **URI** (Unified Resource Identifier): the thing that is typed into the address bar of a browser; the argument of curl,...
 * **Request-Target**: Generally a subset of the URI.
@@ -32,6 +32,8 @@ URI:
     `host        = (IPv6address / IPvFuture) / IPv4address / reg-name `
   * **Port**:
     port          = *DIGIT
+    usage of userinfo in http is deprecated and should be rejected. see [https://datatracker.ietf.org/doc/html/rfc9110#name-deprecation-of-userinfo-in-]()
+    -> if we detect user-info, we say it is a BAD REQUEST
 * **Path:**
   `path-abempty = *( "/" segment ) `                              ; begins with "/" or is empty
   `path-absolute = "/" [ segment-nz * ( "/" segment ) ]` ; begins with "/" but not "//"
@@ -41,7 +43,9 @@ URI:
 * **Query**:
   `query         = *( pchar / "/" / "?" )`
 * **Fragment**:
-  `fragment      = *( pchar / "/" / "?" )`
+  `fragment      = *( pchar / "/" / "?" ) `
+  Fragments are only used on user-agent (client) side and are not sent to servers. see [https://datatracker.ietf.org/doc/html/rfc9110#name-uri-references
+  ]()-> if we detect fragment (request-target contains unencoded "#"), we say it is a BAD REQUEST
 * **Absolute-URI**: (scheme, authority, path and optional query)
   `gen-delims = ":" / "/" / "?" / "#" / "[" / "]" / "@"`
   `sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="`
@@ -78,19 +82,31 @@ Since we only need to handle GET/POST/DELETE methods, we can already **discard a
 Even though we are implementing a origin-server, we still need to be able to accept request-targets in absolute-form;
 Best way to do this is to **extract the host portion** from the request-target and **override** the value of the **host-header** field.
 
-When parsing the request-target string (the string between method and version in the first line of request), we should proceed as follows:
+When creating a request-target-object from a raw request-target-string (between method and version in the first line of request), we should proceed as follows:
 
-1. Separate request using the delimiters from  `gen-delims`  into optional scheme, authority (mandatory only if scheme was specified; consisting of optional userinfo, host, optional port), path, optional query. Convert the scheme to lower-case as we read it. If we encounter a fragment, thats a BAD_REQUEST since it should not be sent to servers (its only relevant on the client level, for example for chrome to scroll down to a specific position on a requested html page).
-2. Check Scheme: If it is anything other than "http://" -> BAD_REQUEST CONTINUE_HERE...
-3. ProcessPath():
-4. DecodePercentages()
-5. CheckForInvalidPathChars()
-6. Normalize():
+1. Separate request using the delimiters from  `gen-delims`  into RqTarget components: optional scheme, authority (mandatory only if scheme was specified; consisting of optional userinfo, host, optional port), path, optional query, optional fragment. Convert the scheme to lower-case as we read it.
+2. Normalize the components:
+
+   1. PercentDecode components host, path, query and convert any %-encoding triplets within those components to upper-case. e.g. %2f -> %2F
+   2. Collapse occurrences of multiple slashes in a row (except for the first 2) in path to one slash. e.g. "/www////upload//" --> "/www/upload/"
+   3. Apply remove_dot_segments algorithm on path (see section 5.2.4 of [https://www.rfc-editor.org/rfc/inline-errata/rfc3986.html]())
+3. Validate the components contents:
+
+   1. Scheme has to be "http"
+   2. no user-info allowed (its deprecated)
+   3. host may only be defined, if a scheme has been defined. if host is defined, it may not be empty and only contain unreserved chars and %-encoding triplets
+   4. port may only be defined, if a scheme and a host have been defined. if port has been defined it has to fit in unsigned short (0-65535)
+   5. path has to be defined and be at least "/". it may only contain unreserved chars and %-encoding triplets. it may not start with "//"
+   6. if query is defined it may may only contain unreserved chars and '&=;' and %-encoding triplets. todo: add more chars
+4. ProcessPath():
+5. DecodePercentages()
+6. CheckForInvalidPathChars()
+7. Normalize():
 
    1. multiple "///" collapse to "/"
    2. "./" can be removed
    3. "../" deletes previous folder from uri (work with stack containing of strings that represent a folder each. if "../" leads to level that is above root -> ERROR (path traversing...)
-7. ProcessQuery():
+8. ProcessQuery():
 
    1. DecodePercentages()
    2. CheckForInvalidQueryChars()
