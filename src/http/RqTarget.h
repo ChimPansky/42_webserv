@@ -37,6 +37,7 @@ class RqTarget {
 
     bool Good() const { return validity_state_ == TARGET_GOOD; };
     std::string ToStr() const;
+    std::string GetDebugString() const;
 
     int status() const { return validity_state_; };
 
@@ -101,6 +102,7 @@ class RqTarget {
     bool IsValidPathChar_(char c) const;
     bool IsValidQueryOrFragmentChar_(char c) const;
 
+    void ValidateScheme_();
     bool IsValidPath_(const std::string& path) const;
     bool IsValidQuery_(const std::string& query) const;
     bool IsValidFragment_(const std::string& fragment) const;

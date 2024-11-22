@@ -1,10 +1,11 @@
 #include "RqTarget.h"
 
-#include <logger.h>
 #include <numeric_utils.h>
 #include <str_utils.h>
 
 #include <cstring>
+
+#include <iostream>
 
 namespace http {
 
@@ -50,12 +51,14 @@ RqTarget::RqTarget(const std::string& raw_target) : validity_state_(TARGET_GOOD)
     }
     path_.second = CollapseChars_(normalized_path.second, '/');
     // Validate_();
+    ValidateScheme_();
 }
 
 RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host, const std::string& port, const std::string& path, const std::string query, const std::string& fragment)
 {
     if (!scheme.empty()) {
         scheme_ = std::make_pair(true, scheme);
+        ValidateScheme_();
     }
     if (!user_info.empty()) {
         user_info_ = std::make_pair(true, user_info);
@@ -133,76 +136,117 @@ std::string RqTarget::ToStr() const
     return str;
 }
 
+std::string RqTarget::GetDebugString() const
+{
+    std::ostringstream oss;
+
+    oss << "DEBUG INFO FOR RequestTarget: " << std::endl;
+    oss << "ToStr(): " << ToStr() << std::endl;
+    oss << "Good(): " << (Good() ? "YES" : "NO") << std::endl;
+    oss << "scheme defined: " << (scheme_.first ? "YES" : "NO") << std::endl;
+    oss << "scheme value: " << scheme() << std::endl;
+    oss << "user_info defined: " << (user_info_.first ? "YES" : "NO") << std::endl;
+    oss << "user_info value: " << user_info_.second << std::endl;
+    oss << "host defined: " << (host_.first ? "YES" : "NO") << std::endl;
+    oss << "host value: " << host_.second << std::endl;
+    oss << "port defined: " << (port_.first ? "YES" : "NO") << std::endl;
+    oss << "port value: " << port_.second << std::endl;
+    oss << "path defined: " << (path_.first ? "YES" : "NO") << std::endl;
+    oss << "path value: " << path_.second << std::endl;
+    oss << "query defined: " << (query_.first ? "YES" : "NO") << std::endl;
+    oss << "query value: " << query_.second << std::endl;
+    oss << "fragment defined: " << (fragment_.first ? "YES" : "NO") << std::endl;
+    oss << "fragment value: " << fragment_.second << std::endl;
+    oss << "FLAGS: " << std::endl;
+    oss << "TARGET_GOOD: " << (validity_state_ & TARGET_GOOD ? "YES" : "NO") << std::endl;
+    oss << "TARGET_BAD: " << (validity_state_ & TARGET_BAD ? "YES" : "NO") << std::endl;
+    oss << "TARGET_TOO_LONG: " << (validity_state_ & TARGET_TOO_LONG ? "YES" : "NO") << std::endl;
+    oss << "TARGET_BAD_SCHEME: " << (validity_state_ & TARGET_BAD_SCHEME ? "YES" : "NO") << std::endl;
+    oss << "TARGET_HAS_USER_INFO: " << (validity_state_ & TARGET_HAS_USER_INFO ? "YES" : "NO") << std::endl;
+    oss << "TARGET_BAD_HOST: " << (validity_state_ & TARGET_BAD_HOST ? "YES" : "NO") << std::endl;
+    oss << "TARGET_BAD_PORT: " << (validity_state_ & TARGET_BAD_PORT ? "YES" : "NO") << std::endl;
+    oss << "TARGET_BAD_PATH: " << (validity_state_ & TARGET_BAD_PATH ? "YES" : "NO") << std::endl;
+    oss << "TARGET_BAD_QUERY: " << (validity_state_ & TARGET_BAD_QUERY ? "YES" : "NO") << std::endl;
+    oss << "TARGET_HAS_FRAGMENT: " << (validity_state_ & TARGET_HAS_FRAGMENT ? "YES" : "NO") << std::endl;
+
+    return oss.str();
+}
+
 void RqTarget::ParseScheme_(const std::string& raw_target, size_t& raw_target_pos)
 {
+    std::cout << "Parsing scheme" << std::endl;
     raw_target_pos = raw_target.find("://");
     if (raw_target_pos == std::string::npos) {
         scheme_.first = false;
         return;
     }
+    std::cout << "Pos: " << raw_target_pos << std::endl;
     scheme_.first = true;
     scheme_.second = utils::ToLowerCase(raw_target.substr(0, raw_target_pos));
-    if (scheme_.second != "http") {
-        validity_state_ |= TARGET_BAD_SCHEME;
-        return;
-    }
     raw_target_pos += 3;
 }
 
 void RqTarget::ParseUserInfo_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!Good()) {
+    if (!scheme_.first || raw_target_pos >= raw_target.size()){
         return;
     }
+    std::cout << "Parsing userinfo" << std::endl;
     size_t start_pos = raw_target_pos;
-    raw_target_pos = raw_target.find("@", start_pos);
-    if (raw_target_pos == std::string::npos) {
+    size_t end_pos = raw_target.find("@", start_pos);;
+    if (end_pos == std::string::npos) {
+        std::cout << "No @ found -> continue to host" << std::endl;
         user_info_.first = false;
         return;
     }
     user_info_.first = true;
-    user_info_.second = raw_target.substr(start_pos, raw_target_pos - start_pos);
+    user_info_.second = raw_target.substr(start_pos, end_pos);
     validity_state_ |= TARGET_HAS_USER_INFO;
+    raw_target_pos = end_pos + 1;
 }
-
 
 void RqTarget::ParseHost_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!Good() || !scheme_.first) {
-        return;
-    }
-    size_t start_pos = raw_target_pos;
-    raw_target_pos = raw_target.find_first_of(":/", start_pos);
-    if (raw_target_pos == std::string::npos) {
-        validity_state_ |= TARGET_BAD_PATH;
+    if (!scheme_.first || raw_target_pos >= raw_target.size()) {
         return;
     }
     host_.first = true;
+    std::cout << "Parsing host" << std::endl;
+    size_t start_pos = raw_target_pos;
+    raw_target_pos = raw_target.find_first_of(":/", start_pos);
+    if (raw_target_pos == std::string::npos) {
+        host_.second = utils::ToLowerCase(raw_target.substr(start_pos));
+        validity_state_ |= TARGET_BAD_PATH;
+        return;
+    }
     host_.second = utils::ToLowerCase(raw_target.substr(start_pos, raw_target_pos - start_pos));
 }
 
 void RqTarget::ParsePort_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!Good() || !host_.first || raw_target_pos == std::string::npos || raw_target[raw_target_pos] != ':') {
+    if (!host_.first || raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != ':') {
         return;
     }
+    port_.first = true;
+    std::cout << "Parsing port" << std::endl;
     raw_target_pos++;
     size_t start_pos = raw_target_pos;
     raw_target_pos = raw_target.find_first_of("/", raw_target_pos);
     if (raw_target_pos == std::string::npos) {
         validity_state_ = TARGET_BAD_PORT;
+        port_.second = raw_target.substr(start_pos);
         return;
     }
-    port_.first = true;
     port_.second = raw_target.substr(start_pos, raw_target_pos - start_pos);
 }
 
 void RqTarget::ParsePath_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!Good() || raw_target_pos == std::string::npos || raw_target[raw_target_pos] != '/') {
+    if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '/') {
         validity_state_ = TARGET_BAD_PATH;
         return;
     }
+    std::cout << "Parsing path" << std::endl;
     size_t start_pos = raw_target_pos;
     path_.first = true;
     raw_target_pos = raw_target.find_first_of("?#", start_pos);
@@ -215,9 +259,10 @@ void RqTarget::ParsePath_(const std::string& raw_target, size_t& raw_target_pos)
 
 void RqTarget::ParseQuery_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!Good() || raw_target_pos == std::string::npos || raw_target[raw_target_pos] != '?') {
+    if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '?') {
         return;
     }
+    std::cout << "Parsing query" << std::endl;
     query_.first = true;
     size_t start_pos = raw_target_pos + 1;
     raw_target_pos = raw_target.find_first_of("#", start_pos);
@@ -229,9 +274,10 @@ void RqTarget::ParseQuery_(const std::string& raw_target, size_t& raw_target_pos
 
 void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!Good() || raw_target_pos == std::string::npos || raw_target[raw_target_pos] != '#') {
+    if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '#') {
         return;
     }
+    std::cout << "Parsing fragment" << std::endl;
     fragment_.first = true;
     fragment_.second = raw_target.substr(raw_target_pos + 1);
     validity_state_ |= TARGET_HAS_FRAGMENT;
@@ -341,6 +387,7 @@ void RqTarget::Validate_()
     if (!Good()) {
         return;
     }
+    ValidateScheme_();
     if (!path_.first || !IsValidPath_(path_.second)) {
         validity_state_ |= TARGET_BAD_PATH;
     }
@@ -349,6 +396,16 @@ void RqTarget::Validate_()
     }
     if (fragment_.first) {
         validity_state_ |= TARGET_HAS_FRAGMENT;
+    }
+}
+
+void RqTarget::ValidateScheme_()
+{
+    if (!scheme_.first) {
+        return;
+    }
+    if (scheme_.second != "http") {
+        validity_state_ |= TARGET_BAD_SCHEME;
     }
 }
 
@@ -392,3 +449,18 @@ bool RqTarget::IsValidQueryOrFragmentChar_(char c) const
 }
 
 }  // namespace http
+
+
+int main(int ac, char* av[])
+{
+    if (ac != 2) {
+        std::cerr << "Usage: " << av[0] << " <url>" << std::endl;
+        return 1;
+    }
+    http::RqTarget tg(av[1]);
+    std::cout << tg.GetDebugString() << std::endl;
+
+
+
+
+}
