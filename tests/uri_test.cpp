@@ -4,7 +4,7 @@
 
 TEST(BasicTests, 1_Test) {
     http::RqTarget RqTarget = http::RqTarget("/path/to/file?a=20&b=30#fragment");
-    EXPECT_EQ(http::RqTarget(RqTarget.path(), RqTarget.query(), RqTarget.fragment()), RqTarget);
+    EXPECT_EQ(http::RqTarget(RqTarget.scheme(), RqTarget.user_info(), RqTarget.host(), RqTarget.port(), RqTarget.path(), RqTarget.query(), RqTarget.fragment()), RqTarget);
     EXPECT_EQ(RqTarget.Good(), true);
 }
 

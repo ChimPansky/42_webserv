@@ -519,16 +519,13 @@ bool RqTarget::IsUnreservedChar_(char c) const
 }  // namespace http
 
 
-int main(int ac, char* av[])
-{
-    if (ac != 2) {
-        std::cerr << "Usage: " << av[0] << " <url>" << std::endl;
-        return 1;
-    }
-    http::RqTarget tg(av[1]);
-    std::cout << tg.GetDebugString() << std::endl;
+// int main(int ac, char* av[])
+// {
+//     if (ac != 2) {
+//         std::cerr << "Usage: " << av[0] << " <url>" << std::endl;
+//         return 1;
+//     }
+//     http::RqTarget tg(av[1]);
+//     std::cout << tg.GetDebugString() << std::endl;
 
-
-
-
-}
+// }
