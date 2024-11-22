@@ -31,8 +31,10 @@ class Server {
                                                            const std::vector<std::string>&);
     std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
     // has to call IResponseCallback with rs when the last is rdy
-    void AcceptRequest(const http::Request& rq,
-                       utils::unique_ptr<http::IResponseCallback> cb) const;
+    utils::unique_ptr<AResponseProcessor> ProcessRequest(
+        const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+    utils::unique_ptr<AResponseProcessor> GetResponseProcessor(
+        const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
 
     std::string name() const;
     const std::vector<std::string>& server_names() const;
