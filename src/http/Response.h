@@ -57,8 +57,6 @@ inline utils::unique_ptr<http::Response> GetSimpleValidResponse() {
       "</html>\n\r";
 
     std::map<std::string, std::string> hdrs;
-    hdrs["Date"] = utils::GetFormatedTime();
-    hdrs["Server"] = "ft_webserv";
     hdrs["Last-Modified"] = "Wed, 22 Jul 2009 19:15:56 GMT";
     hdrs["Content-Length"] = utils::NumericToString(txt_body.size());
     hdrs["Content-Type"] = "text/html";

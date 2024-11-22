@@ -1,5 +1,5 @@
-#ifndef WS_SERVER_ARESPONSE_PROCESSOR_H
-#define WS_SERVER_ARESPONSE_PROCESSOR_H
+#ifndef WS_SERVER_A_RESPONSE_PROCESSOR_H
+#define WS_SERVER_A_RESPONSE_PROCESSOR_H
 
 #include <Request.h>
 #include <Response.h>
@@ -33,8 +33,6 @@ class GeneratedErrorResponseProcessor : public AResponseProcessor {
       body.reserve(body_str.size());
       std::copy(body_str.begin(), body_str.end(), std::back_inserter(body));
       std::map<std::string, std::string> hdrs;
-      hdrs["Server"] = "ft_webserv";
-      hdrs["Date"] = utils::GetFormatedTime();
       hdrs["Content-Type"] = "text/html";
       // hdrs["Connection"] = "Closed";
       hdrs["Content-Length"] = utils::NumericToString(body.size());

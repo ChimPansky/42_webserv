@@ -166,12 +166,12 @@ std::string Server::GetDebugString() const
     return oss.str();
 }
 
-void    Server::FillResponseHeaders(utils::unique_ptr<http::Response> rs) const
+void Server::FillResponseHeaders(http::Response& rs) const
 {
-    std::map<std::string, std::string>  headers = rs->headers();
+    std::map<std::string, std::string> headers = rs.headers();
 
     headers["Server"] = "ft_webserv";
     headers["Date"] = utils::GetFormatedTime();
 
-    rs->set_headers(headers);
+    rs.set_headers(headers);
 }

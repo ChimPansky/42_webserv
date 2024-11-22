@@ -71,7 +71,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
 
 void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 {
-    associated_server_->FillResponseHeaders(rs);
+    associated_server_->FillResponseHeaders(*rs);
     std::map<std::string, std::string>::const_iterator conn_it = rs->headers().find("connection");
     bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
     if (c_api::EventManager::get().RegisterCallback(
