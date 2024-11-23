@@ -64,6 +64,10 @@ jobs:
         uses: ./.github/actions/setup
       - name: Use cmake
         run: cmake --version
+      - name: Set CC and CXX to Clang
+        run: |
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
       - name: generate Makefiles
         run: mkdir -p build && cd build && cmake ..
       - name: compilation
