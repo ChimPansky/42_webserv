@@ -254,13 +254,25 @@ void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_
 }
 
 void RqTarget::Normalize_() {
-    // todo decoding: check if decoding-set is same for host, path and query
+    // todo decoding: check if host should be decoded and if decoding-set is same for host, path and query
     if (host_.first) {
-        host_.second = PercentDecode_(host_.second);
+        // std::pair<bool, std::string> decoded = PercentDecode_(host_.second);
+        // if (decoded.first) {
+        //     host_.second = decoded.second;
+        // }
+        // else { // invalid encoding detected -> BAD_REQUEST
+        //     validity_state_ |= TARGET_BAD_HOST;
+        // }
         ConvertEncodedHexToUpper_(host_.second);
     }
     if (path_.first) {
-        path_.second = PercentDecode_(path_.second);
+        std::pair<bool, std::string> decoded = PercentDecode_(path_.second);
+        if (decoded.first) {
+            path_.second = decoded.second;
+        }
+        else { // invalid encoding detected -> BAD_REQUEST
+            validity_state_ |= TARGET_BAD_PATH;
+        }
         ConvertEncodedHexToUpper_(path_.second);
         path_.second = CollapseSlashes_(path_.second);
         std::pair<bool, std::string> dot_segment_free_path = RemoveDotSegments_(path_.second);
@@ -272,24 +284,33 @@ void RqTarget::Normalize_() {
         }
     }
     if (query_.first) {
-        query_.second = PercentDecode_(query_.second);
+        std::pair<bool, std::string> decoded = PercentDecode_(query_.second);
+        if (decoded.first) {
+            query_.second = decoded.second;
+        }
+        else { // invalid encoding detected -> BAD_REQUEST
+            validity_state_ |= TARGET_BAD_QUERY;
+        }
         ConvertEncodedHexToUpper_(query_.second);
     }
 }
 
 // todo: decide if we also need to be able to decode chars from reserved-set (for example if query contains a request-target: "/path?link=http%3A%2F%2Fwww.example.com%2Fsearch%3Fq%3Dtest")
-std::string RqTarget::PercentDecode_(const std::string& str,
+std::pair<bool/*valid_triplet*/, std::string> RqTarget::PercentDecode_(const std::string& str,
                                                            const char* decode_set) const
 {
-    if (!decode_set || decode_set[0] == '\0') {
-        return str;
-    }
     std::string decoded;
     std::pair<bool, unsigned short> ascii;
     for (size_t i = 0; i < str.size(); ++i) {
-        if (str[i] == '%' && i + 2 >= str.size()) {
+        if (str[i] == '%') {
+            if (i + 2 >= str.size()) {
+                return std::pair<bool, std::string>(false, "");
+            }
             ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
-            if (ascii.first && strchr(decode_set, static_cast<char>(ascii.second))) {
+            if (!ascii.first) {
+                return std::pair<bool, std::string>(false, "");
+            }
+            if (decode_set && strchr(decode_set, static_cast<char>(ascii.second))) {
                 decoded += static_cast<char>(ascii.second);
             }
             else {
@@ -300,7 +321,7 @@ std::string RqTarget::PercentDecode_(const std::string& str,
             decoded += str[i];
         }
     }
-    return decoded;
+    return std::pair<bool, std::string>(true, decoded);
 }
 
 std::pair<bool /*valid*/, std::string> RqTarget::RemoveDotSegments_(const std::string& str) const

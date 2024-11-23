@@ -69,7 +69,7 @@ class RqTarget {
     static const char* kGenDelims;
     static const char* kSubDelims;
     int validity_state_;
-    
+
     typedef std::pair<bool /*component_defined*/, std::string /*value*/> Component;
     Component scheme_;
     Component user_info_;
@@ -80,7 +80,6 @@ class RqTarget {
     Component fragment_;
 
     void Validate_();
-    bool ExtractComponent();
     void ParseScheme_(const std::string& raw_uri, size_t& raw_uri_pos);
     void ParseUserInfo_(const std::string& raw_uri, size_t& raw_uri_pos);
     void ParseHost_(const std::string& raw_uri, size_t& raw_uri_pos);
@@ -91,7 +90,7 @@ class RqTarget {
 
     // normalize components: decode safe-to-decode chars, convert encoded hex to upper, remove dot segments and collapse slashes in path
     void Normalize_();
-    std::string PercentDecode_(const std::string& str, const char* decode_set = kUnreserved) const;
+    std::pair<bool/*valid_triplet*/, std::string> PercentDecode_(const std::string& str, const char* decode_set = kUnreserved) const;
     void ConvertEncodedHexToUpper_(std::string& str);
     std::pair<bool /*no_directory_traversal*/, std::string> RemoveDotSegments_(const std::string& str) const;
     std::string CollapseSlashes_(const std::string& str) const;
