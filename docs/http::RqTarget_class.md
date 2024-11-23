@@ -16,8 +16,7 @@
 
 `request-line   = method SP request-target SP HTTP-version `
 examples:
-`GET /www/search?name=john HTTP/1.1
-POST www.example.com:4242/upload/images HTTP/1.1`
+`GET /www/search?name=john HTTP/1.1 POST www.example.com:4242/upload/images HTTP/1.1`
 
 **Request-Target is **NOT** the same as URI!
 
@@ -35,14 +34,15 @@ POST www.example.com:4242/upload/images HTTP/1.1`
 
   * **Userinfo**:
     `userinfo    = *( unreserved / pct-encoded / sub-delims / ":" )`
+
+    usage of userinfo in http is deprecated and should be rejected. see [https://datatracker.ietf.org/doc/html/rfc9110#name-deprecation-of-userinfo-in-]()
+    -> if we detect user-info, we say it is a BAD REQUEST
   * **Host:**
     `IPvFuture   = "v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )`
     `reg-name    = *( unreserved / pct-encoded / sub-delims )`
     `host        = (IPv6address / IPvFuture) / IPv4address / reg-name `
   * **Port**:
-    port          = *DIGIT
-    usage of userinfo in http is deprecated and should be rejected. see [https://datatracker.ietf.org/doc/html/rfc9110#name-deprecation-of-userinfo-in-]()
-    -> if we detect user-info, we say it is a BAD REQUEST
+    `port          = *DIGIT`
 * **Path:**
   `path-abempty = *( "/" segment ) `                              ; begins with "/" or is empty
   `path-absolute = "/" [ segment-nz * ( "/" segment ) ]` ; begins with "/" but not "//"
@@ -87,7 +87,7 @@ The Request-Target can be in one of 4 forms:
 
 Since we only need to handle GET/POST/DELETE methods, we can already **discard authority- and asterisk-form**.
 Even though we are implementing a origin-server, we still need to be able to accept request-targets in absolute-form;
-Best way to do this is to **extract the host portion** from the request-target and **override** the value of the **host-header** field.
+Best way to do this is to **extract the host portion** from the request-target, decoded it (if applicable) and **override** the value of the **host-header** field.
 
 When creating a request-target-object from a raw request-target-string (between method and version in the first line of request), we should proceed as follows:
 
@@ -105,15 +105,4 @@ When creating a request-target-object from a raw request-target-string (between 
    4. port may only be defined, if a scheme and a host have been defined. if port has been defined it has to fit in unsigned short (0-65535)
    5. path has to be defined and be at least "/". it may only contain unreserved chars and %-encoding triplets. it may not start with "//"
    6. if query is defined it may may only contain unreserved chars and '&=;' and %-encoding triplets. todo: add more chars
-4. ProcessPath():
-5. DecodePercentages()
-6. CheckForInvalidPathChars()
-7. Normalize():
-
-   1. multiple "///" collapse to "/"
-   2. "./" can be removed
-   3. "../" deletes previous folder from uri (work with stack containing of strings that represent a folder each. if "../" leads to level that is above root -> ERROR (path traversing...)
-8. ProcessQuery():
-
-   1. DecodePercentages()
-   2. CheckForInvalidQueryChars()
+4. If during any of these steps a violation of URI grammar is violated -> BAD_REQUEST
