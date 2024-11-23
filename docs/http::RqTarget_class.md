@@ -97,6 +97,7 @@ When creating a request-target-object from a raw request-target-string (between 
    1. PercentDecode components host, path, query and convert any %-encoding triplets within those components to upper-case. e.g. %2f -> %2F
    2. Collapse occurrences of multiple slashes in a row (except for the first 2) in path to one slash. e.g. "/www////upload//" --> "/www/upload/"
    3. Apply remove_dot_segments algorithm on path (see section 5.2.4 of [https://www.rfc-editor.org/rfc/inline-errata/rfc3986.html]())
+   4. Remove port if it is 80 and the scheme is http, since that is the default anyway.
 3. Validate the components contents:
 
    1. Scheme has to be "http"
