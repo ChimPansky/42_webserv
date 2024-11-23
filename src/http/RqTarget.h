@@ -55,7 +55,7 @@ class RqTarget {
     enum RqTargetStatus {
         TARGET_GOOD = 0,
         TARGET_BAD = 1L << 0,
-        TARGET_TOO_LONG = 1L << 3,
+        TARGET_TOO_LONG = 1L << 3,  //todo: check if we need to implement this here or in RqBuilder
         TARGET_BAD_SCHEME = 1L << 4,
         TARGET_HAS_USER_INFO = 1L << 5,
         TARGET_BAD_HOST = 1L << 6,

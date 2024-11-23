@@ -136,7 +136,7 @@ std::string RqTarget::GetDebugString() const
     oss << "fragment defined: " << (fragment_.first ? "YES" : "NO") << std::endl;
     oss << "fragment value: " << fragment_.second << std::endl;
     oss << "FLAGS: " << std::endl;
-    oss << "TARGET_GOOD: " << (validity_state_ & TARGET_GOOD ? "YES" : "NO") << std::endl;
+    oss << "TARGET_GOOD: " << (validity_state_ == TARGET_GOOD ? "YES" : "NO") << std::endl;
     oss << "TARGET_BAD: " << (validity_state_ & TARGET_BAD ? "YES" : "NO") << std::endl;
     oss << "TARGET_TOO_LONG: " << (validity_state_ & TARGET_TOO_LONG ? "YES" : "NO") << std::endl;
     oss << "TARGET_BAD_SCHEME: " << (validity_state_ & TARGET_BAD_SCHEME ? "YES" : "NO") << std::endl;
@@ -153,16 +153,14 @@ std::string RqTarget::GetDebugString() const
 
 void RqTarget::ParseScheme_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    std::cout << "Parsing scheme" << std::endl;
-    raw_target_pos = raw_target.find("://");
-    if (raw_target_pos == std::string::npos) {
+    size_t end_pos = raw_target.find("://");
+    if (end_pos == std::string::npos) {
         scheme_.first = false;
         return;
     }
-    std::cout << "Pos: " << raw_target_pos << std::endl;
     scheme_.first = true;
-    scheme_.second = utils::ToLowerCase(raw_target.substr(0, raw_target_pos));
-    raw_target_pos += 3;
+    scheme_.second = utils::ToLowerCase(raw_target.substr(0, end_pos));
+    raw_target_pos = end_pos + 3;
 }
 
 void RqTarget::ParseUserInfo_(const std::string& raw_target, size_t& raw_target_pos)
@@ -170,7 +168,6 @@ void RqTarget::ParseUserInfo_(const std::string& raw_target, size_t& raw_target_
     if (!scheme_.first || raw_target_pos >= raw_target.size()){
         return;
     }
-    std::cout << "Parsing userinfo" << std::endl;
     size_t start_pos = raw_target_pos;
     size_t end_pos = raw_target.find("@", start_pos);;
     if (end_pos == std::string::npos) {
@@ -187,7 +184,6 @@ void RqTarget::ParseHost_(const std::string& raw_target, size_t& raw_target_pos)
     if (!scheme_.first || raw_target_pos >= raw_target.size()) {
         return;
     }
-    std::cout << "Parsing host" << std::endl;
     host_.first = true;
     size_t start_pos = raw_target_pos;
     raw_target_pos = raw_target.find_first_of(":/", start_pos);
@@ -203,7 +199,6 @@ void RqTarget::ParsePort_(const std::string& raw_target, size_t& raw_target_pos)
     if (!host_.first || raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != ':') {
         return;
     }
-    std::cout << "Parsing port" << std::endl;
     port_.first = true;
     raw_target_pos++;
     size_t start_pos = raw_target_pos;
@@ -221,7 +216,6 @@ void RqTarget::ParsePath_(const std::string& raw_target, size_t& raw_target_pos)
         validity_state_ = TARGET_BAD_PATH;
         return;
     }
-    std::cout << "Parsing path" << std::endl;
     size_t start_pos = raw_target_pos;
     path_.first = true;
     raw_target_pos = raw_target.find_first_of("?#", start_pos);
@@ -237,7 +231,6 @@ void RqTarget::ParseQuery_(const std::string& raw_target, size_t& raw_target_pos
     if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '?') {
         return;
     }
-    std::cout << "Parsing query" << std::endl;
     query_.first = true;
     size_t start_pos = raw_target_pos + 1;
     raw_target_pos = raw_target.find("#", start_pos);
@@ -252,7 +245,6 @@ void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_
     if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '#') {
         return;
     }
-    std::cout << "Parsing fragment" << std::endl;
     fragment_.first = true;
     fragment_.second = raw_target.substr(raw_target_pos + 1);
 }
@@ -270,7 +262,7 @@ void RqTarget::Normalize_() {
         ConvertEncodedHexToUpper_(host_.second);
     }
     if (port_.first && port_.second == "80" && scheme_.second == "http") {
-        port_.first = false;
+        port_ = std::pair<bool, std::string>(false, "");
     }
     if (path_.first) {
         std::pair<bool, std::string> decoded = PercentDecode_(path_.second);
@@ -547,13 +539,13 @@ bool RqTarget::IsUnreservedChar_(char c) const
 }  // namespace http
 
 
-int main(int ac, char* av[])
-{
-    if (ac != 2) {
-        std::cerr << "Usage: " << av[0] << " <url>" << std::endl;
-        return 1;
-    }
-    http::RqTarget tg(av[1]);
-    std::cout << tg.GetDebugString() << std::endl;
+// int main(int ac, char* av[])
+// {
+//     if (ac != 2) {
+//         std::cerr << "Usage: " << av[0] << " <url>" << std::endl;
+//         return 1;
+//     }
+//     http::RqTarget tg(av[1]);
+//     std::cout << tg.GetDebugString() << std::endl;
 
-}
+// }
