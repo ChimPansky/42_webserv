@@ -26,21 +26,38 @@ namespace http {
 
 class RqTarget {
   public:
+    enum RqTargetStatus {
+        RQ_TARGET_GOOD = 0,
+        RQ_TARGET_TOO_LONG = 1L << 3,  //todo: check if we need to implement this here or in RqBuilder
+        RQ_TARGET_BAD_SCHEME = 1L << 4,
+        RQ_TARGET_HAS_USER_INFO = 1L << 5,
+        RQ_TARGET_BAD_HOST = 1L << 6,
+        RQ_TARGET_BAD_PORT = 1L << 7,
+        RQ_TARGET_BAD_PATH = 1L << 8,
+        RQ_TARGET_BAD_QUERY = 1L << 9,
+        RQ_TARGET_HAS_FRAGMENT = 1L << 10,
+    };
     RqTarget(){};
     RqTarget(const std::string& raw_uri);
     RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host, const std::string& port, const std::string& path, const std::string query, const std::string& fragment);
     RqTarget(const RqTarget& rhs);
     ~RqTarget() {}
-
     RqTarget& operator=(const RqTarget& rhs);
     bool operator==(const RqTarget& rhs) const;
     bool operator!=(const RqTarget& rhs) const;
 
-    bool Good() const { return validity_state_ == TARGET_GOOD; };
+    int validity_state() const { return validity_state_; };
+    bool Good() const { return validity_state_ == RQ_TARGET_GOOD; };
+
+    bool HasScheme() const { return scheme_.first; };
+    bool HasUserInfo() const { return user_info_.first; };
+    bool HasHost() const { return host_.first; };
+    bool HasPort() const { return port_.first; };
+    bool HasPath() const { return path_.first; };
+    bool HasQuery() const { return query_.first; };
+    bool HasFragment() const { return fragment_.first; };
     std::string ToStr() const;
     std::string GetDebugString() const;
-
-    int status() const { return validity_state_; };
 
     const std::string& scheme() const { return scheme_.second; };
     const std::string& user_info() const { return user_info_.second; };
@@ -52,18 +69,6 @@ class RqTarget {
 
 
   private:
-    enum RqTargetStatus {
-        TARGET_GOOD = 0,
-        TARGET_BAD = 1L << 0,
-        TARGET_TOO_LONG = 1L << 3,  //todo: check if we need to implement this here or in RqBuilder
-        TARGET_BAD_SCHEME = 1L << 4,
-        TARGET_HAS_USER_INFO = 1L << 5,
-        TARGET_BAD_HOST = 1L << 6,
-        TARGET_BAD_PORT = 1L << 7,
-        TARGET_BAD_PATH = 1L << 8,
-        TARGET_BAD_QUERY = 1L << 9,
-        TARGET_HAS_FRAGMENT = 1L << 10,
-    };
 
     static const char* kUnreserved;
     static const char* kGenDelims;

@@ -19,7 +19,7 @@ const char* RqTarget::kUnreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopq
 const char* RqTarget::kGenDelims = ":/?#[]@";
 const char* RqTarget::kSubDelims = "!$&'()*+,;=";
 
-RqTarget::RqTarget(const std::string& raw_target) : validity_state_(TARGET_GOOD)
+RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GOOD)
 {
     size_t raw_target_pos = 0;
     ParseScheme_(raw_target, raw_target_pos);
@@ -136,16 +136,15 @@ std::string RqTarget::GetDebugString() const
     oss << "fragment defined: " << (fragment_.first ? "YES" : "NO") << std::endl;
     oss << "fragment value: " << fragment_.second << std::endl;
     oss << "FLAGS: " << std::endl;
-    oss << "TARGET_GOOD: " << (validity_state_ == TARGET_GOOD ? "YES" : "NO") << std::endl;
-    oss << "TARGET_BAD: " << (validity_state_ & TARGET_BAD ? "YES" : "NO") << std::endl;
-    oss << "TARGET_TOO_LONG: " << (validity_state_ & TARGET_TOO_LONG ? "YES" : "NO") << std::endl;
-    oss << "TARGET_BAD_SCHEME: " << (validity_state_ & TARGET_BAD_SCHEME ? "YES" : "NO") << std::endl;
-    oss << "TARGET_HAS_USER_INFO: " << (validity_state_ & TARGET_HAS_USER_INFO ? "YES" : "NO") << std::endl;
-    oss << "TARGET_BAD_HOST: " << (validity_state_ & TARGET_BAD_HOST ? "YES" : "NO") << std::endl;
-    oss << "TARGET_BAD_PORT: " << (validity_state_ & TARGET_BAD_PORT ? "YES" : "NO") << std::endl;
-    oss << "TARGET_BAD_PATH: " << (validity_state_ & TARGET_BAD_PATH ? "YES" : "NO") << std::endl;
-    oss << "TARGET_BAD_QUERY: " << (validity_state_ & TARGET_BAD_QUERY ? "YES" : "NO") << std::endl;
-    oss << "TARGET_HAS_FRAGMENT: " << (validity_state_ & TARGET_HAS_FRAGMENT ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_GOOD: " << (validity_state_ == RQ_TARGET_GOOD ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_TOO_LONG: " << (validity_state_ & RQ_TARGET_TOO_LONG ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_BAD_SCHEME: " << (validity_state_ & RQ_TARGET_BAD_SCHEME ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_HAS_USER_INFO: " << (validity_state_ & RQ_TARGET_HAS_USER_INFO ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_BAD_HOST: " << (validity_state_ & RQ_TARGET_BAD_HOST ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_BAD_PORT: " << (validity_state_ & RQ_TARGET_BAD_PORT ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_BAD_PATH: " << (validity_state_ & RQ_TARGET_BAD_PATH ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_BAD_QUERY: " << (validity_state_ & RQ_TARGET_BAD_QUERY ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_HAS_FRAGMENT: " << (validity_state_ & RQ_TARGET_HAS_FRAGMENT ? "YES" : "NO") << std::endl;
     oss << "ToStr(): " << ToStr() << std::endl;
 
     return oss.str();
@@ -175,7 +174,7 @@ void RqTarget::ParseUserInfo_(const std::string& raw_target, size_t& raw_target_
         return;
     }
     user_info_.first = true;
-    user_info_.second = raw_target.substr(start_pos, end_pos);
+    user_info_.second = raw_target.substr(start_pos, end_pos - start_pos);
     raw_target_pos = end_pos + 1;
 }
 
@@ -213,7 +212,7 @@ void RqTarget::ParsePort_(const std::string& raw_target, size_t& raw_target_pos)
 void RqTarget::ParsePath_(const std::string& raw_target, size_t& raw_target_pos)
 {
     if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '/') {
-        validity_state_ = TARGET_BAD_PATH;
+        validity_state_ = RQ_TARGET_BAD_PATH;
         return;
     }
     size_t start_pos = raw_target_pos;
@@ -257,7 +256,7 @@ void RqTarget::Normalize_() {
         //     host_.second = decoded.second;
         // }
         // else { // invalid encoding detected -> BAD_REQUEST
-        //     validity_state_ |= TARGET_BAD_HOST;
+        //     validity_state_ |= RQ_TARGET_BAD_HOST;
         // }
         ConvertEncodedHexToUpper_(host_.second);
     }
@@ -270,7 +269,8 @@ void RqTarget::Normalize_() {
             path_.second = decoded.second;
         }
         else { // invalid encoding detected -> BAD_REQUEST
-            validity_state_ |= TARGET_BAD_PATH;
+            std::cout << "invalid encoding detected" << std::endl;
+            validity_state_ |= RQ_TARGET_BAD_PATH;
         }
         ConvertEncodedHexToUpper_(path_.second);
         path_.second = CollapseSlashes_(path_.second);
@@ -279,7 +279,8 @@ void RqTarget::Normalize_() {
             path_.second = dot_segment_free_path.second;
         }
         else { // directory traversal detected -> BAD_REQUEST
-            validity_state_ |= TARGET_BAD_PATH;
+            std::cout << "directory traversal detected" << std::endl;
+            validity_state_ |= RQ_TARGET_BAD_PATH;
         }
     }
     if (query_.first) {
@@ -288,7 +289,7 @@ void RqTarget::Normalize_() {
             query_.second = decoded.second;
         }
         else { // invalid encoding detected -> BAD_REQUEST
-            validity_state_ |= TARGET_BAD_QUERY;
+            validity_state_ |= RQ_TARGET_BAD_QUERY;
         }
         ConvertEncodedHexToUpper_(query_.second);
     }
@@ -410,7 +411,7 @@ void RqTarget::Validate_()
         ValidateScheme_();
     }
     if (user_info_.first) {
-        validity_state_ |= TARGET_HAS_USER_INFO;
+        validity_state_ |= RQ_TARGET_HAS_USER_INFO;
     }
     if (host_.first) {
         ValidateHost_();
@@ -425,7 +426,7 @@ void RqTarget::Validate_()
         ValidateQuery_();
     }
     if (fragment_.first) {
-        validity_state_ |= TARGET_HAS_FRAGMENT;
+        validity_state_ |= RQ_TARGET_HAS_FRAGMENT;
     }
 }
 
@@ -435,7 +436,7 @@ void RqTarget::ValidateScheme_()
         return;
     }
     if (scheme_.second != "http") {
-        validity_state_ |= TARGET_BAD_SCHEME;
+        validity_state_ |= RQ_TARGET_BAD_SCHEME;
     }
 }
 
@@ -445,16 +446,16 @@ void RqTarget::ValidateHost_()
         return;
     }
     if (!scheme_.first) {
-        validity_state_ |= TARGET_BAD_SCHEME;
+        validity_state_ |= RQ_TARGET_BAD_SCHEME;
         return;
     }
     if (host_.second.empty()) {
-        validity_state_ |= TARGET_BAD_HOST;
+        validity_state_ |= RQ_TARGET_BAD_HOST;
     }
     for (size_t i = 0; i < host_.second.size(); ++i) {
         const char *str = host_.second.c_str() + i;
         if (!IsValidContent_(str)) {
-            validity_state_ |= TARGET_BAD_HOST;
+            validity_state_ |= RQ_TARGET_BAD_HOST;
             return;
         }
     }
@@ -466,15 +467,15 @@ void RqTarget::ValidatePort_()
         return;
     }
     if (!scheme_.first) {
-        validity_state_ |= TARGET_BAD_SCHEME;
+        validity_state_ |= RQ_TARGET_BAD_SCHEME;
         return;
     }
     if (!host_.first) {
-        validity_state_ |= TARGET_BAD_HOST;
+        validity_state_ |= RQ_TARGET_BAD_HOST;
         return;
     }
     if (port_.second.empty() || !utils::StrToNumericNoThrow<unsigned short>(port_.second).first) {
-        validity_state_ |= TARGET_BAD_PORT;
+        validity_state_ |= RQ_TARGET_BAD_PORT;
     }
 }
 
@@ -482,19 +483,19 @@ void RqTarget::ValidatePort_()
 void RqTarget::ValidatePath_()
 {
     if (!path_.first || path_.second.empty() || path_.second[0] != '/') {
-        validity_state_ |= TARGET_BAD_PATH;
+        validity_state_ |= RQ_TARGET_BAD_PATH;
         return;
     }
     for (size_t i = 0; i < path_.second.size(); ++i) {
         const char *str = path_.second.c_str() + i;
-        if (!IsValidContent_(str) && std::strchr(":@/", *str) != NULL) {
-            validity_state_ |= TARGET_BAD_PATH;
-            return;
-        }
         if (i == 1 && *str == '/') {
-            validity_state_ |= TARGET_BAD_PATH;
+            validity_state_ |= RQ_TARGET_BAD_PATH;
             return;
         }
+        if (IsValidContent_(str) || std::strchr(":@/", *str) != NULL) {
+            continue;
+        }
+        validity_state_ |= RQ_TARGET_BAD_PATH;
     }
 }
 
@@ -505,10 +506,11 @@ void RqTarget::ValidateQuery_()
     }
     for (size_t i = 0; i < query_.second.size(); ++i) {
         const char *str = query_.second.c_str() + i;
-        if (!IsValidContent_(str) && std::strchr(":@/?", *str) != NULL) {
-            validity_state_ |= TARGET_BAD_PATH;
-            return;
+        if (IsValidContent_(str) || std::strchr(":@/?", *str) != NULL) {
+            continue;
         }
+        validity_state_ |= RQ_TARGET_BAD_QUERY;
+        return;
     }
 }
 
@@ -519,7 +521,7 @@ bool RqTarget::IsValidContent_(const char* str) const
 
 bool RqTarget::IsEncodedOctet_(const char* str) const
 {
-    if (*str == '%') {
+    if (*str != '%') {
         return false;
     }
     if (str[1] == '\0' || str[2] == '\0') {
