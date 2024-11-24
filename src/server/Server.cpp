@@ -165,13 +165,3 @@ std::string Server::GetDebugString() const
     }
     return oss.str();
 }
-
-void Server::FillResponseHeaders(http::Response& rs) const
-{
-    std::map<std::string, std::string> headers = rs.headers();
-
-    headers["Server"] = "ft_webserv";
-    headers["Date"] = utils::GetFormatedTime();
-
-    rs.set_headers(headers);
-}

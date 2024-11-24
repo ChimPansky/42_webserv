@@ -17,7 +17,9 @@ class ServerCluster {
     static void StopHandler();
     static void Run();
     static utils::shared_ptr<Server> ChooseServer(int master_fd, const http::Request& rq);
+    static void FillResponseHeaders(http::Response& rs);
     void PrintDebugInfo() const;
+    static inline const char* kServerClusterName() { return "ft_webserv"; }
 
   private:
     ServerCluster(const config::Config& config);

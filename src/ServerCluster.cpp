@@ -160,3 +160,9 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     cluster_.clients_[fd] = utils::unique_ptr<ClientSession>(
         new ClientSession(client_sock, fd, cluster_.sockets_to_servers_[acceptor.sockfd()][0]));
 }
+
+void ServerCluster::FillResponseHeaders(http::Response& rs)
+{
+    rs.add_header(std::make_pair("Server", kServerClusterName()));
+    rs.add_header(std::make_pair("Date", utils::GetFormatedTime()));
+}

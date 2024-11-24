@@ -51,7 +51,7 @@ const std::map<std::string, std::string>& Response::headers() const {
     return headers_;
 }
 
-void  Response::set_headers(const std::map<std::string, std::string>& hdrs)
+bool Response::add_header(const std::pair<std::string, std::string>& header)
 {
-    headers_ = hdrs;
+    return headers_.insert(header).second;
 }
