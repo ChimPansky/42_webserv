@@ -3,12 +3,12 @@
 
 #include <ResponseCodes.h>
 #include <fcntl.h>
+#include <unique_ptr.h>
 #include <unistd.h>
 
 #include <fstream>
 
 #include "AResponseProcessor.h"
-#include <unique_ptr.h>
 
 class FileProcessor : public AResponseProcessor {
   private:
@@ -23,22 +23,20 @@ class FileProcessor : public AResponseProcessor {
     // change back to config
     FileProcessor(const std::string& file_path,
                   utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-        : AResponseProcessor(
-              response_rdy_cb)  //,
-                                //err_response_processor_(utils::unique_ptr<GeneratedErrorResponseProcessor>(NULL))
+        : AResponseProcessor(response_rdy_cb),
+          err_response_processor_(utils::unique_ptr<GeneratedErrorResponseProcessor>(NULL))
     {
         if (access(file_path.c_str(), F_OK) == -1) {
-            // return 404
-            // err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
-            //     new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
-            // return;
+            err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
+                new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
+            return;
         }
         std::ifstream file(file_path.c_str(), std::ios::binary);
         if (!file.is_open()) {
-            // return 50x (for now 500)
-            // err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
-            //     new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
-            // return;
+            err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
+                new GeneratedErrorResponseProcessor(response_rdy_cb_,
+                                                    http::HTTP_INTERNAL_SERVER_ERROR));
+            return;
         }
         std::vector<char> body = ReadFile_(file);
         std::map<std::string, std::string> hdrs;
