@@ -3,6 +3,7 @@
 
 #include <ResponseCodes.h>
 #include <fcntl.h>
+#include <server_utils.h>
 #include <unique_ptr.h>
 #include <unistd.h>
 
@@ -17,8 +18,22 @@ class FileProcessor : public AResponseProcessor {
         return std::vector<char>(std::istreambuf_iterator<char>(file),
                                  std::istreambuf_iterator<char>());
     }
-    std::string GetContentType(
-        const std::string& file);  // return mime type based on extension (mb move to utils later)
+    std::string GetContentType(const std::string& file)
+    {  // return mime type based on extension (mb move to utils later)
+
+        std::map<std::string, std::string> mime_types = utils::serv::GetMimeTypes();
+
+        size_t dot_pos = file.find_last_of('.');
+        if (dot_pos == std::string::npos) {
+            return utils::serv::kDefaultContentType();
+        }
+        std::string extension = file.substr(dot_pos);
+        if (mime_types.find(extension) == mime_types.end()) {
+            return utils::serv::kDefaultContentType();
+        }
+        return mime_types[extension];
+    }
+
   public:
     // change back to config
     FileProcessor(const std::string& file_path,
