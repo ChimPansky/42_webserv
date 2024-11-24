@@ -295,7 +295,6 @@ void RqTarget::Normalize_() {
     }
 }
 
-// todo: decide if we also need to be able to decode chars from reserved-set (for example if query contains a request-target: "/path?link=http%3A%2F%2Fwww.example.com%2Fsearch%3Fq%3Dtest")
 std::pair<bool/*valid_triplet*/, std::string> RqTarget::PercentDecode_(const std::string& str,
                                                            const char* decode_set) const
 {
@@ -442,6 +441,7 @@ void RqTarget::ValidateScheme_()
 
 void RqTarget::ValidateHost_()
 {
+    //todo: decide if we check for valid ipv4 or ipv6 address,...
     if (!host_.first) {
         return;
     }
@@ -454,7 +454,7 @@ void RqTarget::ValidateHost_()
     }
     for (size_t i = 0; i < host_.second.size(); ++i) {
         const char *str = host_.second.c_str() + i;
-        if (!IsValidContent_(str)) {
+        if (IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL) {
             validity_state_ |= RQ_TARGET_BAD_HOST;
             return;
         }
@@ -492,7 +492,7 @@ void RqTarget::ValidatePath_()
             validity_state_ |= RQ_TARGET_BAD_PATH;
             return;
         }
-        if (IsValidContent_(str) || std::strchr(":@/", *str) != NULL) {
+        if (IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) || std::strchr(":@/", *str) != NULL) {
             continue;
         }
         validity_state_ |= RQ_TARGET_BAD_PATH;
@@ -506,7 +506,7 @@ void RqTarget::ValidateQuery_()
     }
     for (size_t i = 0; i < query_.second.size(); ++i) {
         const char *str = query_.second.c_str() + i;
-        if (IsValidContent_(str) || std::strchr(":@/?", *str) != NULL) {
+        if (IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) || std::strchr(":@/?", *str) != NULL) {
             continue;
         }
         validity_state_ |= RQ_TARGET_BAD_QUERY;

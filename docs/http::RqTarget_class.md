@@ -104,6 +104,6 @@ When creating a request-target-object from a raw request-target-string (between 
    2. no user-info allowed (its deprecated)
    3. host may only be defined, if a scheme has been defined. if host is defined, it may not be empty and only contain unreserved chars and %-encoding triplets
    4. port may only be defined, if a scheme and a host have been defined. if port has been defined it has to fit in unsigned short (0-65535)
-   5. path has to be defined and be at least "/". it may only contain unreserved chars and %-encoding triplets. it may not start with "//"
-   6. if query is defined it may may only contain unreserved chars and '&=;' and %-encoding triplets. todo: add more chars
+   5. path has to be defined and be at least "/". it may only contain unreserved chars, subdelimiters and ":@/" and %-encoding triplets. it may not start with "//"
+   6. if query is defined it may may only contain unreserved chars, subdelimiters and ':@/?' and %-encoding triplets.
 4. If during any of these steps a violation of URI grammar is violated -> BAD_REQUEST
