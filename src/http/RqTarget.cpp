@@ -3,7 +3,6 @@
 #include <str_utils.h>
 
 #include <cstring>
-#include <iostream>
 
 namespace http {
 
@@ -283,7 +282,6 @@ void RqTarget::Normalize_()
         if (decoded.first) {
             path_.second = decoded.second;
         } else {  // invalid encoding detected -> BAD_REQUEST
-            std::cout << "invalid encoding detected" << std::endl;
             validity_state_ |= RQ_TARGET_BAD_PATH;
         }
         ConvertEncodedHexToUpper_(path_.second);
@@ -564,15 +562,3 @@ bool RqTarget::IsUnreservedChar_(char c) const
 }
 
 }  // namespace http
-
-
-// int main(int ac, char* av[])
-// {
-//     if (ac != 2) {
-//         std::cerr << "Usage: " << av[0] << " <url>" << std::endl;
-//         return 1;
-//     }
-//     http::RqTarget tg(av[1]);
-//     std::cout << tg.GetDebugString() << std::endl;
-
-// }

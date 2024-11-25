@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 #include <RequestBuilder.h>
 #include <fstream>
-#include <iostream>
 #include "ResponseCodes.h"
 #include <logger.h>
 
