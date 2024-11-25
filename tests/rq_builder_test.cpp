@@ -427,6 +427,10 @@ TEST(InvalidUri, 60_Uri_too_long) {
         FAIL();
     }
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-    EXPECT_EQ("", builder.rq().rqTarget.ToStr());
-    EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
+    if (RQ_TARGET_LEN_LIMIT > 256) {
+        EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii", builder.rq().rqTarget.ToStr());
+    } else {
+        EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
+        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
+    }
 }
