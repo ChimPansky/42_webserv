@@ -150,7 +150,7 @@ RequestBuilder::BuildState RequestBuilder::BuildRqTarget_()
         if (parser_.ExceededLineLimit()) {
             return Error_(RQ_BAD);
         }
-        if (parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
+        if (parser_.ElementLen() > RQ_TARGET_LEN_LIMIT) {
             return Error_(RQ_URI_TOO_LONG);
         }
         if (parser_.Peek() == ' ') {

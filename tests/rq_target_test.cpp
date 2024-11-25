@@ -166,7 +166,7 @@ TEST(BasicTests, 11_Test)
 TEST(BasicTests, 12_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii");
-    if (RQ_URI_LEN_LIMIT > 256) {
+    if (RQ_TARGET_LEN_LIMIT > 256) {
         EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_TOO_LONG);
     } else {
         EXPECT_FALSE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_TOO_LONG);

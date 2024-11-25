@@ -21,7 +21,7 @@ const char* RqTarget::kSubDelims = "!$&'()*+,;=";
 
 RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GOOD)
 {
-    if (raw_target.size() > RQ_URI_LEN_LIMIT) {
+    if (raw_target.size() > RQ_TARGET_LEN_LIMIT) {
         validity_state_ |= RQ_TARGET_TOO_LONG;
         return;
     }
