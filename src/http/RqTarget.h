@@ -109,7 +109,6 @@ class RqTarget {
     void ValidatePort_();
     void ValidatePath_();
     void ValidateQuery_();
-    bool IsValidContent_(const char *str) const;
     bool IsEncodedOctet_(const char *str) const;
     bool IsUnreservedChar_(char c) const;
 };

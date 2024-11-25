@@ -278,8 +278,7 @@ void RqTarget::Normalize_() {
         if (dot_segment_free_path.first) {
             path_.second = dot_segment_free_path.second;
         }
-        else { // directory traversal detected -> BAD_REQUEST
-            std::cout << "directory traversal detected" << std::endl;
+        else { // directory traversal detected -> BAD_REQUEST (log it?)
             validity_state_ |= RQ_TARGET_BAD_PATH;
         }
     }
@@ -454,10 +453,14 @@ void RqTarget::ValidateHost_()
     }
     for (size_t i = 0; i < host_.second.size(); ++i) {
         const char *str = host_.second.c_str() + i;
-        if (IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL) {
-            validity_state_ |= RQ_TARGET_BAD_HOST;
-            return;
+        if (IsEncodedOctet_(str)) {
+            i += 2;
+            continue;
         }
+        if (std::strchr(kUnreserved, *str) != NULL) {
+            continue;
+        }
+        validity_state_ |= RQ_TARGET_BAD_HOST;
     }
 }
 
@@ -492,7 +495,11 @@ void RqTarget::ValidatePath_()
             validity_state_ |= RQ_TARGET_BAD_PATH;
             return;
         }
-        if (IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) || std::strchr(":@/", *str) != NULL) {
+        if (IsEncodedOctet_(str)) {
+            i += 2;
+            continue;
+        }
+        if (std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) || std::strchr(":@/", *str) != NULL) {
             continue;
         }
         validity_state_ |= RQ_TARGET_BAD_PATH;
@@ -506,7 +513,11 @@ void RqTarget::ValidateQuery_()
     }
     for (size_t i = 0; i < query_.second.size(); ++i) {
         const char *str = query_.second.c_str() + i;
-        if (IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) || std::strchr(":@/?", *str) != NULL) {
+        if (IsEncodedOctet_(str)) {
+            i += 2;
+            continue;
+        }
+        if (std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) || std::strchr(":@/?", *str) != NULL) {
             continue;
         }
         validity_state_ |= RQ_TARGET_BAD_QUERY;
@@ -514,10 +525,10 @@ void RqTarget::ValidateQuery_()
     }
 }
 
-bool RqTarget::IsValidContent_(const char* str) const
-{
-    return IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) != NULL;
-}
+// bool RqTarget::IsValidContent_(const char* str) const
+// {
+//     return IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) != NULL;
+// }
 
 bool RqTarget::IsEncodedOctet_(const char* str) const
 {
