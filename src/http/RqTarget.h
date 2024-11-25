@@ -1,23 +1,32 @@
 #ifndef WS_HTTP_RQ_TARGET_H
 #define WS_HTTP_RQ_TARGET_H
 
+#include <numeric_utils.h>
+
 #include <cstddef>
 #include <string>
-#include <numeric_utils.h>
 namespace http {
 
 /* RqTarget class:
- Request Target is the string that comes after the method and before the version in the request line. Example: "GET /path/to/file?query1=1&query2=2 HTTP/1.1"
- We need to handle 2 kinds of targets:
-    1. Absolute path: /path[?query] (slash followed by zero or more path segments and an optional query). example: /path/to/file?query1=1&query2=2
-    2. Absolute URI: scheme://host[:port]/path[?query] (scheme followed by host followed by optional port followed by absolute path followed by optional query. example: http://www.example.com/path/to/file?query1=1&query2=2
+ Request Target is the string that comes after the method and before the version in the request
+ line. Example: "GET /path/to/file?query1=1&query2=2 HTTP/1.1" We need to handle 2 kinds of targets:
+    1. Absolute path: /path[?query] (slash followed by zero or more path segments and an optional
+ query). example: /path/to/file?query1=1&query2=2
+    2. Absolute URI: scheme://host[:port]/path[?query] (scheme followed by host followed by optional
+ port followed by absolute path followed by optional query. example:
+ http://www.example.com/path/to/file?query1=1&query2=2
 
-    - Mostly we handle RqTargets in first form, but according to RFC we also need to be able to accept Requests with Targets in second form (Requests to Proxy servers).
-    - The host and port information in the second form will then override the value of the host header field and will be used to choose a Server from the ServerCluster.
+    - Mostly we handle RqTargets in first form, but according to RFC we also need to be able to
+ accept Requests with Targets in second form (Requests to Proxy servers).
+    - The host and port information in the second form will then override the value of the host
+ header field and will be used to choose a Server from the ServerCluster.
 
-    in order to make the target comparable to other targets, we need to normalize it. Normalization includes:
+    in order to make the target comparable to other targets, we need to normalize it. Normalization
+ includes:
     - Store scheme and host in lower-case since they are case-insensitive.
-    - Percent-decode the host, path and query components. Only decode unreserved characters, leave reserved characters (chars that are used as delimiters like %2F for /, %3F for ?,...) as is (might need to change this later - host and query may have different decoding rules).
+    - Percent-decode the host, path and query components. Only decode unreserved characters, leave
+ reserved characters (chars that are used as delimiters like %2F for /, %3F for ?,...) as is (might
+ need to change this later - host and query may have different decoding rules).
     - Make the encoded hex characters in the path and query components uppercase.
     - Remove dot-segments from the path component.
     - Collapse sequences of slashes in the path-component.
@@ -28,7 +37,8 @@ class RqTarget {
   public:
     enum RqTargetStatus {
         RQ_TARGET_GOOD = 0,
-        RQ_TARGET_TOO_LONG = 1L << 3,  //todo: check if we need to implement this here or in RqBuilder
+        RQ_TARGET_TOO_LONG =
+            1L << 3,  // todo: check if we need to implement this here or in RqBuilder
         RQ_TARGET_BAD_SCHEME = 1L << 4,
         RQ_TARGET_HAS_USER_INFO = 1L << 5,
         RQ_TARGET_BAD_HOST = 1L << 6,
@@ -39,7 +49,9 @@ class RqTarget {
     };
     RqTarget(){};
     RqTarget(const std::string& raw_uri);
-    RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host, const std::string& port, const std::string& path, const std::string query, const std::string& fragment);
+    RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host,
+             const std::string& port, const std::string& path, const std::string query,
+             const std::string& fragment);
     RqTarget(const RqTarget& rhs);
     ~RqTarget() {}
     RqTarget& operator=(const RqTarget& rhs);
@@ -69,7 +81,6 @@ class RqTarget {
 
 
   private:
-
     static const char* kUnreserved;
     static const char* kGenDelims;
     static const char* kSubDelims;
@@ -93,11 +104,14 @@ class RqTarget {
     void ParseQuery_(const std::string& raw_uri, size_t& raw_uri_pos);
     void ParseFragment_(const std::string& raw_uri, size_t& raw_uri_pos);
 
-    // normalize components: decode safe-to-decode chars, convert encoded hex to upper, remove dot segments and collapse slashes in path
+    // normalize components: decode safe-to-decode chars, convert encoded hex to upper, remove dot
+    // segments and collapse slashes in path
     void Normalize_();
-    std::pair<bool/*valid_triplet*/, std::string> PercentDecode_(const std::string& str, const char* decode_set = kUnreserved) const;
+    std::pair<bool /*valid_triplet*/, std::string> PercentDecode_(
+        const std::string& str, const char* decode_set = kUnreserved) const;
     void ConvertEncodedHexToUpper_(std::string& str);
-    std::pair<bool /*no_directory_traversal*/, std::string> RemoveDotSegments_(const std::string& str) const;
+    std::pair<bool /*no_directory_traversal*/, std::string> RemoveDotSegments_(
+        const std::string& str) const;
     std::string CollapseSlashes_(const std::string& str) const;
 
     // helpers:
@@ -109,7 +123,7 @@ class RqTarget {
     void ValidatePort_();
     void ValidatePath_();
     void ValidateQuery_();
-    bool IsEncodedOctet_(const char *str) const;
+    bool IsEncodedOctet_(const char* str) const;
     bool IsUnreservedChar_(char c) const;
 };
 

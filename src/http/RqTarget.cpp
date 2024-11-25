@@ -3,7 +3,6 @@
 #include <str_utils.h>
 
 #include <cstring>
-
 #include <iostream>
 
 namespace http {
@@ -15,7 +14,8 @@ std::ostream& operator<<(std::ostream& out, const RqTarget& RqTarget)
 }
 
 // before decoding: check that each target-component only contains valid characters
-const char* RqTarget::kUnreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+const char* RqTarget::kUnreserved =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 const char* RqTarget::kGenDelims = ":/?#[]@";
 const char* RqTarget::kSubDelims = "!$&'()*+,;=";
 
@@ -33,7 +33,9 @@ RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GO
     Validate_();
 }
 
-RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host, const std::string& port, const std::string& path, const std::string query, const std::string& fragment)
+RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host,
+                   const std::string& port, const std::string& path, const std::string query,
+                   const std::string& fragment)
 {
     if (!scheme.empty()) {
         scheme_ = std::make_pair(true, scheme);
@@ -82,7 +84,9 @@ RqTarget& RqTarget::operator=(const RqTarget& rhs)
 
 bool RqTarget::operator==(const RqTarget& rhs) const
 {
-    return scheme_ == rhs.scheme_ && user_info_ == rhs.user_info_ && host_ == rhs.host_ && port_ == rhs.port_ && path_ == rhs.path_ && query_ == rhs.query_ && fragment_ == rhs.fragment_;
+    return scheme_ == rhs.scheme_ && user_info_ == rhs.user_info_ && host_ == rhs.host_ &&
+           port_ == rhs.port_ && path_ == rhs.path_ && query_ == rhs.query_ &&
+           fragment_ == rhs.fragment_;
 }
 
 bool RqTarget::operator!=(const RqTarget& rhs) const
@@ -137,14 +141,22 @@ std::string RqTarget::GetDebugString() const
     oss << "fragment value: " << fragment_.second << std::endl;
     oss << "FLAGS: " << std::endl;
     oss << "RQ_TARGET_GOOD: " << (validity_state_ == RQ_TARGET_GOOD ? "YES" : "NO") << std::endl;
-    oss << "RQ_TARGET_TOO_LONG: " << (validity_state_ & RQ_TARGET_TOO_LONG ? "YES" : "NO") << std::endl;
-    oss << "RQ_TARGET_BAD_SCHEME: " << (validity_state_ & RQ_TARGET_BAD_SCHEME ? "YES" : "NO") << std::endl;
-    oss << "RQ_TARGET_HAS_USER_INFO: " << (validity_state_ & RQ_TARGET_HAS_USER_INFO ? "YES" : "NO") << std::endl;
-    oss << "RQ_TARGET_BAD_HOST: " << (validity_state_ & RQ_TARGET_BAD_HOST ? "YES" : "NO") << std::endl;
-    oss << "RQ_TARGET_BAD_PORT: " << (validity_state_ & RQ_TARGET_BAD_PORT ? "YES" : "NO") << std::endl;
-    oss << "RQ_TARGET_BAD_PATH: " << (validity_state_ & RQ_TARGET_BAD_PATH ? "YES" : "NO") << std::endl;
-    oss << "RQ_TARGET_BAD_QUERY: " << (validity_state_ & RQ_TARGET_BAD_QUERY ? "YES" : "NO") << std::endl;
-    oss << "RQ_TARGET_HAS_FRAGMENT: " << (validity_state_ & RQ_TARGET_HAS_FRAGMENT ? "YES" : "NO") << std::endl;
+    oss << "RQ_TARGET_TOO_LONG: " << (validity_state_ & RQ_TARGET_TOO_LONG ? "YES" : "NO")
+        << std::endl;
+    oss << "RQ_TARGET_BAD_SCHEME: " << (validity_state_ & RQ_TARGET_BAD_SCHEME ? "YES" : "NO")
+        << std::endl;
+    oss << "RQ_TARGET_HAS_USER_INFO: " << (validity_state_ & RQ_TARGET_HAS_USER_INFO ? "YES" : "NO")
+        << std::endl;
+    oss << "RQ_TARGET_BAD_HOST: " << (validity_state_ & RQ_TARGET_BAD_HOST ? "YES" : "NO")
+        << std::endl;
+    oss << "RQ_TARGET_BAD_PORT: " << (validity_state_ & RQ_TARGET_BAD_PORT ? "YES" : "NO")
+        << std::endl;
+    oss << "RQ_TARGET_BAD_PATH: " << (validity_state_ & RQ_TARGET_BAD_PATH ? "YES" : "NO")
+        << std::endl;
+    oss << "RQ_TARGET_BAD_QUERY: " << (validity_state_ & RQ_TARGET_BAD_QUERY ? "YES" : "NO")
+        << std::endl;
+    oss << "RQ_TARGET_HAS_FRAGMENT: " << (validity_state_ & RQ_TARGET_HAS_FRAGMENT ? "YES" : "NO")
+        << std::endl;
     oss << "ToStr(): " << ToStr() << std::endl;
 
     return oss.str();
@@ -164,11 +176,12 @@ void RqTarget::ParseScheme_(const std::string& raw_target, size_t& raw_target_po
 
 void RqTarget::ParseUserInfo_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!scheme_.first || raw_target_pos >= raw_target.size()){
+    if (!scheme_.first || raw_target_pos >= raw_target.size()) {
         return;
     }
     size_t start_pos = raw_target_pos;
-    size_t end_pos = raw_target.find("@", start_pos);;
+    size_t end_pos = raw_target.find("@", start_pos);
+    ;
     if (end_pos == std::string::npos) {
         user_info_.first = false;
         return;
@@ -248,8 +261,10 @@ void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_
     fragment_.second = raw_target.substr(raw_target_pos + 1);
 }
 
-void RqTarget::Normalize_() {
-    // todo decoding: check if host should be decoded and if decoding-set is same for host, path and query
+void RqTarget::Normalize_()
+{
+    // todo decoding: check if host should be decoded and if decoding-set is same for host, path and
+    // query
     if (host_.first) {
         // std::pair<bool, std::string> decoded = PercentDecode_(host_.second);
         // if (decoded.first) {
@@ -267,8 +282,7 @@ void RqTarget::Normalize_() {
         std::pair<bool, std::string> decoded = PercentDecode_(path_.second);
         if (decoded.first) {
             path_.second = decoded.second;
-        }
-        else { // invalid encoding detected -> BAD_REQUEST
+        } else {  // invalid encoding detected -> BAD_REQUEST
             std::cout << "invalid encoding detected" << std::endl;
             validity_state_ |= RQ_TARGET_BAD_PATH;
         }
@@ -277,8 +291,7 @@ void RqTarget::Normalize_() {
         std::pair<bool, std::string> dot_segment_free_path = RemoveDotSegments_(path_.second);
         if (dot_segment_free_path.first) {
             path_.second = dot_segment_free_path.second;
-        }
-        else { // directory traversal detected -> BAD_REQUEST (log it?)
+        } else {  // directory traversal detected -> BAD_REQUEST (log it?)
             validity_state_ |= RQ_TARGET_BAD_PATH;
         }
     }
@@ -286,16 +299,15 @@ void RqTarget::Normalize_() {
         std::pair<bool, std::string> decoded = PercentDecode_(query_.second);
         if (decoded.first) {
             query_.second = decoded.second;
-        }
-        else { // invalid encoding detected -> BAD_REQUEST
+        } else {  // invalid encoding detected -> BAD_REQUEST
             validity_state_ |= RQ_TARGET_BAD_QUERY;
         }
         ConvertEncodedHexToUpper_(query_.second);
     }
 }
 
-std::pair<bool/*valid_triplet*/, std::string> RqTarget::PercentDecode_(const std::string& str,
-                                                           const char* decode_set) const
+std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
+    const std::string& str, const char* decode_set) const
 {
     std::string decoded;
     std::pair<bool, unsigned short> ascii;
@@ -310,8 +322,7 @@ std::pair<bool/*valid_triplet*/, std::string> RqTarget::PercentDecode_(const std
             }
             if (decode_set && strchr(decode_set, static_cast<char>(ascii.second))) {
                 decoded += static_cast<char>(ascii.second);
-            }
-            else {
+            } else {
                 decoded += str.substr(i, 3);
             }
             i += 2;
@@ -440,7 +451,7 @@ void RqTarget::ValidateScheme_()
 
 void RqTarget::ValidateHost_()
 {
-    //todo: decide if we check for valid ipv4 or ipv6 address,...
+    // todo: decide if we check for valid ipv4 or ipv6 address,...
     if (!host_.first) {
         return;
     }
@@ -452,7 +463,7 @@ void RqTarget::ValidateHost_()
         validity_state_ |= RQ_TARGET_BAD_HOST;
     }
     for (size_t i = 0; i < host_.second.size(); ++i) {
-        const char *str = host_.second.c_str() + i;
+        const char* str = host_.second.c_str() + i;
         if (IsEncodedOctet_(str)) {
             i += 2;
             continue;
@@ -490,7 +501,7 @@ void RqTarget::ValidatePath_()
         return;
     }
     for (size_t i = 0; i < path_.second.size(); ++i) {
-        const char *str = path_.second.c_str() + i;
+        const char* str = path_.second.c_str() + i;
         if (i == 1 && *str == '/') {
             validity_state_ |= RQ_TARGET_BAD_PATH;
             return;
@@ -499,7 +510,8 @@ void RqTarget::ValidatePath_()
             i += 2;
             continue;
         }
-        if (std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) || std::strchr(":@/", *str) != NULL) {
+        if (std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) ||
+            std::strchr(":@/", *str) != NULL) {
             continue;
         }
         validity_state_ |= RQ_TARGET_BAD_PATH;
@@ -512,12 +524,13 @@ void RqTarget::ValidateQuery_()
         return;
     }
     for (size_t i = 0; i < query_.second.size(); ++i) {
-        const char *str = query_.second.c_str() + i;
+        const char* str = query_.second.c_str() + i;
         if (IsEncodedOctet_(str)) {
             i += 2;
             continue;
         }
-        if (std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) || std::strchr(":@/?", *str) != NULL) {
+        if (std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) ||
+            std::strchr(":@/?", *str) != NULL) {
             continue;
         }
         validity_state_ |= RQ_TARGET_BAD_QUERY;
@@ -527,7 +540,8 @@ void RqTarget::ValidateQuery_()
 
 // bool RqTarget::IsValidContent_(const char* str) const
 // {
-//     return IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL || std::strchr(kSubDelims, *str) != NULL;
+//     return IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL ||
+//     std::strchr(kSubDelims, *str) != NULL;
 // }
 
 bool RqTarget::IsEncodedOctet_(const char* str) const
