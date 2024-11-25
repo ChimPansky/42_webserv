@@ -1,6 +1,7 @@
 #include "RqTarget.h"
 
 #include <str_utils.h>
+#include <http.h>
 
 #include <cstring>
 
@@ -20,6 +21,10 @@ const char* RqTarget::kSubDelims = "!$&'()*+,;=";
 
 RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GOOD)
 {
+    if (raw_target.size() > RQ_URI_LEN_LIMIT) {
+        validity_state_ |= RQ_TARGET_TOO_LONG;
+        return;
+    }
     size_t raw_target_pos = 0;
     ParseScheme_(raw_target, raw_target_pos);
     ParseUserInfo_(raw_target, raw_target_pos);
