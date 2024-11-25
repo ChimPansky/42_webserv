@@ -42,12 +42,14 @@ class FileProcessor : public AResponseProcessor {
           err_response_processor_(utils::unique_ptr<GeneratedErrorResponseProcessor>(NULL))
     {
         if (access(file_path.c_str(), F_OK) == -1) {
+            LOG(DEBUG) << "Requested file not found: " << file_path;
             err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
                 new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
             return;
         }
         std::ifstream file(file_path.c_str(), std::ios::binary);
         if (!file.is_open()) {
+            LOG(DEBUG) << "Requested file cannot be opened: " << file_path;
             err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
                 new GeneratedErrorResponseProcessor(response_rdy_cb_,
                                                     http::HTTP_INTERNAL_SERVER_ERROR));
