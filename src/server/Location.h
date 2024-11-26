@@ -1,7 +1,7 @@
 #ifndef WS_SERVER_LOCATION_H
 #define WS_SERVER_LOCATION_H
 
-#include <AResponseProcessor.h>
+#include "response_processors/AResponseProcessor.h"
 #include <LocationConfig.h>
 #include <Request.h>
 #include <unique_ptr.h>

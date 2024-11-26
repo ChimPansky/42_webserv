@@ -1,8 +1,6 @@
-#include "server_utils.h"
+#include "utils.h"
 
 namespace utils {
-
-namespace serv {
 
 std::map<std::string, std::string> GetMimeTypes()
 {
@@ -22,7 +20,5 @@ std::map<std::string, std::string> GetMimeTypes()
 
     return mime_types;
 }
-
-}  // namespace serv
 
 }  // namespace utils
