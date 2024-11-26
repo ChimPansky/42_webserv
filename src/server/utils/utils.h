@@ -6,7 +6,7 @@
 
 namespace utils {
 
-std::map<std::string, std::string> GetMimeTypes();
+std::map<const char*, const char*> GetMimeTypes();
 inline const char* kDefaultContentType()
 {
     return "application/octet-stream";

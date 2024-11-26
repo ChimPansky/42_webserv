@@ -45,15 +45,16 @@ std::vector<char> FileProcessor::ReadFile_(std::ifstream& file)
 
 std::string FileProcessor::GetContentType(const std::string& file)
 {
-    std::map<std::string, std::string> mime_types = utils::GetMimeTypes();
+    static const std::map<const char*, const char*>& mime_types = utils::GetMimeTypes();
 
     size_t dot_pos = file.find_last_of('.');
     if (dot_pos == std::string::npos) {
         return utils::kDefaultContentType();
     }
-    std::string extension = file.substr(dot_pos);
-    if (mime_types.find(extension) == mime_types.end()) {
+    const char* extension = file.c_str() + dot_pos;
+    std::map<const char*, const char*>::const_iterator it = mime_types.find(extension);
+    if (it == mime_types.end()) {
         return utils::kDefaultContentType();
     }
-    return mime_types[extension];
+    return it->second;
 }
