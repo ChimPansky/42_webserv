@@ -2,25 +2,30 @@
 
 namespace utils {
 
-std::map<const char*, const char*> GetMimeTypes()
+const char* GetTypeByExt(const std::string& ext)
 {
-    static std::map<const char*, const char*> mime_types;
-
-    if (mime_types.empty()) {  // to initialize it only once
-        mime_types[".html"] = "text/html";
-        mime_types[".css"] = "text/css";
-        mime_types[".js"] = "application/javascript";
-        mime_types[".txt"] = "text/plain";
-        mime_types[".png"] = "image/png";
-        mime_types[".jpg"] = "image/jpeg";
-        mime_types[".jpeg"] = "image/jpeg";
-        mime_types[".gif"] = "image/gif";
-        mime_types[".ico"] = "image/x-icon";
-        mime_types[".pdf"] = "application/pdf";
-        mime_types[".json"] = "application/json";
-    }
-
-    return mime_types;
+    if (ext == ".html")
+        return "text/html";
+    else if (ext == ".css")
+        return "text/css";
+    else if (ext == ".js")
+        return "application/javascript";
+    else if (ext == ".txt")
+        return "text/plain";
+    else if (ext == ".png")
+        return "image/png";
+    else if (ext == ".jpg" || ext == ".jpeg")
+        return "image/jpeg";
+    else if (ext == ".gif")
+        return "image/gif";
+    else if (ext == ".ico")
+        return "image/x-icon";
+    else if (ext == ".pdf")
+        return "application/pdf";
+    else if (ext == ".json")
+        return "application/json";
+    else
+        return kDefaultContentType();
 }
 
 }  // namespace utils
