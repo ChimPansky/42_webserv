@@ -163,6 +163,6 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
 
 void ServerCluster::FillResponseHeaders(http::Response& rs)
 {
-    rs.add_header(std::make_pair("Server", kServerClusterName()));
-    rs.add_header(std::make_pair("Date", utils::GetFormatedTime()));
+    rs.AddHeader(std::make_pair("Server", kServerClusterName()));
+    rs.AddHeader(std::make_pair("Date", utils::GetFormatedTime()));
 }

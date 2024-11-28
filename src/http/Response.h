@@ -19,7 +19,7 @@ class Response {
     std::vector<char> Dump() const;
     std::string DumpToStr() const;
     const std::map<std::string, std::string>& headers() const;
-    bool add_header(const std::pair<std::string, std::string>& header);
+    bool AddHeader(const std::pair<std::string, std::string>& header);
 
   private:
     ResponseCode code_;

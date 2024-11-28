@@ -51,7 +51,7 @@ const std::map<std::string, std::string>& Response::headers() const {
     return headers_;
 }
 
-bool Response::add_header(const std::pair<std::string, std::string>& header)
+bool Response::AddHeader(const std::pair<std::string, std::string>& header)
 {
     return headers_.insert(header).second;
 }
