@@ -36,7 +36,13 @@ const sockaddr_in& ClientSocket::addr_in() const {
 
 ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t read_size) const
 {
-    return ::recv(sockfd_, (void*)(buf.data() + buf.size() - read_size), read_size, MSG_NOSIGNAL);
+    ssize_t bytes_read = ::recv(sockfd_, (void*)(buf.data()), read_size, MSG_NOSIGNAL);
+    if (bytes_read < 0) {
+        buf.resize(0);
+    } else if (static_cast<size_t>(bytes_read) < read_size) {
+        buf.resize(bytes_read);
+    }
+    return bytes_read;
 }
 
 ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const

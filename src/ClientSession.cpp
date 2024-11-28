@@ -39,17 +39,33 @@ bool ClientSession::connection_closed() const
 
 
 // RECV REQUEST
-void ClientSession::ProcessNewData(size_t bytes_recvd)
+void ClientSession::ProcessNewData(std::vector<char>& buf)
 {
-    rq_builder_.Build(bytes_recvd);
-    if (rq_builder_.builder_status() == http::RB_NEED_TO_MATCH_SERVER) {
-        LOG(DEBUG) << "ProcessNewData: Client " << client_sock_->sockfd()
-                   << " chooses Server on Mastersocket: " << master_socket_fd_;
-        associated_server_ = ServerCluster::ChooseServer(
-            master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
-        rq_builder_.ApplyServerInfo(1000);  // then this
-        rq_builder_.Build(bytes_recvd);     // and this are obsolete
+    if (buf.empty()) {
+        LOG(DEBUG) << "ProcessNewData: Empty buffer -> ignoring";
+        return;
     }
+    rq_.ProcessNewData(buf); // build request until after-headers or append buf to body
+    if (rq_.status() == http::RQ_END_OF_HEADERS_NOT_REACHED) {
+        LOG(DEBUG) << "ProcessNewData: End of header-section not reached -> waiting for more data";
+        return;
+    }
+    if (rq_.status() == http::RQ_END_OF_HEADERS_REACHED && rq_.BodyExpected()
+        && !rq_.body().ready_to_send_to_server()) {
+        LOG(DEBUG) << "ProcessNewData: Body / Bodychunk not complete -> waiting for more data";
+        return;
+    }
+    if (!associated_server_) {
+        associated_server_ = ServerCluster::ChooseServer(master_socket_fd_, rq_);
+    }
+
+    // todo: send rq to server and server will either send response right away (for non-POST methods)
+    // OR attempt to write data from request-body to location on server
+    // therefore need to change Server::ProcessRequest()...
+
+    //associated_server_->ProcessRequest(rq_);
+    //...............
+
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
                    << ((rq_builder_.rq().status == http::RQ_GOOD) ? "GOOD)" : "BAD)")
@@ -99,35 +115,21 @@ ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : c
 void ClientSession::ClientReadCallback::Call(int /*fd*/)
 {
     LOG(DEBUG) << "ClientReadCallback::Call";
+    std::vector<char> buf;
+    buf.resize(CLIENT_RD_CALLBACK_RD_SZ);
+    ssize_t bytes_recvd = client_.client_sock_->Recv(buf, CLIENT_RD_CALLBACK_RD_SZ);
+    if (bytes_recvd <= 0) {
+        LOG(DEBUG) << "Client disconnected -> terminating Session";
+        client_.CloseConnection();
+        return;
+    }
     if (client_.read_state_ == CS_IGNORE) {
-        std::vector<char> buf;
-        buf.resize(1000);
-        ssize_t bytes_recvd = client_.client_sock_->Recv(buf, 1000);
         LOG(DEBUG) << "RdCB::Call (ignored) bytes_recvd: " << bytes_recvd
                    << " from: " << client_.client_sock_->sockfd();
-        if (bytes_recvd <= 0) {
-            LOG(DEBUG) << "Client disconnected -> terminating Session";
-            client_.CloseConnection();
-            return;
-        }
     } else {
-        client_.rq_builder_.PrepareToRecvData(CLIENT_RD_CALLBACK_RD_SZ);
-        ssize_t bytes_recvd =
-            client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
-        // what u gonna do with the closed connection in builder?
         LOG(DEBUG) << "RdCB::Call (not ignored) bytes_recvd: " << bytes_recvd
                    << " from: " << client_.client_sock_->sockfd();
-        ;
-        // TODO: what if read-size == length of (invalid) request?
-        // we need to recv 0 bytes and forward it to builder in order to realize its bad:
-        // read_size == 10 && rq == "GET / HTTP"
-        if (bytes_recvd <= 0) {
-            LOG(DEBUG) << "Client disconnected -> terminating Session";
-            client_.CloseConnection();
-            return;
-        }
-        client_.rq_builder_.AdjustBufferSize(bytes_recvd);
-        client_.ProcessNewData(bytes_recvd);
+        client_.ProcessNewData(buf);
     }
 }
 

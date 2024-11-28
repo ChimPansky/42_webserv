@@ -11,27 +11,70 @@
 
 namespace http {
 
+class RequestBuilder;
 enum RqStatus {
-    RQ_INCOMPLETE = 0,
-    RQ_GOOD = HTTP_OK,
-    RQ_BAD = HTTP_BAD_REQUEST,
-    RQ_URI_TOO_LONG = HTTP_URI_TOO_LONG
+    RQ_END_OF_HEADERS_NOT_REACHED = 0,
+    RQ_END_OF_HEADERS_REACHED,
+    RQ_BAD,
+    RQ_END_OF_BODY_REACHED
 };
 
-class RequestBuilder;
-struct Request {
+enum BodyType {
+    BT_NONE = 0,
+    BT_REGULAR,
+    BT_CHUNKED
+};
+
+class RequestBody {
+  public:
+    RequestBody();
+
+    BodyType type() const { return type_; }
+    const std::vector<char>& content() const { return content_; }
+    bool ready_to_send_to_server( ) const { return ready_to_send_to_server_; }
+
+  private:
+    BodyType type_;
+    std::vector<char> content_;
+    bool ready_to_send_to_server_;
+};
+
+class Request {
+  public:
     Request();
 
-    RqStatus status;
-    Method method;
-    http::Uri uri;
-    Version version;
-    std::map<std::string, std::string> headers;
-    std::vector<char> body;
+    void ProcessNewData(std::vector<char>& buf);
+    bool BodyExpected() const { return body_.type() != BT_NONE; }
+
+    std::string ToString() const;
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;
-    std::string ToString() const;
+    RqStatus status() const { return status_; }
+    ResponseCode rs_code() const { return rs_code_; }
+    Method method() const { return method_; }
+    const http::Uri& uri() const { return uri_; }
+    Version version() const { return version_; }
+    const RequestBody& body() const { return body_; }
+
+    void set_status(RqStatus status) { status_ = status; }
+    void set_rs_code(ResponseCode rs_code) { rs_code_ = rs_code; }
+    void set_method(Method method) { method_ = method; }
+    void set_uri(const http::Uri& uri) { uri_ = uri; }
+    void set_version(Version version) { version_ = version; }
+    void add_header(const std::string& key, const std::string& value) {
+        headers_[key] = value;
+    }
+
+  private:
+    RqStatus status_;
+    ResponseCode rs_code_;
+    Method method_;
+    http::Uri uri_;
+    Version version_;
+    std::map<std::string, std::string> headers_;
+    RequestBody body_;
+
 };
 
 }  // namespace http

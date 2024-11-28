@@ -24,7 +24,7 @@ class ClientSession {
     ~ClientSession();
     bool connection_closed() const;
     bool IsRequestReady() const;
-    void ProcessNewData(size_t bytes_recvd);
+    void ProcessNewData(std::vector<char>& buf);
     void CloseConnection();
     void PrepareResponse(utils::unique_ptr<http::Response> rs);
     void ResponseSentCleanup(bool close_connection);
@@ -66,7 +66,7 @@ class ClientSession {
     int master_socket_fd_;
     utils::shared_ptr<Server> associated_server_;
     utils::unique_ptr<AResponseProcessor> response_processor_;
-    http::RequestBuilder rq_builder_;
+    http::Request rq_;
     bool connection_closed_;
     CsState read_state_;
 };
