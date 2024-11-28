@@ -2,7 +2,7 @@
 #define WS_CLIENT_H
 
 #include <ClientSocket.h>
-#include <IResponseProcessor.h>
+#include <response_processors/AResponseProcessor.h>
 #include <RequestBuilder.h>
 #include <Server.h>
 #include <multiplexers/ICallback.h>

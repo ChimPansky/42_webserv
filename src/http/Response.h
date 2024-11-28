@@ -19,6 +19,8 @@ class Response {
     std::vector<char> Dump() const;
     std::string DumpToStr() const;
     const std::map<std::string, std::string>& headers() const;
+    bool AddHeader(const std::pair<std::string, std::string>& header);
+
   private:
     ResponseCode code_;
     http::Version version_;
@@ -56,8 +58,6 @@ inline utils::unique_ptr<http::Response> GetSimpleValidResponse() {
       "</html>\n\r";
 
     std::map<std::string, std::string> hdrs;
-    hdrs["Date"] = utils::GetFormatedTime();
-    hdrs["Server"] = "ft_webserv";
     hdrs["Last-Modified"] = "Wed, 22 Jul 2009 19:15:56 GMT";
     hdrs["Content-Length"] = utils::NumericToString(txt_body.size());
     hdrs["Content-Type"] = "text/html";

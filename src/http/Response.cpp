@@ -50,3 +50,8 @@ std::string Response::DumpToStr() const {
 const std::map<std::string, std::string>& Response::headers() const {
     return headers_;
 }
+
+bool Response::AddHeader(const std::pair<std::string, std::string>& header)
+{
+    return headers_.insert(header).second;
+}

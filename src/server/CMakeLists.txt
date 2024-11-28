@@ -1,6 +1,8 @@
 add_library(Server
     Server.cpp
     Location.cpp
+    utils/utils.cpp
+    response_processors/FileProcessor.cpp
 )
 
 target_link_libraries(Server PUBLIC Utils)
