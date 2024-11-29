@@ -13,7 +13,7 @@
 namespace http {
 
 RequestBuilder::RequestBuilder()
-    : builder_status_(RB_BUILDING), build_state_(BS_METHOD), body_builder_(&rq_.body)
+    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), body_builder_(&rq_.body)
 {}
 
 RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char>* rq_body)
@@ -61,6 +61,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
         }
         BuildState old_state = build_state_;
         switch (build_state_) {
+            case BS_RQ_LINE:            build_state_ = BuildFirstLine_(); break;
             case BS_METHOD:             build_state_ = BuildMethod_(); break;
             case BS_URI:                build_state_ = BuildUri_(); break;
             case BS_VERSION:            build_state_ = BuildVersion_(); break;
@@ -118,6 +119,60 @@ std::vector<char>& RequestBuilder::buf()
     return parser_.buf();
 }
 
+RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
+{
+    while (!parser_.EndOfBuffer()) {
+        if (CheckForEOL_()) {
+            line_ = parser_.ExtractElement();
+            std::stringstream ss(line_);
+            std::getline(ss, raw_method_, ' ');
+            if (ss.eof()) {
+                return Error_(RQ_BAD);
+            }
+            std::getline(ss, raw_uri_, ' ');
+            if (ss.eof()) {
+                return Error_(RQ_BAD);
+            }
+            std::getline(ss, raw_version_);
+            if (!ss.eof()) {
+                return Error_(RQ_BAD);
+            }
+            parser_.Advance();
+        }
+        parser_.Advance();
+        return BS_HEADER_FIELD;
+    }
+    return BS_RQ_LINE;
+}
+
+RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
+    while (!parser_.EndOfBuffer()) {
+        if (CheckForEOL_()) {
+            line_ = parser_.ExtractElement();
+            if (line_.empty()) {
+                parser_.Advance();
+                return BS_AFTER_HEADERS;
+            }
+            std::stringstream ss(line_);
+            std::string header_key, header_val;
+            std::getline(ss, header_key, ':');
+            if (ss.eof()) {
+                return Error_(RQ_BAD);
+            }
+            std::getline(ss, header_val);
+            if (!ss.eof()) {
+                return Error_(RQ_BAD);
+            }
+            rq_.headers[header_key] = header_val;
+            parser_.Advance();
+            parser_.StartNewElement();
+            return (BS_HEADER_FIELD);
+        }
+        parser_.Advance();
+    }
+    return BS_HEADER_FIELD;
+}
+
 RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 {
     while (!parser_.EndOfBuffer()) {
@@ -148,7 +203,7 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_()
 {
     while (!parser_.EndOfBuffer()) {
         if (parser_.ExceededLineLimit()) {
-            return Error_(RQ_BAD); 
+            return Error_(RQ_BAD);
         }
         if (parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
             return Error_(RQ_URI_TOO_LONG);

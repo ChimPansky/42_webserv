@@ -5,6 +5,7 @@
 #include "RequestParser.h"
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace http {
@@ -30,6 +31,8 @@ class RequestBuilder {
 
   private:
     enum BuildState {
+        BS_RQ_LINE,
+        BS_HEADER_FIELD,
         BS_METHOD,
         BS_URI,
         BS_VERSION,
@@ -64,10 +67,17 @@ class RequestBuilder {
   private:
     Request rq_;
     RqBuilderStatus builder_status_;
+    std::string line_;
+    std::string raw_method_;
+    std::string raw_uri_;
+    std::string raw_version_;
     RequestParser parser_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
+
+    BuildState BuildFirstLine_();
+    BuildState BuildHeaderField_();
 
     BuildState BuildMethod_();
     BuildState BuildUri_();
