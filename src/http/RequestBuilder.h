@@ -3,6 +3,7 @@
 
 #include "Request.h"
 #include "RequestParser.h"
+#include "ResponseCodes.h"
 
 #include <cstddef>
 #include <string>
@@ -32,14 +33,7 @@ class RequestBuilder {
   private:
     enum BuildState {
         BS_RQ_LINE,
-        BS_HEADER_FIELD,
-        BS_METHOD,
-        BS_URI,
-        BS_VERSION,
-        BS_BETWEEN_HEADERS,
-        BS_HEADER_KEY,
-        BS_HEADER_KEY_VAL_SEP,
-        BS_HEADER_VALUE,
+        BS_HEADER_FIELDS,
         BS_AFTER_HEADERS,
         BS_CHECK_FOR_BODY,
         BS_CHECK_BODY_REGULAR_LENGTH,
@@ -67,17 +61,23 @@ class RequestBuilder {
   private:
     Request rq_;
     RqBuilderStatus builder_status_;
+    RequestParser parser_;
     std::string line_;
     std::string raw_method_;
     std::string raw_uri_;
     std::string raw_version_;
-    RequestParser parser_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
 
     BuildState BuildFirstLine_();
+    http::ResponseCode ValidateFirstLine_();
     BuildState BuildHeaderField_();
+    http::ResponseCode ValidateHeaders_();
+
+    bool InsertHeaderField_(std::string& key, std::string& value);
+
+
 
     BuildState BuildMethod_();
     BuildState BuildUri_();
@@ -98,7 +98,7 @@ class RequestBuilder {
     void NullTerminatorCheck_(char c);
     bool CheckForEOL_() const;
     bool IsParsingState_(BuildState state) const;
-    BuildState Error_(RqStatus status);
+    BuildState Error_(ResponseCode status);
 };
 
 }  // namespace http

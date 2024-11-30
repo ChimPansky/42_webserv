@@ -1,5 +1,6 @@
 #include "RequestBuilder.h"
 #include "Request.h"
+#include "Response.h"
 #include "ResponseCodes.h"
 
 #include <cctype>
@@ -9,6 +10,7 @@
 
 #include <logger.h>
 #include <numeric_utils.h>
+#include "str_utils.h"
 
 namespace http {
 
@@ -51,7 +53,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
     LOG(DEBUG) << "RequestBuilder::Build";
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
-        rq_.status = RQ_BAD;
+        rq_.status = HTTP_BAD_REQUEST;
         builder_status_ = RB_DONE;
         return;
     }
@@ -62,13 +64,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
         BuildState old_state = build_state_;
         switch (build_state_) {
             case BS_RQ_LINE:            build_state_ = BuildFirstLine_(); break;
-            case BS_METHOD:             build_state_ = BuildMethod_(); break;
-            case BS_URI:                build_state_ = BuildUri_(); break;
-            case BS_VERSION:            build_state_ = BuildVersion_(); break;
-            case BS_BETWEEN_HEADERS:    build_state_ = CheckForNextHeader_(); break;
-            case BS_HEADER_KEY:         build_state_ = BuildHeaderKey_(); break;
-            case BS_HEADER_KEY_VAL_SEP: build_state_ = ParseHeaderKeyValSep_(); break;
-            case BS_HEADER_VALUE:       build_state_ = BuildHeaderValue_(); break;
+            case BS_HEADER_FIELDS:       build_state_ = BuildHeaderField_(); break;
             case BS_AFTER_HEADERS:      build_state_ = NeedToMatchServer_(); break;
             case BS_CHECK_FOR_BODY:     build_state_ = CheckForBody_(); break;
             case BS_CHECK_BODY_REGULAR_LENGTH:  build_state_ = CheckBodyRegularLength_(); break;
@@ -87,9 +83,6 @@ void RequestBuilder::Build(size_t bytes_recvd)
         }
     }
     if (build_state_ == BS_END || build_state_ == BS_BAD_REQUEST) {
-        if (build_state_ == BS_END) {
-            rq_.status = RQ_GOOD;
-        }
         builder_status_ = RB_DONE;
     }
 }
@@ -122,212 +115,112 @@ std::vector<char>& RequestBuilder::buf()
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 {
     while (!parser_.EndOfBuffer()) {
+        if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
+            return Error_(HTTP_BAD_REQUEST);
+        }
         if (CheckForEOL_()) {
-            line_ = parser_.ExtractElement();
+            line_ = parser_.ExtractLine();
+            // todo for robustness: if very first line of request empty -> ignore and continue
             std::stringstream ss(line_);
             std::getline(ss, raw_method_, ' ');
+            LOG(INFO) << "raw_method_: " << raw_method_;
             if (ss.eof()) {
-                return Error_(RQ_BAD);
+                return Error_(HTTP_BAD_REQUEST);
             }
             std::getline(ss, raw_uri_, ' ');
+            LOG(INFO) << "raw_uri_: " << raw_uri_;
             if (ss.eof()) {
-                return Error_(RQ_BAD);
+                return Error_(HTTP_BAD_REQUEST);
             }
             std::getline(ss, raw_version_);
+            LOG(INFO) << "raw_version_: " << raw_version_;
             if (!ss.eof()) {
-                return Error_(RQ_BAD);
+                return Error_(HTTP_BAD_REQUEST);
+            }
+            ResponseCode rc = ValidateFirstLine_();
+            if (rc != http::HTTP_OK) {
+                return Error_(rc);
             }
             parser_.Advance();
+            return BS_HEADER_FIELDS;
         }
         parser_.Advance();
-        return BS_HEADER_FIELD;
     }
     return BS_RQ_LINE;
 }
 
+ResponseCode RequestBuilder::ValidateFirstLine_() {
+    // if (!syntaxchecker.check_method(raw_method)) {
+    //     return HTTP_BAD_REQUEST;
+    // };
+    if (raw_method_ == "GET") {
+        rq_.method = HTTP_GET;
+    } else if (raw_method_ == "POST") {
+        rq_.method = HTTP_POST;
+    } else if (raw_method_ == "DELETE") {
+        rq_.method = HTTP_DELETE;
+    } else {
+        return HTTP_NOT_IMPLEMENTED;
+    }
+    rq_.uri = raw_uri_; // todo: change this to Uri object once merged
+    // if Uri bad...
+    // if (!syntaxchecker.check_version(raw_version)) {
+    //     return HTTP_BAD_REQUEST;
+    // };
+    if (raw_version_ == "HTTP/1.0") {
+        rq_.version = HTTP_1_0;
+    } else if (raw_version_ == "HTTP/1.1") {
+        rq_.version = HTTP_1_1;
+    } else {
+        return HTTP_HTTP_VERSION_NOT_SUPPORTED;
+    }
+    return HTTP_OK;
+}
+
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     while (!parser_.EndOfBuffer()) {
+        if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
+            return Error_(HTTP_BAD_REQUEST);
+        }
         if (CheckForEOL_()) {
-            line_ = parser_.ExtractElement();
+            line_ = parser_.ExtractLine();
             if (line_.empty()) {
                 parser_.Advance();
+                ResponseCode rc = ValidateHeaders_();
+                if (rc != http::HTTP_OK) {
+                    return Error_(rc);
+                }
                 return BS_AFTER_HEADERS;
             }
             std::stringstream ss(line_);
             std::string header_key, header_val;
             std::getline(ss, header_key, ':');
             if (ss.eof()) {
-                return Error_(RQ_BAD);
+                return Error_(HTTP_BAD_REQUEST);
             }
             std::getline(ss, header_val);
             if (!ss.eof()) {
-                return Error_(RQ_BAD);
+                return Error_(HTTP_BAD_REQUEST);
             }
-            rq_.headers[header_key] = header_val;
+            if (!InsertHeaderField_(header_key, header_val)) {
+                return Error_(HTTP_BAD_REQUEST);
+            }
             parser_.Advance();
             parser_.StartNewElement();
-            return (BS_HEADER_FIELD);
+            return (BS_HEADER_FIELDS);
         }
         parser_.Advance();
     }
-    return BS_HEADER_FIELD;
+    return BS_HEADER_FIELDS;
 }
 
-RequestBuilder::BuildState RequestBuilder::BuildMethod_()
+ResponseCode RequestBuilder::ValidateHeaders_()
 {
-    while (!parser_.EndOfBuffer()) {
-        if (parser_.ElementLen() == 4 && parser_.CompareBuf_("GET ", 4) == 0) {
-            rq_.method = HTTP_GET;
-        }
-        if (parser_.ElementLen() == 5 && parser_.CompareBuf_("POST ", 5) == 0) {
-            rq_.method = HTTP_POST;
-        }
-        if (parser_.ElementLen() == 7 && parser_.CompareBuf_("DELETE ", 7) == 0) {
-            rq_.method = HTTP_DELETE;
-        }
-        if (rq_.method != HTTP_NO_METHOD) {
-            parser_.Advance();
-            return BS_URI;
-        }
-        if (parser_.ElementLen() > 7) {
-            return Error_(RQ_BAD);
-        }
-        parser_.Advance(1);
-    }
-    return BS_METHOD;
-}
-
-// https://datatracker.ietf.org/doc/html/rfc2616#page-17
-//  https://datatracker.ietf.org/doc/html/rfc2396
-RequestBuilder::BuildState RequestBuilder::BuildUri_()
-{
-    while (!parser_.EndOfBuffer()) {
-        if (parser_.ExceededLineLimit()) {
-            return Error_(RQ_BAD);
-        }
-        if (parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
-            return Error_(RQ_URI_TOO_LONG);
-        }
-        if (parser_.Peek() == ' ') {
-            if (parser_.ElementLen() > 1) {
-                rq_.uri = parser_.ExtractElement();
-                parser_.Advance();
-                return BS_VERSION;
-            } else {
-                return Error_(RQ_BAD);
-            }
-        }
-        parser_.Advance();
-    }
-    return BS_URI;
-}
-
-RequestBuilder::BuildState RequestBuilder::BuildVersion_()
-{
-    while (!parser_.EndOfBuffer()) {
-        if (parser_.ElementLen() == 10 && parser_.CompareBuf_("HTTP/0.9\r\n", 10) == 0) {
-            rq_.version = HTTP_0_9;
-        }
-        if (parser_.ElementLen() == 10 && parser_.CompareBuf_("HTTP/1.0\r\n", 10) == 0) {
-            rq_.version = HTTP_1_0;
-        }
-        if (parser_.ElementLen() == 10 && parser_.CompareBuf_("HTTP/1.1\r\n", 10) == 0) {
-            rq_.version = HTTP_1_1;
-        }
-        if (parser_.ElementLen() == 8 && parser_.CompareBuf_("HTTP/2\r\n", 8) == 0) {
-            rq_.version = HTTP_2;
-        }
-        if (parser_.ElementLen() == 8 && parser_.CompareBuf_("HTTP/3\r\n", 8) == 0) {
-            rq_.version = HTTP_3;
-        }
-        if (rq_.version != HTTP_NO_VERSION) {
-            parser_.Advance();
-            return BS_BETWEEN_HEADERS;
-        }
-        if (parser_.ElementLen() > 10) {
-            return Error_(RQ_BAD);
-        }
-        parser_.Advance();
-    }
-    return BS_VERSION;
-}
-
-RequestBuilder::BuildState RequestBuilder::CheckForNextHeader_()
-{
-    while (!parser_.EndOfBuffer()) {
-        if (parser_.ElementLen() == 1 && parser_.Peek() != EOL_CARRIAGE_RETURN) {
-            return BS_HEADER_KEY;
-        }
-        if (CheckForEOL_()) {
-            parser_.Advance();
-            return BS_AFTER_HEADERS;
-        }
-        parser_.Advance();
-    }
-    if (CheckForEOL_()) {
-        return BS_AFTER_HEADERS;
-    }
-    return BS_BETWEEN_HEADERS;
-}
-
-RequestBuilder::BuildState RequestBuilder::BuildHeaderKey_()
-{
-    while (!parser_.EndOfBuffer()) {
-        char c = parser_.Peek();
-        if (c == ':') {
-            if (parser_.ElementLen() == 1) {
-                return Error_(RQ_BAD);
-            } else {
-                header_key_ = parser_.ExtractElement();
-                parser_.Advance();
-                // TODO: check if header_key already exists in map (no duplicates allowed)
-                // also: check length of header keys/values and total number of headers
-                return BS_HEADER_KEY_VAL_SEP;
-            }
-        } else if (!(std::isalnum(c) || (parser_.ElementLen() > 1 && c == '-'))) {
-            return Error_(RQ_BAD);
-        }
-        parser_[parser_.element_end_idx()] = std::tolower(parser_[parser_.element_end_idx()]);
-        parser_.Advance();
-    }
-    return BS_HEADER_KEY;
-}
-
-RequestBuilder::BuildState RequestBuilder::ParseHeaderKeyValSep_()
-{
-    while (!parser_.EndOfBuffer()) {
-        if (std::isspace(parser_.Peek())) {
-            parser_.Advance();
-            continue;
-        }
-        if (parser_.ElementLen() < 2) {
-            return Error_(RQ_BAD);
-        }
-        return BS_HEADER_VALUE;
-    }
-    return BS_HEADER_KEY_VAL_SEP;
-}
-
-// RFC: https://datatracker.ietf.org/doc/html/rfc2616#page-17
-RequestBuilder::BuildState RequestBuilder::BuildHeaderValue_()
-{
-    while (!parser_.EndOfBuffer()) {
-        char c = parser_.Peek();
-        if (CheckForEOL_()) {
-            rq_.headers[header_key_] = parser_.ExtractElement(-1);
-            parser_.Advance();
-            return BS_BETWEEN_HEADERS;
-        }
-        if (parser_.ElementLen() > 1 && parser_.Peek(-1) == EOL_CARRIAGE_RETURN) {
-            return Error_(RQ_BAD);
-        }
-        if (c != EOL_CARRIAGE_RETURN &&
-            !std::isprint(c)) {  // TODO: additional checks for valid characters...
-            return Error_(RQ_BAD);
-        }
-        parser_.Advance();
-    }
-    return BS_HEADER_VALUE;
+    // iterate through headers map
+    // for each header: if syntaxcheck bad --> return HTTP_BAD_REQUEST
+    // if duplicate host header --> return HTTP_BAD_REQUEST
+    // additional semantic checks...
+    return HTTP_OK;
 }
 
 RequestBuilder::BuildState RequestBuilder::NeedToMatchServer_() {
@@ -343,7 +236,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
     std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
     std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
     if (content_length.first && transfer_encoding.first) {
-        return Error_(RQ_BAD);
+        return Error_(HTTP_BAD_REQUEST);
     }
     if (transfer_encoding.second == "chunked") {
         body_builder_.chunked = true;
@@ -357,11 +250,11 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
                 content_length_num.second;  // TODO: content-length limits?
             return BS_CHECK_BODY_REGULAR_LENGTH;
         } else {
-            return Error_(RQ_BAD);
+            return Error_(HTTP_BAD_REQUEST);
         }
     }
     if (rq_.method == HTTP_POST) {
-        return Error_(RQ_BAD);
+        return Error_(HTTP_BAD_REQUEST);
     }
     return BS_END;
 }
@@ -369,7 +262,7 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
 RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_()
 {
     if (body_builder_.remaining_length > body_builder_.max_body_size) {
-        return Error_(RQ_BAD);
+        return Error_(HTTP_BAD_REQUEST);
     }
     body_builder_.body->resize(body_builder_.remaining_length);
     return BS_BODY_REGULAR;
@@ -403,12 +296,12 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
             std::pair<bool, size_t> converted_size =
                 utils::HexToUnsignedNumericNoThrow<size_t>(parser_.ExtractElement(-1));
             if (!converted_size.first) {
-                return Error_(RQ_BAD);
+                return Error_(HTTP_BAD_REQUEST);
             }
             body_builder_.remaining_length =
                 converted_size.second;  // TODO: check for chunk size limits
             if (rq_.body.size() + body_builder_.remaining_length > body_builder_.max_body_size) {
-                return Error_(RQ_BAD);
+                return Error_(HTTP_BAD_REQUEST);
             }
             if (body_builder_.remaining_length == 0) {
                 return BS_END;
@@ -430,7 +323,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
     while (!parser_.EndOfBuffer() && parser_.ElementLen() <= body_builder_.remaining_length + 2) {
         if (CheckForEOL_()) {
             if (parser_.ElementLen() - 2 != body_builder_.remaining_length) {
-                return Error_(RQ_BAD);
+                return Error_(HTTP_BAD_REQUEST);
             }
             size_t old_sz = body_builder_.body->size();
             body_builder_.body->resize(old_sz + body_builder_.remaining_length);
@@ -468,7 +361,15 @@ bool RequestBuilder::IsParsingState_(BuildState state) const
     return (state != BS_AFTER_HEADERS && state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH);
 }
 
-RequestBuilder::BuildState RequestBuilder::Error_(RqStatus status) {
+bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
+    std::string key_lower = utils::ToLowerCase(key);
+    // todo: check for host-duplicates
+    // todo: handle list values
+    rq_.headers[key_lower] = value;
+    return true;
+}
+
+RequestBuilder::BuildState RequestBuilder::Error_(ResponseCode status) {
     rq_.status = status;
     return BS_BAD_REQUEST;
 }

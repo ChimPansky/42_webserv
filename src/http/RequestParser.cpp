@@ -84,6 +84,15 @@ std::string RequestParser::ExtractElement(ssize_t end_offset) const
     return std::string(buf_.data() + begin, buf_.data() + end);
 }
 
+std::string RequestParser::ExtractLine() const
+{
+    size_t begin = element_begin_idx_;
+    size_t end =
+        std::max(static_cast<ssize_t>(element_end_idx_), static_cast<ssize_t>(begin));
+    end = std::min(end, buf_.size());
+    return std::string(buf_.data() + begin, buf_.data() + end - 1);
+}
+
 char& RequestParser::operator[](ssize_t index)
 {
     if (index < 0) {

@@ -6,7 +6,7 @@
 
 namespace http {
 
-Request::Request() : status(RQ_INCOMPLETE), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
+Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
 {}
 
 std::pair<bool /*header_key_found*/, std::string /*header_value*/> Request::GetHeaderVal(
@@ -23,7 +23,7 @@ std::string Request::ToString() const
 {
     std::ostringstream ret;
     ret << "---Request---"
-        << "\n\tStatus: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_GOOD ? "GOOD" : "Bad"))
+        << "\n\tStatus: " << (status == HTTP_OK ? "OK " : "BAD ") << status
         << "\n\tMethod: " << method
         << "\n\tURI: " << uri
         << "\n\tVersion: " << version

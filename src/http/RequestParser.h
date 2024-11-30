@@ -24,6 +24,7 @@ class RequestParser {
     bool ExceededLineLimit() const;
     size_t ElementLen() const;
     std::string ExtractElement(ssize_t end_offset = 0) const;
+    std::string ExtractLine() const;
 
     char& operator[](ssize_t index);
 
