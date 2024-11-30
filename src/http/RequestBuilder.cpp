@@ -1,6 +1,5 @@
 #include "RequestBuilder.h"
 #include "Request.h"
-#include "Response.h"
 #include "ResponseCodes.h"
 
 #include <cctype>
@@ -37,9 +36,6 @@ bool RequestBuilder::CanBuild_()
     if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
         return false;
     }
-    if (build_state_ == BS_BODY_REGULAR && parser_.ElementLen() > 0) {
-        return true;
-    }
     if (IsParsingState_(build_state_) && parser_.EndOfBuffer()) {
         builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
         return false;
@@ -51,6 +47,7 @@ bool RequestBuilder::CanBuild_()
 void RequestBuilder::Build(size_t bytes_recvd)
 {
     LOG(DEBUG) << "RequestBuilder::Build";
+    LOG(INFO) << "buffer: " << parser_.buf().data();
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = HTTP_BAD_REQUEST;
@@ -61,7 +58,6 @@ void RequestBuilder::Build(size_t bytes_recvd)
         if (IsParsingState_(build_state_)) {       // todo: check for \0 within states...
             NullTerminatorCheck_(parser_.Peek());  // can there be \0 in body???
         }
-        BuildState old_state = build_state_;
         switch (build_state_) {
             case BS_RQ_LINE:            build_state_ = BuildFirstLine_(); break;
             case BS_HEADER_FIELDS:       build_state_ = BuildHeaderField_(); break;
@@ -77,9 +73,6 @@ void RequestBuilder::Build(size_t bytes_recvd)
         if (builder_status_ == RB_NEED_TO_MATCH_SERVER) {
             LOG(DEBUG) << "NEED_TO_MATCH_SERVER -> break out of Build-Loop";
             return;
-        }
-        if (build_state_ != old_state) {
-            parser_.StartNewElement();
         }
     }
     if (build_state_ == BS_END || build_state_ == BS_BAD_REQUEST) {
@@ -114,6 +107,7 @@ std::vector<char>& RequestBuilder::buf()
 
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 {
+    LOG(INFO) << "BuildFirstLine_";
     while (!parser_.EndOfBuffer()) {
         if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
             return Error_(HTTP_BAD_REQUEST);
@@ -123,17 +117,14 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
             // todo for robustness: if very first line of request empty -> ignore and continue
             std::stringstream ss(line_);
             std::getline(ss, raw_method_, ' ');
-            LOG(INFO) << "raw_method_: " << raw_method_;
             if (ss.eof()) {
                 return Error_(HTTP_BAD_REQUEST);
             }
             std::getline(ss, raw_uri_, ' ');
-            LOG(INFO) << "raw_uri_: " << raw_uri_;
             if (ss.eof()) {
                 return Error_(HTTP_BAD_REQUEST);
             }
             std::getline(ss, raw_version_);
-            LOG(INFO) << "raw_version_: " << raw_version_;
             if (!ss.eof()) {
                 return Error_(HTTP_BAD_REQUEST);
             }
@@ -141,7 +132,6 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
             if (rc != http::HTTP_OK) {
                 return Error_(rc);
             }
-            parser_.Advance();
             return BS_HEADER_FIELDS;
         }
         parser_.Advance();
@@ -150,6 +140,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 }
 
 ResponseCode RequestBuilder::ValidateFirstLine_() {
+    LOG(INFO) << "ValidateFirstLine_";
     // if (!syntaxchecker.check_method(raw_method)) {
     //     return HTTP_BAD_REQUEST;
     // };
@@ -178,14 +169,15 @@ ResponseCode RequestBuilder::ValidateFirstLine_() {
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
+    LOG(INFO) << "BuildHeaderField_";
     while (!parser_.EndOfBuffer()) {
         if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
             return Error_(HTTP_BAD_REQUEST);
         }
         if (CheckForEOL_()) {
+            LOG(INFO) << "Found EOL in header field";
             line_ = parser_.ExtractLine();
             if (line_.empty()) {
-                parser_.Advance();
                 ResponseCode rc = ValidateHeaders_();
                 if (rc != http::HTTP_OK) {
                     return Error_(rc);
@@ -205,8 +197,6 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
             if (!InsertHeaderField_(header_key, header_val)) {
                 return Error_(HTTP_BAD_REQUEST);
             }
-            parser_.Advance();
-            parser_.StartNewElement();
             return (BS_HEADER_FIELDS);
         }
         parser_.Advance();
@@ -216,6 +206,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
 
 ResponseCode RequestBuilder::ValidateHeaders_()
 {
+    LOG(INFO) << "ValidateHeaders_";
     // iterate through headers map
     // for each header: if syntaxcheck bad --> return HTTP_BAD_REQUEST
     // if duplicate host header --> return HTTP_BAD_REQUEST
@@ -275,10 +266,10 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
     }
     size_t copy_size = std::min(parser_.ElementLen(), body_builder_.remaining_length);
     std::memcpy(body_builder_.body->data() + body_builder_.body_idx,
-                parser_.buf().data() + parser_.element_begin_idx(), copy_size);
+                parser_.buf().data(), copy_size);
+                // todo erase from buf
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;
-    parser_.StartNewElement();
     if (body_builder_.remaining_length == 0) {
         return BS_END;
     }
@@ -294,7 +285,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
             std::tolower(parser_[parser_.element_end_idx() - 1]);
         if (CheckForEOL_()) {
             std::pair<bool, size_t> converted_size =
-                utils::HexToUnsignedNumericNoThrow<size_t>(parser_.ExtractElement(-1));
+                utils::HexToUnsignedNumericNoThrow<size_t>(parser_.ExtractElement());
             if (!converted_size.first) {
                 return Error_(HTTP_BAD_REQUEST);
             }
@@ -306,7 +297,6 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
             if (body_builder_.remaining_length == 0) {
                 return BS_END;
             }
-            parser_.Advance();
             return BS_BODY_CHUNK_CONTENT;
         }
         if (parser_.EndOfBuffer()) {
@@ -328,8 +318,9 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
             size_t old_sz = body_builder_.body->size();
             body_builder_.body->resize(old_sz + body_builder_.remaining_length);
             std::memcpy(body_builder_.body->data() + old_sz,
-                        parser_.buf().data() + parser_.element_begin_idx(),
+                        parser_.buf().data(),
                         body_builder_.remaining_length);
+            // todo: erase from buffer
             parser_.Advance();
             return BS_BODY_CHUNK_SIZE;
         }
