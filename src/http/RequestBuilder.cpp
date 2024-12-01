@@ -108,33 +108,29 @@ std::vector<char>& RequestBuilder::buf()
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 {
     LOG(INFO) << "BuildFirstLine_";
-    while (!parser_.EndOfBuffer()) {
-        if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
+    line_extraction_result_ = TryToExtractLine_();
+    if (line_extraction_result_ == LINE_TOO_LONG) {
+        return Error_(HTTP_BAD_REQUEST);
+    } else if (line_extraction_result_ == LINE_EXTRACTED) {
+        // todo for robustness: if very first line of request empty -> ignore and continue
+        std::stringstream ss(line_);
+        std::getline(ss, raw_method_, ' ');
+        if (ss.eof()) {
             return Error_(HTTP_BAD_REQUEST);
         }
-        if (parser_.FoundCRLF()) {
-            line_ = parser_.ExtractLine();
-            // todo for robustness: if very first line of request empty -> ignore and continue
-            std::stringstream ss(line_);
-            std::getline(ss, raw_method_, ' ');
-            if (ss.eof()) {
-                return Error_(HTTP_BAD_REQUEST);
-            }
-            std::getline(ss, raw_uri_, ' ');
-            if (ss.eof()) {
-                return Error_(HTTP_BAD_REQUEST);
-            }
-            std::getline(ss, raw_version_);
-            if (!ss.eof()) {
-                return Error_(HTTP_BAD_REQUEST);
-            }
-            ResponseCode rc = ValidateFirstLine_();
-            if (rc != http::HTTP_OK) {
-                return Error_(rc);
-            }
-            return BS_HEADER_FIELDS;
+        std::getline(ss, raw_uri_, ' ');
+        if (ss.eof()) {
+            return Error_(HTTP_BAD_REQUEST);
         }
-        parser_.Advance();
+        std::getline(ss, raw_version_);
+        if (!ss.eof()) {
+            return Error_(HTTP_BAD_REQUEST);
+        }
+        ResponseCode rc = ValidateFirstLine_();
+        if (rc != http::HTTP_OK) {
+            return Error_(rc);
+        }
+        return BS_HEADER_FIELDS;
     }
     return BS_RQ_LINE;
 }
@@ -170,36 +166,30 @@ ResponseCode RequestBuilder::ValidateFirstLine_() {
 
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     LOG(INFO) << "BuildHeaderField_";
-    while (!parser_.EndOfBuffer()) {
-        if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
+    line_extraction_result_ = TryToExtractLine_();
+    if (line_extraction_result_ == LINE_TOO_LONG) {
+        return Error_(HTTP_BAD_REQUEST);
+    } else if (line_extraction_result_ == LINE_EXTRACTED) {
+        if (line_.empty()) {
+            ResponseCode rc = ValidateHeaders_();
+            if (rc != http::HTTP_OK) {
+                return Error_(rc);
+            }
+            return BS_AFTER_HEADERS;
+        }
+        std::stringstream ss(line_);
+        std::string header_key, header_val;
+        std::getline(ss, header_key, ':');
+        if (ss.eof()) {
             return Error_(HTTP_BAD_REQUEST);
         }
-        if (parser_.FoundCRLF()) {
-            LOG(INFO) << "Found EOL in header field";
-            line_ = parser_.ExtractLine();
-            if (line_.empty()) {
-                ResponseCode rc = ValidateHeaders_();
-                if (rc != http::HTTP_OK) {
-                    return Error_(rc);
-                }
-                return BS_AFTER_HEADERS;
-            }
-            std::stringstream ss(line_);
-            std::string header_key, header_val;
-            std::getline(ss, header_key, ':');
-            if (ss.eof()) {
-                return Error_(HTTP_BAD_REQUEST);
-            }
-            std::getline(ss, header_val);
-            if (!ss.eof()) {
-                return Error_(HTTP_BAD_REQUEST);
-            }
-            if (!InsertHeaderField_(header_key, header_val)) {
-                return Error_(HTTP_BAD_REQUEST);
-            }
-            return (BS_HEADER_FIELDS);
+        std::getline(ss, header_val);
+        if (!ss.eof()) {
+            return Error_(HTTP_BAD_REQUEST);
         }
-        parser_.Advance();
+        if (!InsertHeaderField_(header_key, header_val)) {
+            return Error_(HTTP_BAD_REQUEST);
+        }
     }
     return BS_HEADER_FIELDS;
 }
@@ -334,6 +324,20 @@ void RequestBuilder::NullTerminatorCheck_(char c)
     if (c == '\0' && build_state_ != BS_BODY_CHUNK_CONTENT) {
         build_state_ = BS_BAD_REQUEST;
     }
+}
+
+RequestBuilder::LineExtractionResult RequestBuilder::TryToExtractLine_() {
+    while (!parser_.EndOfBuffer()) {
+        if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
+            return LINE_TOO_LONG;
+        }
+        if (parser_.FoundCRLF()) {
+            line_ = parser_.ExtractLine();
+            return LINE_EXTRACTED;
+        }
+        parser_.Advance();
+    }
+    return CRLF_NOT_FOUND;
 }
 
 bool RequestBuilder::IsParsingState_(BuildState state) const
