@@ -24,6 +24,11 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
     HTTP_3
 };
 
+enum EOL_CHARS {
+    EOL_CARRIAGE_RETURN = '\r',
+    EOL_LINE_FEED = '\n'
+};
+
 const char* HttpVerToStr(http::Version ver);
 
 }  // namespace http

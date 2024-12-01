@@ -18,12 +18,13 @@ class RequestParser {
 
     char Peek(ssize_t offset = 0) const;
     bool Advance(ssize_t n = 1);
+    bool FoundCRLF() const;
     void StartNewElement();
     bool EndOfBuffer() const;
     bool ExceededLineLimit() const;
     size_t ElementLen() const;
     std::string ExtractElement();
-    std::string ExtractLine(); 
+    std::string ExtractLine();
 
     char& operator[](ssize_t index);
 

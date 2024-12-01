@@ -99,5 +99,11 @@ size_t RequestParser::element_end_idx() const
     return element_end_idx_;
 }
 
+bool RequestParser::FoundCRLF() const {
+    if (element_end_idx_ < 1) {
+        return false;
+    }
+    return buf_[element_end_idx_ - 1] == EOL_CARRIAGE_RETURN && buf_[element_end_idx_] == EOL_LINE_FEED;
+}
 
 }  // namespace http

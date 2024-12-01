@@ -112,7 +112,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
         if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
             return Error_(HTTP_BAD_REQUEST);
         }
-        if (CheckForEOL_()) {
+        if (parser_.FoundCRLF()) {
             line_ = parser_.ExtractLine();
             // todo for robustness: if very first line of request empty -> ignore and continue
             std::stringstream ss(line_);
@@ -174,7 +174,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
         if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
             return Error_(HTTP_BAD_REQUEST);
         }
-        if (CheckForEOL_()) {
+        if (parser_.FoundCRLF()) {
             LOG(INFO) << "Found EOL in header field";
             line_ = parser_.ExtractLine();
             if (line_.empty()) {
@@ -283,7 +283,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
     while (true) {
         parser_[parser_.element_end_idx() - 1] =
             std::tolower(parser_[parser_.element_end_idx() - 1]);
-        if (CheckForEOL_()) {
+        if (parser_.FoundCRLF()) {
             std::pair<bool, size_t> converted_size =
                 utils::HexToUnsignedNumericNoThrow<size_t>(parser_.ExtractElement());
             if (!converted_size.first) {
@@ -311,7 +311,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
 {
     while (!parser_.EndOfBuffer() && parser_.ElementLen() <= body_builder_.remaining_length + 2) {
-        if (CheckForEOL_()) {
+        if (parser_.FoundCRLF()) {
             if (parser_.ElementLen() - 2 != body_builder_.remaining_length) {
                 return Error_(HTTP_BAD_REQUEST);
             }
@@ -334,17 +334,6 @@ void RequestBuilder::NullTerminatorCheck_(char c)
     if (c == '\0' && build_state_ != BS_BODY_CHUNK_CONTENT) {
         build_state_ = BS_BAD_REQUEST;
     }
-}
-
-bool RequestBuilder::CheckForEOL_() const
-{
-    if (parser_.ElementLen() < 2) {
-        return false;
-    }
-    if (parser_.Peek(-1) == EOL_CARRIAGE_RETURN && parser_.Peek() == EOL_LINE_FEED) {
-        return true;
-    }
-    return false;
 }
 
 bool RequestBuilder::IsParsingState_(BuildState state) const

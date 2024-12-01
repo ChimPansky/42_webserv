@@ -43,10 +43,6 @@ class RequestBuilder {
         BS_END,
         BS_BAD_REQUEST
     };
-    enum EOL_CHARS {
-        EOL_CARRIAGE_RETURN = '\r',
-        EOL_LINE_FEED = '\n'
-    };
 
   public:
     RequestBuilder();
@@ -77,8 +73,6 @@ class RequestBuilder {
 
     bool InsertHeaderField_(std::string& key, std::string& value);
 
-
-
     BuildState BuildMethod_();
     BuildState BuildUri_();
     BuildState BuildVersion_();
@@ -96,7 +90,6 @@ class RequestBuilder {
     // helpers:
     bool CanBuild_();
     void NullTerminatorCheck_(char c);
-    bool CheckForEOL_() const;
     bool IsParsingState_(BuildState state) const;
     BuildState Error_(ResponseCode status);
 };
