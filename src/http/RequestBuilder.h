@@ -43,10 +43,11 @@ class RequestBuilder {
         BS_END,
         BS_BAD_REQUEST
     };
-    enum LineExtractionResult {
-        LINE_EXTRACTED,
-        LINE_TOO_LONG,
-        CRLF_NOT_FOUND
+    enum ExtractionResult {
+        EXTRACTION_SUCCESS,
+        EXTRACTION_TOO_LONG,
+        EXTRACTION_CRLF_NOT_FOUND,
+        EXTRACTION_NULL_TERMINATOR_FOUND
     };
 
   public:
@@ -64,7 +65,7 @@ class RequestBuilder {
     RqBuilderStatus builder_status_;
     RequestParser parser_;
     std::string line_;
-    LineExtractionResult line_extraction_result_;
+    ExtractionResult extraction_result_;
     std::string raw_method_;
     std::string raw_uri_;
     std::string raw_version_;
@@ -96,7 +97,8 @@ class RequestBuilder {
     // helpers:
     bool CanBuild_();
     void NullTerminatorCheck_(char c);
-    LineExtractionResult TryToExtractLine_();
+    ExtractionResult TryToExtractLine_();
+    ExtractionResult TryToExtractBodyContent_();
     bool IsParsingState_(BuildState state) const;
     BuildState Error_(ResponseCode status);
 };
