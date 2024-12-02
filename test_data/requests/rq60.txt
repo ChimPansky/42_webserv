@@ -1,6 +1,6 @@
-POST /loooooooooooooooooooooooooooonnnnnggggggggggg/uuuuuuuuuurrrrriiiiiiiiiiiii/waaayy/too/looong HTTP/1.1
+POST /llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii HTTP/1.1
 Transfer-Encoding: chunked
 
-A   
+A
 0123456789
 0

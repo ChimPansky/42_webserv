@@ -42,12 +42,12 @@ add_test(
     COMMAND ./location_matching
 )
 
-# Uri
-add_executable(uri_test uri_test.cpp)
-target_link_libraries(uri_test PRIVATE Http gtest gtest_main)
+# RequestTarget
+add_executable(rq_target_test rq_target_test.cpp)
+target_link_libraries(rq_target_test PRIVATE Http gtest gtest_main)
 add_test(
-    NAME uri_test
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/uri_test
+    NAME rq_target_test
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/rq_target_test
 )
 
 # Valgrind

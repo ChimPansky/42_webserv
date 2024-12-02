@@ -31,7 +31,7 @@ class RequestBuilder {
   private:
     enum BuildState {
         BS_METHOD,
-        BS_URI,
+        BS_RQ_TARGET,
         BS_VERSION,
         BS_BETWEEN_HEADERS,
         BS_HEADER_KEY,
@@ -70,7 +70,7 @@ class RequestBuilder {
     BodyBuilder body_builder_;
 
     BuildState BuildMethod_();
-    BuildState BuildUri_();
+    BuildState BuildRqTarget_();
     BuildState BuildVersion_();
     BuildState CheckForNextHeader_();
     BuildState BuildHeaderKey_();
