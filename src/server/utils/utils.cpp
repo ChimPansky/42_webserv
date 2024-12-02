@@ -28,4 +28,13 @@ const char* GetTypeByExt(const std::string& ext)
         return kDefaultContentType();
 }
 
+std::string UpdatePath(const std::string& loc, const std::string& matched_prefix,
+                       const std::string& uri_path)
+{
+    if (matched_prefix == "/") {
+        return loc.substr(1) + uri_path;
+    }
+    return loc.substr(1) + uri_path.substr(matched_prefix.length());
+}
+
 }  // namespace utils

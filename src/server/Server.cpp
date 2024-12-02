@@ -2,7 +2,9 @@
 #include "Server.h"
 
 #include "Request.h"
-#include "shared_ptr.h"
+#include "response_processors/FileProcessor.h"
+#include <shared_ptr.h>
+#include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
@@ -112,8 +114,10 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         // return utils::unique_ptr<AResponseProcessor>(new DirListingResponseProcessor(cb, rq,
         // root_dir));
     }
-    LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
-    return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
+    std::string new_path =
+        utils::UpdatePath(chosen_loc->root_dir(), chosen_loc->route().first, rq.uri.path());
+    LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << new_path;
+    return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
 }
 
 std::pair<MatchType, std::string> Server::MatchHostName(
