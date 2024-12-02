@@ -3,6 +3,7 @@
 #include <logger.h>
 #include <str_utils.h>
 #include <sstream>
+#include "RqTarget.h"
 
 namespace http {
 
@@ -25,7 +26,7 @@ std::string Request::ToString() const
     ret << "---Request---"
         << "\n\tStatus: " << (status == HTTP_OK ? "OK " : "BAD ") << status
         << "\n\tMethod: " << method
-        << "\n\tURI: " << uri
+        << "\n\tRequest-Target: " << rqTarget.ToStr()
         << "\n\tVersion: " << version
         << "\n\t~Headers~";
 

@@ -81,7 +81,7 @@ class RequestBuilder {
     bool InsertHeaderField_(std::string& key, std::string& value);
 
     BuildState BuildMethod_();
-    BuildState BuildUri_();
+    BuildState BuildRqTarget_();
     BuildState BuildVersion_();
     BuildState CheckForNextHeader_();
     BuildState BuildHeaderKey_();

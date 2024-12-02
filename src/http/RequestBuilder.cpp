@@ -134,7 +134,6 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
         return Error_(rc);
     }
     return BS_HEADER_FIELDS;
-
 }
 
 ResponseCode RequestBuilder::ValidateFirstLine_() {
@@ -151,7 +150,7 @@ ResponseCode RequestBuilder::ValidateFirstLine_() {
     } else {
         return HTTP_NOT_IMPLEMENTED;
     }
-    rq_.uri = raw_uri_; // todo: change this to Uri object once merged
+    rq_.rqTarget = raw_uri_; // todo: change this to Uri object once merged
     // if Uri bad...
     // if (!syntaxchecker.check_version(raw_version)) {
     //     return HTTP_BAD_REQUEST;

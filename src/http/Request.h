@@ -7,7 +7,7 @@
 
 #include <http.h>
 #include <ResponseCodes.h>
-#include <Uri.h>
+#include <RqTarget.h>
 
 namespace http {
 
@@ -24,7 +24,7 @@ struct Request {
 
     ResponseCode status;
     Method method;
-    http::Uri uri;
+    http::RqTarget rqTarget;
     Version version;
     std::map<std::string, std::string> headers;
     std::vector<char> body;
