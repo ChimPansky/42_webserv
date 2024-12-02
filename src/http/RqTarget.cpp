@@ -4,6 +4,7 @@
 #include <http.h>
 
 #include <cstring>
+#include <sstream>
 
 namespace http {
 
@@ -18,6 +19,8 @@ const char* RqTarget::kUnreserved =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 const char* RqTarget::kGenDelims = ":/?#[]@";
 const char* RqTarget::kSubDelims = "!$&'()*+,;=";
+
+RqTarget::RqTarget() : validity_state_(RQ_TARGET_GOOD) {}
 
 RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GOOD)
 {
@@ -100,67 +103,67 @@ bool RqTarget::operator!=(const RqTarget& rhs) const
 
 std::string RqTarget::ToStr() const
 {
-    std::string str;
+    std::stringstream ss;
     if (scheme_.first) {
-        str += scheme_.second + "://";
+        ss << scheme_.second << "://";
     }
     if (user_info_.first) {
-        str += user_info_.second + "@";
+        ss << user_info_.second << "@";
     }
     if (host_.first) {
-        str += host_.second;
+        ss << host_.second;
     }
     if (port_.first) {
-        str += ":" + port_.second;
+        ss << ":" << port_.second;
     }
-    str += path_.second;
+    ss << path_.second;
     if (query_.first) {
-        str += "?" + query_.second;
+        ss << "?" << query_.second;
     }
     if (fragment_.first) {
-        str += "#" + fragment_.second;
+        ss << "#" << fragment_.second;
     }
-    return str;
+    return ss.str();
 }
 
 std::string RqTarget::GetDebugString() const
 {
     std::ostringstream oss;
 
-    oss << "DEBUG INFO FOR RequestTarget: " << std::endl;
-    oss << "Good(): " << (Good() ? "YES" : "NO") << std::endl;
-    oss << "scheme defined: " << (scheme_.first ? "YES" : "NO") << std::endl;
-    oss << "scheme value: " << scheme() << std::endl;
-    oss << "user_info defined: " << (user_info_.first ? "YES" : "NO") << std::endl;
-    oss << "user_info value: " << user_info_.second << std::endl;
-    oss << "host defined: " << (host_.first ? "YES" : "NO") << std::endl;
-    oss << "host value: " << host_.second << std::endl;
-    oss << "port defined: " << (port_.first ? "YES" : "NO") << std::endl;
-    oss << "port value: " << port_.second << std::endl;
-    oss << "path defined: " << (path_.first ? "YES" : "NO") << std::endl;
-    oss << "path value: " << path_.second << std::endl;
-    oss << "query defined: " << (query_.first ? "YES" : "NO") << std::endl;
-    oss << "query value: " << query_.second << std::endl;
-    oss << "fragment defined: " << (fragment_.first ? "YES" : "NO") << std::endl;
-    oss << "fragment value: " << fragment_.second << std::endl;
-    oss << "FLAGS: " << std::endl;
-    oss << "RQ_TARGET_GOOD: " << (validity_state_ == RQ_TARGET_GOOD ? "YES" : "NO") << std::endl;
+    oss << "DEBUG INFO FOR RequestTarget:\n";
+    oss << "Good(): " << (Good() ? "YES" : "NO") << "\n";
+    oss << "scheme defined: " << (scheme_.first ? "YES" : "NO") << "\n";
+    oss << "scheme value: " << scheme() << "\n";
+    oss << "user_info defined: " << (user_info_.first ? "YES" : "NO") << "\n";
+    oss << "user_info value: " << user_info_.second << "\n";
+    oss << "host defined: " << (host_.first ? "YES" : "NO") << "\n";
+    oss << "host value: " << host_.second << "\n";
+    oss << "port defined: " << (port_.first ? "YES" : "NO") << "\n";
+    oss << "port value: " << port_.second << "\n";
+    oss << "path defined: " << (path_.first ? "YES" : "NO") << "\n";
+    oss << "path value: " << path_.second << "\n";
+    oss << "query defined: " << (query_.first ? "YES" : "NO") << "\n";
+    oss << "query value: " << query_.second << "\n";
+    oss << "fragment defined: " << (fragment_.first ? "YES" : "NO") << "\n";
+    oss << "fragment value: " << fragment_.second << "\n";
+    oss << "FLAGS: " << "\n";
+    oss << "RQ_TARGET_GOOD: " << (validity_state_ == RQ_TARGET_GOOD ? "YES" : "NO") << "\n";
     oss << "RQ_TARGET_TOO_LONG: " << (validity_state_ & RQ_TARGET_TOO_LONG ? "YES" : "NO")
-        << std::endl;
+        << "\n";
     oss << "RQ_TARGET_BAD_SCHEME: " << (validity_state_ & RQ_TARGET_BAD_SCHEME ? "YES" : "NO")
-        << std::endl;
+        << "\n";
     oss << "RQ_TARGET_HAS_USER_INFO: " << (validity_state_ & RQ_TARGET_HAS_USER_INFO ? "YES" : "NO")
-        << std::endl;
+        << "\n";
     oss << "RQ_TARGET_BAD_HOST: " << (validity_state_ & RQ_TARGET_BAD_HOST ? "YES" : "NO")
-        << std::endl;
+        << "\n";
     oss << "RQ_TARGET_BAD_PORT: " << (validity_state_ & RQ_TARGET_BAD_PORT ? "YES" : "NO")
-        << std::endl;
+        << "\n";
     oss << "RQ_TARGET_BAD_PATH: " << (validity_state_ & RQ_TARGET_BAD_PATH ? "YES" : "NO")
-        << std::endl;
+        << "\n";
     oss << "RQ_TARGET_BAD_QUERY: " << (validity_state_ & RQ_TARGET_BAD_QUERY ? "YES" : "NO")
-        << std::endl;
+        << "\n";
     oss << "RQ_TARGET_HAS_FRAGMENT: " << (validity_state_ & RQ_TARGET_HAS_FRAGMENT ? "YES" : "NO")
-        << std::endl;
+        << "\n";
     oss << "ToStr(): " << ToStr() << std::endl;
 
     return oss.str();
@@ -267,16 +270,14 @@ void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_
 
 void RqTarget::Normalize_()
 {
-    // todo decoding: check if host should be decoded and if decoding-set is same for host, path and
-    // query
     if (host_.first) {
-        // std::pair<bool, std::string> decoded = PercentDecode_(host_.second);
-        // if (decoded.first) {
-        //     host_.second = decoded.second;
-        // }
-        // else { // invalid encoding detected -> BAD_REQUEST
-        //     validity_state_ |= RQ_TARGET_BAD_HOST;
-        // }
+        std::pair<bool, std::string> decoded = PercentDecode_(host_.second);
+        if (decoded.first) {
+            host_.second = decoded.second;
+        }
+        else { // invalid encoding detected -> BAD_REQUEST
+            validity_state_ |= RQ_TARGET_BAD_HOST;
+        }
         ConvertEncodedHexToUpper_(host_.second);
     }
     if (port_.first && port_.second == "80" && scheme_.second == "http") {
@@ -541,12 +542,6 @@ void RqTarget::ValidateQuery_()
     }
 }
 
-// bool RqTarget::IsValidContent_(const char* str) const
-// {
-//     return IsEncodedOctet_(str) || std::strchr(kUnreserved, *str) != NULL ||
-//     std::strchr(kSubDelims, *str) != NULL;
-// }
-
 bool RqTarget::IsEncodedOctet_(const char* str) const
 {
     if (*str != '%') {
@@ -559,11 +554,6 @@ bool RqTarget::IsEncodedOctet_(const char* str) const
         return false;
     }
     return true;
-}
-
-bool RqTarget::IsUnreservedChar_(char c) const
-{
-    return std::strchr(kUnreserved, c) != NULL;
 }
 
 }  // namespace http

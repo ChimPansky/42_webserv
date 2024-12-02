@@ -46,7 +46,7 @@ class RqTarget {
         RQ_TARGET_BAD_QUERY = 1L << 9,
         RQ_TARGET_HAS_FRAGMENT = 1L << 10,
     };
-    RqTarget(){};
+    RqTarget();
     RqTarget(const std::string& raw_uri);
     RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host,
              const std::string& port, const std::string& path, const std::string query,
@@ -123,7 +123,6 @@ class RqTarget {
     void ValidatePath_();
     void ValidateQuery_();
     bool IsEncodedOctet_(const char* str) const;
-    bool IsUnreservedChar_(char c) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const RqTarget& RqTarget);
