@@ -9,7 +9,6 @@
 
 class FileProcessor : public AResponseProcessor {
   private:
-    std::vector<char> ReadFile_(std::ifstream& file);
     std::string GetContentType(const std::string& file);
 
   public:
