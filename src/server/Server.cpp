@@ -1,9 +1,10 @@
 
 #include "Server.h"
 
+#include <shared_ptr.h>
+
 #include "Request.h"
 #include "response_processors/FileProcessor.h"
-#include <shared_ptr.h>
 #include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg)
@@ -115,7 +116,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         // root_dir));
     }
     std::string new_path =
-        utils::UpdatePath(chosen_loc->root_dir(), chosen_loc->route().first, rq.uri.path());
+        utils::UpdatePath(chosen_loc->root_dir(), chosen_loc->route().first, rq.rqTarget.path());
     LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << new_path;
     return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
 }

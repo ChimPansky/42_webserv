@@ -31,10 +31,11 @@ const char* GetTypeByExt(const std::string& ext)
 std::string UpdatePath(const std::string& loc, const std::string& matched_prefix,
                        const std::string& uri_path)
 {
-    if (matched_prefix == "/") {
-        return loc.substr(1) + uri_path;
+    std::string remaining_path = uri_path.substr(matched_prefix.length());
+    if (remaining_path[0] != '/') {
+        remaining_path = "/" + remaining_path;
     }
-    return loc.substr(1) + uri_path.substr(matched_prefix.length());
+    return loc.substr(1) + remaining_path;
 }
 
 }  // namespace utils
