@@ -2,21 +2,26 @@
 #define WS_SERVER_RESPONSE_PROCESSORS_CGI_PROCESSOR_H
 
 #include <unique_ptr.h>
-
+#include <fcntl.h>
+#include <unistd.h>
 #include <fstream>
+#include <sys/wait.h>
 
 #include "AResponseProcessor.h"
+#include "Location.h"
 
 class CGIProcessor : public AResponseProcessor {
+
   private:
-    void    SetEnv_(const http::Request& rq)
+    void    ClosePipes_(int pipes_in[2], int pipes_out[2]);
+    void    SetEnv_(const http::Request& rq) //check what are the necessary vars for cgi
     {
         std::vector<std::string> envv;
 
         envv.push_back("GATEWAY_INTERFACE=CGI/1.1");
         envv.push_back("SERVER_PROTOCOL=HTTP/1.1");
         envv.push_back("SCRIPT_NAME=" + cgi_path_);
-        if (rq.method == http::HTTP_POST) {
+        if (rq.method == http::HTTP_POST) { // temp, better to have a func to convert enum to str
             envv.push_back("REQUEST_METHOD=POST");
             envv.push_back("CONTENT_LENGTH=" + rq.body.size());
             envv.push_back("CONTENT_TYPE=" + rq.GetHeaderVal("Content-Type").second);
@@ -47,28 +52,63 @@ class CGIProcessor : public AResponseProcessor {
                                     // responses but is not strictly necessary.
 
         for (size_t i = 0; i < envv.size(); ++i) {
-            envv_.push_back(const_cast<char*>(envv[i].c_str()));
+            envv_.push_back(envv[i].c_str());
         }
         envv_.push_back(NULL);
     }
 
-    int Execute(int clientsocket)
+    std::vector<char>   ExecuteCGI_()
     {
+        int pipes_in[2];
+        int pipes_out[2];
+
+        if (pipe(pipes_in) < 0 || pipe(pipes_out)) {
+            ClosePipes_(pipes_in, pipes_out);
+            err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
+                new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+            return;
+        }
+
         pid_t child_pid = fork();
         if (child_pid < 0) {
-            std::perror("fork failed");
-            return -1;
+            ClosePipes_(pipes_in, pipes_out);
+            err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
+                new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+            return;
         } else if (child_pid == 0) {
-            dup2(clientsocket, STDOUT_FILENO);
-            dup2(clientsocket, STDERR_FILENO);
+            close(pipes_in[1]);
+            close(pipes_out[0]);
 
-            char* args[] = {const_cast<char*>(cgi_path_.c_str()), NULL};
-            execve(cgi_path_.c_str(), args, &envv_[0]);
-            std::perror("execve failed");
-            exit(1);
+            if (dup2(pipes_in[0], STDIN_FILENO) < 0 || dup2(pipes_out[1], STDOUT_FILENO)) {
+                ClosePipes_(pipes_in, pipes_out);
+            }
+
+            close(pipes_in[0]);
+            close(pipes_out[1]);
+            //set args for execve
+            int res = execve(...);
+            exit(res);
         }
-        waitpid(child_pid, NULL, WNOHANG);
-        return 0;
+
+        close(pipes_in[0]);
+        close(pipes_out[1]);
+
+        if (!body.empty()) {
+            write(pipes_in[1], body.data(), body.size());
+        }
+        close(pipe_in[1]);
+
+        int status;
+        waitpid(child_pid, &status, WNOHANG);
+        if (WEXITSTATUS(status) != 0) {
+            err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
+                new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+            return;
+        }
+
+        //process cgi output
+
+    
         // ◦ Execute CGI based on certain file extension (for example .php).
         // ◦ Make it work with POST and GET methods.
         // ◦ Make the route able to accept uploaded files and configure where they should
@@ -84,20 +124,28 @@ class CGIProcessor : public AResponseProcessor {
     }
 
   public:
-    CGIProcessor(const std::string& file_path,
+    CGIProcessor(const std::string& script_path, const http::Request& rq, const Location& loc,
                   utils::unique_ptr<http::IResponseCallback> response_rdy_cb) : err_response_processor(utils::unique_ptr<GeneratedErrorResponseProcessor>(NULL)) {
     
-        if (access(file_path.c_str(), F_OK) == -1) {
-            LOG(DEBUG) << "Requested file not found: " << file_path;
+        // check against allowed extensions
+    
+        if (access(script_path.c_str(), F_OK) == -1) {
+            LOG(DEBUG) << "Requested file not found: " << script_path;
             err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
                 new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
             return;
-        } else if (access(file_path.c_str(), X_OK) == -1) {
-            LOG(DEBUG) << "Requested file is not executable: " << file_path;
+        } else if (access(script_path.c_str(), X_OK) == -1) {
+            LOG(DEBUG) << "Requested file is not executable: " << script_path;
             err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
-                new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND)); // return another error
+                new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
             return;
         }
+        std::vector<char>   output = ExecuteCGI_();
+        std::map<std::string, std::string> headers;
+        // get headers from cgi output
+        std::vector<char>   body; // Extract CGI Body
+            response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
+                new http::Response(http::HTTP_OK, http::HTTP_1_1, headers, body)));
     }
     ~CGIProcessor() {};
 
