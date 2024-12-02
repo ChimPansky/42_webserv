@@ -62,7 +62,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
         BuildState old_state = build_state_;
         switch (build_state_) {
             case BS_METHOD:             build_state_ = BuildMethod_(); break;
-            case BS_URI:                build_state_ = BuildUri_(); break;
+            case BS_RQ_TARGET:                build_state_ = BuildRqTarget_(); break;
             case BS_VERSION:            build_state_ = BuildVersion_(); break;
             case BS_BETWEEN_HEADERS:    build_state_ = CheckForNextHeader_(); break;
             case BS_HEADER_KEY:         build_state_ = BuildHeaderKey_(); break;
@@ -132,7 +132,7 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
         }
         if (rq_.method != HTTP_NO_METHOD) {
             parser_.Advance();
-            return BS_URI;
+            return BS_RQ_TARGET;
         }
         if (parser_.ElementLen() > 7) {
             return Error_(RQ_BAD);
@@ -144,18 +144,18 @@ RequestBuilder::BuildState RequestBuilder::BuildMethod_()
 
 // https://datatracker.ietf.org/doc/html/rfc2616#page-17
 //  https://datatracker.ietf.org/doc/html/rfc2396
-RequestBuilder::BuildState RequestBuilder::BuildUri_()
+RequestBuilder::BuildState RequestBuilder::BuildRqTarget_()
 {
     while (!parser_.EndOfBuffer()) {
         if (parser_.ExceededLineLimit()) {
-            return Error_(RQ_BAD); 
+            return Error_(RQ_BAD);
         }
-        if (parser_.ElementLen() > RQ_URI_LEN_LIMIT) {
+        if (parser_.ElementLen() > RQ_TARGET_LEN_LIMIT) {
             return Error_(RQ_URI_TOO_LONG);
         }
         if (parser_.Peek() == ' ') {
             if (parser_.ElementLen() > 1) {
-                rq_.uri = parser_.ExtractElement();
+                rq_.rqTarget = parser_.ExtractElement();
                 parser_.Advance();
                 return BS_VERSION;
             } else {
@@ -164,7 +164,7 @@ RequestBuilder::BuildState RequestBuilder::BuildUri_()
         }
         parser_.Advance();
     }
-    return BS_URI;
+    return BS_RQ_TARGET;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildVersion_()
