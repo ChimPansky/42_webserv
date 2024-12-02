@@ -17,7 +17,7 @@ FetchContent_MakeAvailable(googletest)
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 98)
 add_compile_options(-Wall -Wextra -Werror)
-add_compile_options("$<$<CONFIG:Debug>:-gdwarf-4>")  # valgrid compatibility
+add_compile_options("$<$<CONFIG:Debug>:-gdwarf-2>")  # valgrid compatibility
 add_compile_options("$<$<CONFIG:Debug>:-Og>")
 # add_compile_options(-fsanitize=address,undefined,leak)
 # add_link_options(-fsanitize=address,undefined,leak)

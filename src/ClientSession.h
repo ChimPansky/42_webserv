@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <unique_ptr.h>
 
-#define CLIENT_RD_CALLBACK_RD_SZ 20
+#define CLIENT_RD_CALLBACK_RD_SZ 2000
 
 class ClientSession {
   private:
@@ -58,6 +58,7 @@ class ClientSession {
     };
 
   private:
+    // TODO (vilvl) refact somehow, ignore state is invalid
     enum CsState {
         CS_READ,
         CS_IGNORE
