@@ -76,7 +76,7 @@ std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> Location::MatchU
 std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> Location::MatchedRoute(
     const http::Request& rq) const
 {
-    return MatchUriPath(rq.uri.path(), route_);
+    return MatchUriPath(rq.rqTarget.path(), route_);
 }
 
 std::string Location::GetDebugString() const
