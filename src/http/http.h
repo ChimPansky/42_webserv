@@ -4,7 +4,7 @@
 namespace http {
 
 #define RQ_LINE_LEN_LIMIT 8192
-#define RQ_URI_LEN_LIMIT 64 // todo: increase this later. keep it low for testing purposes
+#define RQ_TARGET_LEN_LIMIT 256 // todo: increase this later. keep it low for testing purposes
 
 inline const char* LineSep() {return "\r\n";}
 
