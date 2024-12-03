@@ -15,6 +15,12 @@ enum MatchType {
     EXACT_MATCH = 3
 };
 
+enum LocationType {
+    CGI,
+    STATIC_FILE,
+    NO_LOCATION
+};
+
 class Server {
   private:
     Server();
@@ -53,7 +59,8 @@ class Server {
     std::vector<utils::shared_ptr<Location> > locations_;
     typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;
 
-    utils::shared_ptr<Location> ChooseLocation(const http::Request& rq) const;
+    std::pair<utils::shared_ptr<Location>, LocationType> ChooseLocation(
+        const http::Request& rq) const;
 };
 
 #endif  // WS_SERVER_SERVER_H
