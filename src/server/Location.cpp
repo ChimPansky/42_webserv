@@ -66,8 +66,7 @@ std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> Location::MatchU
 
     if (path == route_path) {
         return std::make_pair(route_path, is_exact_match);
-    } else if (!is_exact_match && path.compare(0, route_path.size(), route_path) == 0 &&
-               (path[route_path.size()] == '/' || route_path == "/")) {
+    } else if (!is_exact_match && path.compare(0, route_path.size(), route_path) == 0) {
         return std::make_pair(route_path, false);
     }
     return std::make_pair(std::string(), false);
