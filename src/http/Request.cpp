@@ -4,6 +4,7 @@
 #include <str_utils.h>
 #include <sstream>
 #include "RqTarget.h"
+#include "http.h"
 
 namespace http {
 
@@ -20,14 +21,14 @@ std::pair<bool /*header_key_found*/, std::string /*header_value*/> Request::GetH
     return std::make_pair(false, "");
 }
 
-std::string Request::ToString() const
+std::string Request::GetDebugString() const
 {
     std::ostringstream ret;
     ret << "---Request---"
         << "\n\tStatus: " << (status == RQ_INCOMPLETE ? "Incomplete" : (status == RQ_GOOD ? "GOOD" : "Bad"))
-        << "\n\tMethod: " << method
+        << "\n\tMethod: " << HttpMethodToStr(method)
         << "\n\tRequest-Target: " << rqTarget.ToStr()
-        << "\n\tVersion: " << version
+        << "\n\tVersion: " << HttpVerToStr(version)
         << "\n\t~Headers~";
 
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();

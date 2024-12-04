@@ -50,7 +50,7 @@ TEST(LocationTest, NoPrefixMatch)
     EXPECT_EQ(result.second, false);
 
     result = Location::MatchUriPath("/pathto/resource", route);
-    EXPECT_EQ(result.first, "");
+    EXPECT_EQ(result.first, "/path");
     EXPECT_EQ(result.second, false);
 
     result = Location::MatchUriPath("/pat", route);

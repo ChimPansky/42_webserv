@@ -25,6 +25,7 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
 };
 
 const char* HttpVerToStr(http::Version ver);
+const char* HttpMethodToStr(http::Method method);
 
 }  // namespace http
 

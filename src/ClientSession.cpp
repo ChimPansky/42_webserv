@@ -55,7 +55,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
                    << ((rq_builder_.rq().status == http::RQ_GOOD) ? "GOOD)" : "BAD)")
                    << " -> Accept on Server...";
         read_state_ = CS_IGNORE;
-        LOG(DEBUG) << rq_builder_.rq().ToString();
+        LOG(DEBUG) << rq_builder_.rq().GetDebugString();
         // server returns rs with basic headers and status complete/body generation in process +
         // generator func
         if (associated_server_) {  // just to make sure we never dereference NULL...
@@ -72,7 +72,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
 void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 {
     ServerCluster::FillResponseHeaders(*rs);
-    std::map<std::string, std::string>::const_iterator conn_it = rs->headers().find("connection");
+    std::map<std::string, std::string>::const_iterator conn_it = rs->headers().find("Connection"); // TODO add find header case-independent
     bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,
@@ -88,7 +88,7 @@ void ClientSession::ResponseSentCleanup(bool close_connection)
     c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_WRITE);
     read_state_ = CS_READ;
     if (close_connection) {
-        connection_closed_ = true;
+        CloseConnection();
     }
 }
 
