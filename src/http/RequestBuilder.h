@@ -67,15 +67,12 @@ class RequestBuilder {
     RequestParser parser_;
     std::string line_;
     ExtractionResult extraction_result_;
-    std::string raw_method_;
-    std::string raw_uri_;
-    std::string raw_version_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
 
     BuildState BuildFirstLine_();
-    http::ResponseCode ValidateFirstLine_();
+    http::ResponseCode ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version);
     BuildState BuildHeaderField_();
     http::ResponseCode ValidateHeaders_();
 

@@ -48,7 +48,6 @@ void RequestBuilder::Build(size_t bytes_recvd)
 {
     // utils::Logger::get().set_severity_threshold(INFO);
     LOG(DEBUG) << "RequestBuilder::Build";
-    LOG(DEBUG) << "buffer: " << parser_.buf().data();
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = HTTP_BAD_REQUEST;
@@ -114,47 +113,54 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
     }
     // todo for robustness: if very first line of request empty -> ignore and continue
     std::stringstream ss(line_);
-    std::getline(ss, raw_method_, ' ');
+    std::string raw_method, raw_rq_target, raw_version;
+    std::getline(ss, raw_method, ' ');
     if (ss.eof()) {
         return Error_(HTTP_BAD_REQUEST);
     }
-    std::getline(ss, raw_uri_, ' ');
-    if (ss.eof() || raw_uri_.empty()) {
+    std::getline(ss, raw_rq_target, ' ');
+    if (ss.eof()) {
         return Error_(HTTP_BAD_REQUEST);
     }
-    std::getline(ss, raw_version_);
+    std::getline(ss, raw_version);
     if (!ss.eof()) {
         return Error_(HTTP_BAD_REQUEST);
     }
-    ResponseCode rc = ValidateFirstLine_();
+    ResponseCode rc = ValidateFirstLine_(raw_method, raw_rq_target, raw_version);
     if (rc != http::HTTP_OK) {
         return Error_(rc);
     }
     return BS_HEADER_FIELDS;
 }
 
-ResponseCode RequestBuilder::ValidateFirstLine_() {
+ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version) {
     LOG(INFO) << "ValidateFirstLine_";
     // if (!syntaxchecker.check_method(raw_method)) {
     //     return HTTP_BAD_REQUEST;
     // };
-    if (raw_method_ == "GET") {
+    if (raw_method == "GET") {
         rq_.method = HTTP_GET;
-    } else if (raw_method_ == "POST") {
+    } else if (raw_method == "POST") {
         rq_.method = HTTP_POST;
-    } else if (raw_method_ == "DELETE") {
+    } else if (raw_method == "DELETE") {
         rq_.method = HTTP_DELETE;
     } else {
         return HTTP_NOT_IMPLEMENTED;
     }
-    rq_.rqTarget = raw_uri_; // todo: change this to Uri object once merged
-    // if Uri bad...
+    rq_.rqTarget = raw_rq_target; // todo: change this to Uri object once merged
+    if (rq_.rqTarget.RQ_TARGET_TOO_LONG) {
+        return HTTP_URI_TOO_LONG;
+    }
+    if (!rq_.rqTarget.Good()) {
+        return HTTP_BAD_REQUEST;
+    }
+    // if Uri bad...raw_rq_target
     // if (!syntaxchecker.check_version(raw_version)) {
     //     return HTTP_BAD_REQUEST;
     // };
-    if (raw_version_ == "HTTP/1.0") {
+    if (raw_version == "HTTP/1.0") {
         rq_.version = HTTP_1_0;
-    } else if (raw_version_ == "HTTP/1.1") {
+    } else if (raw_version == "HTTP/1.1") {
         rq_.version = HTTP_1_1;
     } else {
         return HTTP_HTTP_VERSION_NOT_SUPPORTED;
