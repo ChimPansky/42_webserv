@@ -46,8 +46,9 @@ bool RequestBuilder::CanBuild_()
 // TODO: rm bytes_recvd
 void RequestBuilder::Build(size_t bytes_recvd)
 {
+    // utils::Logger::get().set_severity_threshold(INFO);
     LOG(DEBUG) << "RequestBuilder::Build";
-    LOG(INFO) << "buffer: " << parser_.buf().data();
+    LOG(DEBUG) << "buffer: " << parser_.buf().data();
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         rq_.status = HTTP_BAD_REQUEST;
@@ -55,9 +56,6 @@ void RequestBuilder::Build(size_t bytes_recvd)
         return;
     }
     while (CanBuild_()) {
-        if (IsParsingState_(build_state_)) {       // todo: check for \0 within states...
-            NullTerminatorCheck_(parser_.Peek());  // can there be \0 in body???
-        }
         switch (build_state_) {
             case BS_RQ_LINE:            build_state_ = BuildFirstLine_(); break;
             case BS_HEADER_FIELDS:       build_state_ = BuildHeaderField_(); break;
@@ -110,10 +108,9 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
     LOG(INFO) << "BuildFirstLine_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
-        case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
-        case EXTRACTION_NULL_TERMINATOR_FOUND: return Error_(HTTP_BAD_REQUEST);
-        case EXTRACTION_TOO_LONG: return Error_(HTTP_BAD_REQUEST);
         case EXTRACTION_SUCCESS: break;
+        case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
+        default: return Error_(HTTP_BAD_REQUEST);
     }
     // todo for robustness: if very first line of request empty -> ignore and continue
     std::stringstream ss(line_);
@@ -122,7 +119,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
         return Error_(HTTP_BAD_REQUEST);
     }
     std::getline(ss, raw_uri_, ' ');
-    if (ss.eof()) {
+    if (ss.eof() || raw_uri_.empty()) {
         return Error_(HTTP_BAD_REQUEST);
     }
     std::getline(ss, raw_version_);
@@ -169,10 +166,9 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     LOG(INFO) << "BuildHeaderField_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
-        case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
-        case EXTRACTION_NULL_TERMINATOR_FOUND: return Error_(HTTP_BAD_REQUEST);
-        case EXTRACTION_TOO_LONG: return Error_(HTTP_BAD_REQUEST);
         case EXTRACTION_SUCCESS: break;
+        case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
+        default: return Error_(HTTP_BAD_REQUEST);
     }
     if (line_.empty()) {
         ResponseCode rc = ValidateHeaders_();
@@ -187,7 +183,8 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     if (ss.eof()) {
         return Error_(HTTP_BAD_REQUEST);
     }
-    std::getline(ss, header_val);
+    ss >> header_val;
+    ss >> std::ws;
     if (!ss.eof()) {
         return Error_(HTTP_BAD_REQUEST);
     }
@@ -276,10 +273,9 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
     LOG(INFO) << "BuildBodyChunkSize_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
-        case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
-        case EXTRACTION_NULL_TERMINATOR_FOUND: return Error_(HTTP_BAD_REQUEST);
-        case EXTRACTION_TOO_LONG: return Error_(HTTP_BAD_REQUEST);
         case EXTRACTION_SUCCESS: break;
+        case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
+        default: return Error_(HTTP_BAD_REQUEST);
     }
     std::pair<bool, size_t> converted_size =
         utils::HexToUnsignedNumericNoThrow<size_t>(line_);
@@ -302,22 +298,14 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
     LOG(INFO) << "BuildBodyChunkContent_";
     extraction_result_ = TryToExtractBodyContent_();
     switch (extraction_result_) {
-        case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_CONTENT;
-        case EXTRACTION_TOO_LONG: return Error_(HTTP_BAD_REQUEST);
         case EXTRACTION_SUCCESS: break;
-        default: break;
+        case EXTRACTION_TOO_LONG: return Error_(HTTP_BAD_REQUEST);
+        default: return BS_BODY_CHUNK_CONTENT;
     }
     size_t old_sz = body_builder_.body->size();
     body_builder_.body->resize(old_sz + body_builder_.remaining_length);
     std::memcpy(body_builder_.body->data() + old_sz, line_.data(), line_.size());
     return BS_BODY_CHUNK_SIZE;
-}
-
-void RequestBuilder::NullTerminatorCheck_(char c)
-{
-    if (c == '\0' && build_state_ != BS_BODY_CHUNK_CONTENT) {
-        build_state_ = BS_BAD_REQUEST;
-    }
 }
 
 RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_() {
@@ -328,6 +316,9 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_() {
         if (parser_.FoundCRLF()) {
             line_ = parser_.ExtractLine();
             return EXTRACTION_SUCCESS;
+        }
+        if (parser_.FoundSingleCR()) {
+            return EXTRACTION_FOUND_SINGLE_CR;
         }
         if (parser_.Peek() == '\0') {
             return EXTRACTION_NULL_TERMINATOR_FOUND;

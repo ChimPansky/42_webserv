@@ -77,7 +77,7 @@ std::string RequestParser::ExtractLine()
         std::max(static_cast<ssize_t>(element_end_idx_ - 1),
         static_cast<ssize_t>(0));
     std::string line = std::string(buf_.data(), buf_.data() + len_without_crlf);
-    LOG(INFO) << "erasing " << len_without_crlf + 1 << " bytes";
+    LOG(DEBUG) << "erasing " << len_without_crlf + 1 << " bytes";
     buf_.erase(buf_.begin(), buf_.begin() + len_without_crlf + 2);
     element_end_idx_ = 0;
     return line;
@@ -104,6 +104,13 @@ bool RequestParser::FoundCRLF() const {
         return false;
     }
     return buf_[element_end_idx_ - 1] == EOL_CARRIAGE_RETURN && buf_[element_end_idx_] == EOL_LINE_FEED;
+}
+
+bool RequestParser::FoundSingleCR() const {
+    if (element_end_idx_ < 1) {
+        return false;
+    }
+    return buf_[element_end_idx_ - 1] == EOL_CARRIAGE_RETURN && buf_[element_end_idx_] != EOL_LINE_FEED;
 }
 
 }  // namespace http

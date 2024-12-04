@@ -19,6 +19,7 @@ class RequestParser {
     char Peek(ssize_t offset = 0) const;
     bool Advance(ssize_t n = 1);
     bool FoundCRLF() const;
+    bool FoundSingleCR() const;
     void StartNewElement();
     bool EndOfBuffer() const;
     bool ExceededLineLimit() const;
