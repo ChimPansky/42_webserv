@@ -1,6 +1,8 @@
 #ifndef WS_HTTP_H
 #define WS_HTTP_H
 
+#include <string>
+
 namespace http {
 
 #define RQ_LINE_LEN_LIMIT 512 // todo: increase this later to 8192. keep it low for testing purposes
@@ -29,7 +31,10 @@ enum EOL_CHARS {
     EOL_LINE_FEED = '\n'
 };
 
-const char* HttpVerToStr(http::Version ver);
+std::pair<bool/*found*/, std::string/*version*/> HttpVerToStr(http::Version ver);
+std::pair<bool/*found*/, std::string/*method*/> HttpMethodToStr(http::Method method);
+std::pair<bool/*found*/, http::Version> StrToHttpVersion(const std::string& version);
+std::pair<bool/*found*/, http::Method> StrToHttpMethod(const std::string& method);
 
 static const char* kUnreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 static const char* kGenDelims = ":/?#[]@";

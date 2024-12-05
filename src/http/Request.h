@@ -24,7 +24,7 @@ struct Request {
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;
-    std::string ToString() const;
+    std::string GetDebugString() const;
 };
 
 }  // namespace http

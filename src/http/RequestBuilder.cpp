@@ -135,18 +135,17 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 
 ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version) {
     LOG(INFO) << "ValidateFirstLine_";
+    LOG(INFO) << "raw_method: {" << raw_method << "}";
+    LOG(INFO) << "raw_rq_target: " << raw_rq_target;
+    LOG(INFO) << "raw_version: {" << raw_version << "}";
     if (!SyntaxChecker::CheckMethod(raw_method)) {
         return HTTP_BAD_REQUEST;
     };
-    if (raw_method == "GET") {
-        rq_.method = HTTP_GET;
-    } else if (raw_method == "POST") {
-        rq_.method = HTTP_POST;
-    } else if (raw_method == "DELETE") {
-        rq_.method = HTTP_DELETE;
-    } else {
+    std::pair<bool, Method> converted_method = StrToHttpMethod(raw_method);
+    if (!converted_method.first) {
         return HTTP_NOT_IMPLEMENTED;
     }
+    rq_.method = converted_method.second;
     rq_.rqTarget = raw_rq_target;
     if (rq_.rqTarget.validity_state() & RqTarget::RQ_TARGET_TOO_LONG) {
         return HTTP_URI_TOO_LONG;
@@ -154,16 +153,15 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
     if (!rq_.rqTarget.Good()) {
         return HTTP_BAD_REQUEST;
     }
-    // if (!syntaxchecker.check_version(raw_version)) {
-    //     return HTTP_BAD_REQUEST;
-    // };
-    if (raw_version == "HTTP/1.0") {
-        rq_.version = HTTP_1_0;
-    } else if (raw_version == "HTTP/1.1") {
-        rq_.version = HTTP_1_1;
-    } else {
+    if (!SyntaxChecker::CheckVersion(raw_version)) {
+        return HTTP_BAD_REQUEST;
+    };
+    std::pair<bool, Version> converted_version = StrToHttpVersion(raw_version);
+    if (!converted_version.first) {
         return HTTP_HTTP_VERSION_NOT_SUPPORTED;
     }
+    rq_.version = converted_version.second;
+    LOG(INFO) << "converted_version: " << rq_.version;
     return HTTP_OK;
 }
 
@@ -202,8 +200,15 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
 ResponseCode RequestBuilder::ValidateHeaders_()
 {
     LOG(INFO) << "ValidateHeaders_";
-    // iterate through headers map
-    // for each header: if syntaxcheck bad --> return HTTP_BAD_REQUEST
+    for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
+         it != rq_.headers.end(); ++it) {
+        if (!SyntaxChecker::CheckHeaderKey(it->first)) {
+            return HTTP_BAD_REQUEST;
+        }
+        if (!SyntaxChecker::CheckHeaderValue(it->second)) {
+            return HTTP_BAD_REQUEST;
+        }
+    }
     // if duplicate host header --> return HTTP_BAD_REQUEST
     // additional semantic checks...
     return HTTP_OK;

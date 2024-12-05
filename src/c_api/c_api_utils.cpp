@@ -61,7 +61,7 @@ std::string PrintIPv4SockAddr(const sockaddr_in& addr_in)
     if (addr_in.sin_family != AF_INET) {
         ss << "Not an IPv4 addr";
     } else {
-        ss << IPv4ToString(htonl(addr_in.sin_addr.s_addr)) << ":" << htons(addr_in.sin_port) << " " << addr_in.sin_family;
+        ss << IPv4ToString(htonl(addr_in.sin_addr.s_addr)) << ":" << htons(addr_in.sin_port);
     }
     return ss.str();
 }
