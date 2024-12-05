@@ -11,3 +11,12 @@ const char* http::HttpVerToStr(Version ver) {
         default: throw std::logic_error("attempt to get a name of unknown http ver");
     }
 }
+
+const char* http::HttpMethodToStr(Method method) {
+    switch (method) {
+        case http::HTTP_GET: return "GET";
+        case http::HTTP_POST: return "POST";
+        case http::HTTP_DELETE: return "DELETE";
+        default: throw std::logic_error("attempt to get a name of unknown http method");
+    }
+}

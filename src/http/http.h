@@ -30,6 +30,7 @@ enum EOL_CHARS {
 };
 
 const char* HttpVerToStr(http::Version ver);
+const char* HttpMethodToStr(http::Method method);
 
 }  // namespace http
 

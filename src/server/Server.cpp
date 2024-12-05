@@ -1,8 +1,11 @@
 
 #include "Server.h"
 
+#include <shared_ptr.h>
+
 #include "Request.h"
-#include "shared_ptr.h"
+#include "response_processors/FileProcessor.h"
+#include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
@@ -48,10 +51,12 @@ const std::vector<utils::shared_ptr<Location> >& Server::locations() const
     return locations_;
 }
 
-utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) const
+std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
+    const http::Request& rq) const
 {
     std::pair<std::string /*route*/, bool /*is_exact_match*/> best_match(std::string(), false);
-    utils::shared_ptr<Location> matched_location;
+    utils::shared_ptr<Location> matched_location = utils::shared_ptr<Location>(NULL);
+    LocationType type;
 
     for (LocationsConstIt it = locations_.begin(); it != locations_.end(); ++it) {
         std::pair<std::string, bool> match_result = (*it)->MatchedRoute(rq);
@@ -63,7 +68,15 @@ utils::shared_ptr<Location> Server::ChooseLocation(const http::Request& rq) cons
             matched_location = *it;
         }
     }
-    return (best_match.first.empty() ? utils::shared_ptr<Location>(NULL) : matched_location);
+
+    if (!matched_location) {
+        type = NO_LOCATION;
+    } else if (matched_location->is_cgi()) {
+        type = CGI;
+    } else {
+        type = STATIC_FILE;
+    }
+    return std::make_pair(matched_location, type);
 }
 
 // if returns nullptr, rs is the valid response right away
@@ -89,24 +102,26 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
 utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
-    const utils::shared_ptr<Location> chosen_loc =
-        ChooseLocation(rq);  // choose location with method,
+    const std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc = ChooseLocation(rq);
+    // choose location with method,
     // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
-    if (!chosen_loc) {
-        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
-        return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
-    } else if (chosen_loc->is_cgi()) {
-        // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq, cgi_paths,
-        // cgi_extensions, root_dir));
-    } else if (chosen_loc->dir_listing()) {
-        // return utils::unique_ptr<AResponseProcessor>(new DirListingResponseProcessor(cb, rq,
-        // root_dir));
+    switch (chosen_loc.second) {
+        case NO_LOCATION:
+            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
+            return utils::unique_ptr<AResponseProcessor>(
+                new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
+        case CGI:
+            LOG(DEBUG) << "RQ_GOOD -> Process CGI";
+            // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
+            // cgi_paths, cgi_extensions, root_dir));
+        case STATIC_FILE:
+            std::string new_path = utils::UpdatePath(
+                chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+            LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << new_path;
+            return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
     }
-    LOG(DEBUG) << "RQ_GOOD -> Send Hello World";
-    return utils::unique_ptr<AResponseProcessor>(new HelloWorldResponseProcessor(cb));
 }
 
 std::pair<MatchType, std::string> Server::MatchHostName(
