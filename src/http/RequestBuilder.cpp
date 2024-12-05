@@ -147,14 +147,13 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
     } else {
         return HTTP_NOT_IMPLEMENTED;
     }
-    rq_.rqTarget = raw_rq_target; // todo: change this to Uri object once merged
-    if (rq_.rqTarget.RQ_TARGET_TOO_LONG) {
+    rq_.rqTarget = raw_rq_target;
+    if (rq_.rqTarget.validity_state() & RqTarget::RQ_TARGET_TOO_LONG) {
         return HTTP_URI_TOO_LONG;
     }
     if (!rq_.rqTarget.Good()) {
         return HTTP_BAD_REQUEST;
     }
-    // if Uri bad...raw_rq_target
     // if (!syntaxchecker.check_version(raw_version)) {
     //     return HTTP_BAD_REQUEST;
     // };

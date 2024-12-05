@@ -395,10 +395,14 @@ TEST(InvalidUri, 60_Uri_too_long) {
     if (BuildRequest(builder, "rq60.txt", 1000) != 0) {
         FAIL();
     }
-    if (RQ_TARGET_LEN_LIMIT > 256) {
-        EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii", builder.rq().rqTarget.ToStr());
-    } else {
+    if (RQ_LINE_LEN_LIMIT > 256 && RQ_TARGET_LEN_LIMIT > 256) {
+        EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiiiblablabla", builder.rq().rqTarget.ToStr());
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    } else if (RQ_LINE_LEN_LIMIT <= 256) {
         EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
+    } else {
+        EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
         EXPECT_EQ("", builder.rq().rqTarget.ToStr());
     }
 }
