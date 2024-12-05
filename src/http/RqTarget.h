@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <string>
+#include <http.h>
 namespace http {
 
 /* RqTarget class:
@@ -80,9 +81,6 @@ class RqTarget {
 
 
   private:
-    static const char* kUnreserved;
-    static const char* kGenDelims;
-    static const char* kSubDelims;
     int validity_state_;
 
     typedef std::pair<bool /*component_defined*/, std::string /*value*/> Component;

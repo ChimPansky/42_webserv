@@ -406,3 +406,19 @@ TEST(InvalidUri, 60_Uri_too_long) {
         EXPECT_EQ("", builder.rq().rqTarget.ToStr());
     }
 }
+
+TEST(BadMethod, 70_Bad_Method) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq70.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
+
+TEST(BadMethod, 76_Unsupported_Method) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq76.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_NOT_IMPLEMENTED, builder.rq().status);
+}

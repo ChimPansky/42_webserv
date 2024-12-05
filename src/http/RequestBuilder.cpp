@@ -2,13 +2,13 @@
 #include "Request.h"
 #include "ResponseCodes.h"
 
-#include <cctype>
 #include <cstring>
 #include <string>
 #include <vector>
 
 #include <logger.h>
 #include <numeric_utils.h>
+#include "SyntaxChecker.h"
 #include "str_utils.h"
 
 namespace http {
@@ -135,9 +135,9 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 
 ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version) {
     LOG(INFO) << "ValidateFirstLine_";
-    // if (!syntaxchecker.check_method(raw_method)) {
-    //     return HTTP_BAD_REQUEST;
-    // };
+    if (!SyntaxChecker::CheckMethod(raw_method)) {
+        return HTTP_BAD_REQUEST;
+    };
     if (raw_method == "GET") {
         rq_.method = HTTP_GET;
     } else if (raw_method == "POST") {

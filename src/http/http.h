@@ -31,6 +31,10 @@ enum EOL_CHARS {
 
 const char* HttpVerToStr(http::Version ver);
 
+static const char* kUnreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+static const char* kGenDelims = ":/?#[]@";
+static const char* kSubDelims = "!$&'()*+,;=";
+
 }  // namespace http
 
 #endif  // WS_HTTP_H
