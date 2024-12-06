@@ -40,6 +40,8 @@ static const char* kUnreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst
 static const char* kGenDelims = ":/?#[]@";
 static const char* kSubDelims = "!$&'()*+,;=";
 
+
+
 }  // namespace http
 
 #endif  // WS_HTTP_H

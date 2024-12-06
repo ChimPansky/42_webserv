@@ -138,7 +138,7 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
     LOG(INFO) << "raw_method: {" << raw_method << "}";
     LOG(INFO) << "raw_rq_target: " << raw_rq_target;
     LOG(INFO) << "raw_version: {" << raw_version << "}";
-    if (!SyntaxChecker::CheckMethod(raw_method)) {
+    if (!SyntaxChecker::IsValidMethod(raw_method)) {
         return HTTP_BAD_REQUEST;
     };
     std::pair<bool, Method> converted_method = StrToHttpMethod(raw_method);
@@ -153,7 +153,7 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
     if (!rq_.rqTarget.Good()) {
         return HTTP_BAD_REQUEST;
     }
-    if (!SyntaxChecker::CheckVersion(raw_version)) {
+    if (!SyntaxChecker::IsValidVersion(raw_version)) {
         return HTTP_BAD_REQUEST;
     };
     std::pair<bool, Version> converted_version = StrToHttpVersion(raw_version);
@@ -165,7 +165,16 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
     return HTTP_OK;
 }
 
+// https://www.rfc-editor.org/rfc/rfc9110#name-field-lines-and-combined-fi
+// When a field name is only present once in a section, the combined "field value" for that field consists of the corresponding field line value. When a field name is repeated within a section, its combined field value consists of the list of corresponding field line values within that section, concatenated in order, with each field line value separated by a comma.
+
+// For example, this section:
+
+// Example-Field: Foo, Bar
+// Example-Field: Baz
+// contains two field lines, both with the field name "Example-Field". The first field line has a field line value of "Foo, Bar", while the second field line value is "Baz". The field value for "Example-Field" is the list "Foo, Bar, Baz".
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
+    // todo: store last header_key and if it's the same as the current one, append to the value
     LOG(INFO) << "BuildHeaderField_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
@@ -202,10 +211,10 @@ ResponseCode RequestBuilder::ValidateHeaders_()
     LOG(INFO) << "ValidateHeaders_";
     for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
          it != rq_.headers.end(); ++it) {
-        if (!SyntaxChecker::CheckHeaderKey(it->first)) {
+        if (!SyntaxChecker::IsValidHeaderKey(it->first)) {
             return HTTP_BAD_REQUEST;
         }
-        if (!SyntaxChecker::CheckHeaderValue(it->second)) {
+        if (!SyntaxChecker::IsValidHeaderValue(it->second)) {
             return HTTP_BAD_REQUEST;
         }
     }
