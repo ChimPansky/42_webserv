@@ -21,6 +21,10 @@ class SyntaxChecker {
     // utilities:
     static bool IsDigit_(char c);
     static bool IsTokenChar_(char c);
+    static bool IsVChar_(char c);
+    static bool IsObsText_(char c);
+    static bool IsFieldVChar_(char c);
+    static bool IsWhiteSpace_(char c);
 };
 
 }  // namespace http

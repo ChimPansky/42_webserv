@@ -243,7 +243,7 @@ TEST(InValidWithoutBody, 14_Invalid_Version) {
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
-    EXPECT_EQ(http::HTTP_HTTP_VERSION_NOT_SUPPORTED, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 // when testing this and viewing rq15.txt in editor: careful about VS Code setting "Files: Insert Final Newline"

@@ -55,22 +55,10 @@ TEST(TokenTests, 9_Test)
     EXPECT_FALSE(http::SyntaxChecker::IsValidToken(token));
 }
 
-TEST(MethodTests, 1_Test)
+TEST(TokenTests, 10_Test)
 {
-    std::string method = "GET";
-    EXPECT_TRUE(http::SyntaxChecker::IsValidMethod(method));
-}
-
-TEST(MethodTests, 2_Test)
-{
-    std::string method = "get";
-    EXPECT_TRUE(http::SyntaxChecker::IsValidMethod(method));
-}
-
-TEST(MethodTests, 3_Test)
-{
-    std::string method = "wEiRdBuTst|11v4l1d~";
-    EXPECT_TRUE(http::SyntaxChecker::IsValidMethod(method));
+    std::string token = "wEiRdBuTst|11v4l1d~";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidToken(token));
 }
 
 TEST(VersionTests, 1_Test)
@@ -113,4 +101,52 @@ TEST(VersionTests, 7_Test)
 {
     std::string version = "HTTP/1.1 ";
     EXPECT_FALSE(http::SyntaxChecker::IsValidVersion(version));
+}
+
+TEST(HeaderValueTests, 1_Test)
+{
+    std::string header_value = "";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidHeaderValue(header_value));
+}
+
+TEST(HeaderValueTests, 2_Test)
+{
+    std::string header_value = " ";
+    EXPECT_FALSE(http::SyntaxChecker::IsValidHeaderValue(header_value));
+}
+
+TEST(HeaderValueTests, 3_Test)
+{
+    std::string header_value = "a";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidHeaderValue(header_value));
+}
+
+TEST(HeaderValueTests, 4_Test)
+{
+    std::string header_value = "1";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidHeaderValue(header_value));
+}
+
+TEST(HeaderValueTests, 5_Test)
+{
+    std::string header_value = "ä";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidHeaderValue(header_value));
+}
+
+TEST(HeaderValueTests, 6_Test)
+{
+    std::string header_value = "=";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidHeaderValue(header_value));
+}
+
+TEST(HeaderValueTests, 7_Test)
+{
+    std::string header_value = "hello world";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidHeaderValue(header_value));
+}
+
+TEST(HeaderValueTests, 8_Test)
+{
+    std::string header_value = "\"#a0+-[ {@;,\t...";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidHeaderValue(header_value));
 }

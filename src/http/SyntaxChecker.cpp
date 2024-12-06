@@ -40,15 +40,29 @@ bool SyntaxChecker::IsValidVersion(const std::string& version) {
 // field-name     = token
 bool SyntaxChecker::IsValidHeaderKey(const std::string& header_name)
 {
-    (void)header_name;
-    return true;
+    return IsValidToken(header_name);
 }
 
-bool SyntaxChecker::IsValidHeaderValue(const std::string& header_value)
-{
-    (void)header_value;
-    return true;
-}
+// https://datatracker.ietf.org/doc/html/rfc9110#name-field-values
+// field-value    = *field-content
+//   field-content  = field-vchar
+//                    [ 1*( SP / HTAB / field-vchar ) field-vchar ]
+//   field-vchar    = VCHAR / obs-text
+//   obs-text       = %x80-FF
+bool SyntaxChecker::IsValidHeaderValue(const std::string& header_value) {
+        size_t len = header_value.size();
+        size_t i = 0;
+        while (i < len) {
+            if (!IsFieldVChar_(header_value[i])) {
+                return false;
+            }
+            ++i;
+            while (i < len && (IsWhiteSpace_(header_value[i]) || IsFieldVChar_(header_value[i]))) {
+                ++i;
+            }
+        }
+        return true;
+    }
 
 // utilities:
 bool SyntaxChecker::IsTokenChar_(char c) {
@@ -56,6 +70,22 @@ bool SyntaxChecker::IsTokenChar_(char c) {
         return true;
     }
     return false;
+}
+
+bool SyntaxChecker::IsVChar_(char c) {
+    return std::isprint(c) && c != ' ';
+}
+
+bool SyntaxChecker::IsObsText_(char c) {
+    return (static_cast<unsigned char>(c) >= 128 && static_cast<unsigned char>(c) <= 255);
+}
+
+bool SyntaxChecker::IsFieldVChar_(char c) {
+    return (IsVChar_(c) || IsObsText_(c));
+}
+
+bool SyntaxChecker::IsWhiteSpace_(char c) {
+    return (c == ' ' || c == '\t');
 }
 
 }  // namespace http
