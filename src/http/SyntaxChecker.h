@@ -5,8 +5,6 @@
 #include <string>
 namespace http {
 
-static const std::string kTokenChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&'*+-.^_`|~";
-
 class SyntaxChecker {
   private:
     SyntaxChecker();

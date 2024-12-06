@@ -1,5 +1,4 @@
 #include "SyntaxChecker.h"
-#include "http.h"
 
 #include <logger.h>
 #include <cctype>
@@ -8,6 +7,7 @@
 
 namespace http {
 
+// token = 1*tchar
 bool SyntaxChecker::IsValidToken(const std::string& token) {
     if (token.empty()) {
         return false;
@@ -50,40 +50,48 @@ bool SyntaxChecker::IsValidHeaderKey(const std::string& header_name)
 //   field-vchar    = VCHAR / obs-text
 //   obs-text       = %x80-FF
 bool SyntaxChecker::IsValidHeaderValue(const std::string& header_value) {
-        size_t len = header_value.size();
-        size_t i = 0;
-        while (i < len) {
-            if (!IsFieldVChar_(header_value[i])) {
-                return false;
-            }
-            ++i;
-            while (i < len && (IsWhiteSpace_(header_value[i]) || IsFieldVChar_(header_value[i]))) {
-                ++i;
-            }
+    size_t len = header_value.size();
+    size_t i = 0;
+    while (i < len) {
+        if (!IsFieldVChar_(header_value[i])) {
+            return false;
         }
-        return true;
+        ++i;
+        while (i < len && (IsWhiteSpace_(header_value[i]) || IsFieldVChar_(header_value[i]))) {
+            ++i;
+        }
     }
-
-// utilities:
-bool SyntaxChecker::IsTokenChar_(char c) {
-    if (std::find(kTokenChars.begin(), kTokenChars.end(), c) != kTokenChars.end()) {
-        return true;
-    }
-    return false;
+    return true;
 }
 
+// utilities:
+// tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
+//  "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
+bool SyntaxChecker::IsTokenChar_(char c) {
+    if (std::isalnum(c)) {
+        return true;
+    }
+    const std::string specialTChars = "!#$%&'*+-.^_`|~";
+    return specialTChars.find(c) != std::string::npos;
+}
+
+// visible (printing) characters
+// VCHAR =  %x21-7E
 bool SyntaxChecker::IsVChar_(char c) {
     return std::isprint(c) && c != ' ';
 }
 
+// obs-text = %x80-FF
 bool SyntaxChecker::IsObsText_(char c) {
     return (static_cast<unsigned char>(c) >= 128 && static_cast<unsigned char>(c) <= 255);
 }
 
+// field-vchar = VCHAR / obs-text
 bool SyntaxChecker::IsFieldVChar_(char c) {
     return (IsVChar_(c) || IsObsText_(c));
 }
 
+// WSP = SP / HTAB
 bool SyntaxChecker::IsWhiteSpace_(char c) {
     return (c == ' ' || c == '\t');
 }

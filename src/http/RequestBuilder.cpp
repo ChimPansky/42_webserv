@@ -46,7 +46,6 @@ bool RequestBuilder::CanBuild_()
 // TODO: rm bytes_recvd
 void RequestBuilder::Build(size_t bytes_recvd)
 {
-    // utils::Logger::get().set_severity_threshold(INFO);
     LOG(DEBUG) << "RequestBuilder::Build";
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
@@ -104,7 +103,7 @@ std::vector<char>& RequestBuilder::buf()
 
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 {
-    LOG(INFO) << "BuildFirstLine_";
+    LOG(DEBUG) << "BuildFirstLine_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
         case EXTRACTION_SUCCESS: break;
@@ -134,10 +133,6 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 }
 
 ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version) {
-    LOG(INFO) << "ValidateFirstLine_";
-    LOG(INFO) << "raw_method: {" << raw_method << "}";
-    LOG(INFO) << "raw_rq_target: " << raw_rq_target;
-    LOG(INFO) << "raw_version: {" << raw_version << "}";
     if (!SyntaxChecker::IsValidMethod(raw_method)) {
         return HTTP_BAD_REQUEST;
     };
@@ -161,7 +156,6 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
         return HTTP_HTTP_VERSION_NOT_SUPPORTED;
     }
     rq_.version = converted_version.second;
-    LOG(INFO) << "converted_version: " << rq_.version;
     return HTTP_OK;
 }
 
@@ -175,7 +169,7 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
 // contains two field lines, both with the field name "Example-Field". The first field line has a field line value of "Foo, Bar", while the second field line value is "Baz". The field value for "Example-Field" is the list "Foo, Bar, Baz".
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     // todo: store last header_key and if it's the same as the current one, append to the value
-    LOG(INFO) << "BuildHeaderField_";
+    LOG(DEBUG) << "BuildHeaderField_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
         case EXTRACTION_SUCCESS: break;
@@ -208,7 +202,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
 
 ResponseCode RequestBuilder::ValidateHeaders_()
 {
-    LOG(INFO) << "ValidateHeaders_";
+    LOG(DEBUG) << "ValidateHeaders_";
     for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
          it != rq_.headers.end(); ++it) {
         if (!SyntaxChecker::IsValidHeaderKey(it->first)) {
@@ -289,7 +283,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 // https://datatracker.ietf.org/doc/html/rfc2616#section-3.5
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 {
-    LOG(INFO) << "BuildBodyChunkSize_";
+    LOG(DEBUG) << "BuildBodyChunkSize_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
         case EXTRACTION_SUCCESS: break;
@@ -314,7 +308,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
 {
-    LOG(INFO) << "BuildBodyChunkContent_";
+    LOG(DEBUG) << "BuildBodyChunkContent_";
     extraction_result_ = TryToExtractBodyContent_();
     switch (extraction_result_) {
         case EXTRACTION_SUCCESS: break;
