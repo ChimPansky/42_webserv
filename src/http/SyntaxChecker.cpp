@@ -2,6 +2,7 @@
 #include "http.h"
 
 #include <logger.h>
+#include <cctype>
 #include <cstring>
 #include <algorithm>
 
@@ -29,34 +30,11 @@ bool SyntaxChecker::IsValidMethod(const std::string& method)
 // https://datatracker.ietf.org/doc/html/rfc9112#name-http-version
 // HTTP-version  = HTTP-name "/" DIGIT "." DIGIT
 // HTTP-name     = %s"HTTP"
+// actually: we really only can receive HTTP/1.0 or HTTP/1.1, anything below or above major version 1 doesn not even the version in the request line
+ // example request line in 0.9: GET /path
 bool SyntaxChecker::IsValidVersion(const std::string& version) {
-    const std::string httpName = "HTTP";
-    // Check if version starts with "HTTP"
-    if (version.compare(0, httpName.size(), httpName) != 0) {
-        return false;
-    }
-    // Check if "/" follows "HTTP"
-    size_t slashPos = httpName.size();
-    if (slashPos >= version.size() || version[slashPos] != '/') {
-        return false; // Missing or misplaced "/"
-    }
-    // Ensure the format after the slash is DIGIT "." DIGIT
-    if (slashPos + 3 >= version.size()) {
-        return false; // Not enough characters for DIGIT "." DIGIT
-    }
-    char majorDigit = version[slashPos + 1];
-    char dot = version[slashPos + 2];
-    char minorDigit = version[slashPos + 3];
-    if (!IsDigit_(majorDigit) || dot != '.' || !IsDigit_(minorDigit)) {
-        return false; // Incorrect format for DIGIT "." DIGIT
-    }
-    // Ensure no extra characters
-    if (slashPos + 4 != version.size()) {
-        return false; // Extra characters after DIGIT "." DIGIT
-    }
-    return true; // All checks passed
+    return version == "HTTP/1.0" || version == "HTTP/1.1";
 }
-
 
 // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
 // field-name     = token
@@ -73,10 +51,6 @@ bool SyntaxChecker::IsValidHeaderValue(const std::string& header_value)
 }
 
 // utilities:
-bool SyntaxChecker::IsDigit_(char c) {
-    return c >= '0' && c <= '9';
-}
-
 bool SyntaxChecker::IsTokenChar_(char c) {
     if (std::find(kTokenChars.begin(), kTokenChars.end(), c) != kTokenChars.end()) {
         return true;

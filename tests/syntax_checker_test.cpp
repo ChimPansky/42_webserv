@@ -72,3 +72,45 @@ TEST(MethodTests, 3_Test)
     std::string method = "wEiRdBuTst|11v4l1d~";
     EXPECT_TRUE(http::SyntaxChecker::IsValidMethod(method));
 }
+
+TEST(VersionTests, 1_Test)
+{
+    std::string version = "";
+    EXPECT_FALSE(http::SyntaxChecker::IsValidVersion(version));
+}
+
+TEST(VersionTests, 2_Test)
+{
+    std::string version = " ";
+    EXPECT_FALSE(http::SyntaxChecker::IsValidVersion(version));
+}
+
+TEST(VersionTests, 3_Test)
+{
+    std::string version = "HTTP/1.0";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidVersion(version));
+}
+
+TEST(VersionTests, 4_Test)
+{
+    std::string version = "HTTP/1.1";
+    EXPECT_TRUE(http::SyntaxChecker::IsValidVersion(version));
+}
+
+TEST(VersionTests, 5_Test)
+{
+    std::string version = "\rHTTP/1.1";
+    EXPECT_FALSE(http::SyntaxChecker::IsValidVersion(version));
+}
+
+TEST(VersionTests, 6_Test)
+{
+    std::string version = "HTTP/1.1\n";
+    EXPECT_FALSE(http::SyntaxChecker::IsValidVersion(version));
+}
+
+TEST(VersionTests, 7_Test)
+{
+    std::string version = "HTTP/1.1 ";
+    EXPECT_FALSE(http::SyntaxChecker::IsValidVersion(version));
+}
