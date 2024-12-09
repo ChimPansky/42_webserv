@@ -2,13 +2,13 @@
 #include "Request.h"
 #include "ResponseCodes.h"
 
-#include <cctype>
 #include <cstring>
 #include <string>
 #include <vector>
 
 #include <logger.h>
 #include <numeric_utils.h>
+#include "SyntaxChecker.h"
 #include "str_utils.h"
 
 namespace http {
@@ -53,7 +53,6 @@ bool RequestBuilder::CanBuild_()
 // TODO: rm bytes_recvd
 void RequestBuilder::Build(size_t bytes_recvd)
 {
-    // utils::Logger::get().set_severity_threshold(INFO);
     LOG(DEBUG) << "RequestBuilder::Build";
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
@@ -110,7 +109,7 @@ std::vector<char>& RequestBuilder::buf()
 
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 {
-    LOG(INFO) << "BuildFirstLine_";
+    LOG(DEBUG) << "BuildFirstLine_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
         case EXTRACTION_SUCCESS: break;
@@ -140,19 +139,14 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 }
 
 ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version) {
-    LOG(INFO) << "ValidateFirstLine_";
-    // if (!syntaxchecker.check_method(raw_method)) {
-    //     return HTTP_BAD_REQUEST;
-    // };
-    if (raw_method == "GET") {
-        rq_.method = HTTP_GET;
-    } else if (raw_method == "POST") {
-        rq_.method = HTTP_POST;
-    } else if (raw_method == "DELETE") {
-        rq_.method = HTTP_DELETE;
-    } else {
+    if (!SyntaxChecker::IsValidMethod(raw_method)) {
+        return HTTP_BAD_REQUEST;
+    };
+    std::pair<bool, Method> converted_method = StrToHttpMethod(raw_method);
+    if (!converted_method.first) {
         return HTTP_NOT_IMPLEMENTED;
     }
+    rq_.method = converted_method.second;
     rq_.rqTarget = raw_rq_target;
     if (rq_.rqTarget.validity_state() & RqTarget::RQ_TARGET_TOO_LONG) {
         return HTTP_URI_TOO_LONG;
@@ -160,21 +154,28 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
     if (!rq_.rqTarget.Good()) {
         return HTTP_BAD_REQUEST;
     }
-    // if (!syntaxchecker.check_version(raw_version)) {
-    //     return HTTP_BAD_REQUEST;
-    // };
-    if (raw_version == "HTTP/1.0") {
-        rq_.version = HTTP_1_0;
-    } else if (raw_version == "HTTP/1.1") {
-        rq_.version = HTTP_1_1;
-    } else {
+    if (!SyntaxChecker::IsValidVersion(raw_version)) {
+        return HTTP_BAD_REQUEST;
+    };
+    std::pair<bool, Version> converted_version = StrToHttpVersion(raw_version);
+    if (!converted_version.first) {
         return HTTP_HTTP_VERSION_NOT_SUPPORTED;
     }
+    rq_.version = converted_version.second;
     return HTTP_OK;
 }
 
+// https://www.rfc-editor.org/rfc/rfc9110#name-field-lines-and-combined-fi
+// When a field name is only present once in a section, the combined "field value" for that field consists of the corresponding field line value. When a field name is repeated within a section, its combined field value consists of the list of corresponding field line values within that section, concatenated in order, with each field line value separated by a comma.
+
+// For example, this section:
+
+// Example-Field: Foo, Bar
+// Example-Field: Baz
+// contains two field lines, both with the field name "Example-Field". The first field line has a field line value of "Foo, Bar", while the second field line value is "Baz". The field value for "Example-Field" is the list "Foo, Bar, Baz".
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
-    LOG(INFO) << "BuildHeaderField_";
+    // todo: store last header_key and if it's the same as the current one, append to the value
+    LOG(DEBUG) << "BuildHeaderField_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
         case EXTRACTION_SUCCESS: break;
@@ -207,9 +208,16 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
 
 ResponseCode RequestBuilder::ValidateHeaders_()
 {
-    LOG(INFO) << "ValidateHeaders_";
-    // iterate through headers map
-    // for each header: if syntaxcheck bad --> return HTTP_BAD_REQUEST
+    LOG(DEBUG) << "ValidateHeaders_";
+    for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
+         it != rq_.headers.end(); ++it) {
+        if (!SyntaxChecker::IsValidHeaderKey(it->first)) {
+            return HTTP_BAD_REQUEST;
+        }
+        if (!SyntaxChecker::IsValidHeaderValue(it->second)) {
+            return HTTP_BAD_REQUEST;
+        }
+    }
     // if duplicate host header --> return HTTP_BAD_REQUEST
     // additional semantic checks...
     return HTTP_OK;
@@ -274,7 +282,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 // https://datatracker.ietf.org/doc/html/rfc2616#section-3.5
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 {
-    LOG(INFO) << "BuildBodyChunkSize_";
+    LOG(DEBUG) << "BuildBodyChunkSize_";
     extraction_result_ = TryToExtractLine_();
     switch (extraction_result_) {
         case EXTRACTION_SUCCESS: break;
@@ -298,7 +306,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
 {
-    LOG(INFO) << "BuildBodyChunkContent_";
+    LOG(DEBUG) << "BuildBodyChunkContent_";
     extraction_result_ = TryToExtractBodyContent_();
     switch (extraction_result_) {
         case EXTRACTION_SUCCESS: break;

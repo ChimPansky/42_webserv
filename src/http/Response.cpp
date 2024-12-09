@@ -9,7 +9,7 @@ Response::Response(ResponseCode code, http::Version version, const std::map<std:
 
 std::vector<char> Response::Dump() const {
     std::string str_dump;
-    str_dump += http::HttpVerToStr(version_);
+    str_dump += http::HttpVerToStr(version_).second;
     str_dump += " ";
     str_dump += utils::NumericToString(code_);
     str_dump += " ";
@@ -30,7 +30,7 @@ std::vector<char> Response::Dump() const {
 
 std::string Response::DumpToStr() const {
     std::string str_dump;
-    str_dump += http::HttpVerToStr(version_);
+    str_dump += http::HttpVerToStr(version_).second;
     str_dump += " ";
     str_dump += utils::NumericToString(code_);
     str_dump += " ";

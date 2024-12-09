@@ -27,9 +27,9 @@ std::string Request::GetDebugString() const
     ret << "---Request---"
         << "\n\tStatus: " << (status == HTTP_OK ? "OK " : "BAD ") << status
         << "\n\tMethod: " << method
-        << "\n\tMethod: " << HttpMethodToStr(method)
+        << "\n\tMethod: " << HttpMethodToStr(method).second
         << "\n\tRequest-Target: " << rqTarget.ToStr()
-        << "\n\tVersion: " << HttpVerToStr(version)
+        << "\n\tVersion: " << HttpVerToStr(version).second
         << "\n\t~Headers~";
 
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
