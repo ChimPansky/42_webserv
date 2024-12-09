@@ -2,7 +2,9 @@
 #include "Request.h"
 #include "ResponseCodes.h"
 
+#include <algorithm>
 #include <cstring>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -10,22 +12,24 @@
 #include <numeric_utils.h>
 #include "SyntaxChecker.h"
 #include "str_utils.h"
+#include "unique_ptr.h"
 
 namespace http {
 
-RequestBuilder::RequestBuilder()
-    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), body_builder_(&rq_.body)
+RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb)
+    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb)
 {}
 
-RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char>* rq_body)
-    : body(rq_body), chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
+
+RequestBuilder::BodyBuilder::BodyBuilder()
+    : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
 
-void RequestBuilder::BodyBuilder::ExpandBuffer(size_t additional_size)
-{
-    body->resize(body->size() + additional_size);
-    remaining_length = additional_size;
-}
+// void RequestBuilder::BodyBuilder::ExpandBuffer(size_t additional_size)
+// {
+//     body->resize(body->size() + additional_size);
+//     remaining_length = additional_size;
+// }
 
 
 void RequestBuilder::PrepareToRecvData(size_t recv_size)
@@ -64,7 +68,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
         switch (build_state_) {
             case BS_RQ_LINE:            build_state_ = BuildFirstLine_(); break;
             case BS_HEADER_FIELDS:       build_state_ = BuildHeaderField_(); break;
-            case BS_AFTER_HEADERS:      build_state_ = ReadyForServer_(); break;
+            case BS_AFTER_HEADERS:      build_state_ = MatchServer_(); break;
             case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
             case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
@@ -251,7 +255,6 @@ ResponseCode RequestBuilder::InterpretHeaders_()
                return HTTP_PAYLOAD_TOO_LARGE;
             }
             rq_.has_body = true;
-            body_builder_.ExpandBuffer(content_length_num.second);
         } else {
             return HTTP_BAD_REQUEST;
         }
@@ -260,8 +263,23 @@ ResponseCode RequestBuilder::InterpretHeaders_()
     return HTTP_OK;
 }
 
-RequestBuilder::BuildState RequestBuilder::ReadyForServer_() {
+RequestBuilder::BuildState RequestBuilder::MatchServer_() {
     if (rq_.has_body) { ////////////////////
+        if (!std::tmpnam(rq_.body)) {
+            LOG(ERROR) << "Failed to create temporary file.";
+            return Error_(HTTP_INTERNAL_SERVER_ERROR);
+        }
+        // Create and use the file
+        body_builder_.body_stream.open(rq_.body);
+        if (!body_builder_.body_stream.is_open()) {
+            LOG(ERROR) << "Failed to open temporary file.";
+            return Error_(HTTP_INTERNAL_SERVER_ERROR);
+        }
+        if (choose_server_cb_) {
+            body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
+        } else {
+            body_builder_.max_body_size = 1000;  // TODO change later
+        }
         if (body_builder_.chunked) {
             builder_status_ = http::RB_BUILD_BODY_CHUNKED;
             return BS_BODY_CHUNK_SIZE;
@@ -313,9 +331,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
         parser_.Advance();
     }
     size_t copy_size = std::min(parser_.ElementLen(), body_builder_.remaining_length);
-    std::memcpy(body_builder_.body->data() + body_builder_.body_idx,
-                parser_.buf().data(), copy_size);
-                // todo erase from buf
+    std::copy(parser_.buf().data(), parser_.buf().data() + copy_size, std::ostream_iterator<char>(body_builder_.body_stream));
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;
     if (body_builder_.remaining_length == 0) {
@@ -335,16 +351,17 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
         case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
         default: return Error_(HTTP_BAD_REQUEST);
     }
-    std::pair<bool, size_t> converted_size =
+    std::pair<bool, size_t> chunk_size =
         utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
-    if (!converted_size.first) {
+    if (!chunk_size.first) {
         return Error_(HTTP_BAD_REQUEST);
     }
-    body_builder_.remaining_length = converted_size.second;
-    if (body_builder_.body->size() + body_builder_.remaining_length > body_builder_.max_body_size) {
+    body_builder_.body_idx += chunk_size.second;
+    body_builder_.remaining_length = chunk_size.second;
+    if (body_builder_.body_idx > body_builder_.max_body_size) {
         return Error_(HTTP_PAYLOAD_TOO_LARGE);
     }
-    if (body_builder_.remaining_length == 0) {
+    if (chunk_size.second == 0) {
         return BS_END;
     }
     return BS_BODY_CHUNK_CONTENT;
@@ -359,9 +376,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
         case EXTRACTION_TOO_LONG: return Error_(HTTP_BAD_REQUEST);
         default: return BS_BODY_CHUNK_CONTENT;
     }
-    size_t old_sz = body_builder_.body->size();
-    body_builder_.ExpandBuffer(body_builder_.remaining_length);
-    std::memcpy(body_builder_.body->data() + old_sz, extraction_.data(), extraction_.size());
+    std::copy(extraction_.begin(), extraction_.end(), std::ostream_iterator<char>(body_builder_.body_stream));
     return BS_BODY_CHUNK_SIZE;
 }
 
@@ -401,7 +416,7 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_() {
 
 bool RequestBuilder::IsParsingState_(BuildState state) const
 {
-    return (state != BS_AFTER_HEADERS && state != BS_CHECK_FOR_BODY);
+    return (state != BS_AFTER_HEADERS);
 }
 
 bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {

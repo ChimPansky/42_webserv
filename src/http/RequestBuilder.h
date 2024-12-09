@@ -4,8 +4,10 @@
 #include "Request.h"
 #include "RequestParser.h"
 #include "ResponseCodes.h"
+#include "unique_ptr.h"
 
 #include <cstddef>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -20,13 +22,22 @@ enum RqBuilderStatus {
     RB_DONE
 };
 
+struct ChosenServerParams {
+    int max_body_size;
+};
+
+class IChooseServerCb {
+  public:
+    virtual ChosenServerParams Call(const http::Request& rq) = 0;
+    virtual ~IChooseServerCb() {};
+};
+
 class RequestBuilder {
   private:
     struct BodyBuilder {
-        BodyBuilder(std::vector<char>* rq_body);
+        BodyBuilder();
 
-        void ExpandBuffer(size_t additional_size);
-        std::vector<char>* body;
+        std::ofstream body_stream;
         bool chunked;
         size_t body_idx;
         size_t remaining_length;
@@ -53,7 +64,7 @@ class RequestBuilder {
     };
 
   public:
-    RequestBuilder();
+    RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb = utils::unique_ptr<IChooseServerCb>(NULL));
     void PrepareToRecvData(size_t recv_size);
     void AdjustBufferSize(size_t bytes_recvd);
     void Build(size_t bytes_recvd);
@@ -71,6 +82,7 @@ class RequestBuilder {
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
+    utils::unique_ptr<IChooseServerCb> choose_server_cb_;
 
     BuildState BuildFirstLine_();
     http::ResponseCode ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version);
@@ -87,7 +99,7 @@ class RequestBuilder {
     BuildState BuildHeaderKey_();
     BuildState ParseHeaderKeyValSep_();
     BuildState BuildHeaderValue_();
-    BuildState ReadyForServer_();
+    BuildState MatchServer_();
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();

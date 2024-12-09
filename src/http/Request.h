@@ -14,6 +14,7 @@ namespace http {
 class RequestBuilder;
 struct Request {
     Request();
+    ~Request();
 
     ResponseCode status;
     Method method;
@@ -21,7 +22,7 @@ struct Request {
     Version version;
     std::map<std::string, std::string> headers;
     bool has_body;
-    std::vector<char> body;
+    char body[TMP_MAX];
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;

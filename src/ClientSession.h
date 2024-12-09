@@ -9,10 +9,23 @@
 #include <shared_ptr.h>
 #include <sys/types.h>
 #include <unique_ptr.h>
+#include "LocationConfig.h"
+#include "ServerConfig.h"
 
 #define CLIENT_RD_CALLBACK_RD_SZ 2000
 
 class ClientSession {
+    class ChooseServerCb : public http::IChooseServerCb {
+      public:
+        ChooseServerCb(ClientSession& client) : client_(client) {
+        }
+
+        virtual http::ChosenServerParams Call(const http::Request& rq);
+
+      private:
+        ClientSession& client_;
+    };
+
   private:
     ClientSession(const ClientSession&);
     ClientSession& operator=(const ClientSession&);
@@ -71,5 +84,8 @@ class ClientSession {
     bool connection_closed_;
     CsState read_state_;
 };
+
+
+
 
 #endif  // WS_CLIENT_H
