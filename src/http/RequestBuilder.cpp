@@ -250,21 +250,15 @@ ResponseCode RequestBuilder::InterpretHeaders_()
     if (content_length.first) {
         std::pair<bool, size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(content_length.second);
-        if (content_length_num.first) { // valid content-length
-            if (content_length_num.second > body_builder_.max_body_size) {
-               return HTTP_PAYLOAD_TOO_LARGE;
-            }
-            rq_.has_body = true;
-        } else {
-            return HTTP_BAD_REQUEST;
-        }
+        body_builder_.remaining_length = content_length_num.second;
+        rq_.has_body = true;
     }
     // additional semantic checks...
     return HTTP_OK;
 }
 
 RequestBuilder::BuildState RequestBuilder::MatchServer_() {
-    if (rq_.has_body) { ////////////////////
+    if (rq_.has_body) {
         if (!std::tmpnam(rq_.body)) {
             LOG(ERROR) << "Failed to create temporary file.";
             return Error_(HTTP_INTERNAL_SERVER_ERROR);
@@ -292,48 +286,37 @@ RequestBuilder::BuildState RequestBuilder::MatchServer_() {
     return BS_END;
 }
 
-// RequestBuilder::BuildState RequestBuilder::CheckForBody_()
-// {
-//     if (rq_.method == HTTP_GET || rq_.method == HTTP_DELETE) {
-//         return BS_END;
-//     }
-//     std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
-//     std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
-//     if (content_length.first && transfer_encoding.first) {
-//         return Error_(HTTP_BAD_REQUEST);
-//     }
-//     if (transfer_encoding.second == "chunked") {
-//         body_builder_.chunked = true;
-//         return BS_BODY_CHUNK_SIZE;
-//     }
-//     if (content_length.first) {
-//         std::pair<bool, size_t> content_length_num =
-//             utils::StrToNumericNoThrow<size_t>(content_length.second);
-//         if (content_length_num.first) {
-//             if (content_length_num.second > body_builder_.max_body_size) {
-//                return Error_(HTTP_PAYLOAD_TOO_LARGE);
-//             }
-//             body_builder_.ExpandBuffer(content_length_num.second);
-//             return BS_BODY_REGULAR;
-//         } else {
-//             return Error_(HTTP_BAD_REQUEST);
-//         }
-//     }
-//     if (rq_.method == HTTP_POST) {
-//         return Error_(HTTP_BAD_REQUEST);
-//     }
-//     return BS_END;
-// }
-
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
+    if (body_builder_.remaining_length > body_builder_.max_body_size) {
+        return Error_(HTTP_PAYLOAD_TOO_LARGE);
+    }
     while (!parser_.EndOfBuffer() && body_builder_.remaining_length > 0) {
+        body_builder_.body_stream << parser_.Peek();
+        LOG(DEBUG) << "Writing char: " << parser_.Peek();
+        if (body_builder_.body_stream.fail()) {
+            LOG(ERROR) << "Failed to write to temporary file.";
+            return Error_(HTTP_INTERNAL_SERVER_ERROR);
+        }
         parser_.Advance();
+        body_builder_.remaining_length--;
     }
     size_t copy_size = std::min(parser_.ElementLen(), body_builder_.remaining_length);
-    std::copy(parser_.buf().data(), parser_.buf().data() + copy_size, std::ostream_iterator<char>(body_builder_.body_stream));
+    // std::copy(parser_.buf().data(), parser_.buf().data() + copy_size, std::ostream_iterator<char>(body_builder_.body_stream));
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;
+
+    LOG(DEBUG) << "Reading file: " << rq_.body;
+    std::ifstream file(rq_.body); // Open file
+
+    if (!file.is_open()) {
+        LOG(ERROR) << "Failed to open temporary file.";
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf(); // Read entire file into the stringstream
+    LOG(DEBUG) << "Builder: Finished reading body: " << buffer.str();
+
     if (body_builder_.remaining_length == 0) {
         return BS_END;
     }

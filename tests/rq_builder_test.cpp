@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <RequestBuilder.h>
 #include <fstream>
+#include <iostream>
 #include "Request.h"
 #include "ResponseCodes.h"
 #include "http.h"
@@ -64,6 +65,7 @@ int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read
 }
 
 std::string readFileToString(const char* filePath) {
+    std::cout << "Reading file: " << filePath << std::endl;
     if (!filePath[0]) {
         ADD_FAILURE() << "Unexepected empty file path";
     }
@@ -77,6 +79,7 @@ std::string readFileToString(const char* filePath) {
 
     std::stringstream buffer;
     buffer << file.rdbuf(); // Read entire file into the stringstream
+    std::cout << "File content: " << buffer.str() << std::endl;
     return buffer.str();    // Return the string
 }
 
@@ -94,6 +97,7 @@ TEST(ValidWithBody, 1_Bodylen_14) {
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
+    EXPECT_TRUE(builder.rq().has_body);
     EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length").second);
     EXPECT_EQ(std::string(BODY_14), body_str);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
