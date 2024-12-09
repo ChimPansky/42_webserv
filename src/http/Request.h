@@ -20,6 +20,7 @@ struct Request {
     http::RqTarget rqTarget;
     Version version;
     std::map<std::string, std::string> headers;
+    bool has_body;
     std::vector<char> body;
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(

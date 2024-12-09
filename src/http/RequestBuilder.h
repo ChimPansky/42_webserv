@@ -15,6 +15,8 @@ enum RqBuilderStatus {
     RB_BUILDING,
     RB_NEED_DATA_FROM_CLIENT,
     RB_NEED_TO_MATCH_SERVER,
+    RB_BUILD_BODY_REGULAR,
+    RB_BUILD_BODY_CHUNKED,
     RB_DONE
 };
 
@@ -36,7 +38,6 @@ class RequestBuilder {
         BS_RQ_LINE,
         BS_HEADER_FIELDS,
         BS_AFTER_HEADERS,
-        BS_CHECK_FOR_BODY,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,
         BS_BODY_CHUNK_CONTENT,
@@ -74,7 +75,8 @@ class RequestBuilder {
     BuildState BuildFirstLine_();
     http::ResponseCode ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version);
     BuildState BuildHeaderField_();
-    http::ResponseCode ValidateHeaders_();
+    http::ResponseCode ValidateHeadersSyntax_();
+    http::ResponseCode InterpretHeaders_();
 
     bool InsertHeaderField_(std::string& key, std::string& value);
 
@@ -85,8 +87,7 @@ class RequestBuilder {
     BuildState BuildHeaderKey_();
     BuildState ParseHeaderKeyValSep_();
     BuildState BuildHeaderValue_();
-    BuildState NeedToMatchServer_();
-    BuildState CheckForBody_();
+    BuildState ReadyForServer_();
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();

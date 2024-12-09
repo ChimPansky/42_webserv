@@ -64,8 +64,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
         switch (build_state_) {
             case BS_RQ_LINE:            build_state_ = BuildFirstLine_(); break;
             case BS_HEADER_FIELDS:       build_state_ = BuildHeaderField_(); break;
-            case BS_AFTER_HEADERS:      build_state_ = NeedToMatchServer_(); break;
-            case BS_CHECK_FOR_BODY:     build_state_ = CheckForBody_(); break;
+            case BS_AFTER_HEADERS:      build_state_ = ReadyForServer_(); break;
             case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
             case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
@@ -182,8 +181,12 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
         default: return Error_(HTTP_BAD_REQUEST);
     }
-    if (extraction_.empty()) {
-        ResponseCode rc = ValidateHeaders_();
+    if (extraction_.empty()) {  // empty line -> end of headers
+        ResponseCode rc = ValidateHeadersSyntax_();
+        if (rc != http::HTTP_OK) {
+            return Error_(rc);
+        }
+        rc = InterpretHeaders_();
         if (rc != http::HTTP_OK) {
             return Error_(rc);
         }
@@ -206,9 +209,9 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     return BS_HEADER_FIELDS;
 }
 
-ResponseCode RequestBuilder::ValidateHeaders_()
+ResponseCode RequestBuilder::ValidateHeadersSyntax_()
 {
-    LOG(DEBUG) << "ValidateHeaders_";
+    LOG(DEBUG) << "ValidateHeadersSyntax_";
     for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
          it != rq_.headers.end(); ++it) {
         if (!SyntaxChecker::IsValidHeaderKey(it->first)) {
@@ -223,43 +226,86 @@ ResponseCode RequestBuilder::ValidateHeaders_()
     return HTTP_OK;
 }
 
-RequestBuilder::BuildState RequestBuilder::NeedToMatchServer_() {
-    builder_status_ = http::RB_NEED_TO_MATCH_SERVER;
-    return BS_CHECK_FOR_BODY;
-}
-
-RequestBuilder::BuildState RequestBuilder::CheckForBody_()
+ResponseCode RequestBuilder::InterpretHeaders_()
 {
-    if (rq_.method == HTTP_GET || rq_.method == HTTP_DELETE) {
-        return BS_END;
+    LOG(DEBUG) << "InterpretHeaders_";
+
+    std::pair<bool, std::string> host = rq_.GetHeaderVal("host");
+    if (!host.first) {
+        return HTTP_BAD_REQUEST;
     }
     std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
     std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
     if (content_length.first && transfer_encoding.first) {
-        return Error_(HTTP_BAD_REQUEST);
+        return HTTP_BAD_REQUEST;
     }
-    if (transfer_encoding.second == "chunked") {
+    if (transfer_encoding.first && transfer_encoding.second == "chunked") {
+        rq_.has_body = true;
         body_builder_.chunked = true;
-        return BS_BODY_CHUNK_SIZE;
     }
     if (content_length.first) {
         std::pair<bool, size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(content_length.second);
-        if (content_length_num.first) {
+        if (content_length_num.first) { // valid content-length
             if (content_length_num.second > body_builder_.max_body_size) {
-               return Error_(HTTP_PAYLOAD_TOO_LARGE);
+               return HTTP_PAYLOAD_TOO_LARGE;
             }
+            rq_.has_body = true;
             body_builder_.ExpandBuffer(content_length_num.second);
-            return BS_BODY_REGULAR;
         } else {
-            return Error_(HTTP_BAD_REQUEST);
+            return HTTP_BAD_REQUEST;
         }
     }
-    if (rq_.method == HTTP_POST) {
-        return Error_(HTTP_BAD_REQUEST);
+    // additional semantic checks...
+    return HTTP_OK;
+}
+
+RequestBuilder::BuildState RequestBuilder::ReadyForServer_() {
+    if (rq_.has_body) { ////////////////////
+        if (body_builder_.chunked) {
+            builder_status_ = http::RB_BUILD_BODY_CHUNKED;
+            return BS_BODY_CHUNK_SIZE;
+        } else {
+            builder_status_ = http::RB_BUILD_BODY_REGULAR;
+            return BS_BODY_REGULAR;
+        }
     }
+    builder_status_ = http::RB_DONE;
     return BS_END;
 }
+
+// RequestBuilder::BuildState RequestBuilder::CheckForBody_()
+// {
+//     if (rq_.method == HTTP_GET || rq_.method == HTTP_DELETE) {
+//         return BS_END;
+//     }
+//     std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
+//     std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
+//     if (content_length.first && transfer_encoding.first) {
+//         return Error_(HTTP_BAD_REQUEST);
+//     }
+//     if (transfer_encoding.second == "chunked") {
+//         body_builder_.chunked = true;
+//         return BS_BODY_CHUNK_SIZE;
+//     }
+//     if (content_length.first) {
+//         std::pair<bool, size_t> content_length_num =
+//             utils::StrToNumericNoThrow<size_t>(content_length.second);
+//         if (content_length_num.first) {
+//             if (content_length_num.second > body_builder_.max_body_size) {
+//                return Error_(HTTP_PAYLOAD_TOO_LARGE);
+//             }
+//             body_builder_.ExpandBuffer(content_length_num.second);
+//             return BS_BODY_REGULAR;
+//         } else {
+//             return Error_(HTTP_BAD_REQUEST);
+//         }
+//     }
+//     if (rq_.method == HTTP_POST) {
+//         return Error_(HTTP_BAD_REQUEST);
+//     }
+//     return BS_END;
+// }
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
