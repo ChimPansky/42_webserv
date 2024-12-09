@@ -10,6 +10,8 @@
 
 #define BODY_1100 "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptat!!!"
 
+#define BODY_1500 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris non enim maximus, efficitur dui sed, sagittis massa. Ut id magna justo. Pellentesque in rhoncus risus. Proin pulvinar pulvinar viverra. Etiam nisl nibh, condimentum at gravida non, pulvinar in nulla. Nullam in sapien odio. Phasellus fringilla ipsum vel purus fermentum rhoncus. Nulla vitae nibh elit. Vestibulum facilisis orci ac tincidunt laoreet. Nullam quis gravida justo, nec faucibus mi. Pellentesque vitae suscipit neque. Sed accumsan, risus at auctor mollis, diam elit efficitur ante, ut venenatis magna erat at metus. Aliquam id turpis maximus, viverra justo ac, tempus nibh. Duis metus ligula, luctus nec lacus quis, aliquam egestas eros. Sed gravida cursus risus, ut facilisis urna condimentum eu. Suspendisse eleifend eleifend ligula eget dignissim. Maecenas ipsum turpis, convallis a purus eu, efficitur fringilla dolor. Ut commodo enim vel leo gravida, vitae efficitur ipsum finibus. Praesent nibh sem, euismod in sagittis iaculis, ultrices a enim. Vestibulum nec orci leo. Vestibulum ac turpis ipsum. Phasellus vel est sed ipsum ullamcorper dignissim placerat ornare est. Nullam dignissim finibus enim et faucibus. In hac habitasse platea dictumst. Praesent pharetra dolor in imperdiet sollicitudin. Aenean consequat sapien eget commodo suscipit. Donec convallis est est, sit amet bibendum purus egestas sed. Nulla vel turpis vehicula, lobortis dolor id, blandit dolor. Sed dignissim eleifend justo, a accumsan purus tell."
+
 #define CLIENT_MAX_BODY_SIZE 1500
 
 ssize_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz) {
@@ -388,6 +390,15 @@ TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
+
+TEST(MaxBodySize, 55_Body_too_large) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq55.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ("1501", builder.rq().GetHeaderVal("content-length").second);
+    EXPECT_EQ(http::HTTP_PAYLOAD_TOO_LARGE, builder.rq().status);
 }
 
 TEST(InvalidUri, 60_Uri_too_long) {

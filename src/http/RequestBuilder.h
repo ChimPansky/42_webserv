@@ -23,6 +23,7 @@ class RequestBuilder {
     struct BodyBuilder {
         BodyBuilder(std::vector<char>* rq_body);
 
+        void ExpandBuffer(size_t additional_size);
         std::vector<char>* body;
         bool chunked;
         size_t body_idx;
@@ -36,7 +37,6 @@ class RequestBuilder {
         BS_HEADER_FIELDS,
         BS_AFTER_HEADERS,
         BS_CHECK_FOR_BODY,
-        BS_CHECK_BODY_REGULAR_LENGTH,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,
         BS_BODY_CHUNK_CONTENT,
@@ -65,7 +65,7 @@ class RequestBuilder {
     Request rq_;
     RqBuilderStatus builder_status_;
     RequestParser parser_;
-    std::string line_;
+    std::string extraction_;
     ExtractionResult extraction_result_;
     BuildState build_state_;
     std::string header_key_;
@@ -87,7 +87,6 @@ class RequestBuilder {
     BuildState BuildHeaderValue_();
     BuildState NeedToMatchServer_();
     BuildState CheckForBody_();
-    BuildState CheckBodyRegularLength_();
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();

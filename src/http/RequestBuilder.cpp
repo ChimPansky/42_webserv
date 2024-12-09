@@ -21,6 +21,13 @@ RequestBuilder::BodyBuilder::BodyBuilder(std::vector<char>* rq_body)
     : body(rq_body), chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
 
+void RequestBuilder::BodyBuilder::ExpandBuffer(size_t additional_size)
+{
+    body->resize(body->size() + additional_size);
+    remaining_length = additional_size;
+}
+
+
 void RequestBuilder::PrepareToRecvData(size_t recv_size)
 {
     parser_.PrepareToRecvData(recv_size);
@@ -60,7 +67,6 @@ void RequestBuilder::Build(size_t bytes_recvd)
             case BS_HEADER_FIELDS:       build_state_ = BuildHeaderField_(); break;
             case BS_AFTER_HEADERS:      build_state_ = NeedToMatchServer_(); break;
             case BS_CHECK_FOR_BODY:     build_state_ = CheckForBody_(); break;
-            case BS_CHECK_BODY_REGULAR_LENGTH:  build_state_ = CheckBodyRegularLength_(); break;
             case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
             case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
@@ -112,7 +118,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
         default: return Error_(HTTP_BAD_REQUEST);
     }
     // todo for robustness: if very first line of request empty -> ignore and continue
-    std::stringstream ss(line_);
+    std::stringstream ss(extraction_);
     std::string raw_method, raw_rq_target, raw_version;
     std::getline(ss, raw_method, ' ');
     if (ss.eof()) {
@@ -175,14 +181,14 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
         default: return Error_(HTTP_BAD_REQUEST);
     }
-    if (line_.empty()) {
+    if (extraction_.empty()) {
         ResponseCode rc = ValidateHeaders_();
         if (rc != http::HTTP_OK) {
             return Error_(rc);
         }
         return BS_AFTER_HEADERS;
     }
-    std::stringstream ss(line_);
+    std::stringstream ss(extraction_);
     std::string header_key, header_val;
     std::getline(ss, header_key, ':');
     if (ss.eof()) {
@@ -232,9 +238,11 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
         std::pair<bool, size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(content_length.second);
         if (content_length_num.first) {
-            body_builder_.remaining_length =
-                content_length_num.second;  // TODO: content-length limits?
-            return BS_CHECK_BODY_REGULAR_LENGTH;
+            if (content_length_num.second > body_builder_.max_body_size) {
+               return Error_(HTTP_PAYLOAD_TOO_LARGE);
+            }
+            body_builder_.ExpandBuffer(content_length_num.second);
+            return BS_BODY_REGULAR;
         } else {
             return Error_(HTTP_BAD_REQUEST);
         }
@@ -243,15 +251,6 @@ RequestBuilder::BuildState RequestBuilder::CheckForBody_()
         return Error_(HTTP_BAD_REQUEST);
     }
     return BS_END;
-}
-
-RequestBuilder::BuildState RequestBuilder::CheckBodyRegularLength_()
-{
-    if (body_builder_.remaining_length > body_builder_.max_body_size) {
-        return Error_(HTTP_BAD_REQUEST);
-    }
-    body_builder_.body->resize(body_builder_.remaining_length);
-    return BS_BODY_REGULAR;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
@@ -283,14 +282,13 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
         default: return Error_(HTTP_BAD_REQUEST);
     }
     std::pair<bool, size_t> converted_size =
-        utils::HexToUnsignedNumericNoThrow<size_t>(line_);
+        utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
     if (!converted_size.first) {
         return Error_(HTTP_BAD_REQUEST);
     }
-    body_builder_.remaining_length =
-        converted_size.second;  // TODO: check for chunk size limits (or is it client_max_body_size?)
-    if (rq_.body.size() + body_builder_.remaining_length > body_builder_.max_body_size) {
-        return Error_(HTTP_BAD_REQUEST);
+    body_builder_.remaining_length = converted_size.second;
+    if (body_builder_.body->size() + body_builder_.remaining_length > body_builder_.max_body_size) {
+        return Error_(HTTP_PAYLOAD_TOO_LARGE);
     }
     if (body_builder_.remaining_length == 0) {
         return BS_END;
@@ -308,8 +306,8 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
         default: return BS_BODY_CHUNK_CONTENT;
     }
     size_t old_sz = body_builder_.body->size();
-    body_builder_.body->resize(old_sz + body_builder_.remaining_length);
-    std::memcpy(body_builder_.body->data() + old_sz, line_.data(), line_.size());
+    body_builder_.ExpandBuffer(body_builder_.remaining_length);
+    std::memcpy(body_builder_.body->data() + old_sz, extraction_.data(), extraction_.size());
     return BS_BODY_CHUNK_SIZE;
 }
 
@@ -319,7 +317,7 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_() {
             return EXTRACTION_TOO_LONG;
         }
         if (parser_.FoundCRLF()) {
-            line_ = parser_.ExtractLine();
+            extraction_ = parser_.ExtractLine();
             return EXTRACTION_SUCCESS;
         }
         if (parser_.FoundSingleCR()) {
@@ -339,7 +337,7 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_() {
             return EXTRACTION_TOO_LONG;
         }
         if (parser_.FoundCRLF()) {
-            line_ = parser_.ExtractLine();
+            extraction_ = parser_.ExtractLine();
             return EXTRACTION_SUCCESS;
         }
         parser_.Advance();
@@ -349,7 +347,7 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_() {
 
 bool RequestBuilder::IsParsingState_(BuildState state) const
 {
-    return (state != BS_AFTER_HEADERS && state != BS_CHECK_FOR_BODY && state != BS_CHECK_BODY_REGULAR_LENGTH);
+    return (state != BS_AFTER_HEADERS && state != BS_CHECK_FOR_BODY);
 }
 
 bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
