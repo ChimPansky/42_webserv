@@ -17,13 +17,7 @@
 #define CLIENT_MAX_BODY_SIZE 1500
 
 ssize_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz) {
-    // size_t old_buf_sz = buf.size();
-    // buf.resize(old_buf_sz + read_sz);
     file.read(buf.data() + buf.size() - read_sz, read_sz);
-    // size_t bytes_recvd = file.gcount();
-    // if (bytes_recvd >= 0 && static_cast<size_t>(bytes_recvd) < read_sz) {
-    //     buf.resize(old_buf_sz + bytes_recvd);
-    // }
     return file.gcount();
 }
 
@@ -65,7 +59,6 @@ int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read
 }
 
 std::string readFileToString(const char* filePath) {
-    std::cout << "Reading file: " << filePath << std::endl;
     if (!filePath[0]) {
         ADD_FAILURE() << "Unexepected empty file path";
     }
@@ -79,7 +72,6 @@ std::string readFileToString(const char* filePath) {
 
     std::stringstream buffer;
     buffer << file.rdbuf(); // Read entire file into the stringstream
-    std::cout << "File content: " << buffer.str() << std::endl;
     return buffer.str();    // Return the string
 }
 
@@ -103,65 +95,79 @@ TEST(ValidWithBody, 1_Bodylen_14) {
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
-// TEST(ValidWithBody, 2_One_Chunk_1100) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq2.txt", 10) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
-//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-//     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
-//     EXPECT_EQ((unsigned long)1100, builder.rq().body.size());
-//     const char* str = BODY_1100;
-//     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-//     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
-// }
+TEST(ValidWithBody, 2_One_Chunk_1100) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq2.txt", 10) != 0) {
+        FAIL();
+    }
+    const http::Request& rq = builder.rq();
+    std::string body_str;
+    if (rq.has_body) {
+        std::cout << "filename: " << rq.body << std::endl;
+        body_str = readFileToString(rq.body);
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
+    EXPECT_EQ(std::string(BODY_1100), body_str);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+}
 
-// TEST(ValidWithBody, 3_One_Chunk_1100) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq2.txt", 9) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
-//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-//     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
-//     EXPECT_EQ((unsigned long)1100, builder.rq().body.size());
-//     const char* str = BODY_1100;
-//     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-//     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
-// }
+TEST(ValidWithBody, 3_One_Chunk_1100) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq2.txt", 9) != 0) {
+        FAIL();
+    }
+    const http::Request& rq = builder.rq();
+    std::string body_str;
+    if (rq.has_body) {
+        body_str = readFileToString(rq.body);
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
+    EXPECT_EQ(std::string(BODY_1100), body_str);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+}
 
-// TEST(ValidWithBody, 4_Bodylen_1) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq4.txt", 50) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
-//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-//     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
-//     EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length").second);
-//     EXPECT_EQ((unsigned long)1, builder.rq().body.size());
-//     const char *str = "a";
-//     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-//     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
-// }
+TEST(ValidWithBody, 4_Bodylen_1) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq4.txt", 50) != 0) {
+        FAIL();
+    }
+    const http::Request& rq = builder.rq();
+    std::string body_str;
+    if (rq.has_body) {
+        body_str = readFileToString(rq.body);
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
+    EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length").second);
+    EXPECT_EQ("a", body_str);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+}
 
-// TEST(ValidWithBody, 5_Chunked_1) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq5.txt", 50) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
-//     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
-//     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
-//     const char *str = "L";
-//     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-//     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
-// }
+TEST(ValidWithBody, 5_Chunked_1) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq5.txt", 50) != 0) {
+        FAIL();
+    }
+    const http::Request& rq = builder.rq();
+    std::string body_str;
+    if (rq.has_body) {
+        body_str = readFileToString(rq.body);
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
+    EXPECT_EQ("L", body_str);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+}
 
 // // Valid without body:
 // TEST(ValidWithoutBody, 6_SimpleGet) {
