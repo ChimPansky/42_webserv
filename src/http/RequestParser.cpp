@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <logger.h>
+#include <sstream>
 
 
 namespace http {
@@ -61,11 +62,10 @@ bool RequestParser::EndOfBuffer() const
 
 std::string RequestParser::ExtractElement()
 {
-    size_t end =
-        std::max(static_cast<ssize_t>(element_end_idx_),
-        static_cast<ssize_t>(0));
+    size_t end = (element_end_idx_ >= 0 ? element_end_idx_ : 0);
     end = std::min(end, buf_.size());
     std::string element = std::string(buf_.data(), buf_.data() + end);
+    LOG(DEBUG) << "erasing " << end << " bytes";
     buf_.erase(buf_.begin(), buf_.begin() + end);
     element_end_idx_ = 0;
     return element;
@@ -74,8 +74,7 @@ std::string RequestParser::ExtractElement()
 std::string RequestParser::ExtractLine()
 {
     size_t len_without_crlf =
-        std::max(static_cast<ssize_t>(element_end_idx_ - 1),
-        static_cast<ssize_t>(0));
+        (element_end_idx_ <= 0 ? 0 : element_end_idx_ - 1);
     std::string line = std::string(buf_.data(), buf_.data() + len_without_crlf);
     LOG(DEBUG) << "erasing " << len_without_crlf + 1 << " bytes";
     buf_.erase(buf_.begin(), buf_.begin() + len_without_crlf + 2);
@@ -103,14 +102,14 @@ bool RequestParser::FoundCRLF() const {
     if (element_end_idx_ < 1) {
         return false;
     }
-    return buf_[element_end_idx_ - 1] == EOL_CARRIAGE_RETURN && buf_[element_end_idx_] == EOL_LINE_FEED;
+    return buf_[element_end_idx_ - 1] == '\r' && buf_[element_end_idx_] == '\n';
 }
 
 bool RequestParser::FoundSingleCR() const {
     if (element_end_idx_ < 1) {
         return false;
     }
-    return buf_[element_end_idx_ - 1] == EOL_CARRIAGE_RETURN && buf_[element_end_idx_] != EOL_LINE_FEED;
+    return buf_[element_end_idx_ - 1] == '\r' && buf_[element_end_idx_] != '\n';
 }
 
 }  // namespace http
