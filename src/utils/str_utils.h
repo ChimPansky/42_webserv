@@ -6,11 +6,11 @@
 
 #include <string>
 #include <vector>
-#include <ctime>
 
 namespace utils {
 
 std::string ToLowerCase(std::string str);
+void EatSpacesAndHTabs(std::stringstream& ss);
 
 namespace fs {
 
