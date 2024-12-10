@@ -243,7 +243,7 @@ TEST(InValidWithoutBody, 14_Invalid_Version) {
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
-    EXPECT_EQ(http::HTTP_HTTP_VERSION_NOT_SUPPORTED, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 // when testing this and viewing rq15.txt in editor: careful about VS Code setting "Files: Insert Final Newline"
@@ -405,4 +405,20 @@ TEST(InvalidUri, 60_Uri_too_long) {
         EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
         EXPECT_EQ("", builder.rq().rqTarget.ToStr());
     }
+}
+
+TEST(BadMethod, 70_Bad_Method) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq70.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
+
+TEST(BadMethod, 76_Unsupported_Method) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq76.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_NOT_IMPLEMENTED, builder.rq().status);
 }

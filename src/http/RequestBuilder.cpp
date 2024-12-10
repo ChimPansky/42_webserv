@@ -1,6 +1,5 @@
 #include "RequestBuilder.h"
 #include "Request.h"
-#include "Response.h"
 #include "ResponseCodes.h"
 
 #include <cstring>
@@ -9,6 +8,7 @@
 
 #include <logger.h>
 #include <numeric_utils.h>
+#include "SyntaxChecker.h"
 #include "str_utils.h"
 
 namespace http {
@@ -46,7 +46,6 @@ bool RequestBuilder::CanBuild_()
 // TODO: rm bytes_recvd
 void RequestBuilder::Build(size_t bytes_recvd)
 {
-    // utils::Logger::get().set_severity_threshold(INFO);
     LOG(DEBUG) << "RequestBuilder::Build";
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
@@ -105,6 +104,7 @@ std::vector<char>& RequestBuilder::buf()
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 {
     LOG(DEBUG) << "BuildFirstLine_";
+
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
@@ -142,18 +142,14 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 
 ResponseCode RequestBuilder::TrySetMethod_(const std::string& raw_method)
 {
-    // if (!syntaxchecker.check_method(raw_method)) {
-    //     return HTTP_BAD_REQUEST;
-    // };
-    if (raw_method == "GET") {
-        rq_.method = HTTP_GET;
-    } else if (raw_method == "POST") {
-        rq_.method = HTTP_POST;
-    } else if (raw_method == "DELETE") {
-        rq_.method = HTTP_DELETE;
-    } else {
+    if (!SyntaxChecker::IsValidMethodName(raw_method)) {
+        return HTTP_BAD_REQUEST;
+    };
+    std::pair<bool, Method> converted_method = HttpMethodFromStr(raw_method);
+    if (!converted_method.first) {
         return HTTP_NOT_IMPLEMENTED;
     }
+    rq_.method = converted_method.second;
     return HTTP_OK;
 }
 
@@ -171,22 +167,28 @@ ResponseCode RequestBuilder::TrySetRqTarget_(const std::string& raw_rq_target)
 
 ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 {
-    // if (!syntaxchecker.check_version(raw_version)) {
-    //     return HTTP_BAD_REQUEST;
-    // };
-    if (raw_version == "HTTP/1.0") {
-        rq_.version = HTTP_1_0;
-    } else if (raw_version == "HTTP/1.1") {
-        rq_.version = HTTP_1_1;
-    } else {
-        return HTTP_HTTP_VERSION_NOT_SUPPORTED;
+    if (!SyntaxChecker::IsValidVersionName(raw_version)) {
+        return HTTP_BAD_REQUEST;
+    };
+    std::pair<bool, Version> converted_version = HttpVersionFromStr(raw_version);
+    if (!converted_version.first) {
+        return HTTP_BAD_REQUEST;
     }
+    rq_.version = converted_version.second;
     return HTTP_OK;
 }
 
+// https://www.rfc-editor.org/rfc/rfc9110#name-field-lines-and-combined-fi
+// When a field name is only present once in a section, the combined "field value" for that field consists of the corresponding field line value. When a field name is repeated within a section, its combined field value consists of the list of corresponding field line values within that section, concatenated in order, with each field line value separated by a comma.
+
+// For example, this section:
+
+// Example-Field: Foo, Bar
+// Example-Field: Baz
+// contains two field lines, both with the field name "Example-Field". The first field line has a field line value of "Foo, Bar", while the second field line value is "Baz". The field value for "Example-Field" is the list "Foo, Bar, Baz".
 
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
-    LOG(INFO) << "BuildHeaderField_";
+    LOG(DEBUG) << "BuildHeaderField_";
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
@@ -219,9 +221,16 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
 
 ResponseCode RequestBuilder::ValidateHeaders_()
 {
-    LOG(INFO) << "ValidateHeaders_";
-    // iterate through headers map
-    // for each header: if syntaxcheck bad --> return HTTP_BAD_REQUEST
+    LOG(DEBUG) << "ValidateHeaders_";
+    for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
+         it != rq_.headers.end(); ++it) {
+        if (!SyntaxChecker::IsValidHeaderKeyName(it->first)) {
+            return HTTP_BAD_REQUEST;
+        }
+        if (!SyntaxChecker::IsValidHeaderValueName(it->second)) {
+            return HTTP_BAD_REQUEST;
+        }
+    }
     // if duplicate host header --> return HTTP_BAD_REQUEST
     // additional semantic checks...
     return HTTP_OK;
@@ -294,6 +303,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 {
     LOG(DEBUG) << "BuildBodyChunkSize_";
+
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
