@@ -66,13 +66,14 @@ class RequestBuilder {
     RqBuilderStatus builder_status_;
     RequestParser parser_;
     std::string line_;
-    ExtractionResult extraction_result_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
 
     BuildState BuildFirstLine_();
-    http::ResponseCode ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version);
+    http::ResponseCode TrySetMethod_(const std::string& raw_method);
+    http::ResponseCode TrySetRqTarget_(const std::string& raw_rq_target);
+    http::ResponseCode TrySetVersion_(const std::string& raw_version);
     BuildState BuildHeaderField_();
     http::ResponseCode ValidateHeaders_();
 
@@ -98,7 +99,7 @@ class RequestBuilder {
     ExtractionResult TryToExtractLine_();
     ExtractionResult TryToExtractBodyContent_();
     bool IsParsingState_(BuildState state) const;
-    BuildState Error_(ResponseCode status);
+    BuildState SetStatusAndExitBuilder_(ResponseCode status);
 };
 
 }  // namespace http
