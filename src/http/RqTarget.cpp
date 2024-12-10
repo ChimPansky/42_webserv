@@ -15,10 +15,7 @@ std::ostream& operator<<(std::ostream& out, const RqTarget& RqTarget)
 }
 
 // before decoding: check that each target-component only contains valid characters
-const char* RqTarget::kUnreserved =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
-const char* RqTarget::kGenDelims = ":/?#[]@";
-const char* RqTarget::kSubDelims = "!$&'()*+,;=";
+
 
 RqTarget::RqTarget() : validity_state_(RQ_TARGET_GOOD) {}
 

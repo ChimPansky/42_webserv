@@ -3,8 +3,10 @@
 
 #include "Request.h"
 #include "RequestParser.h"
+#include "ResponseCodes.h"
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace http {
@@ -30,13 +32,8 @@ class RequestBuilder {
 
   private:
     enum BuildState {
-        BS_METHOD,
-        BS_RQ_TARGET,
-        BS_VERSION,
-        BS_BETWEEN_HEADERS,
-        BS_HEADER_KEY,
-        BS_HEADER_KEY_VAL_SEP,
-        BS_HEADER_VALUE,
+        BS_RQ_LINE,
+        BS_HEADER_FIELDS,
         BS_AFTER_HEADERS,
         BS_CHECK_FOR_BODY,
         BS_CHECK_BODY_REGULAR_LENGTH,
@@ -46,9 +43,12 @@ class RequestBuilder {
         BS_END,
         BS_BAD_REQUEST
     };
-    enum EOL_CHARS {
-        EOL_CARRIAGE_RETURN = '\r',
-        EOL_LINE_FEED = '\n'
+    enum ExtractionResult {
+        EXTRACTION_SUCCESS,
+        EXTRACTION_TOO_LONG,
+        EXTRACTION_CRLF_NOT_FOUND,
+        EXTRACTION_FOUND_SINGLE_CR,
+        EXTRACTION_NULL_TERMINATOR_FOUND
     };
 
   public:
@@ -65,9 +65,19 @@ class RequestBuilder {
     Request rq_;
     RqBuilderStatus builder_status_;
     RequestParser parser_;
+    std::string line_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;
+
+    BuildState BuildFirstLine_();
+    http::ResponseCode TrySetMethod_(const std::string& raw_method);
+    http::ResponseCode TrySetRqTarget_(const std::string& raw_rq_target);
+    http::ResponseCode TrySetVersion_(const std::string& raw_version);
+    BuildState BuildHeaderField_();
+    http::ResponseCode ValidateHeaders_();
+
+    bool InsertHeaderField_(std::string& key, std::string& value);
 
     BuildState BuildMethod_();
     BuildState BuildRqTarget_();
@@ -86,9 +96,10 @@ class RequestBuilder {
     // helpers:
     bool CanBuild_();
     void NullTerminatorCheck_(char c);
-    bool CheckForEOL_() const;
+    ExtractionResult TryToExtractLine_();
+    ExtractionResult TryToExtractBodyContent_();
     bool IsParsingState_(BuildState state) const;
-    BuildState Error_(RqStatus status);
+    BuildState SetStatusAndExitBuilder_(ResponseCode status);
 };
 
 }  // namespace http

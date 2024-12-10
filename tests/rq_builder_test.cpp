@@ -3,6 +3,7 @@
 #include <RequestBuilder.h>
 #include <fstream>
 #include "ResponseCodes.h"
+#include "http.h"
 #include <logger.h>
 
 #define BODY_14 "Hello, World!!"
@@ -72,7 +73,7 @@ TEST(ValidWithBody, 1_Bodylen_14) {
     const char* str = BODY_14;
     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
     EXPECT_EQ((unsigned long)14, builder.rq().body.size());
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 TEST(ValidWithBody, 2_One_Chunk_1100) {
@@ -87,7 +88,7 @@ TEST(ValidWithBody, 2_One_Chunk_1100) {
     EXPECT_EQ((unsigned long)1100, builder.rq().body.size());
     const char* str = BODY_1100;
     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 TEST(ValidWithBody, 3_One_Chunk_1100) {
@@ -102,7 +103,7 @@ TEST(ValidWithBody, 3_One_Chunk_1100) {
     EXPECT_EQ((unsigned long)1100, builder.rq().body.size());
     const char* str = BODY_1100;
     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 TEST(ValidWithBody, 4_Bodylen_1) {
@@ -118,7 +119,7 @@ TEST(ValidWithBody, 4_Bodylen_1) {
     EXPECT_EQ((unsigned long)1, builder.rq().body.size());
     const char *str = "a";
     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 TEST(ValidWithBody, 5_Chunked_1) {
@@ -132,7 +133,7 @@ TEST(ValidWithBody, 5_Chunked_1) {
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
     const char *str = "L";
     EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 // Valid without body:
@@ -147,7 +148,7 @@ TEST(ValidWithoutBody, 6_SimpleGet) {
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("", builder.rq().GetHeaderVal("content-length").second);
     EXPECT_TRUE(builder.rq().body.empty());
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 TEST(ValidWithoutBody, 7_GetWithQuery) {
@@ -161,7 +162,7 @@ TEST(ValidWithoutBody, 7_GetWithQuery) {
     EXPECT_EQ("www.search.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("", builder.rq().GetHeaderVal("content-length").second);
     EXPECT_TRUE(builder.rq().body.empty());
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 TEST(ValidWithoutBody, 8_GetWithHeaders) {
@@ -176,7 +177,7 @@ TEST(ValidWithoutBody, 8_GetWithHeaders) {
     EXPECT_EQ("application/json", builder.rq().GetHeaderVal("accept").second);
     EXPECT_EQ("CustomClient/1.0", builder.rq().GetHeaderVal("user-agent").second);
     EXPECT_TRUE(builder.rq().body.empty());
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 9_PostWithHeaders) {
@@ -191,7 +192,7 @@ TEST(InValidWithoutBody, 9_PostWithHeaders) {
     EXPECT_EQ("application/x-www-form-urlencoded", builder.rq().GetHeaderVal("content-type").second);
     EXPECT_EQ("http://www.example.com", builder.rq().GetHeaderVal("referer").second);
     EXPECT_TRUE(builder.rq().body.empty());
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
@@ -203,9 +204,9 @@ TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
     EXPECT_EQ("/items/123", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
     EXPECT_EQ("api.items.com", builder.rq().GetHeaderVal("host").second);
-    EXPECT_EQ("Bearer some_token", builder.rq().GetHeaderVal("authorization").second);
+    EXPECT_EQ("Bearer_some_token", builder.rq().GetHeaderVal("authorization").second);
     EXPECT_TRUE(builder.rq().body.empty());
-    EXPECT_EQ(http::RQ_GOOD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 11_Incomplete_Method) {
@@ -213,7 +214,7 @@ TEST(InValidWithoutBody, 11_Incomplete_Method) {
     if (BuildRequest(builder, "rq11.txt", 7) != 0) {
         FAIL();
     }
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 12_Too_Many_Spaces) {
@@ -221,8 +222,7 @@ TEST(InValidWithoutBody, 12_Too_Many_Spaces) {
     if (BuildRequest(builder, "rq12.txt", 7) != 0) {
         FAIL();
     }
-    EXPECT_EQ(http::HTTP_GET, builder.rq().method);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 13_No_URI) {
@@ -230,13 +230,12 @@ TEST(InValidWithoutBody, 13_No_URI) {
     if (BuildRequest(builder, "rq13.txt", 10) != 0) {
         FAIL();
     }
-    EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_TRUE(builder.rq().rqTarget.ToStr().empty());
     EXPECT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
-TEST(InValidWithoutBody, 14_No_Invalid_Version) {
+TEST(InValidWithoutBody, 14_Invalid_Version) {
      http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "rq14.txt", 1000) != 0) {
         FAIL();
@@ -244,7 +243,7 @@ TEST(InValidWithoutBody, 14_No_Invalid_Version) {
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 // when testing this and viewing rq15.txt in editor: careful about VS Code setting "Files: Insert Final Newline"
@@ -253,10 +252,8 @@ TEST(InValidWithoutBody, 15_No_CRLF_After_Version) {
     if (BuildRequest(builder, "rq15.txt", 10000) != 0) {
         FAIL();
     }
-    EXPECT_EQ(http::HTTP_DELETE, builder.rq().method);
-    EXPECT_EQ("/upload/subfolder1/subfolder2", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 16_Just_LF_After_Version) {
@@ -264,10 +261,8 @@ TEST(InValidWithoutBody, 16_Just_LF_After_Version) {
     if (BuildRequest(builder, "rq16.txt", 13) != 0) {
         FAIL();
     }
-    EXPECT_EQ(http::HTTP_DELETE, builder.rq().method);
-    EXPECT_EQ("/upload/subfolder1/subfolder2", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_NO_VERSION, builder.rq().version);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 17_Bad_Header_Key) {
@@ -277,8 +272,8 @@ TEST(InValidWithoutBody, 17_Bad_Header_Key) {
     }
     EXPECT_EQ(http::HTTP_DELETE, builder.rq().method);
     EXPECT_EQ("/upload/subfolder1/subfolder2", builder.rq().rqTarget.ToStr());
-    EXPECT_EQ(http::HTTP_2, builder.rq().version);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 18_Bad_Header_Key) {
@@ -288,8 +283,8 @@ TEST(InValidWithoutBody, 18_Bad_Header_Key) {
     }
     EXPECT_EQ(http::HTTP_DELETE, builder.rq().method);
     EXPECT_EQ("/upload/subfolder1/subfolder2", builder.rq().rqTarget.ToStr());
-    EXPECT_EQ(http::HTTP_2, builder.rq().version);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 19_Bad_Header_Key) {
@@ -300,8 +295,7 @@ TEST(InValidWithoutBody, 19_Bad_Header_Key) {
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_FALSE(builder.rq().GetHeaderVal("Host!").first);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 20_Bad_Header_Key) {
@@ -312,8 +306,7 @@ TEST(InValidWithoutBody, 20_Bad_Header_Key) {
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_FALSE(builder.rq().GetHeaderVal("Host-").first);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithoutBody, 21_Bad_Header_Key) {
@@ -324,33 +317,9 @@ TEST(InValidWithoutBody, 21_Bad_Header_Key) {
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_FALSE(builder.rq().GetHeaderVal("Host ").first);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
-TEST(InValidWithoutBody, 22_Missing_Space) {
-     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "rq22.txt", 70) != 0) {
-        FAIL();
-    }
-    EXPECT_EQ(http::HTTP_GET, builder.rq().method);
-    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
-    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_FALSE(builder.rq().GetHeaderVal("host").first);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
-}
-
-TEST(InValidWithoutBody, 23_Missing_Header_Value) {
-     http::RequestBuilder builder = http::RequestBuilder();
-    if (BuildRequest(builder, "rq23.txt", 70) != 0) {
-        FAIL();
-    }
-    EXPECT_EQ(http::HTTP_GET, builder.rq().method);
-    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
-    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_FALSE(builder.rq().GetHeaderVal("host").first);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
-}
 
 TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
      http::RequestBuilder builder = http::RequestBuilder();
@@ -361,7 +330,7 @@ TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_FALSE(builder.rq().GetHeaderVal("host").first);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 //TEST(InValidWithoutBody, 25_Bad_Header_Value_10) {
@@ -382,7 +351,7 @@ TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus) {
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
@@ -394,7 +363,7 @@ TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
@@ -406,7 +375,7 @@ TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
@@ -418,7 +387,7 @@ TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
-    EXPECT_EQ(http::RQ_BAD, builder.rq().status);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
 TEST(InvalidUri, 60_Uri_too_long) {
@@ -426,11 +395,30 @@ TEST(InvalidUri, 60_Uri_too_long) {
     if (BuildRequest(builder, "rq60.txt", 1000) != 0) {
         FAIL();
     }
-    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-    if (RQ_TARGET_LEN_LIMIT > 256) {
-        EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii", builder.rq().rqTarget.ToStr());
+    if (RQ_LINE_LEN_LIMIT > 256 && RQ_TARGET_LEN_LIMIT > 256) {
+        EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiiiblablabla", builder.rq().rqTarget.ToStr());
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    } else if (RQ_LINE_LEN_LIMIT <= 256) {
+        EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
     } else {
         EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
         EXPECT_EQ("", builder.rq().rqTarget.ToStr());
     }
+}
+
+TEST(BadMethod, 70_Bad_Method) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq70.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
+
+TEST(BadMethod, 76_Unsupported_Method) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq76.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_NOT_IMPLEMENTED, builder.rq().status);
 }

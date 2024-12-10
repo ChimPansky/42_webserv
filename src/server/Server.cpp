@@ -90,19 +90,12 @@ std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
 utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
-    switch (rq.status) {
-        case http::RQ_INCOMPLETE:
-            throw std::logic_error("trying to accept incomplete rq");
-        case http::RQ_BAD:
-            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-            return utils::unique_ptr<AResponseProcessor>(
-                new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
-        case http::RQ_URI_TOO_LONG:
-            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-            return utils::unique_ptr<AResponseProcessor>(
-                new GeneratedErrorResponseProcessor(cb, (http::ResponseCode)rq.status));
-        case http::RQ_GOOD:
+    if (rq.status == http::HTTP_OK) {
             return GetResponseProcessor(rq, cb);
+    } else {
+            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
+            return utils::unique_ptr<AResponseProcessor>(
+                new GeneratedErrorResponseProcessor(cb, rq.status));
     }
 }
 

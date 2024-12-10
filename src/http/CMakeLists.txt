@@ -22,6 +22,7 @@ add_library(Http
     RequestParser.cpp
     Response.cpp
     RqTarget.cpp
+    SyntaxChecker.cpp
     ${RESPONSE_CODES_CPP}  # RESPONSE_CODES_CPP is the output of custom command, which creates implicit dependency on that command
 )
 

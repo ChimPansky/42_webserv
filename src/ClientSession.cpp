@@ -52,7 +52,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
     }
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
-                   << ((rq_builder_.rq().status == http::RQ_GOOD) ? "GOOD)" : "BAD)")
+                   << ((rq_builder_.rq().status == http::HTTP_OK) ? "GOOD)" : "BAD)")
                    << " -> Accept on Server...";
         read_state_ = CS_IGNORE;
         LOG(DEBUG) << rq_builder_.rq().GetDebugString();
