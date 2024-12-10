@@ -12,7 +12,7 @@
 #include "LocationConfig.h"
 #include "ServerConfig.h"
 
-#define CLIENT_RD_CALLBACK_RD_SZ 2000
+#define CLIENT_RD_CALLBACK_RD_SZ 10
 
 class ClientSession {
     class ChooseServerCb : public http::IChooseServerCb {

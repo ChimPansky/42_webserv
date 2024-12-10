@@ -49,6 +49,10 @@ size_t RequestParser::ElementLen() const
     return element_end_idx_ + 1;
 }
 
+size_t RequestParser::RemainingLength() const {
+    return buf_.size() - element_end_idx_;
+}
+
 bool RequestParser::ExceededLineLimit() const
 {
     return element_end_idx_ > RQ_LINE_LEN_LIMIT;

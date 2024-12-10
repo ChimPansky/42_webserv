@@ -291,37 +291,18 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
     if (body_builder_.remaining_length > body_builder_.max_body_size) {
         return Error_(HTTP_PAYLOAD_TOO_LARGE);
     }
-    while (!parser_.EndOfBuffer() && body_builder_.remaining_length > 0) {
-        body_builder_.body_stream << parser_.Peek();
-        LOG(DEBUG) << "Writing char: " << parser_.Peek();
-        if (body_builder_.body_stream.fail()) {
-            LOG(ERROR) << "Failed to write to temporary file.";
-            return Error_(HTTP_INTERNAL_SERVER_ERROR);
-        }
-        parser_.Advance();
-        body_builder_.remaining_length--;
-    }
-    size_t copy_size = std::min(parser_.ElementLen(), body_builder_.remaining_length);
-    // std::copy(parser_.buf().data(), parser_.buf().data() + copy_size, std::ostream_iterator<char>(body_builder_.body_stream));
+    size_t copy_size = std::min(body_builder_.remaining_length, parser_.RemainingLength());
+    char *begin = parser_.buf().data() + body_builder_.body_idx;
+    char *end = begin + copy_size;
+    std::copy(begin, end, std::ostream_iterator<char>(body_builder_.body_stream));
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;
-
-    LOG(DEBUG) << "Reading file: " << rq_.body;
-    std::ifstream file(rq_.body); // Open file
-
-    if (!file.is_open()) {
-        LOG(ERROR) << "Failed to open temporary file.";
+    parser_.Advance(copy_size);
+    if (body_builder_.remaining_length > 0) {
+        return BS_BODY_REGULAR;
     }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf(); // Read entire file into the stringstream
-    LOG(DEBUG) << "Builder: Finished reading body: " << buffer.str();
-
-    if (body_builder_.remaining_length == 0) {
-        return BS_END;
-    }
-    parser_.Advance();
-    return BS_BODY_REGULAR;
+    body_builder_.body_stream.close();
+    return BS_END;
 }
 
 // https://datatracker.ietf.org/doc/html/rfc2616#section-3.5

@@ -1,6 +1,7 @@
 add_library(Utils
     logger.cpp
     time_utils.cpp
+    file_utils.cpp
     str_utils.cpp
 )
 

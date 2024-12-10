@@ -46,7 +46,8 @@ std::string Request::GetDebugString() const
     }
 
     ret << "\n\tHas body: " << (has_body ? "Yes" : "No");
-    
+    ret << "\n\tBodypath: " << body;
+
     return ret.str();
 }
 
