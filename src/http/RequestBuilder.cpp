@@ -194,7 +194,7 @@ ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 // contains two field lines, both with the field name "Example-Field". The first field line has a field line value of "Foo, Bar", while the second field line value is "Baz". The field value for "Example-Field" is the list "Foo, Bar, Baz".
 
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
-    LOG(INFO) << "BuildHeaderField_";
+    LOG(DEBUG) << "BuildHeaderField_";
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
