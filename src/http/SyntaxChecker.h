@@ -10,11 +10,11 @@ class SyntaxChecker {
     SyntaxChecker();
 
   public:
-    static bool IsValidToken(const std::string& token);
-    static bool IsValidMethod(const std::string& method);
-    static bool IsValidVersion(const std::string& version);
-    static bool IsValidHeaderKey(const std::string& header_name);
-    static bool IsValidHeaderValue(const std::string& header_value);
+    static bool IsValidTokenName(const std::string& token);
+    static bool IsValidMethodName(const std::string& method);
+    static bool IsValidVersionName(const std::string& version);
+    static bool IsValidHeaderKeyName(const std::string& header_name);
+    static bool IsValidHeaderValueName(const std::string& header_value);
 
     // utilities:
     static bool IsDigit_(char c);

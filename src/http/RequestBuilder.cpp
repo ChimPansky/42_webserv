@@ -142,7 +142,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 
 ResponseCode RequestBuilder::TrySetMethod_(const std::string& raw_method)
 {
-    if (!SyntaxChecker::IsValidMethod(raw_method)) {
+    if (!SyntaxChecker::IsValidMethodName(raw_method)) {
         return HTTP_BAD_REQUEST;
     };
     std::pair<bool, Method> converted_method = HttpMethodFromStr(raw_method);
@@ -167,7 +167,7 @@ ResponseCode RequestBuilder::TrySetRqTarget_(const std::string& raw_rq_target)
 
 ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 {
-    if (!SyntaxChecker::IsValidVersion(raw_version)) {
+    if (!SyntaxChecker::IsValidVersionName(raw_version)) {
         return HTTP_BAD_REQUEST;
     };
     std::pair<bool, Version> converted_version = HttpVersionFromStr(raw_version);
@@ -224,10 +224,10 @@ ResponseCode RequestBuilder::ValidateHeaders_()
     LOG(DEBUG) << "ValidateHeaders_";
     for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
          it != rq_.headers.end(); ++it) {
-        if (!SyntaxChecker::IsValidHeaderKey(it->first)) {
+        if (!SyntaxChecker::IsValidHeaderKeyName(it->first)) {
             return HTTP_BAD_REQUEST;
         }
-        if (!SyntaxChecker::IsValidHeaderValue(it->second)) {
+        if (!SyntaxChecker::IsValidHeaderValueName(it->second)) {
             return HTTP_BAD_REQUEST;
         }
     }

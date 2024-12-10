@@ -8,7 +8,7 @@
 namespace http {
 
 // token = 1*tchar
-bool SyntaxChecker::IsValidToken(const std::string& token) {
+bool SyntaxChecker::IsValidTokenName(const std::string& token) {
     if (token.empty()) {
         return false;
     }
@@ -22,9 +22,9 @@ bool SyntaxChecker::IsValidToken(const std::string& token) {
 
 // https://datatracker.ietf.org/doc/html/rfc9112#name-method
 // method         = token
-bool SyntaxChecker::IsValidMethod(const std::string& method)
+bool SyntaxChecker::IsValidMethodName(const std::string& method)
 {
-    return IsValidToken(method);
+    return IsValidTokenName(method);
 }
 
 // https://datatracker.ietf.org/doc/html/rfc9112#name-http-version
@@ -32,15 +32,15 @@ bool SyntaxChecker::IsValidMethod(const std::string& method)
 // HTTP-name     = %s"HTTP"
 // actually: we really only can receive HTTP/1.0 or HTTP/1.1, anything below or above major version 1 doesn not even the version in the request line
  // example request line in 0.9: GET /path
-bool SyntaxChecker::IsValidVersion(const std::string& version) {
+bool SyntaxChecker::IsValidVersionName(const std::string& version) {
     return version == "HTTP/1.0" || version == "HTTP/1.1";
 }
 
 // https://datatracker.ietf.org/doc/html/rfc9112#name-field-syntax
 // field-name     = token
-bool SyntaxChecker::IsValidHeaderKey(const std::string& header_name)
+bool SyntaxChecker::IsValidHeaderKeyName(const std::string& header_name)
 {
-    return IsValidToken(header_name);
+    return IsValidTokenName(header_name);
 }
 
 // https://datatracker.ietf.org/doc/html/rfc9110#name-field-values
@@ -49,17 +49,17 @@ bool SyntaxChecker::IsValidHeaderKey(const std::string& header_name)
 //                    [ 1*( SP / HTAB / field-vchar ) field-vchar ]
 //   field-vchar    = VCHAR / obs-text
 //   obs-text       = %x80-FF
-bool SyntaxChecker::IsValidHeaderValue(const std::string& header_value) {
+bool SyntaxChecker::IsValidHeaderValueName(const std::string& header_value) {
     size_t len = header_value.size();
     size_t i = 0;
+    if (len > 0 && !IsFieldVChar_(header_value[i])) {
+        return false;
+    }
     while (i < len) {
-        if (!IsFieldVChar_(header_value[i])) {
-            return false;
+        if (!IsWhiteSpace_(header_value[i]) && !IsFieldVChar_(header_value[i])) {
+           return false;
         }
         ++i;
-        while (i < len && (IsWhiteSpace_(header_value[i]) || IsFieldVChar_(header_value[i]))) {
-            ++i;
-        }
     }
     return true;
 }
