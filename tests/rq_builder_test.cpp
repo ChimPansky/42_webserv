@@ -339,7 +339,17 @@ TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
 // TODO: Tests 25-30 check headervalues with invalid characters
 
 
-//TODO: Tests 31+ check for conflicting headers? multiple headers with same key?
+// TODO: Tests 31+ check for conflicting headers? multiple headers with same key?
+TEST(BadHeaders, 31_double_host) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq31.txt", 30) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_GET, builder.rq().method);
+    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
 
 
 //TODO: Tests 41+ check for invalid body content

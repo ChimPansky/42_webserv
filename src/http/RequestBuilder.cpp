@@ -238,6 +238,7 @@ ResponseCode RequestBuilder::ValidateHeadersSyntax_()
 ResponseCode RequestBuilder::InterpretHeaders_()
 {
     LOG(DEBUG) << "InterpretHeaders_";
+    LOG(DEBUG) << rq_.GetDebugString();
 
     std::pair<bool, std::string> host = rq_.GetHeaderVal("host");
     if (!host.first) {
@@ -393,7 +394,9 @@ bool RequestBuilder::IsParsingState_(BuildState state) const
 
 bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
     std::string key_lower = utils::ToLowerCase(key);
-    // todo: check for host-duplicates
+    if (key_lower == "host" && rq_.headers.find(key_lower) != rq_.headers.end()) {
+        return false;
+    }
     // todo: handle list values
     rq_.headers[key_lower] = value;
     return true;
