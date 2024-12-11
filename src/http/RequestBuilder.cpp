@@ -229,7 +229,6 @@ ResponseCode RequestBuilder::ValidateHeadersSyntax_()
             return HTTP_BAD_REQUEST;
         }
     }
-    // if duplicate host header --> return HTTP_BAD_REQUEST
     // additional semantic checks...
     return HTTP_OK;
 }
