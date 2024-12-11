@@ -12,6 +12,7 @@
 #include <numeric_utils.h>
 #include <unistd.h>
 #include "SyntaxChecker.h"
+#include "http.h"
 #include "str_utils.h"
 #include "unique_ptr.h"
 
@@ -253,6 +254,9 @@ ResponseCode RequestBuilder::InterpretHeaders_()
             utils::StrToNumericNoThrow<size_t>(content_length.second);
         body_builder_.remaining_length = content_length_num.second;
         rq_.has_body = true;
+    }
+    if (rq_.method == HTTP_POST && !content_length.first && !transfer_encoding.first) {
+        return HTTP_LENGTH_REQUIRED;
     }
     // additional semantic checks...
     return HTTP_OK;

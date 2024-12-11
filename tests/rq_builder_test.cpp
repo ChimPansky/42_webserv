@@ -126,6 +126,9 @@ TEST(ValidWithBody, 4_Bodylen_1) {
 
 TEST(ValidWithBody, 5_Chunked_1) {
     http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq5.txt", 50) != 0) {
+        FAIL();
+    }
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
@@ -178,6 +181,7 @@ TEST(ValidWithoutBody, 8_GetWithHeaders) {
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
+// POST without content-length or chunked: BAD_REQUEST?
 TEST(InValidWithoutBody, 9_PostWithHeaders) {
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "rq9.txt", 80) != 0) {
@@ -190,7 +194,7 @@ TEST(InValidWithoutBody, 9_PostWithHeaders) {
     EXPECT_EQ("application/x-www-form-urlencoded", builder.rq().GetHeaderVal("content-type").second);
     EXPECT_EQ("http://www.example.com", builder.rq().GetHeaderVal("referer").second);
     EXPECT_FALSE(builder.rq().has_body);
-    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+    EXPECT_EQ(http::HTTP_LENGTH_REQUIRED, builder.rq().status);
 }
 
 TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
@@ -340,92 +344,92 @@ TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
 
 //TODO: Tests 41+ check for invalid body content
 
-// TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus) {
-//      http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq50.txt", 1000) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
-//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-//     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
-//     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
-// }
+TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus) {
+     http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq50.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
 
-// TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
-//      http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
-//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-//     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
-//     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
-// }
+TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
+     http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
 
-// TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
-//      http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq52.txt", 1000) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
-//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-//     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
-//     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
-// }
+TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
+     http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq52.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
 
-// TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
-//     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
-//     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-//     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
-//     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
-// }
+TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
 
-// TEST(MaxBodySize, 55_Body_too_large) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq55.txt", 1000) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ("1501", builder.rq().GetHeaderVal("content-length").second);
-//     EXPECT_EQ(http::HTTP_PAYLOAD_TOO_LARGE, builder.rq().status);
-// }
+TEST(MaxBodySize, 55_Body_too_large) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq55.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ("1501", builder.rq().GetHeaderVal("content-length").second);
+    EXPECT_EQ(http::HTTP_PAYLOAD_TOO_LARGE, builder.rq().status);
+}
 
-// TEST(InvalidUri, 60_Uri_too_long) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq60.txt", 1000) != 0) {
-//         FAIL();
-//     }
-//     if (RQ_LINE_LEN_LIMIT > 256 && RQ_TARGET_LEN_LIMIT > 256) {
-//         EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiiiblablabla", builder.rq().rqTarget.ToStr());
-//         EXPECT_EQ(http::HTTP_OK, builder.rq().status);
-//     } else if (RQ_LINE_LEN_LIMIT <= 256) {
-//         EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
-//         EXPECT_EQ("", builder.rq().rqTarget.ToStr());
-//     } else {
-//         EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
-//         EXPECT_EQ("", builder.rq().rqTarget.ToStr());
-//     }
-// }
+TEST(InvalidUri, 60_Uri_too_long) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq60.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_LINE_LEN_LIMIT > 256 && RQ_TARGET_LEN_LIMIT > 256) {
+        EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiiiblablabla", builder.rq().rqTarget.ToStr());
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    } else if (RQ_LINE_LEN_LIMIT <= 256) {
+        EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
+    } else {
+        EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
+        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
+    }
+}
 
-// TEST(BadMethod, 70_Bad_Method) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq70.txt", 1000) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
-// }
+TEST(BadMethod, 70_Bad_Method) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq70.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
 
-// TEST(BadMethod, 76_Unsupported_Method) {
-//     http::RequestBuilder builder = http::RequestBuilder();
-//     if (BuildRequest(builder, "rq76.txt", 1000) != 0) {
-//         FAIL();
-//     }
-//     EXPECT_EQ(http::HTTP_NOT_IMPLEMENTED, builder.rq().status);
-// }
+TEST(BadMethod, 76_Unsupported_Method) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq76.txt", 1000) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_NOT_IMPLEMENTED, builder.rq().status);
+}

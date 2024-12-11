@@ -8,7 +8,7 @@
 
 namespace http {
 
-Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
+Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false)
 {
     body[0] = 0;
 }
