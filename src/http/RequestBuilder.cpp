@@ -27,13 +27,6 @@ RequestBuilder::BodyBuilder::BodyBuilder()
     : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
 
-// void RequestBuilder::BodyBuilder::ExpandBuffer(size_t additional_size)
-// {
-//     body->resize(body->size() + additional_size);
-//     remaining_length = additional_size;
-// }
-
-
 void RequestBuilder::PrepareToRecvData(size_t recv_size)
 {
     parser_.PrepareToRecvData(recv_size);
@@ -84,16 +77,6 @@ void RequestBuilder::Build(size_t bytes_recvd)
     }
     if (build_state_ == BS_END || build_state_ == BS_BAD_REQUEST) {
         builder_status_ = RB_DONE;
-    }
-}
-
-void RequestBuilder::ApplyServerInfo(size_t max_body_size)
-{
-    body_builder_.max_body_size = max_body_size;
-    if (parser_.EndOfBuffer()) {
-        builder_status_ = RB_NEED_DATA_FROM_CLIENT;
-    } else {
-        builder_status_ = RB_BUILDING;
     }
 }
 
@@ -232,6 +215,7 @@ ResponseCode RequestBuilder::ValidateHeadersSyntax_()
     return HTTP_OK;
 }
 
+// todo: do we need to differentiate btw HTTP/1.0 and HTTP/1.1?
 ResponseCode RequestBuilder::InterpretHeaders_()
 {
     LOG(DEBUG) << "InterpretHeaders_";

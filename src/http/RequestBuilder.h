@@ -68,7 +68,6 @@ class RequestBuilder {
     void PrepareToRecvData(size_t recv_size);
     void AdjustBufferSize(size_t bytes_recvd);
     void Build(size_t bytes_recvd);
-    void ApplyServerInfo(size_t max_body_size);
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
     std::vector<char>& buf();
