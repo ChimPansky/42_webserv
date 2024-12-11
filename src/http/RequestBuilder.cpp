@@ -10,6 +10,7 @@
 
 #include <logger.h>
 #include <numeric_utils.h>
+#include <unistd.h>
 #include "SyntaxChecker.h"
 #include "str_utils.h"
 #include "unique_ptr.h"
@@ -272,7 +273,7 @@ RequestBuilder::BuildState RequestBuilder::MatchServer_() {
         if (choose_server_cb_) {
             body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
         } else {
-            body_builder_.max_body_size = 1000;  // TODO change later
+            body_builder_.max_body_size = 1500;  // TODO change later
         }
         if (body_builder_.chunked) {
             builder_status_ = http::RB_BUILD_BODY_CHUNKED;
@@ -326,6 +327,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
         return Error_(HTTP_PAYLOAD_TOO_LARGE);
     }
     if (chunk_size.second == 0) {
+        body_builder_.body_stream.close();
         return BS_END;
     }
     return BS_BODY_CHUNK_CONTENT;

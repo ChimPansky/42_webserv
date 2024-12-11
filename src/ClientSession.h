@@ -18,6 +18,7 @@ class ClientSession {
     class ChooseServerCb : public http::IChooseServerCb {
       public:
         ChooseServerCb(ClientSession& client) : client_(client) {
+            LOG(DEBUG) << "CHOOSE SERVER CB CREATED";
         }
 
         virtual http::ChosenServerParams Call(const http::Request& rq);

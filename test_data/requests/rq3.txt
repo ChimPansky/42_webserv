@@ -1,4 +1,5 @@
 POST /upload HTTP/1.1
+Host: www.example.com
 Transfer-Encoding: chunked
 
 44C

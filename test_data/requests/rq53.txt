@@ -1,6 +1,7 @@
 POST / HTTP/1.1
+Host: www.example.com
 Transfer-Encoding: chunked
 
-A   
+A
 0123456789
 0
