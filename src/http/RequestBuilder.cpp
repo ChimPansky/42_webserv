@@ -98,43 +98,57 @@ std::vector<char>& RequestBuilder::buf()
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 {
     LOG(DEBUG) << "BuildFirstLine_";
-    extraction_result_ = TryToExtractLine_();
-    switch (extraction_result_) {
+
+    switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
-        default: return Error_(HTTP_BAD_REQUEST);
+        default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     // todo for robustness: if very first line of request empty -> ignore and continue
     std::stringstream ss(extraction_);
     std::string raw_method, raw_rq_target, raw_version;
     std::getline(ss, raw_method, ' ');
-    if (ss.eof()) {
-        return Error_(HTTP_BAD_REQUEST);
+    if (ss.eof() || ss.fail()) {
+        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     std::getline(ss, raw_rq_target, ' ');
-    if (ss.eof()) {
-        return Error_(HTTP_BAD_REQUEST);
+    if (ss.eof()  || ss.fail()) {
+        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     std::getline(ss, raw_version);
-    if (!ss.eof()) {
-        return Error_(HTTP_BAD_REQUEST);
+    if (!ss.eof() || ss.fail()) {
+        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    ResponseCode rc = ValidateFirstLine_(raw_method, raw_rq_target, raw_version);
+    ResponseCode rc = TrySetMethod_(raw_method);
     if (rc != http::HTTP_OK) {
-        return Error_(rc);
+        return SetStatusAndExitBuilder_(rc);
+    }
+    rc = TrySetRqTarget_(raw_rq_target);
+    if (rc != http::HTTP_OK) {
+        return SetStatusAndExitBuilder_(rc);
+    }
+    rc = TrySetVersion_(raw_version);
+    if (rc != http::HTTP_OK) {
+        return SetStatusAndExitBuilder_(rc);
     }
     return BS_HEADER_FIELDS;
 }
 
-ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version) {
-    if (!SyntaxChecker::IsValidMethod(raw_method)) {
+ResponseCode RequestBuilder::TrySetMethod_(const std::string& raw_method)
+{
+    if (!SyntaxChecker::IsValidMethodName(raw_method)) {
         return HTTP_BAD_REQUEST;
     };
-    std::pair<bool, Method> converted_method = StrToHttpMethod(raw_method);
+    std::pair<bool, Method> converted_method = HttpMethodFromStr(raw_method);
     if (!converted_method.first) {
         return HTTP_NOT_IMPLEMENTED;
     }
     rq_.method = converted_method.second;
+    return HTTP_OK;
+}
+
+ResponseCode RequestBuilder::TrySetRqTarget_(const std::string& raw_rq_target)
+{
     rq_.rqTarget = raw_rq_target;
     if (rq_.rqTarget.validity_state() & RqTarget::RQ_TARGET_TOO_LONG) {
         return HTTP_URI_TOO_LONG;
@@ -142,12 +156,17 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
     if (!rq_.rqTarget.Good()) {
         return HTTP_BAD_REQUEST;
     }
-    if (!SyntaxChecker::IsValidVersion(raw_version)) {
+    return HTTP_OK;
+}
+
+ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
+{
+    if (!SyntaxChecker::IsValidVersionName(raw_version)) {
         return HTTP_BAD_REQUEST;
     };
-    std::pair<bool, Version> converted_version = StrToHttpVersion(raw_version);
+    std::pair<bool, Version> converted_version = HttpVersionFromStr(raw_version);
     if (!converted_version.first) {
-        return HTTP_HTTP_VERSION_NOT_SUPPORTED;
+        return HTTP_BAD_REQUEST;
     }
     rq_.version = converted_version.second;
     return HTTP_OK;
@@ -161,39 +180,39 @@ ResponseCode RequestBuilder::ValidateFirstLine_(std::string& raw_method, std::st
 // Example-Field: Foo, Bar
 // Example-Field: Baz
 // contains two field lines, both with the field name "Example-Field". The first field line has a field line value of "Foo, Bar", while the second field line value is "Baz". The field value for "Example-Field" is the list "Foo, Bar, Baz".
+
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
-    // todo: store last header_key and if it's the same as the current one, append to the value
     LOG(DEBUG) << "BuildHeaderField_";
-    extraction_result_ = TryToExtractLine_();
-    switch (extraction_result_) {
+    switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
-        default: return Error_(HTTP_BAD_REQUEST);
+        default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     if (extraction_.empty()) {  // empty line -> end of headers
         ResponseCode rc = ValidateHeadersSyntax_();
         if (rc != http::HTTP_OK) {
-            return Error_(rc);
+            return SetStatusAndExitBuilder_(rc);
         }
         rc = InterpretHeaders_();
         if (rc != http::HTTP_OK) {
-            return Error_(rc);
+            return SetStatusAndExitBuilder_(rc);
         }
         return BS_AFTER_HEADERS;
     }
     std::stringstream ss(extraction_);
     std::string header_key, header_val;
     std::getline(ss, header_key, ':');
+    utils::EatSpacesAndHTabs(ss);
     if (ss.eof()) {
-        return Error_(HTTP_BAD_REQUEST);
+        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    ss >> header_val;
-    ss >> std::ws;
+    ss >> std::noskipws >> header_val;
+    utils::EatSpacesAndHTabs(ss);
     if (!ss.eof()) {
-        return Error_(HTTP_BAD_REQUEST);
+        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     if (!InsertHeaderField_(header_key, header_val)) {
-        return Error_(HTTP_BAD_REQUEST);
+        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     return BS_HEADER_FIELDS;
 }
@@ -203,10 +222,10 @@ ResponseCode RequestBuilder::ValidateHeadersSyntax_()
     LOG(DEBUG) << "ValidateHeadersSyntax_";
     for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
          it != rq_.headers.end(); ++it) {
-        if (!SyntaxChecker::IsValidHeaderKey(it->first)) {
+        if (!SyntaxChecker::IsValidHeaderKeyName(it->first)) {
             return HTTP_BAD_REQUEST;
         }
-        if (!SyntaxChecker::IsValidHeaderValue(it->second)) {
+        if (!SyntaxChecker::IsValidHeaderValueName(it->second)) {
             return HTTP_BAD_REQUEST;
         }
     }
@@ -250,13 +269,13 @@ RequestBuilder::BuildState RequestBuilder::MatchServer_() {
     if (rq_.has_body) {
         if (!std::tmpnam(rq_.body)) {
             LOG(ERROR) << "Failed to create temporary file.";
-            return Error_(HTTP_INTERNAL_SERVER_ERROR);
+            return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
         }
         // Create and use the file
         body_builder_.body_stream.open(rq_.body);
         if (!body_builder_.body_stream.is_open()) {
             LOG(ERROR) << "Failed to open temporary file.";
-            return Error_(HTTP_INTERNAL_SERVER_ERROR);
+            return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
         }
         if (choose_server_cb_) {
             body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
@@ -278,7 +297,7 @@ RequestBuilder::BuildState RequestBuilder::MatchServer_() {
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
     if (body_builder_.remaining_length > body_builder_.max_body_size) {
-        return Error_(HTTP_PAYLOAD_TOO_LARGE);
+        return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
     }
     size_t copy_size = std::min(body_builder_.remaining_length, parser_.RemainingLength());
     char *begin = parser_.buf().data() + body_builder_.body_idx;
@@ -298,21 +317,21 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 {
     LOG(DEBUG) << "BuildBodyChunkSize_";
-    extraction_result_ = TryToExtractLine_();
-    switch (extraction_result_) {
+
+    switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
-        default: return Error_(HTTP_BAD_REQUEST);
+        default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     std::pair<bool, size_t> chunk_size =
         utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
     if (!chunk_size.first) {
-        return Error_(HTTP_BAD_REQUEST);
+        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     body_builder_.body_idx += chunk_size.second;
     body_builder_.remaining_length = chunk_size.second;
     if (body_builder_.body_idx > body_builder_.max_body_size) {
-        return Error_(HTTP_PAYLOAD_TOO_LARGE);
+        return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
     }
     if (chunk_size.second == 0) {
         body_builder_.body_stream.close();
@@ -324,10 +343,9 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
 {
     LOG(DEBUG) << "BuildBodyChunkContent_";
-    extraction_result_ = TryToExtractBodyContent_();
-    switch (extraction_result_) {
+    switch (TryToExtractBodyContent_()) {
         case EXTRACTION_SUCCESS: break;
-        case EXTRACTION_TOO_LONG: return Error_(HTTP_BAD_REQUEST);
+        case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
         default: return BS_BODY_CHUNK_CONTENT;
     }
     std::copy(extraction_.begin(), extraction_.end(), std::ostream_iterator<char>(body_builder_.body_stream));
@@ -381,7 +399,7 @@ bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
     return true;
 }
 
-RequestBuilder::BuildState RequestBuilder::Error_(ResponseCode status) {
+RequestBuilder::BuildState RequestBuilder::SetStatusAndExitBuilder_(ResponseCode status) {
     rq_.status = status;
     return BS_BAD_REQUEST;
 }

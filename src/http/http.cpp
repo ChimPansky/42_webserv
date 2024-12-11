@@ -24,7 +24,7 @@ std::pair<bool/*found*/, std::string/*method*/> HttpMethodToStr(Method method) {
     }
 }
 
-std::pair<bool/*found*/, http::Method> StrToHttpMethod(const std::string& raw_method) {
+std::pair<bool/*found*/, http::Method> HttpMethodFromStr(const std::string& raw_method) {
     if (raw_method == "GET") {
         return std::make_pair(true, HTTP_GET);
     } else if (raw_method == "POST") {
@@ -36,7 +36,7 @@ std::pair<bool/*found*/, http::Method> StrToHttpMethod(const std::string& raw_me
     }
 }
 
-std::pair<bool/*found*/, http::Version> StrToHttpVersion(const std::string& raw_version) {
+std::pair<bool/*found*/, http::Version> HttpVersionFromStr(const std::string& raw_version) {
     if (raw_version == "HTTP/0.9") {
         return std::make_pair(true, HTTP_0_9);
     } else if (raw_version == "HTTP/1.0") {
@@ -48,7 +48,7 @@ std::pair<bool/*found*/, http::Version> StrToHttpVersion(const std::string& raw_
     } else if (raw_version == "HTTP/3") {
         return std::make_pair(true, HTTP_3);
     } else {
-        LOG(INFO) << "StrToHttpVersion: DID NOT MATCH ANY VERSION";
+        LOG(INFO) << "HttpVersionFromStr: DID NOT MATCH ANY VERSION";
         return std::make_pair(false, HTTP_NO_VERSION);
     }
 }

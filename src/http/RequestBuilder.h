@@ -84,7 +84,9 @@ class RequestBuilder {
     utils::unique_ptr<IChooseServerCb> choose_server_cb_;
 
     BuildState BuildFirstLine_();
-    http::ResponseCode ValidateFirstLine_(std::string& raw_method, std::string& raw_rq_target, std::string& raw_version);
+    http::ResponseCode TrySetMethod_(const std::string& raw_method);
+    http::ResponseCode TrySetRqTarget_(const std::string& raw_rq_target);
+    http::ResponseCode TrySetVersion_(const std::string& raw_version);
     BuildState BuildHeaderField_();
     http::ResponseCode ValidateHeadersSyntax_();
     http::ResponseCode InterpretHeaders_();
@@ -109,7 +111,7 @@ class RequestBuilder {
     ExtractionResult TryToExtractLine_();
     ExtractionResult TryToExtractBodyContent_();
     bool IsParsingState_(BuildState state) const;
-    BuildState Error_(ResponseCode status);
+    BuildState SetStatusAndExitBuilder_(ResponseCode status);
 };
 
 }  // namespace http
