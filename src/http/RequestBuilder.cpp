@@ -256,6 +256,9 @@ ResponseCode RequestBuilder::InterpretHeaders_()
     if (content_length.first) {
         std::pair<bool, size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(content_length.second);
+        if (!content_length_num.first) {
+            return HTTP_BAD_REQUEST;
+        }
         body_builder_.remaining_length = content_length_num.second;
         rq_.has_body = true;
     }

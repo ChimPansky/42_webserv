@@ -351,6 +351,17 @@ TEST(BadHeaders, 31_double_host) {
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
+TEST(BadHeaders, 32_negative__content_length) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq32.txt", 30) != 0) {
+        FAIL();
+    }
+    EXPECT_EQ(http::HTTP_POST, builder.rq().method);
+    EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
+    EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
+    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+}
+
 
 //TODO: Tests 41+ check for invalid body content
 
