@@ -53,7 +53,8 @@ bool ClientSession::connection_closed() const
 // RECV REQUEST
 void ClientSession::ProcessNewData(size_t bytes_recvd)
 {
-    rq_builder_.Build(bytes_recvd);
+    (void)bytes_recvd;
+    rq_builder_.Build();
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
                    << ((rq_builder_.rq().status == http::HTTP_OK) ? "GOOD)" : "BAD)")

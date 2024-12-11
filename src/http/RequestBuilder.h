@@ -67,7 +67,7 @@ class RequestBuilder {
     RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb = utils::unique_ptr<IChooseServerCb>(NULL));
     void PrepareToRecvData(size_t recv_size);
     void AdjustBufferSize(size_t bytes_recvd);
-    void Build(size_t bytes_recvd);
+    void Build();
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
     std::vector<char>& buf();
@@ -110,7 +110,6 @@ class RequestBuilder {
     void NullTerminatorCheck_(char c);
     ExtractionResult TryToExtractLine_();
     ExtractionResult TryToExtractBodyContent_();
-    bool IsParsingState_(BuildState state) const;
     BuildState SetStatusAndExitBuilder_(ResponseCode status);
 };
 

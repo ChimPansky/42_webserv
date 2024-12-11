@@ -42,19 +42,18 @@ bool RequestBuilder::CanBuild_()
     if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
         return false;
     }
-    if (IsParsingState_(build_state_) && parser_.EndOfBuffer()) {
+    if (parser_.EndOfBuffer()) {
         builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
         return false;
     }
     return true;
 }
 
-// TODO: rm bytes_recvd
-void RequestBuilder::Build(size_t bytes_recvd)
+void RequestBuilder::Build()
 {
     LOG(DEBUG) << "RequestBuilder::Build";
     // client session will be killed earlier, so dead code, rm
-    if (parser_.EndOfBuffer() && bytes_recvd == 0) {
+    if (parser_.EndOfBuffer()) {
         rq_.status = HTTP_BAD_REQUEST;
         builder_status_ = RB_DONE;
         return;
@@ -384,11 +383,6 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_() {
         parser_.Advance();
     }
     return EXTRACTION_CRLF_NOT_FOUND;
-}
-
-bool RequestBuilder::IsParsingState_(BuildState state) const
-{
-    return (state != BS_AFTER_HEADERS);
 }
 
 bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {

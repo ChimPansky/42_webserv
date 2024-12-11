@@ -24,8 +24,8 @@ ssize_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz) {
 }
 
 // Client Context
-void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd) {
-    builder.Build(bytes_recvd);
+void ProcessNewData(http::RequestBuilder& builder) {
+    builder.Build();
 }
 
 // Client Callback context
@@ -38,7 +38,7 @@ bool Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz) {
         return false;
     }
     builder.AdjustBufferSize(bytes_recvd);
-    ProcessNewData(builder, bytes_recvd);
+    ProcessNewData(builder);
     return true;
 }
 
