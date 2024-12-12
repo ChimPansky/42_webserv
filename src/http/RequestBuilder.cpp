@@ -19,7 +19,7 @@
 namespace http {
 
 RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb)
-    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb)
+    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb), header_count_(0)
 {}
 
 
@@ -102,6 +102,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
+        case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_URI_TOO_LONG);
         default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     // todo for robustness: if very first line of request empty -> ignore and continue
@@ -394,9 +395,8 @@ bool RequestBuilder::IsParsingState_(BuildState state) const
 }
 
 ResponseCode RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
-    static int header_count = 0;
-    header_count++;
-    if (header_count > RQ_MAX_HEADER_COUNT) {
+    header_count_++;
+    if (header_count_ > RQ_MAX_HEADER_COUNT) {
         return HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
     }
     std::string key_lower = utils::ToLowerCase(key);

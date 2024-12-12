@@ -77,11 +77,10 @@ class RequestBuilder {
     RqBuilderStatus builder_status_;
     RequestParser parser_;
     std::string extraction_;
-    ExtractionResult extraction_result_;
     BuildState build_state_;
-    std::string header_key_;
     BodyBuilder body_builder_;
     utils::unique_ptr<IChooseServerCb> choose_server_cb_;
+    int header_count_;
 
     BuildState BuildFirstLine_();
     http::ResponseCode TrySetMethod_(const std::string& raw_method);
