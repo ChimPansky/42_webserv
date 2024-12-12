@@ -2,9 +2,12 @@
 #include <gtest/gtest.h>
 #include <RequestBuilder.h>
 #include <fstream>
+#include <iostream>
+#include "Request.h"
 #include "ResponseCodes.h"
 #include "http.h"
 #include <logger.h>
+#include "file_utils.h"
 
 #define BODY_14 "Hello, World!!"
 
@@ -12,26 +15,17 @@
 
 #define BODY_1500 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris non enim maximus, efficitur dui sed, sagittis massa. Ut id magna justo. Pellentesque in rhoncus risus. Proin pulvinar pulvinar viverra. Etiam nisl nibh, condimentum at gravida non, pulvinar in nulla. Nullam in sapien odio. Phasellus fringilla ipsum vel purus fermentum rhoncus. Nulla vitae nibh elit. Vestibulum facilisis orci ac tincidunt laoreet. Nullam quis gravida justo, nec faucibus mi. Pellentesque vitae suscipit neque. Sed accumsan, risus at auctor mollis, diam elit efficitur ante, ut venenatis magna erat at metus. Aliquam id turpis maximus, viverra justo ac, tempus nibh. Duis metus ligula, luctus nec lacus quis, aliquam egestas eros. Sed gravida cursus risus, ut facilisis urna condimentum eu. Suspendisse eleifend eleifend ligula eget dignissim. Maecenas ipsum turpis, convallis a purus eu, efficitur fringilla dolor. Ut commodo enim vel leo gravida, vitae efficitur ipsum finibus. Praesent nibh sem, euismod in sagittis iaculis, ultrices a enim. Vestibulum nec orci leo. Vestibulum ac turpis ipsum. Phasellus vel est sed ipsum ullamcorper dignissim placerat ornare est. Nullam dignissim finibus enim et faucibus. In hac habitasse platea dictumst. Praesent pharetra dolor in imperdiet sollicitudin. Aenean consequat sapien eget commodo suscipit. Donec convallis est est, sit amet bibendum purus egestas sed. Nulla vel turpis vehicula, lobortis dolor id, blandit dolor. Sed dignissim eleifend justo, a accumsan purus tell."
 
-#define CLIENT_MAX_BODY_SIZE 1500
+// #define CLIENT_MAX_BODY_SIZE 1500
+// max body size is set to 1500 in RequestBuilder::MatchServer_()
 
 ssize_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz) {
-    // size_t old_buf_sz = buf.size();
-    // buf.resize(old_buf_sz + read_sz);
     file.read(buf.data() + buf.size() - read_sz, read_sz);
-    // size_t bytes_recvd = file.gcount();
-    // if (bytes_recvd >= 0 && static_cast<size_t>(bytes_recvd) < read_sz) {
-    //     buf.resize(old_buf_sz + bytes_recvd);
-    // }
     return file.gcount();
 }
 
 // Client Context
 void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd) {
     builder.Build(bytes_recvd);
-    if (builder.builder_status() == http::RB_NEED_TO_MATCH_SERVER) {
-        builder.ApplyServerInfo(CLIENT_MAX_BODY_SIZE);
-        builder.Build(bytes_recvd);
-    }
 }
 
 // Client Callback context
@@ -62,19 +56,31 @@ int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read
     return 0;
 }
 
+std::string GetBodyContent_(const http::Request& rq) {
+    std::pair<bool, std::string> body_str;
+    if (!rq.has_body) {
+        return "";
+    }
+    body_str = utils::ReadFileToString(rq.body);
+    if (!body_str.first) {
+        ADD_FAILURE() << "Error reading body content from file";
+    }
+    return body_str.second;
+}
+
 TEST(ValidWithBody, 1_Bodylen_14) {
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "rq1.txt", 50) != 0) {
         FAIL();
     }
+
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
+    EXPECT_TRUE(builder.rq().has_body);
     EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length").second);
-    const char* str = BODY_14;
-    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
-    EXPECT_EQ((unsigned long)14, builder.rq().body.size());
+    EXPECT_EQ(std::string(BODY_14), GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -87,9 +93,7 @@ TEST(ValidWithBody, 2_One_Chunk_1100) {
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
-    EXPECT_EQ((unsigned long)1100, builder.rq().body.size());
-    const char* str = BODY_1100;
-    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    EXPECT_EQ(std::string(BODY_1100), GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -102,9 +106,7 @@ TEST(ValidWithBody, 3_One_Chunk_1100) {
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
-    EXPECT_EQ((unsigned long)1100, builder.rq().body.size());
-    const char* str = BODY_1100;
-    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    EXPECT_EQ(std::string(BODY_1100), GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -118,9 +120,7 @@ TEST(ValidWithBody, 4_Bodylen_1) {
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length").second);
-    EXPECT_EQ((unsigned long)1, builder.rq().body.size());
-    const char *str = "a";
-    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    EXPECT_EQ("a", GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -133,8 +133,7 @@ TEST(ValidWithBody, 5_Chunked_1) {
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
     EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
-    const char *str = "L";
-    EXPECT_EQ(std::vector<char>(str, str + strlen(str)), builder.rq().body);
+    EXPECT_EQ("L", GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -149,7 +148,7 @@ TEST(ValidWithoutBody, 6_SimpleGet) {
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("", builder.rq().GetHeaderVal("content-length").second);
-    EXPECT_TRUE(builder.rq().body.empty());
+    EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -163,7 +162,7 @@ TEST(ValidWithoutBody, 7_GetWithQuery) {
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.search.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("", builder.rq().GetHeaderVal("content-length").second);
-    EXPECT_TRUE(builder.rq().body.empty());
+    EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -178,10 +177,11 @@ TEST(ValidWithoutBody, 8_GetWithHeaders) {
     EXPECT_EQ("shop.example.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("application/json", builder.rq().GetHeaderVal("accept").second);
     EXPECT_EQ("CustomClient/1.0", builder.rq().GetHeaderVal("user-agent").second);
-    EXPECT_TRUE(builder.rq().body.empty());
+    EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
+// POST without content-length or chunked: BAD_REQUEST?
 TEST(InValidWithoutBody, 9_PostWithHeaders) {
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "rq9.txt", 80) != 0) {
@@ -193,8 +193,8 @@ TEST(InValidWithoutBody, 9_PostWithHeaders) {
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("application/x-www-form-urlencoded", builder.rq().GetHeaderVal("content-type").second);
     EXPECT_EQ("http://www.example.com", builder.rq().GetHeaderVal("referer").second);
-    EXPECT_TRUE(builder.rq().body.empty());
-    EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+    EXPECT_FALSE(builder.rq().has_body);
+    EXPECT_EQ(http::HTTP_LENGTH_REQUIRED, builder.rq().status);
 }
 
 TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
@@ -207,7 +207,7 @@ TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
     EXPECT_EQ("api.items.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("Bearer_some_token", builder.rq().GetHeaderVal("authorization").second);
-    EXPECT_TRUE(builder.rq().body.empty());
+    EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 

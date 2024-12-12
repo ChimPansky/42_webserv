@@ -1,4 +1,5 @@
 POST /upload HTTP/1.0
+Host: www.example.com
 Transfer-Encoding: chunked
 
 1

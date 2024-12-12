@@ -14,13 +14,15 @@ namespace http {
 class RequestBuilder;
 struct Request {
     Request();
+    ~Request();
 
     ResponseCode status;
     Method method;
     http::RqTarget rqTarget;
     Version version;
     std::map<std::string, std::string> headers;
-    std::vector<char> body;
+    bool has_body;
+    char body[TMP_MAX];
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;

@@ -24,6 +24,7 @@ class RequestParser {
     bool EndOfBuffer() const;
     bool ExceededLineLimit() const;
     size_t ElementLen() const;
+    size_t RemainingLength() const;
     std::string ExtractElement();
     std::string ExtractLine();
 

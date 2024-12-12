@@ -4,8 +4,10 @@
 #include "Request.h"
 #include "RequestParser.h"
 #include "ResponseCodes.h"
+#include <unique_ptr.h>
 
 #include <cstddef>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -14,17 +16,26 @@ namespace http {
 enum RqBuilderStatus {
     RB_BUILDING,
     RB_NEED_DATA_FROM_CLIENT,
-    RB_NEED_TO_MATCH_SERVER,
     RB_DONE
 };
+
+struct ChosenServerParams {
+    int max_body_size;
+};
+
+class IChooseServerCb {
+  public:
+    virtual ChosenServerParams Call(const http::Request& rq) = 0;
+    virtual ~IChooseServerCb() {};
+};
+
 
 class RequestBuilder {
   private:
     struct BodyBuilder {
-        BodyBuilder(std::vector<char>* rq_body);
+        BodyBuilder();
 
-        void ExpandBuffer(size_t additional_size);
-        std::vector<char>* body;
+        std::ofstream body_stream;
         bool chunked;
         size_t body_idx;
         size_t remaining_length;
@@ -35,8 +46,9 @@ class RequestBuilder {
     enum BuildState {
         BS_RQ_LINE,
         BS_HEADER_FIELDS,
-        BS_AFTER_HEADERS,
-        BS_CHECK_FOR_BODY,
+        BS_MATCH_SERVER,
+        BS_CHECK_HEADERS,
+        BS_PREPARE_TO_READ_BODY,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,
         BS_BODY_CHUNK_CONTENT,
@@ -52,11 +64,10 @@ class RequestBuilder {
     };
 
   public:
-    RequestBuilder();
+    RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb = utils::unique_ptr<IChooseServerCb>(NULL));
     void PrepareToRecvData(size_t recv_size);
     void AdjustBufferSize(size_t bytes_recvd);
     void Build(size_t bytes_recvd);
-    void ApplyServerInfo(size_t max_body_size);
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
     std::vector<char>& buf();
@@ -67,21 +78,20 @@ class RequestBuilder {
     RequestParser parser_;
     std::string extraction_;
     BuildState build_state_;
-    std::string header_key_;
     BodyBuilder body_builder_;
+    utils::unique_ptr<IChooseServerCb> choose_server_cb_;
 
     BuildState BuildFirstLine_();
     http::ResponseCode TrySetMethod_(const std::string& raw_method);
     http::ResponseCode TrySetRqTarget_(const std::string& raw_rq_target);
     http::ResponseCode TrySetVersion_(const std::string& raw_version);
     BuildState BuildHeaderField_();
-    http::ResponseCode ValidateHeaders_();
-
+    http::ResponseCode ValidateHeadersSyntax_();
+    http::ResponseCode InterpretHeaders_();
     bool InsertHeaderField_(std::string& key, std::string& value);
-
-    BuildState BuildHeaderValue_();
-    BuildState NeedToMatchServer_();
-    BuildState CheckForBody_();
+    BuildState MatchServer_();
+    BuildState CheckHeaders_();
+    BuildState PrepareBody_();
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();

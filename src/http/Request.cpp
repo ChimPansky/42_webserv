@@ -8,8 +8,14 @@
 
 namespace http {
 
-Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
+Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false), body("")
 {}
+
+Request::~Request() {
+    if (has_body && body[0] != '\0') {
+        std::remove(body);
+    }
+}
 
 std::pair<bool /*header_key_found*/, std::string /*header_value*/> Request::GetHeaderVal(
     const std::string& key) const
@@ -37,8 +43,8 @@ std::string Request::GetDebugString() const
         ret << "\n\t" << it->first << ": " << it->second;
     }
 
-    ret << "\n\tBody size: " << body.size()
-        << "\n\tBody: " << std::string(body.data(), body.size());
+    ret << "\n\tHas body: " << (has_body ? "Yes" : "No");
+    ret << "\n\tBodypath: " << body;
 
     return ret.str();
 }
