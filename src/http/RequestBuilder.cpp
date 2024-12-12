@@ -22,7 +22,6 @@ RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_
     : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb), header_count_(0), header_section_size_(0)
 {}
 
-
 RequestBuilder::BodyBuilder::BodyBuilder()
     : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
@@ -63,16 +62,14 @@ void RequestBuilder::Build(size_t bytes_recvd)
         switch (build_state_) {
             case BS_RQ_LINE:            build_state_ = BuildFirstLine_(); break;
             case BS_HEADER_FIELDS:       build_state_ = BuildHeaderField_(); break;
-            case BS_AFTER_HEADERS:      build_state_ = MatchServer_(); break;
+            case BS_MATCH_SERVER:      build_state_ = MatchServer_(); break;
+            case BS_CHECK_HEADERS:  build_state_ = CheckHeaders_(); break;
+            case BS_PREPARE_TO_READ_BODY:   build_state_ = PrepareBody_(); break;
             case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
             case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
             case BS_BAD_REQUEST: break;
             case BS_END: break;
-        }
-        if (builder_status_ == RB_NEED_TO_MATCH_SERVER) {
-            LOG(DEBUG) << "NEED_TO_MATCH_SERVER -> break out of Build-Loop";
-            return;
         }
     }
     if (build_state_ == BS_END || build_state_ == BS_BAD_REQUEST) {
@@ -197,15 +194,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     }
     ResponseCode rc;
     if (extraction_.empty()) {  // empty line -> end of headers
-        rc = ValidateHeadersSyntax_();
-        if (rc != http::HTTP_OK) {
-            return SetStatusAndExitBuilder_(rc);
-        }
-        rc = InterpretHeaders_();
-        if (rc != http::HTTP_OK) {
-            return SetStatusAndExitBuilder_(rc);
-        }
-        return BS_AFTER_HEADERS;
+        return BS_MATCH_SERVER;
     }
     std::stringstream ss(extraction_);
     std::string header_key, header_val;
@@ -224,6 +213,32 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
         return SetStatusAndExitBuilder_(rc);
     }
     return BS_HEADER_FIELDS;
+}
+
+RequestBuilder::BuildState RequestBuilder::MatchServer_() {
+    LOG(DEBUG) << "MatchServer_";
+    if (choose_server_cb_) {
+        body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
+    } else {    //tests
+        LOG(DEBUG) << "SETTING MAX_BODY_SIZE TO 1500";
+        body_builder_.max_body_size = 1500;
+    }
+    return BS_CHECK_HEADERS;
+}
+
+RequestBuilder::BuildState RequestBuilder::CheckHeaders_() {
+    ResponseCode rc = ValidateHeadersSyntax_();
+    if (rc != http::HTTP_OK) {
+        return SetStatusAndExitBuilder_(rc);
+    }
+    rc = InterpretHeaders_();
+    if (rc != http::HTTP_OK) {
+        return SetStatusAndExitBuilder_(rc);
+    }
+    if (rq_.has_body) {
+        return BS_PREPARE_TO_READ_BODY;
+    }
+    return BS_END;
 }
 
 ResponseCode RequestBuilder::ValidateHeadersSyntax_()
@@ -261,10 +276,18 @@ ResponseCode RequestBuilder::InterpretHeaders_()
         body_builder_.chunked = true;
     }
     if (content_length.first) {
+        rq_.has_body = true;
         std::pair<bool, size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(content_length.second);
-        body_builder_.remaining_length = content_length_num.second;
-        rq_.has_body = true;
+        LOG(DEBUG) << "InterpretHeaders_() Max_body_size: " << body_builder_.max_body_size;
+        if (content_length_num.first) {
+            if (content_length_num.second > body_builder_.max_body_size) {
+               return HTTP_PAYLOAD_TOO_LARGE;
+            }
+            body_builder_.remaining_length = content_length_num.second;
+        } else {
+            return HTTP_BAD_REQUEST;
+        }
     }
     if (rq_.method == HTTP_POST && !content_length.first && !transfer_encoding.first) {
         return HTTP_LENGTH_REQUIRED;
@@ -273,43 +296,33 @@ ResponseCode RequestBuilder::InterpretHeaders_()
     return HTTP_OK;
 }
 
-RequestBuilder::BuildState RequestBuilder::MatchServer_() {
-    if (rq_.has_body) {
-        if (!std::tmpnam(rq_.body)) {
-            LOG(ERROR) << "Failed to create temporary file.";
-            return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
-        }
-        // Create and use the file
-        body_builder_.body_stream.open(rq_.body);
-        if (!body_builder_.body_stream.is_open()) {
-            LOG(ERROR) << "Failed to open temporary file.";
-            return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
-        }
-        if (choose_server_cb_) {
-            body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
-        } else {
-            body_builder_.max_body_size = 1500;  // TODO change later
-        }
-        if (body_builder_.chunked) {
-            builder_status_ = http::RB_BUILD_BODY_CHUNKED;
-            return BS_BODY_CHUNK_SIZE;
-        } else {
-            builder_status_ = http::RB_BUILD_BODY_REGULAR;
-            return BS_BODY_REGULAR;
-        }
+RequestBuilder::BuildState RequestBuilder::PrepareBody_() {
+    if (!std::tmpnam(rq_.body)) {
+        LOG(ERROR) << "Failed to create temporary file.";
+        return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
     }
-    builder_status_ = http::RB_DONE;
+    // Create and use the file
+    body_builder_.body_stream.open(rq_.body);
+    if (!body_builder_.body_stream.is_open()) {
+        LOG(ERROR) << "Failed to open temporary file.";
+        return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
+    }
+    if (body_builder_.chunked) {
+        return BS_BODY_CHUNK_SIZE;
+    } else {
+        if (body_builder_.remaining_length > body_builder_.max_body_size) {
+            return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
+        }
+        return BS_BODY_REGULAR;
+    }
     return BS_END;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
-    if (body_builder_.remaining_length > body_builder_.max_body_size) {
-        return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
-    }
     size_t copy_size = std::min(body_builder_.remaining_length, parser_.RemainingLength());
-    char *begin = parser_.buf().data() + body_builder_.body_idx;
-    char *end = begin + copy_size;
+    const char *begin = parser_.buf().data() + body_builder_.body_idx;
+    const char *end = begin + copy_size;
     std::copy(begin, end, std::ostream_iterator<char>(body_builder_.body_stream));
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;
@@ -336,14 +349,14 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
     if (!chunk_size.first) {
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
+    if (chunk_size.second == 0) {
+        body_builder_.body_stream.close();
+        return BS_END;
+    }
     body_builder_.body_idx += chunk_size.second;
     body_builder_.remaining_length = chunk_size.second;
     if (body_builder_.body_idx > body_builder_.max_body_size) {
         return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
-    }
-    if (chunk_size.second == 0) {
-        body_builder_.body_stream.close();
-        return BS_END;
     }
     return BS_BODY_CHUNK_CONTENT;
 }
@@ -396,7 +409,7 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_() {
 
 bool RequestBuilder::IsParsingState_(BuildState state) const
 {
-    return (state != BS_AFTER_HEADERS);
+    return (state != BS_MATCH_SERVER && state != BS_CHECK_HEADERS && state != BS_PREPARE_TO_READ_BODY);
 }
 
 ResponseCode RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {

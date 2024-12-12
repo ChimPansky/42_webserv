@@ -9,6 +9,10 @@
 #include "ServerCluster.h"
 
 
+ClientSession::ChooseServerCb::ChooseServerCb(ClientSession& client) : client_(client) {
+    LOG(DEBUG) << "CHOOSE SERVER CB CREATED";
+}
+
 http::ChosenServerParams ClientSession::ChooseServerCb::Call(const http::Request& rq) {
     client_.associated_server_ = ServerCluster::ChooseServer(
         client_.master_socket_fd_,

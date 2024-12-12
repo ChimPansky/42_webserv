@@ -19,19 +19,19 @@ bool IsDirectory(const char *path) {
     return (info.st_mode & S_IFDIR) != 0;
 }
 
-std::pair<bool/*success*/, std::string/*file_content*/> ReadFileToString(const char* filePath) {
+std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char* filePath) {
     if (!filePath[0]) {
-        LOG(ERROR) << "utils::ReadFileToString: Empty file path";
-        return std::make_pair<bool, std::string>(false, "");
+        LOG(ERROR) << "Empty file path";
+        return std::make_pair(false, "");
     }
     std::ifstream file(filePath);
     if (!file.is_open()) {
         LOG(ERROR) << "utils::ReadFileToString: Could not open file: " << filePath;
-        return std::make_pair<bool, std::string>(false, "");
+        return std::make_pair(false, "");
     }
     std::stringstream buffer;
     buffer << file.rdbuf();
-    return std::make_pair<bool, std::string>(true, buffer.str());
+    return std::make_pair(true, buffer.str());
 }
 
 }  // namespace utils

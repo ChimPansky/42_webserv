@@ -4,7 +4,7 @@
 #include "Request.h"
 #include "RequestParser.h"
 #include "ResponseCodes.h"
-#include "unique_ptr.h"
+#include <unique_ptr.h>
 
 #include <cstddef>
 #include <cstdio>
@@ -16,9 +16,6 @@ namespace http {
 enum RqBuilderStatus {
     RB_BUILDING,
     RB_NEED_DATA_FROM_CLIENT,
-    RB_NEED_TO_MATCH_SERVER,
-    RB_BUILD_BODY_REGULAR,
-    RB_BUILD_BODY_CHUNKED,
     RB_DONE
 };
 
@@ -31,6 +28,7 @@ class IChooseServerCb {
     virtual ChosenServerParams Call(const http::Request& rq) = 0;
     virtual ~IChooseServerCb() {};
 };
+
 
 class RequestBuilder {
   private:
@@ -48,7 +46,9 @@ class RequestBuilder {
     enum BuildState {
         BS_RQ_LINE,
         BS_HEADER_FIELDS,
-        BS_AFTER_HEADERS,
+        BS_MATCH_SERVER,
+        BS_CHECK_HEADERS,
+        BS_PREPARE_TO_READ_BODY,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,
         BS_BODY_CHUNK_CONTENT,
@@ -90,17 +90,10 @@ class RequestBuilder {
     BuildState BuildHeaderField_();
     http::ResponseCode ValidateHeadersSyntax_();
     http::ResponseCode InterpretHeaders_();
-
-    http::ResponseCode InsertHeaderField_(std::string& key, std::string& value);
-
-    BuildState BuildMethod_();
-    BuildState BuildRqTarget_();
-    BuildState BuildVersion_();
-    BuildState CheckForNextHeader_();
-    BuildState BuildHeaderKey_();
-    BuildState ParseHeaderKeyValSep_();
-    BuildState BuildHeaderValue_();
+    ResponseCode InsertHeaderField_(std::string& key, std::string& value);
     BuildState MatchServer_();
+    BuildState CheckHeaders_();
+    BuildState PrepareBody_();
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();
