@@ -23,7 +23,7 @@ RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_
 {}
 
 RequestBuilder::BodyBuilder::BodyBuilder()
-    : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
+    : body_type(BB_NO_BODY), body_idx(0), remaining_length(0), max_body_size(0)
 {}
 
 void RequestBuilder::PrepareToRecvData(size_t recv_size)
@@ -273,10 +273,11 @@ ResponseCode RequestBuilder::InterpretHeaders_()
     }
     if (transfer_encoding.first && transfer_encoding.second == "chunked") {
         rq_.has_body = true;
-        body_builder_.chunked = true;
+        body_builder_.body_type = BB_CHUNKED;
     }
     if (content_length.first) {
         rq_.has_body = true;
+        body_builder_.body_type = BB_REGULAR;
         std::pair<bool, size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(content_length.second);
         LOG(DEBUG) << "InterpretHeaders_() Max_body_size: " << body_builder_.max_body_size;
@@ -289,7 +290,7 @@ ResponseCode RequestBuilder::InterpretHeaders_()
             return HTTP_BAD_REQUEST;
         }
     }
-    if (rq_.method == HTTP_POST && !content_length.first && !transfer_encoding.first) {
+    if (rq_.method == HTTP_POST && body_builder_.body_type == BB_NO_BODY) {
         return HTTP_LENGTH_REQUIRED;
     }
     // additional semantic checks...
@@ -307,9 +308,10 @@ RequestBuilder::BuildState RequestBuilder::PrepareBody_() {
         LOG(ERROR) << "Failed to open temporary file.";
         return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
     }
-    if (body_builder_.chunked) {
+    if (body_builder_.body_type == BB_CHUNKED) {
         return BS_BODY_CHUNK_SIZE;
-    } else {
+    }
+    if (body_builder_.body_type == BB_REGULAR) {
         if (body_builder_.remaining_length > body_builder_.max_body_size) {
             return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
         }

@@ -32,11 +32,16 @@ class IChooseServerCb {
 
 class RequestBuilder {
   private:
+    enum BodyType {
+        BB_NO_BODY,
+        BB_CHUNKED,
+        BB_REGULAR
+    };
     struct BodyBuilder {
         BodyBuilder();
 
         std::ofstream body_stream;
-        bool chunked;
+        BodyType body_type;
         size_t body_idx;
         size_t remaining_length;
         size_t max_body_size;
