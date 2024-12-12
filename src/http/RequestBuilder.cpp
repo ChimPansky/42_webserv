@@ -19,7 +19,7 @@
 namespace http {
 
 RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb)
-    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb), header_count_(0)
+    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb), header_count_(0), header_section_size_(0)
 {}
 
 
@@ -105,6 +105,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
         case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_URI_TOO_LONG);
         default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
+    header_section_size_ += extraction_.size();
     // todo for robustness: if very first line of request empty -> ignore and continue
     std::stringstream ss(extraction_);
     std::string raw_method, raw_rq_target, raw_version;
@@ -189,14 +190,20 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
         default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
+    header_section_size_ += extraction_.size();
+    if (header_section_size_ > RQ_HEADER_SECTION_LIMIT) {
+        return SetStatusAndExitBuilder_(HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE);
+    }
     ResponseCode rc;
     if (extraction_.empty()) {  // empty line -> end of headers
         rc = ValidateHeadersSyntax_();
         if (rc != http::HTTP_OK) {
+            LOG(ERROR) << "ValidateHeadersSyntax_ failed";
             return SetStatusAndExitBuilder_(rc);
         }
         rc = InterpretHeaders_();
         if (rc != http::HTTP_OK) {
+            LOG(ERROR) << "InterpretHeaders_ failed";
             return SetStatusAndExitBuilder_(rc);
         }
         return BS_AFTER_HEADERS;
@@ -215,6 +222,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     }
     rc = InsertHeaderField_(header_key, header_val);
     if (rc != http::HTTP_OK) {
+        LOG(ERROR) << "InsertHeaderField_ failed";
         return SetStatusAndExitBuilder_(rc);
     }
     return BS_HEADER_FIELDS;

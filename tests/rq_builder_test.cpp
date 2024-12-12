@@ -425,6 +425,18 @@ TEST(LengthLimits, 61_Header_Too_Long) {
     }
 }
 
+TEST(LengthLimits, 62_Header_Section_Too_Large) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq62.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_HEADER_SECTION_LIMIT <= 32768) {
+        EXPECT_EQ(http::HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE, builder.rq().status);
+    } else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    }
+}
+
 TEST(LengthLimits, 65_Too_Many_Headers) {
     http::RequestBuilder builder = http::RequestBuilder();
     if (BuildRequest(builder, "rq65.txt", 1000) != 0) {
