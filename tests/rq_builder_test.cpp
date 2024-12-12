@@ -433,3 +433,15 @@ TEST(BadMethod, 76_Unsupported_Method) {
     }
     EXPECT_EQ(http::HTTP_NOT_IMPLEMENTED, builder.rq().status);
 }
+
+TEST(TooManyHeaders, 80_Too_Many_Headers) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq80.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_MAX_HEADER_COUNT <= 10) {
+        EXPECT_EQ(http::HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE, builder.rq().status);
+    } else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    }
+}

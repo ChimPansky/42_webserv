@@ -188,8 +188,9 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
         default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
+    ResponseCode rc;
     if (extraction_.empty()) {  // empty line -> end of headers
-        ResponseCode rc = ValidateHeadersSyntax_();
+        rc = ValidateHeadersSyntax_();
         if (rc != http::HTTP_OK) {
             return SetStatusAndExitBuilder_(rc);
         }
@@ -211,8 +212,9 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     if (!ss.eof()) {
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    if (!InsertHeaderField_(header_key, header_val)) {
-        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+    rc = InsertHeaderField_(header_key, header_val);
+    if (rc != http::HTTP_OK) {
+        return SetStatusAndExitBuilder_(rc);
     }
     return BS_HEADER_FIELDS;
 }
@@ -391,12 +393,17 @@ bool RequestBuilder::IsParsingState_(BuildState state) const
     return (state != BS_AFTER_HEADERS);
 }
 
-bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
+ResponseCode RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
+    static int header_count = 0;
+    header_count++;
+    if (header_count > RQ_MAX_HEADER_COUNT) {
+        return HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+    }
     std::string key_lower = utils::ToLowerCase(key);
     // todo: check for host-duplicates
     // todo: handle list values
     rq_.headers[key_lower] = value;
-    return true;
+    return HTTP_OK;
 }
 
 RequestBuilder::BuildState RequestBuilder::SetStatusAndExitBuilder_(ResponseCode status) {

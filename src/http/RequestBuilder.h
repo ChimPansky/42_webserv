@@ -91,7 +91,7 @@ class RequestBuilder {
     http::ResponseCode ValidateHeadersSyntax_();
     http::ResponseCode InterpretHeaders_();
 
-    bool InsertHeaderField_(std::string& key, std::string& value);
+    http::ResponseCode InsertHeaderField_(std::string& key, std::string& value);
 
     BuildState BuildMethod_();
     BuildState BuildRqTarget_();
