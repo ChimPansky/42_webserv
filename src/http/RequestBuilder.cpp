@@ -26,6 +26,13 @@ RequestBuilder::BodyBuilder::BodyBuilder()
     : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
 
+void RequestBuilder::BodyBuilder::ExpandBuffer(size_t additional_size)
+{
+    body->resize(body->size() + additional_size);
+    remaining_length = additional_size;
+}
+
+
 void RequestBuilder::PrepareToRecvData(size_t recv_size)
 {
     parser_.PrepareToRecvData(recv_size);
@@ -252,10 +259,18 @@ ResponseCode RequestBuilder::InterpretHeaders_()
         body_builder_.chunked = true;
     }
     if (content_length.first) {
+        rq_.has_body = true;
         std::pair<bool, size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(content_length.second);
-        body_builder_.remaining_length = content_length_num.second;
-        rq_.has_body = true;
+        if (content_length_num.first) {
+            if (content_length_num.second > body_builder_.max_body_size) {
+               return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
+            }
+            body_builder_.remaining_length = content_length_num.second;
+            return BS_BODY_REGULAR;
+        } else {
+            return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+        }
     }
     if (rq_.method == HTTP_POST && !content_length.first && !transfer_encoding.first) {
         return HTTP_LENGTH_REQUIRED;
@@ -327,14 +342,14 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
     if (!chunk_size.first) {
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
+    if (chunk_size.second == 0) {
+        body_builder_.body_stream.close();
+        return BS_END;
+    }
     body_builder_.body_idx += chunk_size.second;
     body_builder_.remaining_length = chunk_size.second;
     if (body_builder_.body_idx > body_builder_.max_body_size) {
         return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
-    }
-    if (chunk_size.second == 0) {
-        body_builder_.body_stream.close();
-        return BS_END;
     }
     return BS_BODY_CHUNK_CONTENT;
 }
@@ -392,7 +407,6 @@ bool RequestBuilder::IsParsingState_(BuildState state) const
 
 bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
     std::string key_lower = utils::ToLowerCase(key);
-    // todo: check for host-duplicates
     // todo: handle list values
     rq_.headers[key_lower] = value;
     return true;
