@@ -22,7 +22,6 @@ RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_
     : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb)
 {}
 
-
 RequestBuilder::BodyBuilder::BodyBuilder()
     : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
@@ -279,14 +278,17 @@ RequestBuilder::BuildState RequestBuilder::MatchServer_() {
         }
         if (choose_server_cb_) {
             body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
-        } else {
-            body_builder_.max_body_size = 1500;  // TODO change later
+        } else {    //tests
+            body_builder_.max_body_size = 1500;
         }
         if (body_builder_.chunked) {
             builder_status_ = http::RB_BUILD_BODY_CHUNKED;
             return BS_BODY_CHUNK_SIZE;
         } else {
             builder_status_ = http::RB_BUILD_BODY_REGULAR;
+            if (body_builder_.remaining_length > body_builder_.max_body_size) {
+                return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
+            }
             return BS_BODY_REGULAR;
         }
     }
@@ -296,12 +298,9 @@ RequestBuilder::BuildState RequestBuilder::MatchServer_() {
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
-    if (body_builder_.remaining_length > body_builder_.max_body_size) {
-        return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
-    }
     size_t copy_size = std::min(body_builder_.remaining_length, parser_.RemainingLength());
-    char *begin = parser_.buf().data() + body_builder_.body_idx;
-    char *end = begin + copy_size;
+    const char *begin = parser_.buf().data() + body_builder_.body_idx;
+    const char *end = begin + copy_size;
     std::copy(begin, end, std::ostream_iterator<char>(body_builder_.body_stream));
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;

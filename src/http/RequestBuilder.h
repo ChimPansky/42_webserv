@@ -4,7 +4,7 @@
 #include "Request.h"
 #include "RequestParser.h"
 #include "ResponseCodes.h"
-#include "unique_ptr.h"
+#include <unique_ptr.h>
 
 #include <cstddef>
 #include <cstdio>
@@ -31,6 +31,7 @@ class IChooseServerCb {
     virtual ChosenServerParams Call(const http::Request& rq) = 0;
     virtual ~IChooseServerCb() {};
 };
+
 
 class RequestBuilder {
   private:
@@ -77,7 +78,6 @@ class RequestBuilder {
     RqBuilderStatus builder_status_;
     RequestParser parser_;
     std::string extraction_;
-    ExtractionResult extraction_result_;
     BuildState build_state_;
     std::string header_key_;
     BodyBuilder body_builder_;

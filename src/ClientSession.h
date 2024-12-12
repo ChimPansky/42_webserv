@@ -1,5 +1,5 @@
-#ifndef WS_CLIENT_H
-#define WS_CLIENT_H
+#ifndef WS_CLIENT_SESSION_H
+#define WS_CLIENT_SESSION_H
 
 #include <ClientSocket.h>
 #include <response_processors/AResponseProcessor.h>
@@ -12,14 +12,12 @@
 #include "LocationConfig.h"
 #include "ServerConfig.h"
 
-#define CLIENT_RD_CALLBACK_RD_SZ 10
+#define CLIENT_RD_CALLBACK_RD_SZ 512
 
 class ClientSession {
     class ChooseServerCb : public http::IChooseServerCb {
       public:
-        ChooseServerCb(ClientSession& client) : client_(client) {
-            LOG(DEBUG) << "CHOOSE SERVER CB CREATED";
-        }
+        ChooseServerCb(ClientSession& client);
 
         virtual http::ChosenServerParams Call(const http::Request& rq);
 
@@ -89,4 +87,4 @@ class ClientSession {
 
 
 
-#endif  // WS_CLIENT_H
+#endif  // WS_CLIENT_SESSION_H

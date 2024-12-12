@@ -8,13 +8,11 @@
 
 namespace http {
 
-Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false)
-{
-    body[0] = 0;
-}
+Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false), body("")
+{}
 
 Request::~Request() {
-    if (has_body && body[0] != 0) {
+    if (has_body && body[0] != '\0') {
         std::remove(body);
     }
 }
