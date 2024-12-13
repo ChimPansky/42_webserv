@@ -116,7 +116,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             LOG(DEBUG) << "RQ_GOOD -> Process CGI";
             // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
             // cgi_paths, cgi_extensions, root_dir));
-        case STATIC_FILE:
+        case STATIC_FILE: // todo: change this to STATIC_PATH and then check if directory or file and call respective processor
             std::string new_path = utils::UpdatePath(
                 chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
             LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << new_path;
