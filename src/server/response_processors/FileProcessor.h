@@ -6,6 +6,7 @@
 #include <fstream>
 
 #include "AResponseProcessor.h"
+#include "DirectoryProcessor.h"
 
 class FileProcessor : public AResponseProcessor {
   private:
@@ -18,6 +19,7 @@ class FileProcessor : public AResponseProcessor {
 
   private:
     utils::unique_ptr<GeneratedErrorResponseProcessor> err_response_processor_;
+    utils::unique_ptr<DirectoryProcessor> directory_processor_;
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_FILE_PROCESSOR_H

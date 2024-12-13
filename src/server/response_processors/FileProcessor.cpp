@@ -23,6 +23,11 @@ FileProcessor::FileProcessor(const std::string& file_path,
     // TODO if directory delegate to DirectoryProcessor or 404
     if (utils::IsDirectory(file_path.c_str())) {
         LOG(DEBUG) << "Requested file is a directory: " << file_path;
+        if (true /*autoindex for location is on*/) {
+            directory_processor_ = utils::unique_ptr<DirectoryProcessor>(
+                new DirectoryProcessor(file_path, response_rdy_cb_));
+            return;
+        }
         err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
             new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
         return;
