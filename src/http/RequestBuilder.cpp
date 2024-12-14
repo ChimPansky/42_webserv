@@ -192,7 +192,6 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     if (header_section_size_ > RQ_HEADER_SECTION_LIMIT) {
         return SetStatusAndExitBuilder_(HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE);
     }
-    ResponseCode rc;
     if (extraction_.empty()) {  // empty line -> end of headers
         return BS_MATCH_SERVER;
     }
@@ -208,7 +207,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     if (!ss.eof()) {
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    rc = InsertHeaderField_(header_key, header_val);
+    ResponseCode rc = InsertHeaderField_(header_key, header_val);
     if (rc != http::HTTP_OK) {
         return SetStatusAndExitBuilder_(rc);
     }
