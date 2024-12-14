@@ -54,6 +54,7 @@ void RequestBuilder::Build(size_t bytes_recvd)
     LOG(DEBUG) << "RequestBuilder::Build";
     // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
+        LOG(INFO) << "Ran out of data while Request incomplete.";
         rq_.status = HTTP_BAD_REQUEST;
         builder_status_ = RB_DONE;
         return;
@@ -99,33 +100,42 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
-        default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+        default: {
+            LOG(INFO) << "Request Line Syntax Error";
+            return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+        }
     }
     // todo for robustness: if very first line of request empty -> ignore and continue
     std::stringstream ss(extraction_);
     std::string raw_method, raw_rq_target, raw_version;
     std::getline(ss, raw_method, ' ');
     if (ss.eof() || ss.fail()) {
+        LOG(INFO) << "Request Line unexpected EOL";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     std::getline(ss, raw_rq_target, ' ');
     if (ss.eof()  || ss.fail()) {
+        LOG(INFO) << "Request Line unexpected EOL";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     std::getline(ss, raw_version);
     if (!ss.eof() || ss.fail()) {
+        LOG(INFO) << "Request Line unexpected EOL";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     ResponseCode rc = TrySetMethod_(raw_method);
     if (rc != http::HTTP_OK) {
+        LOG(INFO) << "Cannot determine method";
         return SetStatusAndExitBuilder_(rc);
     }
     rc = TrySetRqTarget_(raw_rq_target);
     if (rc != http::HTTP_OK) {
+        LOG(INFO) << "Cannot determine Request-Target";
         return SetStatusAndExitBuilder_(rc);
     }
     rc = TrySetVersion_(raw_version);
     if (rc != http::HTTP_OK) {
+        LOG(INFO) << "Cannot determine Version";
         return SetStatusAndExitBuilder_(rc);
     }
     return BS_HEADER_FIELDS;
@@ -134,10 +144,12 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 ResponseCode RequestBuilder::TrySetMethod_(const std::string& raw_method)
 {
     if (!SyntaxChecker::IsValidMethodName(raw_method)) {
+        LOG(INFO) << "Invalid Method name: " << raw_method;
         return HTTP_BAD_REQUEST;
     };
     std::pair<bool, Method> converted_method = HttpMethodFromStr(raw_method);
     if (!converted_method.first) {
+        LOG(INFO) << "Method not implemented: " << raw_method;
         return HTTP_NOT_IMPLEMENTED;
     }
     rq_.method = converted_method.second;
@@ -148,9 +160,11 @@ ResponseCode RequestBuilder::TrySetRqTarget_(const std::string& raw_rq_target)
 {
     rq_.rqTarget = raw_rq_target;
     if (rq_.rqTarget.validity_state() & RqTarget::RQ_TARGET_TOO_LONG) {
+        LOG(INFO) << "Request Target too long: " << raw_rq_target.size();
         return HTTP_URI_TOO_LONG;
     }
     if (!rq_.rqTarget.Good()) {
+        LOG(INFO) << "Invalid Request Target: " << raw_rq_target;
         return HTTP_BAD_REQUEST;
     }
     return HTTP_OK;
@@ -159,10 +173,12 @@ ResponseCode RequestBuilder::TrySetRqTarget_(const std::string& raw_rq_target)
 ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 {
     if (!SyntaxChecker::IsValidVersionName(raw_version)) {
+         LOG(INFO) << "Invalid Version name: " << raw_version;
         return HTTP_BAD_REQUEST;
     };
     std::pair<bool, Version> converted_version = HttpVersionFromStr(raw_version);
     if (!converted_version.first) {
+        LOG(INFO) << "Version not implemented: " << raw_version;
         return HTTP_BAD_REQUEST;
     }
     rq_.version = converted_version.second;
@@ -183,7 +199,10 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
-        default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+        default: {
+            LOG(INFO) << "Header Field Syntax Error";
+            return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+        }
     }
     if (extraction_.empty()) {
         return BS_MATCH_SERVER;
@@ -193,14 +212,16 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     std::getline(ss, header_key, ':');
     utils::EatSpacesAndHTabs(ss);
     if (ss.eof()) {
+        LOG(INFO) << "unexpected EOL after header key";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    ss >> std::noskipws >> header_val;
-    utils::EatSpacesAndHTabs(ss);
+    std::getline(ss, header_val, '\r');
     if (!ss.eof()) {
+        LOG(INFO) << "Extra characters after header val";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     if (!InsertHeaderField_(header_key, header_val)) {
+        LOG(INFO) << "Could not insert header Field";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     return BS_HEADER_FIELDS;
@@ -238,9 +259,11 @@ ResponseCode RequestBuilder::ValidateHeadersSyntax_()
     for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
          it != rq_.headers.end(); ++it) {
         if (!SyntaxChecker::IsValidHeaderKeyName(it->first)) {
+            LOG(INFO) << "Header Key Syntax Error";
             return HTTP_BAD_REQUEST;
         }
         if (!SyntaxChecker::IsValidHeaderValueName(it->second)) {
+            LOG(INFO) << "Header Value Syntax Error";
             return HTTP_BAD_REQUEST;
         }
     }
@@ -255,11 +278,13 @@ ResponseCode RequestBuilder::InterpretHeaders_()
 
     std::pair<bool, std::string> host = rq_.GetHeaderVal("host");
     if (!host.first) {
+        LOG(INFO) << "Host header missing";
         return HTTP_BAD_REQUEST;
     }
     std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
     std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
     if (content_length.first && transfer_encoding.first) {
+        LOG(INFO) << "Both Content-Length and Transfer-Encoding headers present";
         return HTTP_BAD_REQUEST;
     }
     if (transfer_encoding.first && transfer_encoding.second == "chunked") {
@@ -273,14 +298,17 @@ ResponseCode RequestBuilder::InterpretHeaders_()
         LOG(DEBUG) << "InterpretHeaders_() Max_body_size: " << body_builder_.max_body_size;
         if (content_length_num.first) {
             if (content_length_num.second > body_builder_.max_body_size) {
-               return HTTP_PAYLOAD_TOO_LARGE;
+                LOG(INFO) << "Content-Length too large";
+                return HTTP_PAYLOAD_TOO_LARGE;
             }
             body_builder_.remaining_length = content_length_num.second;
         } else {
+            LOG(INFO) << "Content-Length not a number";
             return HTTP_BAD_REQUEST;
         }
     }
     if (rq_.method == HTTP_POST && !content_length.first && !transfer_encoding.first) {
+        LOG(INFO) << "POST request without Content-Length or Transfer-Encoding";
         return HTTP_LENGTH_REQUIRED;
     }
     // additional semantic checks...
@@ -302,6 +330,7 @@ RequestBuilder::BuildState RequestBuilder::PrepareBody_() {
         return BS_BODY_CHUNK_SIZE;
     } else {
         if (body_builder_.remaining_length > body_builder_.max_body_size) {
+            LOG(INFO) << "Content-Length too large";
             return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
         }
         return BS_BODY_REGULAR;
@@ -338,6 +367,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
     std::pair<bool, size_t> chunk_size =
         utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
     if (!chunk_size.first) {
+        LOG(INFO) << "Chunk Size Syntax Error";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     if (chunk_size.second == 0) {
@@ -347,6 +377,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
     body_builder_.body_idx += chunk_size.second;
     body_builder_.remaining_length = chunk_size.second;
     if (body_builder_.body_idx > body_builder_.max_body_size) {
+        LOG(INFO) << "Chunked content too large";
         return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
     }
     return BS_BODY_CHUNK_CONTENT;
@@ -367,6 +398,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
 RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_() {
     while (!parser_.EndOfBuffer()) {
         if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
+            LOG(INFO) << "Line too long";
             return EXTRACTION_TOO_LONG;
         }
         if (parser_.FoundCRLF()) {
@@ -374,9 +406,11 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_() {
             return EXTRACTION_SUCCESS;
         }
         if (parser_.FoundSingleCR()) {
+            LOG(INFO) << "Single CR found in Line";
             return EXTRACTION_FOUND_SINGLE_CR;
         }
         if (parser_.Peek() == '\0') {
+            LOG(INFO) << "Null Terminator found in Line";
             return EXTRACTION_NULL_TERMINATOR_FOUND;
         }
         parser_.Advance();
@@ -387,6 +421,7 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_() {
 RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_() {
     while (!parser_.EndOfBuffer()) {
         if (parser_.ElementLen() > body_builder_.max_body_size) {
+            LOG(INFO) << "Body content too long";
             return EXTRACTION_TOO_LONG;
         }
         if (parser_.FoundCRLF()) {
