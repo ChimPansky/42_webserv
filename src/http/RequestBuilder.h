@@ -64,7 +64,7 @@ class RequestBuilder {
     };
 
   public:
-    RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb = utils::unique_ptr<IChooseServerCb>(NULL));
+    RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb);
     void PrepareToRecvData(size_t recv_size);
     void AdjustBufferSize(size_t bytes_recvd);
     void Build(size_t bytes_recvd);

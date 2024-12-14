@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iterator>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,11 @@ namespace http {
 
 RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb)
     : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb)
-{}
+{
+    if (!choose_server_cb) {
+        throw std::logic_error("No Choose Server Callback specified");
+    }
+}
 
 RequestBuilder::BodyBuilder::BodyBuilder()
     : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
@@ -229,12 +234,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
 
 RequestBuilder::BuildState RequestBuilder::MatchServer_() {
     LOG(DEBUG) << "MatchServer_";
-    if (choose_server_cb_) {
-        body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
-    } else {    //tests
-        LOG(DEBUG) << "SETTING MAX_BODY_SIZE TO 1500";
-        body_builder_.max_body_size = 1500;
-    }
+    body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
     return BS_CHECK_HEADERS;
 }
 
