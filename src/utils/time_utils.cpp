@@ -1,9 +1,11 @@
-#include <sstream>
-#include <ctime>
-#include <iomanip>
 #include "time_utils.h"
 
-std::string utils::GetFormatedTime(std::time_t raw_time) {
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+
+std::string utils::GetFormatedTime(std::time_t raw_time)
+{
     if (0 == raw_time) {
         std::time(&raw_time);  // get currnet time
     }
@@ -17,14 +19,11 @@ std::string utils::GetFormatedTime(std::time_t raw_time) {
                                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
     std::ostringstream oss;
-    oss << dayNames[time_info->tm_wday] << ", "
-        << std::setfill('0') << std::setw(2) << time_info->tm_mday << " "
-        << monthNames[time_info->tm_mon] << " "
-        << (1900 + time_info->tm_year) << " "
-        << std::setw(2) << std::setfill('0') << time_info->tm_hour << ":"
-        << std::setw(2) << std::setfill('0') << time_info->tm_min << ":"
-        << std::setw(2) << std::setfill('0') << time_info->tm_sec
-        << " GMT";
+    oss << dayNames[time_info->tm_wday] << ", " << std::setfill('0') << std::setw(2)
+        << time_info->tm_mday << " " << monthNames[time_info->tm_mon] << " "
+        << (1900 + time_info->tm_year) << " " << std::setw(2) << std::setfill('0')
+        << time_info->tm_hour << ":" << std::setw(2) << std::setfill('0') << time_info->tm_min
+        << ":" << std::setw(2) << std::setfill('0') << time_info->tm_sec << " GMT";
 
     return oss.str();
 }

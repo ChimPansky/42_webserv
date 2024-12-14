@@ -1,10 +1,13 @@
 #include "http.h"
+
 #include <stdexcept>
+
 #include "logger.h"
 
 namespace http {
 
-std::pair<bool/*found*/, std::string/*version*/> HttpVerToStr(Version ver) {
+std::pair<bool /*found*/, std::string /*version*/> HttpVerToStr(Version ver)
+{
     switch (ver) {
         case HTTP_0_9: return std::make_pair(true, "HTTP/0.9");
         case HTTP_1_0: return std::make_pair(true, "HTTP/1.0");
@@ -15,7 +18,8 @@ std::pair<bool/*found*/, std::string/*version*/> HttpVerToStr(Version ver) {
     }
 }
 
-std::pair<bool/*found*/, std::string/*method*/> HttpMethodToStr(Method method) {
+std::pair<bool /*found*/, std::string /*method*/> HttpMethodToStr(Method method)
+{
     switch (method) {
         case HTTP_GET: return std::make_pair(true, "GET");
         case HTTP_POST: return std::make_pair(true, "POST");
@@ -24,7 +28,8 @@ std::pair<bool/*found*/, std::string/*method*/> HttpMethodToStr(Method method) {
     }
 }
 
-std::pair<bool/*found*/, http::Method> HttpMethodFromStr(const std::string& raw_method) {
+std::pair<bool /*found*/, http::Method> HttpMethodFromStr(const std::string& raw_method)
+{
     if (raw_method == "GET") {
         return std::make_pair(true, HTTP_GET);
     } else if (raw_method == "POST") {
@@ -36,7 +41,8 @@ std::pair<bool/*found*/, http::Method> HttpMethodFromStr(const std::string& raw_
     }
 }
 
-std::pair<bool/*found*/, http::Version> HttpVersionFromStr(const std::string& raw_version) {
+std::pair<bool /*found*/, http::Version> HttpVersionFromStr(const std::string& raw_version)
+{
     if (raw_version == "HTTP/0.9") {
         return std::make_pair(true, HTTP_0_9);
     } else if (raw_version == "HTTP/1.0") {

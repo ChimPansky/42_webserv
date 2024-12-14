@@ -2,13 +2,14 @@
 #define WS_CLIENT_SESSION_H
 
 #include <ClientSocket.h>
-#include <response_processors/AResponseProcessor.h>
 #include <RequestBuilder.h>
 #include <Server.h>
 #include <multiplexers/ICallback.h>
+#include <response_processors/AResponseProcessor.h>
 #include <shared_ptr.h>
 #include <sys/types.h>
 #include <unique_ptr.h>
+
 #include "LocationConfig.h"
 #include "ServerConfig.h"
 
@@ -83,8 +84,6 @@ class ClientSession {
     bool connection_closed_;
     CsState read_state_;
 };
-
-
 
 
 #endif  // WS_CLIENT_SESSION_H

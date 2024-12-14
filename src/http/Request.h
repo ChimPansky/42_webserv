@@ -1,13 +1,13 @@
 #ifndef WS_HTTP_REQUEST_H
 #define WS_HTTP_REQUEST_H
 
-#include <map>
-#include <string>
-#include <vector>
-
-#include <http.h>
 #include <ResponseCodes.h>
 #include <RqTarget.h>
+#include <file_utils.h>
+#include <http.h>
+
+#include <map>
+#include <string>
 
 namespace http {
 
@@ -22,7 +22,7 @@ struct Request {
     Version version;
     std::map<std::string, std::string> headers;
     bool has_body;
-    char body[TMP_MAX];
+    char body[utils::kMaxTempFileName];
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;

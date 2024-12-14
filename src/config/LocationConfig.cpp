@@ -25,8 +25,7 @@ const std::vector<http::Method>& LocationConfig::allowed_methods() const
     return allowed_methods_;
 }
 
-const std::pair<int /*status_code*/, std::string /*new_route*/>& LocationConfig::redirect()
-    const
+const std::pair<int /*status_code*/, std::string /*new_route*/>& LocationConfig::redirect() const
 {
     return redirect_;
 }

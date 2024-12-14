@@ -1,6 +1,8 @@
 #include "RequestBuilder.h"
-#include "Request.h"
-#include "ResponseCodes.h"
+
+#include <logger.h>
+#include <numeric_utils.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cstring>
@@ -9,9 +11,8 @@
 #include <string>
 #include <vector>
 
-#include <logger.h>
-#include <numeric_utils.h>
-#include <unistd.h>
+#include "Request.h"
+#include "ResponseCodes.h"
 #include "SyntaxChecker.h"
 #include "http.h"
 #include "str_utils.h"
@@ -20,7 +21,8 @@
 namespace http {
 
 RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb)
-    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb), header_count_(0), header_section_size_(0)
+    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb),
+      header_count_(0), header_section_size_(0)
 {
     if (!choose_server_cb_) {
         throw std::logic_error("No Choose Server Callback specified");
@@ -66,14 +68,14 @@ void RequestBuilder::Build(size_t bytes_recvd)
     }
     while (CanBuild_()) {
         switch (build_state_) {
-            case BS_RQ_LINE:            build_state_ = BuildFirstLine_(); break;
-            case BS_HEADER_FIELDS:       build_state_ = BuildHeaderField_(); break;
-            case BS_MATCH_SERVER:      build_state_ = MatchServer_(); break;
-            case BS_CHECK_HEADERS:  build_state_ = CheckHeaders_(); break;
-            case BS_PREPARE_TO_READ_BODY:   build_state_ = PrepareBody_(); break;
-            case BS_BODY_REGULAR:               build_state_ = BuildBodyRegular_(); break;
-            case BS_BODY_CHUNK_SIZE:            build_state_ = BuildBodyChunkSize_(); break;
-            case BS_BODY_CHUNK_CONTENT:         build_state_ = BuildBodyChunkContent_(); break;
+            case BS_RQ_LINE: build_state_ = BuildFirstLine_(); break;
+            case BS_HEADER_FIELDS: build_state_ = BuildHeaderField_(); break;
+            case BS_MATCH_SERVER: build_state_ = MatchServer_(); break;
+            case BS_CHECK_HEADERS: build_state_ = CheckHeaders_(); break;
+            case BS_PREPARE_TO_READ_BODY: build_state_ = PrepareBody_(); break;
+            case BS_BODY_REGULAR: build_state_ = BuildBodyRegular_(); break;
+            case BS_BODY_CHUNK_SIZE: build_state_ = BuildBodyChunkSize_(); break;
+            case BS_BODY_CHUNK_CONTENT: build_state_ = BuildBodyChunkContent_(); break;
             case BS_BAD_REQUEST: break;
             case BS_END: break;
         }
@@ -121,7 +123,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     std::getline(ss, raw_rq_target, ' ');
-    if (ss.eof()  || ss.fail()) {
+    if (ss.eof() || ss.fail()) {
         LOG(INFO) << "Request Line unexpected EOL";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
@@ -180,7 +182,7 @@ ResponseCode RequestBuilder::TrySetRqTarget_(const std::string& raw_rq_target)
 ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 {
     if (!SyntaxChecker::IsValidVersionName(raw_version)) {
-         LOG(INFO) << "Invalid Version name: " << raw_version;
+        LOG(INFO) << "Invalid Version name: " << raw_version;
         return HTTP_BAD_REQUEST;
     };
     std::pair<bool, Version> converted_version = HttpVersionFromStr(raw_version);
@@ -193,15 +195,21 @@ ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 }
 
 // https://www.rfc-editor.org/rfc/rfc9110#name-field-lines-and-combined-fi
-// When a field name is only present once in a section, the combined "field value" for that field consists of the corresponding field line value. When a field name is repeated within a section, its combined field value consists of the list of corresponding field line values within that section, concatenated in order, with each field line value separated by a comma.
+// When a field name is only present once in a section, the combined "field value" for that field
+// consists of the corresponding field line value. When a field name is repeated within a section,
+// its combined field value consists of the list of corresponding field line values within that
+// section, concatenated in order, with each field line value separated by a comma.
 
 // For example, this section:
 
 // Example-Field: Foo, Bar
 // Example-Field: Baz
-// contains two field lines, both with the field name "Example-Field". The first field line has a field line value of "Foo, Bar", while the second field line value is "Baz". The field value for "Example-Field" is the list "Foo, Bar, Baz".
+// contains two field lines, both with the field name "Example-Field". The first field line has a
+// field line value of "Foo, Bar", while the second field line value is "Baz". The field value for
+// "Example-Field" is the list "Foo, Bar, Baz".
 
-RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
+RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
+{
     LOG(DEBUG) << "BuildHeaderField_";
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
@@ -240,13 +248,15 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
     return BS_HEADER_FIELDS;
 }
 
-RequestBuilder::BuildState RequestBuilder::MatchServer_() {
+RequestBuilder::BuildState RequestBuilder::MatchServer_()
+{
     LOG(DEBUG) << "MatchServer_";
     body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
     return BS_CHECK_HEADERS;
 }
 
-RequestBuilder::BuildState RequestBuilder::CheckHeaders_() {
+RequestBuilder::BuildState RequestBuilder::CheckHeaders_()
+{
     ResponseCode rc = ValidateHeadersSyntax_();
     if (rc != http::HTTP_OK) {
         return SetStatusAndExitBuilder_(rc);
@@ -323,15 +333,10 @@ ResponseCode RequestBuilder::InterpretHeaders_()
     return HTTP_OK;
 }
 
-RequestBuilder::BuildState RequestBuilder::PrepareBody_() {
-    if (!std::tmpnam(rq_.body)) {
+RequestBuilder::BuildState RequestBuilder::PrepareBody_()
+{
+    if (!utils::CreateAndOpenTmpFileToStream(body_builder_.body_stream, rq_.body)) {
         LOG(ERROR) << "Failed to create temporary file.";
-        return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
-    }
-    // Create and use the file
-    body_builder_.body_stream.open(rq_.body);
-    if (!body_builder_.body_stream.is_open()) {
-        LOG(ERROR) << "Failed to open temporary file.";
         return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
     }
     if (body_builder_.chunked) {
@@ -349,8 +354,8 @@ RequestBuilder::BuildState RequestBuilder::PrepareBody_() {
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
     size_t copy_size = std::min(body_builder_.remaining_length, parser_.RemainingLength());
-    const char *begin = parser_.buf().data() + body_builder_.body_idx;
-    const char *end = begin + copy_size;
+    const char* begin = parser_.buf().data() + body_builder_.body_idx;
+    const char* end = begin + copy_size;
     std::copy(begin, end, std::ostream_iterator<char>(body_builder_.body_stream));
     body_builder_.body_idx += copy_size;
     body_builder_.remaining_length -= copy_size;
@@ -372,8 +377,7 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
         case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
         default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    std::pair<bool, size_t> chunk_size =
-        utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
+    std::pair<bool, size_t> chunk_size = utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
     if (!chunk_size.first) {
         LOG(INFO) << "Chunk Size Syntax Error";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
@@ -399,11 +403,13 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
         case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
         default: return BS_BODY_CHUNK_CONTENT;
     }
-    std::copy(extraction_.begin(), extraction_.end(), std::ostream_iterator<char>(body_builder_.body_stream));
+    std::copy(extraction_.begin(), extraction_.end(),
+              std::ostream_iterator<char>(body_builder_.body_stream));
     return BS_BODY_CHUNK_SIZE;
 }
 
-RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_() {
+RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_()
+{
     while (!parser_.EndOfBuffer()) {
         if (parser_.ElementLen() > RQ_LINE_LEN_LIMIT) {
             LOG(INFO) << "Line too long";
@@ -426,7 +432,8 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_() {
     return EXTRACTION_CRLF_NOT_FOUND;
 }
 
-RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_() {
+RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_()
+{
     while (!parser_.EndOfBuffer()) {
         if (parser_.ElementLen() > body_builder_.max_body_size) {
             LOG(INFO) << "Body content too long";
@@ -443,10 +450,12 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_() {
 
 bool RequestBuilder::IsParsingState_(BuildState state) const
 {
-    return (state != BS_MATCH_SERVER && state != BS_CHECK_HEADERS && state != BS_PREPARE_TO_READ_BODY);
+    return (state != BS_MATCH_SERVER && state != BS_CHECK_HEADERS &&
+            state != BS_PREPARE_TO_READ_BODY);
 }
 
-ResponseCode RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
+ResponseCode RequestBuilder::InsertHeaderField_(std::string& key, std::string& value)
+{
     header_count_++;
     if (header_count_ > RQ_MAX_HEADER_COUNT) {
         return HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
@@ -457,7 +466,8 @@ ResponseCode RequestBuilder::InsertHeaderField_(std::string& key, std::string& v
     return HTTP_OK;
 }
 
-RequestBuilder::BuildState RequestBuilder::SetStatusAndExitBuilder_(ResponseCode status) {
+RequestBuilder::BuildState RequestBuilder::SetStatusAndExitBuilder_(ResponseCode status)
+{
     rq_.status = status;
     return BS_BAD_REQUEST;
 }

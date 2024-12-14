@@ -1,4 +1,5 @@
 #include "str_utils.h"
+
 #include <dirent.h>
 
 #include <fstream>
@@ -14,7 +15,8 @@ std::string ToLowerCase(std::string str)
     return str;
 }
 
-void EatSpacesAndHTabs(std::stringstream& ss) {
+void EatSpacesAndHTabs(std::stringstream& ss)
+{
     while (ss.peek() == ' ' || ss.peek() == '\t') {
         ss.ignore();
     }

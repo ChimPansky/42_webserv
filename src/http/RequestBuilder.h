@@ -1,15 +1,17 @@
 #ifndef WS_HTTP_REQUEST_BUILDER_H
 #define WS_HTTP_REQUEST_BUILDER_H
 
-#include "Request.h"
-#include "RequestParser.h"
-#include "ResponseCodes.h"
 #include <unique_ptr.h>
 
 #include <cstddef>
 #include <cstdio>
+#include <fstream>
 #include <string>
 #include <vector>
+
+#include "Request.h"
+#include "RequestParser.h"
+#include "ResponseCodes.h"
 
 namespace http {
 
@@ -26,7 +28,7 @@ struct ChosenServerParams {
 class IChooseServerCb {
   public:
     virtual ChosenServerParams Call(const http::Request& rq) = 0;
-    virtual ~IChooseServerCb() {};
+    virtual ~IChooseServerCb(){};
 };
 
 

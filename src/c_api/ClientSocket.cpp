@@ -1,13 +1,12 @@
 #include "ClientSocket.h"
 
+#include <logger.h>
 #include <netinet/in.h>
 #include <unistd.h>
 
 #include <cstring>
 #include <stdexcept>
 #include <vector>
-
-#include <logger.h>
 
 namespace c_api {
 
@@ -30,7 +29,8 @@ int ClientSocket::sockfd() const
     return sockfd_;
 }
 
-const sockaddr_in& ClientSocket::addr_in() const {
+const sockaddr_in& ClientSocket::addr_in() const
+{
     return addr_in_;
 }
 
