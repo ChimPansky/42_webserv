@@ -91,11 +91,11 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
     if (rq.status == http::HTTP_OK) {
-            return GetResponseProcessor(rq, cb);
+        return GetResponseProcessor(rq, cb);
     } else {
-            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-            return utils::unique_ptr<AResponseProcessor>(
-                new GeneratedErrorResponseProcessor(cb, rq.status));
+        LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
+        return utils::unique_ptr<AResponseProcessor>(
+            new GeneratedErrorResponseProcessor(cb, rq.status));
     }
 }
 

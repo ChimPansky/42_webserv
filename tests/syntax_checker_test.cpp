@@ -27,7 +27,7 @@ TEST(TokenTests, 4_Test)
 
 TEST(TokenTests, 5_Test)
 {
-    std:: string token = " abc";
+    std::string token = " abc";
     EXPECT_FALSE(http::SyntaxChecker::IsValidTokenName(token));
 }
 

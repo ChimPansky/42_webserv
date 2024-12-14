@@ -1,7 +1,7 @@
+#include <logger.h>
+
 #include "EpollMultiplexer.h"
 #include "SelectMultiplexer.h"
-
-#include <logger.h>
 
 namespace c_api {
 

@@ -9,24 +9,27 @@
 #include "ServerCluster.h"
 
 
-ClientSession::ChooseServerCb::ChooseServerCb(ClientSession& client) : client_(client) {
+ClientSession::ChooseServerCb::ChooseServerCb(ClientSession& client) : client_(client)
+{
     LOG(DEBUG) << "CHOOSE SERVER CB CREATED";
 }
 
-http::ChosenServerParams ClientSession::ChooseServerCb::Call(const http::Request& rq) {
-    client_.associated_server_ = ServerCluster::ChooseServer(
-        client_.master_socket_fd_,
-        rq);
+http::ChosenServerParams ClientSession::ChooseServerCb::Call(const http::Request& rq)
+{
+    client_.associated_server_ = ServerCluster::ChooseServer(client_.master_socket_fd_, rq);
     http::ChosenServerParams params;
     std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc =
         client_.associated_server_->ChooseLocation(rq);
-    params.max_body_size = (chosen_loc.second != NO_LOCATION ? chosen_loc.first->client_max_body_size() : config::LocationConfig::kDefaultClientMaxBodySize());
+    params.max_body_size =
+        (chosen_loc.second != NO_LOCATION ? chosen_loc.first->client_max_body_size()
+                                          : config::LocationConfig::kDefaultClientMaxBodySize());
     return params;
 }
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd,
                              utils::shared_ptr<Server> default_server)
-    : client_sock_(sock), master_socket_fd_(master_sock_fd), associated_server_(default_server), rq_builder_(utils::unique_ptr<http::IChooseServerCb>(new ChooseServerCb(*this))),
+    : client_sock_(sock), master_socket_fd_(master_sock_fd), associated_server_(default_server),
+      rq_builder_(utils::unique_ptr<http::IChooseServerCb>(new ChooseServerCb(*this))),
       connection_closed_(false), read_state_(CS_READ)
 {
     if (c_api::EventManager::get().RegisterCallback(
@@ -80,7 +83,8 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
 void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 {
     ServerCluster::FillResponseHeaders(*rs);
-    std::map<std::string, std::string>::const_iterator conn_it = rs->headers().find("Connection"); // TODO add find header case-independent
+    std::map<std::string, std::string>::const_iterator conn_it =
+        rs->headers().find("Connection");  // TODO add find header case-independent
     bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,

@@ -1,11 +1,11 @@
 #ifndef WS_HTTP_RQ_TARGET_H
 #define WS_HTTP_RQ_TARGET_H
 
+#include <http.h>
 #include <numeric_utils.h>
 
 #include <cstddef>
 #include <string>
-#include <http.h>
 namespace http {
 
 /* RqTarget class:

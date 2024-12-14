@@ -24,15 +24,15 @@ class Logger {
 
   private:
     Logger(char* log_path = NULL);  // singleton initialisation
+
     class NullStream : public std::ostream {
       public:
         NullStream() : std::ostream(&nullBuffer) {}
+
       private:
         class NullBuffer : public std::streambuf {
-        public:
-            int overflow(int c) {
-                return c;
-            }
+          public:
+            int overflow(int c) { return c; }
         };
         NullBuffer nullBuffer;
     };
@@ -62,7 +62,8 @@ class Logger {
     std::ofstream fs_;
     std::ostream* os_;
     std::ostream* es_;
-    NullStream    null_stream_;
+
+    static NullStream null_stream_;
 
     Severity severity_threshold_;
 
@@ -75,6 +76,8 @@ class Logger {
     utils::Logger::get().log(severity) << #severity[0] << utils::Logger::dump_time() << " " \
                                        << __FILE__ << ":" << __LINE__ << "] "
 
-#define LOG_IF(severity, condition) if (condition) LOG(severity)
+#define LOG_IF(severity, condition) \
+    if (condition)                  \
+    LOG(severity)
 
 #endif  // WS_UTILS_LOGGER_H
