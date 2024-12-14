@@ -19,6 +19,15 @@ bool IsDirectory(const char *path) {
     return (info.st_mode & S_IFDIR) != 0;
 }
 
+bool IsRegularFile(const char *path) {
+    struct stat info;
+
+    if (stat(path, &info) != 0) {
+        return false;
+    }
+    return (info.st_mode & S_IFREG) != 0;
+}
+
 std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char* filePath) {
     if (!filePath[0]) {
         LOG(ERROR) << "Empty file path";

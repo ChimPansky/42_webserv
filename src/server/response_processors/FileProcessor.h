@@ -3,10 +3,7 @@
 
 #include <unique_ptr.h>
 
-#include <fstream>
-
 #include "AResponseProcessor.h"
-#include "DirectoryProcessor.h"
 
 class FileProcessor : public AResponseProcessor {
   private:

@@ -13,32 +13,20 @@
 FileProcessor::FileProcessor(const std::string& file_path,
                              utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
     : AResponseProcessor(response_rdy_cb),
-      err_response_processor_(utils::unique_ptr<GeneratedErrorResponseProcessor>(NULL))
+      delegated_response_processor_(utils::unique_ptr<AResponseProcessor>(NULL))
 {
     if (!utils::DoesPathExist(file_path.c_str())) {
         LOG(DEBUG) << "Requested file not found: " << file_path;
-        err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
+        delegated_response_processor_ = utils::unique_ptr<AResponseProcessor>(
             new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
         return;
     }
-    // TODO if directory delegate to DirectoryProcessor or 404
-    if (utils::IsDirectory(file_path.c_str())) {
-        LOG(DEBUG) << "Requested file is a directory: " << file_path;
-        if (true /*autoindex for location is on*/) {
-            directory_processor_ = utils::unique_ptr<DirectoryProcessor>(
-                new DirectoryProcessor(file_path, response_rdy_cb_));
-            return;
-        }
-        err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
-            new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
-        return;
-    }
-    // check if POST/GET/DELETE
+    // TODO: differentiate between GET/POST/DELETE
     std::ifstream file(file_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
         LOG(DEBUG) << "Requested file cannot be opened: " << file_path;
-        err_response_processor_ =
-            utils::unique_ptr<GeneratedErrorResponseProcessor>(new GeneratedErrorResponseProcessor(
+        delegated_response_processor_ =
+            utils::unique_ptr<AResponseProcessor>(new GeneratedErrorResponseProcessor(
                 response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
         return;
     }

@@ -5,6 +5,7 @@
 
 #include "Request.h"
 #include "response_processors/FileProcessor.h"
+#include "response_processors/DirectoryProcessor.h"
 #include "utils/utils.h"
 #include <file_utils.h>
 
@@ -108,24 +109,35 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
+
+    if (chosen_loc.second != NO_LOCATION && std::find(chosen_loc.first->allowed_methods().begin(), chosen_loc.first->allowed_methods().end(), rq.method) == chosen_loc.first->allowed_methods().end()) {
+        LOG(DEBUG) << "Method not allowed for specific location -> Create 405 ResponseProcessor";
+        return utils::unique_ptr<AResponseProcessor>(
+            new GeneratedErrorResponseProcessor(cb, http::HTTP_METHOD_NOT_ALLOWED));
+    }
     switch (chosen_loc.second) {
         case NO_LOCATION:
-            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
+            LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
             return utils::unique_ptr<AResponseProcessor>(
                 new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
         case CGI:
-            LOG(DEBUG) << "RQ_GOOD -> Process CGI";
+            LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
             // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
             // cgi_paths, cgi_extensions, root_dir));
         case STATIC_PATH:
             std::string new_path = utils::UpdatePath(
                 chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-            if (utils::IsDirectory(new_path.c_str())) {
-                LOG(DEBUG) << "Requested file is a directory: " << new_path;
-                return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(new_path, cb));
+            if (utils::IsRegularFile(new_path.c_str())) {
+                LOG(DEBUG) << "Location is a regular file -> Create FileProcessor" << new_path;
+                return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
+            } else if (utils::IsDirectory(new_path.c_str())) {
+                LOG(DEBUG) << "Location is a directory -> Create DirectoryProcessor " << new_path;
+                return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(new_path, cb, rq, chosen_loc.first));
+            } else {
+                LOG(DEBUG) << "Location is not a reg file or directory -> Create 404 ResponseProcessor " << http::HTTP_NOT_FOUND;
+                return utils::unique_ptr<AResponseProcessor>(
+                    new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
             }
-            LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << new_path;
-            return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
     }
 }
 
