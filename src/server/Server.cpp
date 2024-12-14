@@ -127,16 +127,27 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         case STATIC_PATH:
             std::string new_path = utils::UpdatePath(
                 chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-            if (utils::IsRegularFile(new_path.c_str())) {
-                LOG(DEBUG) << "Location is a regular file -> Create FileProcessor" << new_path;
-                return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
+            // if (utils::IsRegularFile(new_path.c_str())) {
+            //     LOG(DEBUG) << "Location is a regular file -> Create FileProcessor" << new_path;
+            //     return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
+            // } else if (utils::IsDirectory(new_path.c_str())) {
+            //     LOG(DEBUG) << "Location is a directory -> Create DirectoryProcessor " << new_path;
+            //     return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(new_path, cb, rq, chosen_loc.first));
+            // } else {
+            //     LOG(DEBUG) << "Location is not a reg file or directory -> Create 404 ResponseProcessor " << http::HTTP_NOT_FOUND;
+            //     return utils::unique_ptr<AResponseProcessor>(
+            //         new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
+            // }
+            if (!utils::DoesPathExist(new_path.c_str())) {
+                LOG(DEBUG) << "Requested file not found: " << new_path;
+                return utils::unique_ptr<AResponseProcessor>(
+                    new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
             } else if (utils::IsDirectory(new_path.c_str())) {
                 LOG(DEBUG) << "Location is a directory -> Create DirectoryProcessor " << new_path;
                 return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(new_path, cb, rq, chosen_loc.first));
             } else {
-                LOG(DEBUG) << "Location is not a reg file or directory -> Create 404 ResponseProcessor " << http::HTTP_NOT_FOUND;
-                return utils::unique_ptr<AResponseProcessor>(
-                    new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
+                 LOG(DEBUG) << "Location is not a directory -> Create FileProcessor" << new_path;
+                return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
             }
     }
 }
