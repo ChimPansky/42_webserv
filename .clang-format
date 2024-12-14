@@ -63,6 +63,7 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: false
 AllowAllConstructorInitializersOnNextLine: true
 FixNamespaceComments: true
 IncludeBlocks:   Regroup
+AllowShortCaseLabelsOnASingleLine: true
 IncludeCategories:
   - Regex:           '^<ext/.*\.h>'
     Priority:        2

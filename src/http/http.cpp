@@ -9,32 +9,22 @@ namespace http {
 std::pair<bool /*found*/, std::string /*version*/> HttpVerToStr(Version ver)
 {
     switch (ver) {
-        case HTTP_0_9:
-            return std::make_pair(true, "HTTP/0.9");
-        case HTTP_1_0:
-            return std::make_pair(true, "HTTP/1.0");
-        case HTTP_1_1:
-            return std::make_pair(true, "HTTP/1.1");
-        case HTTP_2:
-            return std::make_pair(true, "HTTP/2");
-        case HTTP_3:
-            return std::make_pair(true, "HTTP/3");
-        default:
-            return std::make_pair(false, "Version not found");
+        case HTTP_0_9: return std::make_pair(true, "HTTP/0.9");
+        case HTTP_1_0: return std::make_pair(true, "HTTP/1.0");
+        case HTTP_1_1: return std::make_pair(true, "HTTP/1.1");
+        case HTTP_2: return std::make_pair(true, "HTTP/2");
+        case HTTP_3: return std::make_pair(true, "HTTP/3");
+        default: return std::make_pair(false, "Version not found");
     }
 }
 
 std::pair<bool /*found*/, std::string /*method*/> HttpMethodToStr(Method method)
 {
     switch (method) {
-        case HTTP_GET:
-            return std::make_pair(true, "GET");
-        case HTTP_POST:
-            return std::make_pair(true, "POST");
-        case HTTP_DELETE:
-            return std::make_pair(true, "DELETE");
-        default:
-            return std::make_pair(false, "Method not found");
+        case HTTP_GET: return std::make_pair(true, "GET");
+        case HTTP_POST: return std::make_pair(true, "POST");
+        case HTTP_DELETE: return std::make_pair(true, "DELETE");
+        default: return std::make_pair(false, "Method not found");
     }
 }
 

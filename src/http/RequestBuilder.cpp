@@ -68,34 +68,16 @@ void RequestBuilder::Build(size_t bytes_recvd)
     }
     while (CanBuild_()) {
         switch (build_state_) {
-            case BS_RQ_LINE:
-                build_state_ = BuildFirstLine_();
-                break;
-            case BS_HEADER_FIELDS:
-                build_state_ = BuildHeaderField_();
-                break;
-            case BS_MATCH_SERVER:
-                build_state_ = MatchServer_();
-                break;
-            case BS_CHECK_HEADERS:
-                build_state_ = CheckHeaders_();
-                break;
-            case BS_PREPARE_TO_READ_BODY:
-                build_state_ = PrepareBody_();
-                break;
-            case BS_BODY_REGULAR:
-                build_state_ = BuildBodyRegular_();
-                break;
-            case BS_BODY_CHUNK_SIZE:
-                build_state_ = BuildBodyChunkSize_();
-                break;
-            case BS_BODY_CHUNK_CONTENT:
-                build_state_ = BuildBodyChunkContent_();
-                break;
-            case BS_BAD_REQUEST:
-                break;
-            case BS_END:
-                break;
+            case BS_RQ_LINE: build_state_ = BuildFirstLine_(); break;
+            case BS_HEADER_FIELDS: build_state_ = BuildHeaderField_(); break;
+            case BS_MATCH_SERVER: build_state_ = MatchServer_(); break;
+            case BS_CHECK_HEADERS: build_state_ = CheckHeaders_(); break;
+            case BS_PREPARE_TO_READ_BODY: build_state_ = PrepareBody_(); break;
+            case BS_BODY_REGULAR: build_state_ = BuildBodyRegular_(); break;
+            case BS_BODY_CHUNK_SIZE: build_state_ = BuildBodyChunkSize_(); break;
+            case BS_BODY_CHUNK_CONTENT: build_state_ = BuildBodyChunkContent_(); break;
+            case BS_BAD_REQUEST: break;
+            case BS_END: break;
         }
     }
     if (build_state_ == BS_END || build_state_ == BS_BAD_REQUEST) {
@@ -123,12 +105,9 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
     LOG(DEBUG) << "BuildFirstLine_";
 
     switch (TryToExtractLine_()) {
-        case EXTRACTION_SUCCESS:
-            break;
-        case EXTRACTION_CRLF_NOT_FOUND:
-            return BS_RQ_LINE;
-        case EXTRACTION_TOO_LONG:
-            return SetStatusAndExitBuilder_(HTTP_URI_TOO_LONG);
+        case EXTRACTION_SUCCESS: break;
+        case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
+        case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_URI_TOO_LONG);
         default: {
             LOG(INFO) << "Request Line Syntax Error";
             return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
@@ -233,10 +212,8 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
 {
     LOG(DEBUG) << "BuildHeaderField_";
     switch (TryToExtractLine_()) {
-        case EXTRACTION_SUCCESS:
-            break;
-        case EXTRACTION_CRLF_NOT_FOUND:
-            return BS_HEADER_FIELDS;
+        case EXTRACTION_SUCCESS: break;
+        case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
         default: {
             LOG(INFO) << "Header Field Syntax Error";
             return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
@@ -396,12 +373,9 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
     LOG(DEBUG) << "BuildBodyChunkSize_";
 
     switch (TryToExtractLine_()) {
-        case EXTRACTION_SUCCESS:
-            break;
-        case EXTRACTION_CRLF_NOT_FOUND:
-            return BS_BODY_CHUNK_SIZE;
-        default:
-            return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+        case EXTRACTION_SUCCESS: break;
+        case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
+        default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     std::pair<bool, size_t> chunk_size = utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
     if (!chunk_size.first) {
@@ -425,12 +399,9 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
 {
     LOG(DEBUG) << "BuildBodyChunkContent_";
     switch (TryToExtractBodyContent_()) {
-        case EXTRACTION_SUCCESS:
-            break;
-        case EXTRACTION_TOO_LONG:
-            return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
-        default:
-            return BS_BODY_CHUNK_CONTENT;
+        case EXTRACTION_SUCCESS: break;
+        case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+        default: return BS_BODY_CHUNK_CONTENT;
     }
     std::copy(extraction_.begin(), extraction_.end(),
               std::ostream_iterator<char>(body_builder_.body_stream));
