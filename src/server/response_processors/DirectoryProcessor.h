@@ -19,27 +19,26 @@ class DirectoryProcessor : public AResponseProcessor {
     };
     class DirEntry {
       public:
-        DirEntry(const std::string& name, const std::string fpath, DirEntryType type, bool visited)
-            : name_(name), fpath_(fpath), type_(type), visited_(visited)
+        DirEntry(const std::string& name, const std::string fpath, DirEntryType type)
+            : name_(name), fpath_(fpath), type_(type)
         {}
 
         std::string name() { return name_; }
         std::string fpath() { return fpath_; }
         DirEntryType type() { return type_; }
-        bool visited() { return visited_; }
 
       private:
         std::string name_;
         std::string fpath_;
         DirEntryType type_;
-        bool visited_;
-        // change_date,..
+        // todo: maybe implement bool visited_;
+        // todo: last_modified,..
     };
 
   public:
-    DirectoryProcessor(const std::string& file_path,
-                       utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                       const http::Request& rq, utils::shared_ptr<Location> loc);
+    DirectoryProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
+                       const std::string& file_path, const http::Request& rq,
+                       utils::shared_ptr<Location> loc);
     ~DirectoryProcessor(){};
 
   private:
