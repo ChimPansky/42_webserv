@@ -17,7 +17,7 @@ enum MatchType {
 
 enum LocationType {
     CGI,
-    STATIC_FILE,
+    STATIC_PATH,
     NO_LOCATION
 };
 

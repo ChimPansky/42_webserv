@@ -18,8 +18,7 @@ class FileProcessor : public AResponseProcessor {
     ~FileProcessor() {};
 
   private:
-    utils::unique_ptr<GeneratedErrorResponseProcessor> err_response_processor_;
-    utils::unique_ptr<DirectoryProcessor> directory_processor_;
+    utils::unique_ptr<AResponseProcessor> delegated_response_processor_;
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_FILE_PROCESSOR_H

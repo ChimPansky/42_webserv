@@ -6,6 +6,7 @@
 #include "Request.h"
 #include "response_processors/FileProcessor.h"
 #include "utils/utils.h"
+#include <file_utils.h>
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
@@ -74,7 +75,7 @@ std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
     } else if (matched_location->is_cgi()) {
         type = CGI;
     } else {
-        type = STATIC_FILE;
+        type = STATIC_PATH;
     }
     return std::make_pair(matched_location, type);
 }
@@ -116,9 +117,13 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             LOG(DEBUG) << "RQ_GOOD -> Process CGI";
             // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
             // cgi_paths, cgi_extensions, root_dir));
-        case STATIC_FILE: // todo: change this to STATIC_PATH and then check if directory or file and call respective processor
+        case STATIC_PATH:
             std::string new_path = utils::UpdatePath(
                 chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+            if (utils::IsDirectory(new_path.c_str())) {
+                LOG(DEBUG) << "Requested file is a directory: " << new_path;
+                return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(new_path, cb));
+            }
             LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << new_path;
             return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
     }

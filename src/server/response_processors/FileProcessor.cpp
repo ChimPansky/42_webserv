@@ -1,4 +1,5 @@
 #include "FileProcessor.h"
+#include "DirectoryProcessor.h"
 
 #include <ResponseCodes.h>
 #include <file_utils.h>
