@@ -16,51 +16,52 @@ class shared_ptr {
   public:
     typedef T element_type;
 
-    shared_ptr(void) throw() : raw_ptr_(NULL), ref_cnt_(NULL)
-    {}
+    shared_ptr(void) throw() : raw_ptr_(NULL), ref_cnt_(NULL) {}
 
     // destroys object if throw
-    explicit shared_ptr(T* p) throw(std::bad_alloc) : ref_cnt_(NULL) {
-        acquire_(p);
-    }
+    explicit shared_ptr(T* p) throw(std::bad_alloc) : ref_cnt_(NULL) { acquire_(p); }
 
-    // Warning : to be used for pointer_cast only ! (does not manage two separate <T> and <U> pointers)
+    // Warning : to be used for pointer_cast only ! (does not manage two separate <T> and <U>
+    // pointers)
     template <class U>
-    shared_ptr(const shared_ptr<U>& rhs, T* p) throw(std::bad_alloc) : ref_cnt_(rhs.ref_cnt_) {
+    shared_ptr(const shared_ptr<U>& rhs, T* p) throw(std::bad_alloc) : ref_cnt_(rhs.ref_cnt_)
+    {
         acquire_(p);
     }
 
     // Copy constructor from another pointer type
     template <class U>
-    shared_ptr(const shared_ptr<U>& rhs) : ref_cnt_(rhs.ref_cnt_) {
-        if ((NULL != rhs.get()) && (0 == rhs.count())) {  // must be coherent : no allocation allowed in this path
+    shared_ptr(const shared_ptr<U>& rhs) : ref_cnt_(rhs.ref_cnt_)
+    {
+        if ((NULL != rhs.get()) &&
+            (0 == rhs.count())) {  // must be coherent : no allocation allowed in this path
             throw std::logic_error("attempt to construct shared_ptr from uncoherent object");
         }
         acquire_(static_cast<typename shared_ptr<T>::element_type*>(rhs.get()));
     }
 
-    shared_ptr(const shared_ptr& rhs) : ref_cnt_(rhs.ref_cnt_) {
-        if ((NULL != rhs.get()) && (0 == rhs.count())) {  // must be coherent : no allocation allowed in this path
+    shared_ptr(const shared_ptr& rhs) : ref_cnt_(rhs.ref_cnt_)
+    {
+        if ((NULL != rhs.get()) &&
+            (0 == rhs.count())) {  // must be coherent : no allocation allowed in this path
             throw std::logic_error("attempt to construct shared_ptr from uncoherent object");
         }
-        acquire_(rhs.raw_ptr_);    // will never throw std::bad_alloc
+        acquire_(rhs.raw_ptr_);  // will never throw std::bad_alloc
     }
 
     // Assignment operator using the copy-and-swap idiom (copy constructor and swap method)
-    shared_ptr& operator=(shared_ptr rhs) throw() {
+    shared_ptr& operator=(shared_ptr rhs) throw()
+    {
         swap(rhs);
         return *this;
     }
 
-    ~shared_ptr() throw() {
-        release_();
-    }
+    ~shared_ptr() throw() { release_(); }
 
-    void reset() throw() {
-        release_();
-    }
+    void reset() throw() { release_(); }
 
-    void reset(T* p) throw(std::bad_alloc) {
+    void reset(T* p) throw(std::bad_alloc)
+    {
         if (p == raw_ptr_) {
             return;
         }
@@ -69,21 +70,19 @@ class shared_ptr {
     }
 
     // swap method for the copy-and-swap idiom (copy constructor and swap method)
-    void swap(shared_ptr& lhs) throw() {
+    void swap(shared_ptr& lhs) throw()
+    {
         std::swap(raw_ptr_, lhs.raw_ptr_);
         std::swap(ref_cnt_, lhs.ref_cnt_);
     }
 
     // reference counter operations :
-    operator bool() const throw() {
-        return (0 < count());
-    }
+    operator bool() const throw() { return (0 < count()); }
 
-    bool unique() const throw() {
-        return (1 == count());
-    }
+    bool unique() const throw() { return (1 == count()); }
 
-    long count() const throw() {
+    long count() const throw()
+    {
         long count = 0;
         if (NULL != ref_cnt_) {
             count = *ref_cnt_;
@@ -92,27 +91,28 @@ class shared_ptr {
     }
 
     // underlying pointer operations :
-    T& operator*() const {
+    T& operator*() const
+    {
         if (NULL == raw_ptr_) {
             throw std::runtime_error("shared_ptr: attempt of dereferencing NULL");
         }
         return *raw_ptr_;
     }
 
-    T* operator->() const {
+    T* operator->() const
+    {
         if (NULL == raw_ptr_) {
             throw std::runtime_error("shared_ptr: attempt of dereferencing NULL");
         }
         return raw_ptr_;
     }
 
-    T* get() const throw() {
-        return raw_ptr_;
-    }
+    T* get() const throw() { return raw_ptr_; }
 
   private:
     // acquire/share the ownership of the raw_ptr_ pointer, initializing the reference counter
-    void acquire_(T* p) throw(std::bad_alloc) {
+    void acquire_(T* p) throw(std::bad_alloc)
+    {
         raw_ptr_ = p;
         if (NULL == raw_ptr_) {
             return;
@@ -132,7 +132,8 @@ class shared_ptr {
     }
 
     // release the ownership of the raw_ptr_ pointer, destroying the object when appropriate
-    void release_() throw() {
+    void release_() throw()
+    {
         if (NULL == ref_cnt_) {
             return;
         }
@@ -151,21 +152,25 @@ class shared_ptr {
 };
 
 template <class T, class U>
-bool operator==(const shared_ptr<T>& l, const shared_ptr<U>& r) throw() {
+bool operator==(const shared_ptr<T>& l, const shared_ptr<U>& r) throw()
+{
     return (l.get() == r.get());
 }
 template <class T, class U>
-bool operator!=(const shared_ptr<T>& l, const shared_ptr<U>& r) throw() {
+bool operator!=(const shared_ptr<T>& l, const shared_ptr<U>& r) throw()
+{
     return (l.get() != r.get());
 }
 
 template <class T, class U>
-shared_ptr<T> static_pointer_cast(const shared_ptr<U>& ptr) {
+shared_ptr<T> static_pointer_cast(const shared_ptr<U>& ptr)
+{
     return shared_ptr<T>(ptr, static_cast<typename shared_ptr<T>::element_type*>(ptr.get()));
 }
 
 template <class T, class U>
-shared_ptr<T> dynamic_pointer_cast(const shared_ptr<U>& ptr) {
+shared_ptr<T> dynamic_pointer_cast(const shared_ptr<U>& ptr)
+{
     T* p = dynamic_cast<typename shared_ptr<T>::element_type*>(ptr.get());
     if (NULL != p) {
         return shared_ptr<T>(ptr, p);

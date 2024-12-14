@@ -2,16 +2,20 @@
 
 #include <logger.h>
 #include <str_utils.h>
+
 #include <sstream>
+
 #include "RqTarget.h"
 #include "http.h"
 
 namespace http {
 
-Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false), body("")
+Request::Request()
+    : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false), body("")
 {}
 
-Request::~Request() {
+Request::~Request()
+{
     if (has_body && body[0] != '\0') {
         std::remove(body);
     }
@@ -32,11 +36,9 @@ std::string Request::GetDebugString() const
     std::ostringstream ret;
     ret << "---Request---"
         << "\n\tStatus: " << (status == HTTP_OK ? "OK " : "BAD ") << status
-        << "\n\tMethod: " << method
-        << "\n\tMethod: " << HttpMethodToStr(method).second
+        << "\n\tMethod: " << method << "\n\tMethod: " << HttpMethodToStr(method).second
         << "\n\tRequest-Target: " << rqTarget.ToStr()
-        << "\n\tVersion: " << HttpVerToStr(version).second
-        << "\n\t~Headers~";
+        << "\n\tVersion: " << HttpVerToStr(version).second << "\n\t~Headers~";
 
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
          it != headers.end(); ++it) {

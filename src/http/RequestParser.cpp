@@ -1,15 +1,16 @@
 #include "RequestParser.h"
-#include "http.h"
+
+#include <logger.h>
 
 #include <cstring>
-#include <logger.h>
 #include <sstream>
+
+#include "http.h"
 
 
 namespace http {
 
-RequestParser::RequestParser()
-    : old_buf_size_(0), element_end_idx_(0)
+RequestParser::RequestParser() : old_buf_size_(0), element_end_idx_(0)
 {}
 
 std::vector<char>& RequestParser::buf()
@@ -50,7 +51,8 @@ size_t RequestParser::ElementLen() const
     return element_end_idx_ + 1;
 }
 
-size_t RequestParser::RemainingLength() const {
+size_t RequestParser::RemainingLength() const
+{
     return buf_.size() - element_end_idx_;
 }
 
@@ -77,8 +79,7 @@ std::string RequestParser::ExtractElement()
 
 std::string RequestParser::ExtractLine()
 {
-    size_t len_without_crlf =
-        (element_end_idx_ <= 0 ? 0 : element_end_idx_ - 1);
+    size_t len_without_crlf = (element_end_idx_ <= 0 ? 0 : element_end_idx_ - 1);
     std::string line = std::string(buf_.data(), buf_.data() + len_without_crlf);
     LOG(DEBUG) << "erasing " << len_without_crlf + 1 << " bytes";
     buf_.erase(buf_.begin(), buf_.begin() + len_without_crlf + 2);
@@ -102,14 +103,16 @@ size_t RequestParser::element_end_idx() const
     return element_end_idx_;
 }
 
-bool RequestParser::FoundCRLF() const {
+bool RequestParser::FoundCRLF() const
+{
     if (element_end_idx_ < 1) {
         return false;
     }
     return buf_[element_end_idx_ - 1] == '\r' && buf_[element_end_idx_] == '\n';
 }
 
-bool RequestParser::FoundSingleCR() const {
+bool RequestParser::FoundSingleCR() const
+{
     if (element_end_idx_ < 1) {
         return false;
     }

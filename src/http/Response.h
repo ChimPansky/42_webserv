@@ -2,19 +2,23 @@
 #define WS_HTTP_RESPONSE_H
 
 #include <ResponseCodes.h>
-#include <string>
-#include <vector>
-#include <map>
-#include <unique_ptr.h>
-#include "http.h"
 #include <numeric_utils.h>
 #include <time_utils.h>
+#include <unique_ptr.h>
+
+#include <map>
+#include <string>
+#include <vector>
+
+#include "http.h"
 
 namespace http {
 
 class Response {
   public:
-    Response(ResponseCode code, http::Version version, const std::map<std::string, std::string>& headers, const std::vector<char>& body);
+    Response(ResponseCode code, http::Version version,
+             const std::map<std::string, std::string>& headers, const std::vector<char>& body);
+
   public:
     std::vector<char> Dump() const;
     std::string DumpToStr() const;
@@ -31,7 +35,7 @@ class Response {
 class IResponseCallback {
   public:
     virtual void Call(utils::unique_ptr<http::Response> rs) = 0;
-    virtual ~IResponseCallback() {};
+    virtual ~IResponseCallback(){};
 };
 
 /*
@@ -49,13 +53,14 @@ Connection: Closed\n\r\
 </body>\n\r\
 </html>\n\r"
 */
-inline utils::unique_ptr<http::Response> GetSimpleValidResponse() {
+inline utils::unique_ptr<http::Response> GetSimpleValidResponse()
+{
     std::string txt_body =
-      "<html>\n\r"
-      "<body>\n\r"
-      "<h1>Hello, World!</h1>\n\r"
-      "</body>\n\r"
-      "</html>\n\r";
+        "<html>\n\r"
+        "<body>\n\r"
+        "<h1>Hello, World!</h1>\n\r"
+        "</body>\n\r"
+        "</html>\n\r";
 
     std::map<std::string, std::string> hdrs;
     hdrs["Last-Modified"] = "Wed, 22 Jul 2009 19:15:56 GMT";
@@ -65,7 +70,8 @@ inline utils::unique_ptr<http::Response> GetSimpleValidResponse() {
 
     std::vector<char> body;
     std::copy(txt_body.begin(), txt_body.end(), std::back_inserter(body));
-    return utils::unique_ptr<http::Response>(new http::Response(http::HTTP_OK, HTTP_1_1, hdrs, body));
+    return utils::unique_ptr<http::Response>(
+        new http::Response(http::HTTP_OK, HTTP_1_1, hdrs, body));
 }
 
 }  // namespace http

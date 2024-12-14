@@ -12,7 +12,7 @@ class FileProcessor : public AResponseProcessor {
   public:
     FileProcessor(const std::string& file_path,
                   utils::unique_ptr<http::IResponseCallback> response_rdy_cb);
-    ~FileProcessor() {};
+    ~FileProcessor(){};
 
   private:
     utils::unique_ptr<AResponseProcessor> delegated_response_processor_;

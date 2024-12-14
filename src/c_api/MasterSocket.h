@@ -3,10 +3,10 @@
 
 #include <netinet/in.h>  // sockaddr_in
 #include <sys/socket.h>  // socket, bind
-#include <unistd.h>      // close
+#include <unique_ptr.h>
+#include <unistd.h>  // close
 
 #include "ClientSocket.h"
-#include <unique_ptr.h>
 
 namespace c_api {
 

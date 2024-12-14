@@ -1,7 +1,7 @@
 #include "RqTarget.h"
 
-#include <str_utils.h>
 #include <http.h>
+#include <str_utils.h>
 
 #include <cstring>
 #include <sstream>
@@ -17,7 +17,8 @@ std::ostream& operator<<(std::ostream& out, const RqTarget& RqTarget)
 // before decoding: check that each target-component only contains valid characters
 
 
-RqTarget::RqTarget() : validity_state_(RQ_TARGET_GOOD) {}
+RqTarget::RqTarget() : validity_state_(RQ_TARGET_GOOD)
+{}
 
 RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GOOD)
 {
@@ -143,20 +144,17 @@ std::string RqTarget::GetDebugString() const
     oss << "query value: " << query_.second << "\n";
     oss << "fragment defined: " << (fragment_.first ? "YES" : "NO") << "\n";
     oss << "fragment value: " << fragment_.second << "\n";
-    oss << "FLAGS: " << "\n";
-    oss << "RQ_TARGET_GOOD: " << (validity_state_ == RQ_TARGET_GOOD ? "YES" : "NO") << "\n";
-    oss << "RQ_TARGET_TOO_LONG: " << (validity_state_ & RQ_TARGET_TOO_LONG ? "YES" : "NO")
+    oss << "FLAGS: "
         << "\n";
+    oss << "RQ_TARGET_GOOD: " << (validity_state_ == RQ_TARGET_GOOD ? "YES" : "NO") << "\n";
+    oss << "RQ_TARGET_TOO_LONG: " << (validity_state_ & RQ_TARGET_TOO_LONG ? "YES" : "NO") << "\n";
     oss << "RQ_TARGET_BAD_SCHEME: " << (validity_state_ & RQ_TARGET_BAD_SCHEME ? "YES" : "NO")
         << "\n";
     oss << "RQ_TARGET_HAS_USER_INFO: " << (validity_state_ & RQ_TARGET_HAS_USER_INFO ? "YES" : "NO")
         << "\n";
-    oss << "RQ_TARGET_BAD_HOST: " << (validity_state_ & RQ_TARGET_BAD_HOST ? "YES" : "NO")
-        << "\n";
-    oss << "RQ_TARGET_BAD_PORT: " << (validity_state_ & RQ_TARGET_BAD_PORT ? "YES" : "NO")
-        << "\n";
-    oss << "RQ_TARGET_BAD_PATH: " << (validity_state_ & RQ_TARGET_BAD_PATH ? "YES" : "NO")
-        << "\n";
+    oss << "RQ_TARGET_BAD_HOST: " << (validity_state_ & RQ_TARGET_BAD_HOST ? "YES" : "NO") << "\n";
+    oss << "RQ_TARGET_BAD_PORT: " << (validity_state_ & RQ_TARGET_BAD_PORT ? "YES" : "NO") << "\n";
+    oss << "RQ_TARGET_BAD_PATH: " << (validity_state_ & RQ_TARGET_BAD_PATH ? "YES" : "NO") << "\n";
     oss << "RQ_TARGET_BAD_QUERY: " << (validity_state_ & RQ_TARGET_BAD_QUERY ? "YES" : "NO")
         << "\n";
     oss << "RQ_TARGET_HAS_FRAGMENT: " << (validity_state_ & RQ_TARGET_HAS_FRAGMENT ? "YES" : "NO")
@@ -271,8 +269,7 @@ void RqTarget::Normalize_()
         std::pair<bool, std::string> decoded = PercentDecode_(host_.second);
         if (decoded.first) {
             host_.second = decoded.second;
-        }
-        else { // invalid encoding detected -> BAD_REQUEST
+        } else {  // invalid encoding detected -> BAD_REQUEST
             validity_state_ |= RQ_TARGET_BAD_HOST;
         }
         ConvertEncodedHexToUpper_(host_.second);

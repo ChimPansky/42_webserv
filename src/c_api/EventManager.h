@@ -1,12 +1,12 @@
 #ifndef WS_C_API_EVENT_MANAGER_H
 #define WS_C_API_EVENT_MANAGER_H
 
+#include <unique_ptr.h>
+
 #include <vector>
 
 #include "multiplexers/ICallback.h"
 #include "multiplexers/IMultiplexer.h"
-
-#include <unique_ptr.h>
 
 namespace c_api {
 

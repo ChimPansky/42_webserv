@@ -18,7 +18,7 @@ int main() {
     int retval, fd;
 
     fd = open("/dev/random", O_RDONLY);
-    
+
     FD_ZERO(&readfds);
     FD_SET(fd, &readfds);
 

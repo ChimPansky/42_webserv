@@ -1,9 +1,9 @@
 #include "InheritedSettings.h"
 
-#include <stdexcept>
-
-#include <str_utils.h>
 #include <numeric_utils.h>
+#include <str_utils.h>
+
+#include <stdexcept>
 
 namespace config {
 

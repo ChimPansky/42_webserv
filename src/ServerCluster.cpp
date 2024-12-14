@@ -157,14 +157,16 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
         return;
     }
     LOG(INFO) << "New incoming connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in())
-        << ", client_fd: " << client_fd << " From: " << c_api::PrintIPv4SockAddr(client_sock->addr_in());
-    cluster_.clients_[client_fd] = utils::unique_ptr<ClientSession>(
-        new ClientSession(client_sock, fd, cluster_.sockets_to_servers_[acceptor.sockfd()][/*kDefaultServer*/ 0]));
+              << ", client_fd: " << client_fd
+              << " From: " << c_api::PrintIPv4SockAddr(client_sock->addr_in());
+    cluster_.clients_[client_fd] = utils::unique_ptr<ClientSession>(new ClientSession(
+        client_sock, fd, cluster_.sockets_to_servers_[acceptor.sockfd()][/*kDefaultServer*/ 0]));
 }
 
 void ServerCluster::FillResponseHeaders(http::Response& rs)
 {
     rs.AddHeader(std::make_pair("Server", kServerClusterName()));
     rs.AddHeader(std::make_pair("Date", utils::GetFormatedTime()));
-    rs.AddHeader(std::make_pair("Connection", "Close"));  // TODO fix or embrace (move to different place if embraced)
+    rs.AddHeader(std::make_pair(
+        "Connection", "Close"));  // TODO fix or embrace (move to different place if embraced)
 }

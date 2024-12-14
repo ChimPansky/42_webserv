@@ -2,15 +2,18 @@
 
 #include <fstream>
 #include <sstream>
-#include <logger.h>
+
+#include "logger.h"
 
 namespace utils {
 
-bool DoesPathExist(const char *path) {
+bool DoesPathExist(const char *path)
+{
     return access(path, F_OK) != -1;
 }
 
-bool IsDirectory(const char *path) {
+bool IsDirectory(const char *path)
+{
     struct stat info;
 
     if (stat(path, &info) != 0) {
@@ -28,7 +31,8 @@ bool IsRegularFile(const char *path) {
     return (info.st_mode & S_IFREG) != 0;
 }
 
-std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char* filePath) {
+std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath)
+{
     if (!filePath[0]) {
         LOG(ERROR) << "Empty file path";
         return std::make_pair(false, "");

@@ -11,15 +11,15 @@
 // just some comment to trigger valgrind CI on github
 
 
-#include "ServerCluster.h"
+#include <ConfigBuilder.h>
 
 #include <csignal>
 #include <iostream>
 
-#include <ConfigBuilder.h>
+#include "ServerCluster.h"
 
-int main(int ac, char **av) try
-{
+int main(int ac, char** av)
+try {
     if (ac != 2) {
         LOG(ERROR) << "usage: webserv <path-to-config-file>";
         return 1;
@@ -31,5 +31,7 @@ int main(int ac, char **av) try
 
     return 0;
 } catch (const std::exception& e) {
-    std::cerr << "Something went wrong and instead of creating a useful dump we're just showing this: " << e.what() << std::endl;
+    std::cerr
+        << "Something went wrong and instead of creating a useful dump we're just showing this: "
+        << e.what() << std::endl;
 }

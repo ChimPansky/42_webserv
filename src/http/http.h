@@ -10,7 +10,10 @@ namespace http {
 #define RQ_HEADER_SECTION_LIMIT 32768
 #define RQ_MAX_HEADER_COUNT 100
 
-inline const char* kCRLF() {return "\r\n";}
+inline const char* kCRLF()
+{
+    return "\r\n";
+}
 
 enum Method {
     HTTP_NO_METHOD,
@@ -28,12 +31,13 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
     HTTP_3
 };
 
-std::pair<bool/*found*/, std::string/*version*/> HttpVerToStr(http::Version ver);
-std::pair<bool/*found*/, std::string/*method*/> HttpMethodToStr(http::Method method);
-std::pair<bool/*found*/, http::Version> HttpVersionFromStr(const std::string& version);
-std::pair<bool/*found*/, http::Method> HttpMethodFromStr(const std::string& method);
+std::pair<bool /*found*/, std::string /*version*/> HttpVerToStr(http::Version ver);
+std::pair<bool /*found*/, std::string /*method*/> HttpMethodToStr(http::Method method);
+std::pair<bool /*found*/, http::Version> HttpVersionFromStr(const std::string& version);
+std::pair<bool /*found*/, http::Method> HttpMethodFromStr(const std::string& method);
 
-static const char* kUnreserved = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+static const char* kUnreserved =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 static const char* kGenDelims = ":/?#[]@";
 static const char* kSubDelims = "!$&'()*+,;=";
 

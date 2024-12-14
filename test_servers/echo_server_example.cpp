@@ -1,9 +1,11 @@
-#include "common.h"
-#include <iostream>
-
 #include <errno.h>
 
-int main() {
+#include <iostream>
+
+#include "common.h"
+
+int main()
+{
     unsigned short port = 8080;
     int sockfd = CreateAndBindSocket(IPv4FromString("127.0.0.1"), port);
 
@@ -33,7 +35,7 @@ int main() {
             if (buf[0] == '\0') {
                 std::cout << std::endl;
             }
-            long b =  0;
+            long b = 0;
             while (b != a) {
                 b += send(slave_socket_fd, buf + b, a, MSG_NOSIGNAL);
             }
