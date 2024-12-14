@@ -68,8 +68,22 @@ std::string GetBodyContent_(const http::Request& rq) {
     return body_str.second;
 }
 
+class DummyCb : public http::IChooseServerCb {
+  public:
+    DummyCb() {}
+    http::ChosenServerParams Call(const http::Request&) {
+        http::ChosenServerParams params;
+        params.max_body_size = 1500;
+        return params;
+    }
+};
+
+http::RequestBuilder CreateBuilder() {
+    return http::RequestBuilder(utils::unique_ptr<http::IChooseServerCb>(new DummyCb()));
+}
+
 TEST(ValidWithBody, 1_Bodylen_14) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq1.txt", 50) != 0) {
         FAIL();
     }
@@ -85,7 +99,7 @@ TEST(ValidWithBody, 1_Bodylen_14) {
 }
 
 TEST(ValidWithBody, 2_One_Chunk_1100) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq2.txt", 10) != 0) {
         FAIL();
     }
@@ -98,7 +112,7 @@ TEST(ValidWithBody, 2_One_Chunk_1100) {
 }
 
 TEST(ValidWithBody, 3_One_Chunk_1100) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq2.txt", 9) != 0) {
         FAIL();
     }
@@ -111,7 +125,7 @@ TEST(ValidWithBody, 3_One_Chunk_1100) {
 }
 
 TEST(ValidWithBody, 4_Bodylen_1) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq4.txt", 50) != 0) {
         FAIL();
     }
@@ -125,7 +139,7 @@ TEST(ValidWithBody, 4_Bodylen_1) {
 }
 
 TEST(ValidWithBody, 5_Chunked_1) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq5.txt", 50) != 0) {
         FAIL();
     }
@@ -139,7 +153,7 @@ TEST(ValidWithBody, 5_Chunked_1) {
 
 // Valid without body:
 TEST(ValidWithoutBody, 6_SimpleGet) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq6.txt", 50) != 0) {
         FAIL();
     }
@@ -153,7 +167,7 @@ TEST(ValidWithoutBody, 6_SimpleGet) {
 }
 
 TEST(ValidWithoutBody, 7_GetWithQuery) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq7.txt", 100) != 0) {
         FAIL();
     }
@@ -167,7 +181,7 @@ TEST(ValidWithoutBody, 7_GetWithQuery) {
 }
 
 TEST(ValidWithoutBody, 8_GetWithHeaders) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq8.txt", 100) != 0) {
         FAIL();
     }
@@ -183,7 +197,7 @@ TEST(ValidWithoutBody, 8_GetWithHeaders) {
 
 // POST without content-length or chunked: BAD_REQUEST?
 TEST(InValidWithoutBody, 9_PostWithHeaders) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq9.txt", 80) != 0) {
         FAIL();
     }
@@ -198,7 +212,7 @@ TEST(InValidWithoutBody, 9_PostWithHeaders) {
 }
 
 TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq10.txt", 50) != 0) {
         FAIL();
     }
@@ -212,7 +226,7 @@ TEST(ValidWithoutBody, 10_DeleteWithHeaders) {
 }
 
 TEST(InValidWithoutBody, 11_Incomplete_Method) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq11.txt", 7) != 0) {
         FAIL();
     }
@@ -220,7 +234,7 @@ TEST(InValidWithoutBody, 11_Incomplete_Method) {
 }
 
 TEST(InValidWithoutBody, 12_Too_Many_Spaces) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq12.txt", 7) != 0) {
         FAIL();
     }
@@ -228,7 +242,7 @@ TEST(InValidWithoutBody, 12_Too_Many_Spaces) {
 }
 
 TEST(InValidWithoutBody, 13_No_URI) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq13.txt", 10) != 0) {
         FAIL();
     }
@@ -238,7 +252,7 @@ TEST(InValidWithoutBody, 13_No_URI) {
 }
 
 TEST(InValidWithoutBody, 14_Invalid_Version) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq14.txt", 1000) != 0) {
         FAIL();
     }
@@ -250,7 +264,7 @@ TEST(InValidWithoutBody, 14_Invalid_Version) {
 
 // when testing this and viewing rq15.txt in editor: careful about VS Code setting "Files: Insert Final Newline"
 TEST(InValidWithoutBody, 15_No_CRLF_After_Version) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq15.txt", 10000) != 0) {
         FAIL();
     }
@@ -259,7 +273,7 @@ TEST(InValidWithoutBody, 15_No_CRLF_After_Version) {
 }
 
 TEST(InValidWithoutBody, 16_Just_LF_After_Version) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq16.txt", 13) != 0) {
         FAIL();
     }
@@ -268,7 +282,7 @@ TEST(InValidWithoutBody, 16_Just_LF_After_Version) {
 }
 
 TEST(InValidWithoutBody, 17_Bad_Header_Key) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq17.txt", 9) != 0) {
         FAIL();
     }
@@ -279,7 +293,7 @@ TEST(InValidWithoutBody, 17_Bad_Header_Key) {
 }
 
 TEST(InValidWithoutBody, 18_Bad_Header_Key) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq18.txt", 1) != 0) {
         FAIL();
     }
@@ -290,7 +304,7 @@ TEST(InValidWithoutBody, 18_Bad_Header_Key) {
 }
 
 TEST(InValidWithoutBody, 19_Bad_Header_Key) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq19.txt", 100) != 0) {
         FAIL();
     }
@@ -301,7 +315,7 @@ TEST(InValidWithoutBody, 19_Bad_Header_Key) {
 }
 
 TEST(InValidWithoutBody, 20_Bad_Header_Key) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq20.txt", 100) != 0) {
         FAIL();
     }
@@ -312,7 +326,7 @@ TEST(InValidWithoutBody, 20_Bad_Header_Key) {
 }
 
 TEST(InValidWithoutBody, 21_Bad_Header_Key) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq21.txt", 100) != 0) {
         FAIL();
     }
@@ -322,9 +336,8 @@ TEST(InValidWithoutBody, 21_Bad_Header_Key) {
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
-
 TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq24.txt", 10) != 0) {
         FAIL();
     }
@@ -345,7 +358,7 @@ TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
 //TODO: Tests 41+ check for invalid body content
 
 TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq50.txt", 1000) != 0) {
         FAIL();
     }
@@ -357,7 +370,7 @@ TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus) {
 }
 
 TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
         FAIL();
     }
@@ -369,7 +382,7 @@ TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus) {
 }
 
 TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
-     http::RequestBuilder builder = http::RequestBuilder();
+     http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq52.txt", 1000) != 0) {
         FAIL();
     }
@@ -381,7 +394,7 @@ TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces) {
 }
 
 TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq51.txt", 1000) != 0) {
         FAIL();
     }
@@ -393,7 +406,7 @@ TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces) {
 }
 
 TEST(MaxBodySize, 55_Body_too_large) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq55.txt", 1000) != 0) {
         FAIL();
     }
@@ -401,25 +414,59 @@ TEST(MaxBodySize, 55_Body_too_large) {
     EXPECT_EQ(http::HTTP_PAYLOAD_TOO_LARGE, builder.rq().status);
 }
 
-TEST(InvalidUri, 60_Uri_too_long) {
-    http::RequestBuilder builder = http::RequestBuilder();
+TEST(LengthLimits, 60_Uri_too_long) {
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq60.txt", 1000) != 0) {
         FAIL();
     }
-    if (RQ_LINE_LEN_LIMIT > 256 && RQ_TARGET_LEN_LIMIT > 256) {
-        EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiiiblablabla", builder.rq().rqTarget.ToStr());
-        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
-    } else if (RQ_LINE_LEN_LIMIT <= 256) {
+    if (RQ_LINE_LEN_LIMIT <= 8192) {
         EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
-        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
-    } else {
-        EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
-        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
+    }
+    else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
     }
 }
 
+TEST(LengthLimits, 61_Header_Too_Long) {
+    http::RequestBuilder builder = CreateBuilder();
+    if (BuildRequest(builder, "rq61.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_LINE_LEN_LIMIT <= 8192) {
+        EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+    } else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    }
+}
+
+TEST(LengthLimits, 62_Header_Section_Too_Large) {
+    http::RequestBuilder builder = CreateBuilder();
+    if (BuildRequest(builder, "rq62.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_HEADER_SECTION_LIMIT <= 32768) {
+        EXPECT_EQ(http::HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE, builder.rq().status);
+    } else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    }
+}
+
+TEST(LengthLimits, 65_Too_Many_Headers) {
+    http::RequestBuilder builder = CreateBuilder();
+    if (BuildRequest(builder, "rq65.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_MAX_HEADER_COUNT <= 100) {
+        EXPECT_EQ(http::HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE, builder.rq().status);
+    } else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    }
+}
+
+
+
 TEST(BadMethod, 70_Bad_Method) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq70.txt", 1000) != 0) {
         FAIL();
     }
@@ -427,7 +474,7 @@ TEST(BadMethod, 70_Bad_Method) {
 }
 
 TEST(BadMethod, 76_Unsupported_Method) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq76.txt", 1000) != 0) {
         FAIL();
     }

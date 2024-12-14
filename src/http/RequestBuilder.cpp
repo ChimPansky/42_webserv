@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iterator>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -19,8 +20,12 @@
 namespace http {
 
 RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb)
-    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb)
-{}
+    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb), header_count_(0), header_section_size_(0)
+{
+    if (!choose_server_cb_) {
+        throw std::logic_error("No Choose Server Callback specified");
+    }
+}
 
 RequestBuilder::BodyBuilder::BodyBuilder()
     : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
@@ -105,6 +110,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
             return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
         }
     }
+    header_section_size_ += extraction_.size();
     // todo for robustness: if very first line of request empty -> ignore and continue
     std::stringstream ss(extraction_);
     std::string raw_method, raw_rq_target, raw_version;
@@ -204,7 +210,12 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
             return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
         }
     }
-    if (extraction_.empty()) {
+    header_section_size_ += extraction_.size();
+    if (header_section_size_ > RQ_HEADER_SECTION_LIMIT) {
+        LOG(INFO) << "Header Section too large";
+        return SetStatusAndExitBuilder_(HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE);
+    }
+    if (extraction_.empty()) {  // empty line -> end of headers
         return BS_MATCH_SERVER;
     }
     std::stringstream ss(extraction_);
@@ -220,21 +231,17 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_() {
         LOG(INFO) << "Extra characters after header val";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    if (!InsertHeaderField_(header_key, header_val)) {
-        LOG(INFO) << "Could not insert header Field";
-        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+    ResponseCode rc = InsertHeaderField_(header_key, header_val);
+    LOG(INFO) << "Could not insert header Field";
+    if (rc != http::HTTP_OK) {
+        return SetStatusAndExitBuilder_(rc);
     }
     return BS_HEADER_FIELDS;
 }
 
 RequestBuilder::BuildState RequestBuilder::MatchServer_() {
     LOG(DEBUG) << "MatchServer_";
-    if (choose_server_cb_) {
-        body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
-    } else {    //tests
-        LOG(DEBUG) << "SETTING MAX_BODY_SIZE TO 1500";
-        body_builder_.max_body_size = 1500;
-    }
+    body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
     return BS_CHECK_HEADERS;
 }
 
@@ -438,11 +445,15 @@ bool RequestBuilder::IsParsingState_(BuildState state) const
     return (state != BS_MATCH_SERVER && state != BS_CHECK_HEADERS && state != BS_PREPARE_TO_READ_BODY);
 }
 
-bool RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
+ResponseCode RequestBuilder::InsertHeaderField_(std::string& key, std::string& value) {
+    header_count_++;
+    if (header_count_ > RQ_MAX_HEADER_COUNT) {
+        return HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+    }
     std::string key_lower = utils::ToLowerCase(key);
     // todo: handle list values
     rq_.headers[key_lower] = value;
-    return true;
+    return HTTP_OK;
 }
 
 RequestBuilder::BuildState RequestBuilder::SetStatusAndExitBuilder_(ResponseCode status) {
