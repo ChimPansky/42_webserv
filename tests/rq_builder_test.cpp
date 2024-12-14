@@ -415,7 +415,7 @@ TEST(MaxBodySize, 55_Body_too_large) {
 }
 
 TEST(LengthLimits, 60_Uri_too_long) {
-      http::RequestBuilder builder = CreateBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq60.txt", 1000) != 0) {
         FAIL();
     }
@@ -428,7 +428,7 @@ TEST(LengthLimits, 60_Uri_too_long) {
 }
 
 TEST(LengthLimits, 61_Header_Too_Long) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq61.txt", 1000) != 0) {
         FAIL();
     }
@@ -440,7 +440,7 @@ TEST(LengthLimits, 61_Header_Too_Long) {
 }
 
 TEST(LengthLimits, 62_Header_Section_Too_Large) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq62.txt", 1000) != 0) {
         FAIL();
     }
@@ -452,7 +452,7 @@ TEST(LengthLimits, 62_Header_Section_Too_Large) {
 }
 
 TEST(LengthLimits, 65_Too_Many_Headers) {
-    http::RequestBuilder builder = http::RequestBuilder();
+    http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq65.txt", 1000) != 0) {
         FAIL();
     }
