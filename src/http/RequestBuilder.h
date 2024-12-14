@@ -80,6 +80,8 @@ class RequestBuilder {
     BuildState build_state_;
     BodyBuilder body_builder_;
     utils::unique_ptr<IChooseServerCb> choose_server_cb_;
+    size_t header_count_;
+    size_t header_section_size_;
 
     BuildState BuildFirstLine_();
     http::ResponseCode TrySetMethod_(const std::string& raw_method);
@@ -88,7 +90,7 @@ class RequestBuilder {
     BuildState BuildHeaderField_();
     http::ResponseCode ValidateHeadersSyntax_();
     http::ResponseCode InterpretHeaders_();
-    bool InsertHeaderField_(std::string& key, std::string& value);
+    ResponseCode InsertHeaderField_(std::string& key, std::string& value);
     BuildState MatchServer_();
     BuildState CheckHeaders_();
     BuildState PrepareBody_();

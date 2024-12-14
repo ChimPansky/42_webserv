@@ -5,8 +5,10 @@
 
 namespace http {
 
-#define RQ_LINE_LEN_LIMIT 512 // todo: increase this later to 8192. keep it low for testing purposes
-#define RQ_TARGET_LEN_LIMIT 256 // todo: increase this later. keep it low for testing purposes
+#define RQ_LINE_LEN_LIMIT 8192
+#define RQ_TARGET_LEN_LIMIT 8192
+#define RQ_HEADER_SECTION_LIMIT 32768
+#define RQ_MAX_HEADER_COUNT 100
 
 inline const char* kCRLF() {return "\r\n";}
 

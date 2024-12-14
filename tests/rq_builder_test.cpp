@@ -336,7 +336,6 @@ TEST(InValidWithoutBody, 21_Bad_Header_Key) {
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
-
 TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value) {
      http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq24.txt", 10) != 0) {
@@ -415,22 +414,56 @@ TEST(MaxBodySize, 55_Body_too_large) {
     EXPECT_EQ(http::HTTP_PAYLOAD_TOO_LARGE, builder.rq().status);
 }
 
-TEST(InvalidUri, 60_Uri_too_long) {
-    http::RequestBuilder builder = CreateBuilder();
+TEST(LengthLimits, 60_Uri_too_long) {
+      http::RequestBuilder builder = CreateBuilder();
     if (BuildRequest(builder, "rq60.txt", 1000) != 0) {
         FAIL();
     }
-    if (RQ_LINE_LEN_LIMIT > 256 && RQ_TARGET_LEN_LIMIT > 256) {
-        EXPECT_EQ("/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiii/llooooooonnnnnnnnnngggggggggggggguuuuuuuuuuuurrrrrrrriiiiiiiiiiblablabla", builder.rq().rqTarget.ToStr());
-        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
-    } else if (RQ_LINE_LEN_LIMIT <= 256) {
-        EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
-        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
-    } else {
+    if (RQ_LINE_LEN_LIMIT <= 8192) {
         EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
-        EXPECT_EQ("", builder.rq().rqTarget.ToStr());
+    }
+    else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
     }
 }
+
+TEST(LengthLimits, 61_Header_Too_Long) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq61.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_LINE_LEN_LIMIT <= 8192) {
+        EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
+    } else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    }
+}
+
+TEST(LengthLimits, 62_Header_Section_Too_Large) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq62.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_HEADER_SECTION_LIMIT <= 32768) {
+        EXPECT_EQ(http::HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE, builder.rq().status);
+    } else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    }
+}
+
+TEST(LengthLimits, 65_Too_Many_Headers) {
+    http::RequestBuilder builder = http::RequestBuilder();
+    if (BuildRequest(builder, "rq65.txt", 1000) != 0) {
+        FAIL();
+    }
+    if (RQ_MAX_HEADER_COUNT <= 100) {
+        EXPECT_EQ(http::HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE, builder.rq().status);
+    } else {
+        EXPECT_EQ(http::HTTP_OK, builder.rq().status);
+    }
+}
+
+
 
 TEST(BadMethod, 70_Bad_Method) {
     http::RequestBuilder builder = CreateBuilder();
