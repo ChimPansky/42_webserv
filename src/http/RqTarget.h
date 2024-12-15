@@ -105,8 +105,8 @@ class RqTarget {
     // segments and collapse slashes in path
     void Normalize_();
     std::pair<bool /*valid_triplet*/, std::string> PercentDecode_(
-        const std::string& str, const char* decode_set = NULL) const;
-    std::string PercentEncode_(const std::string& str, const char* no_decode_set = NULL) const;
+        const std::string& str, const char* dont_decode_set = NULL) const;
+    std::string PercentEncode_(const std::string& str, const char* dont_encode_set = NULL) const;
     void ConvertEncodedHexToUpper_(std::string& str);
     std::pair<bool /*no_directory_traversal*/, std::string> RemoveDotSegments_(
         const std::string& str) const;

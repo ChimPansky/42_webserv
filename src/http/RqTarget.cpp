@@ -280,7 +280,7 @@ void RqTarget::Normalize_()
         port_ = std::pair<bool, std::string>(false, "");
     }
     if (path_.first) {
-        std::pair<bool, std::string> decoded = PercentDecode_(path_.second);
+        std::pair<bool, std::string> decoded = PercentDecode_(path_.second, "/");
         if (decoded.first) {
             path_.second = decoded.second;
         } else {  // invalid encoding detected -> BAD_REQUEST
@@ -296,7 +296,8 @@ void RqTarget::Normalize_()
         }
     }
     if (query_.first) {
-        std::pair<bool, std::string> decoded = PercentDecode_(query_.second);
+        std::pair<bool, std::string> decoded =
+            PercentDecode_(query_.second, "&=");  // maybe change to "&=+,/,;?"
         if (decoded.first) {
             query_.second = decoded.second;
         } else {  // invalid encoding detected -> BAD_REQUEST
@@ -306,8 +307,9 @@ void RqTarget::Normalize_()
     }
 }
 
+// decode all percent-encoded characters, except those in the dont_decode_set
 std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
-    const std::string& str, const char* decode_set) const
+    const std::string& str, const char* dont_decode_set) const
 {
     std::string decoded;
     std::pair<bool, unsigned short> ascii;
@@ -317,14 +319,13 @@ std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
                 return std::pair<bool, std::string>(false, "");
             }
             ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
-            if (!decode_set ||
-                (decode_set && strchr(decode_set, static_cast<char>(ascii.second)))) {
+            if (dont_decode_set && strchr(dont_decode_set, static_cast<char>(ascii.second))) {
+                decoded += str.substr(i, 3);
+            } else {
                 if (!ascii.first) {
                     return std::pair<bool, std::string>(false, "");
                 }
                 decoded += static_cast<char>(ascii.second);
-            } else {
-                decoded += str.substr(i, 3);
             }
             i += 2;
         } else {
@@ -335,13 +336,13 @@ std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
 }
 
 // encode all chars that are not in the unreserved set (delimiters, whitespaces, etc.) and not in
-// the no_decode_set for example: dont encode "/" in path, but encode it in query
-std::string RqTarget::PercentEncode_(const std::string& str, const char* no_decode_set) const
+// the dont_encode_set for example: dont encode "/" in path, but encode it in query
+std::string RqTarget::PercentEncode_(const std::string& str, const char* dont_encode_set) const
 {
     std::string encoded;
     for (size_t i = 0; i < str.size(); ++i) {
         if (strchr(kUnreserved, str[i]) == NULL &&
-            (no_decode_set && strchr(no_decode_set, str[i]) == NULL)) {
+            (dont_encode_set && strchr(dont_encode_set, str[i]) == NULL)) {
             encoded += '%';
             encoded += utils::NumericToHexStr(str[i]);
         } else {
