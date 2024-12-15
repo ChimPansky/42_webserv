@@ -15,7 +15,7 @@ FileProcessor::FileProcessor(const std::string& file_path,
 {
     if (!utils::DoesPathExist(file_path.c_str())) {
         LOG(DEBUG) << "Requested file not found: " << file_path;
-        err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
+        err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
             new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
         return;
     }
@@ -31,7 +31,7 @@ FileProcessor::FileProcessor(const std::string& file_path,
     if (!file.is_open()) {
         LOG(DEBUG) << "Requested file cannot be opened: " << file_path;
         err_response_processor_ =
-            utils::unique_ptr<AResponseProcessor>(new GeneratedErrorResponseProcessor(
+            utils::unique_ptr<GeneratedErrorResponseProcessor>(new GeneratedErrorResponseProcessor(
                 response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
         return;
     }

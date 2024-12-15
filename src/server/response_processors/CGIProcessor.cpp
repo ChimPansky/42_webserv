@@ -19,7 +19,7 @@ bool CGIProcessor::IsValidMethod_(utils::shared_ptr<Location> loc, const http::R
 }
 
 std::string CGIProcessor::GetInterpreterByExt_(utils::shared_ptr<Location> loc,
-                                          const std::string& script_path)
+                                               const std::string& script_path)
 {
     if (script_path.find_last_of(".") == std::string::npos) {
         return std::string();
@@ -46,9 +46,9 @@ void CGIProcessor::SetEnv_(const std::string& script_path, const http::Request& 
     envv_.push_back("GATEWAY_INTERFACE=CGI/1.1");
     envv_.push_back("SERVER_SOFTWARE=webserv/1.0");
 
-    envv_.push_back("SERVER_PROTOCOL=" + std::string(HttpVerToStr(rq.version)));
+    envv_.push_back("SERVER_PROTOCOL=" + std::string(HttpVerToStr(rq.version).second));
     envv_.push_back("SCRIPT_NAME=" + rq.rqTarget.path());
-    envv_.push_back("REQUEST_METHOD=" + std::string(HttpMethodToStr(rq.method)));
+    envv_.push_back("REQUEST_METHOD=" + std::string(HttpMethodToStr(rq.method).second));
 
     if (!rq.body.empty()) {
         envv_.push_back("CONTENT_LENGTH=" + utils::NumericToString(rq.body.size()));
@@ -85,8 +85,10 @@ int CGIProcessor::Execute_(const std::string& script_path, const http::Request& 
         return 1;
     }
 
-    utils::unique_ptr<c_api::SocketWrapper> client_socket = utils::unique_ptr<c_api::SocketWrapper>(new c_api::SocketWrapper(sv[0]));
-    utils::unique_ptr<c_api::SocketWrapper> server_socket = utils::unique_ptr<c_api::SocketWrapper>(new c_api::SocketWrapper(sv[1]));
+    utils::unique_ptr<c_api::SocketWrapper> client_socket =
+        utils::unique_ptr<c_api::SocketWrapper>(new c_api::SocketWrapper(sv[0]));
+    utils::unique_ptr<c_api::SocketWrapper> server_socket =
+        utils::unique_ptr<c_api::SocketWrapper>(new c_api::SocketWrapper(sv[1]));
 
     if (!rq.body.empty()) {
         if (c_api::EventManager::get().RegisterCallback(
@@ -191,7 +193,8 @@ CGIProcessor::CGIProcessor(const std::string& script_path, const http::Request& 
                 response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
         return;
     }
-    response_rdy_cb_->Call(utils::unique_ptr<http::Response>(new http::Response(http::HTTP_OK, http::HTTP_1_1, std::map<std::string, std::string>(), buffer_)));
+    response_rdy_cb_->Call(utils::unique_ptr<http::Response>(new http::Response(
+        http::HTTP_OK, http::HTTP_1_1, std::map<std::string, std::string>(), buffer_)));
 }
 
 CGIProcessor::~CGIProcessor()
@@ -239,7 +242,7 @@ void CGIProcessor::CGIWriteCallback::Call(int /*fd*/)
 }
 
 CGIProcessor::ChildProcess::ChildProcess(pid_t pid)
-    : child_pid_(pid), start_time_(std::time(NULL)), status_(0) {};
+    : child_pid_(pid), start_time_(std::time(NULL)), status_(0){};
 
 
 void CGIProcessor::ChildProcess::Monitor()
@@ -247,7 +250,6 @@ void CGIProcessor::ChildProcess::Monitor()
     int timeout = 5;
 
     while (true) {
-
         if (std::time(NULL) - start_time_ > timeout) {
             LOG(ERROR) << "Timeout exceeded. Terminating child process...";
             kill(child_pid_, SIGKILL);
@@ -263,5 +265,7 @@ void CGIProcessor::ChildProcess::Monitor()
     }
 }
 
-int CGIProcessor::ChildProcess::status() const { return status_; }
-
+int CGIProcessor::ChildProcess::status() const
+{
+    return status_;
+}
