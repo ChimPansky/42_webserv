@@ -1,6 +1,7 @@
 #ifndef WS_UTILS_NUMERIC_UTILS_H
 #define WS_UTILS_NUMERIC_UTILS_H
 
+#include <iomanip>
 #include <limits>
 #include <sstream>
 
@@ -82,6 +83,14 @@ std::string NumericToString(NumType num)
 {
     std::stringstream ss;
     ss << num;
+    return ss.str();
+}
+
+template <typename NumType>
+std::string NumericToHexStr(NumType c)
+{
+    std::stringstream ss;
+    ss << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << (int)c;
     return ss.str();
 }
 }  // namespace utils
