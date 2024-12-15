@@ -5,7 +5,6 @@
 #include <stdexcept>
 
 #include "multiplexers/IMultiplexer.h"
-#include <unistd.h>
 
 namespace c_api {
 
@@ -82,16 +81,6 @@ void EventManager::ClearCallback_(int fd, CallbackType type)
             LOG(ERROR) << "Could not unregister write callback for fd: " << fd;
         }
         wr_sockets_.erase(fd);
-    }
-}
-
-void    EventManager::CloseAllFds()
-{
-    for (c_api::FdToCallbackMapIt it = rd_sockets_.begin(); it != rd_sockets_.end(); ++it) {
-        close((*it).first);
-    }
-    for (c_api::FdToCallbackMapIt it = wr_sockets_.begin(); it != wr_sockets_.end(); ++it) {
-        close((*it).first); 
     }
 }
 
