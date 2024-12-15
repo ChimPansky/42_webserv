@@ -6,6 +6,8 @@
 #include <cstring>
 #include <sstream>
 
+#include "logger.h"
+
 namespace http {
 
 std::ostream& operator<<(std::ostream& out, const RqTarget& RqTarget)
@@ -34,8 +36,9 @@ RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GO
     ParsePath_(raw_target, raw_target_pos);
     ParseQuery_(raw_target, raw_target_pos);
     ParseFragment_(raw_target, raw_target_pos);
-    Normalize_();
     Validate_();
+    Normalize_();
+    LOG(DEBUG) << "RqTarget: " << GetDebugString();
 }
 
 RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host,
@@ -63,8 +66,8 @@ RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, cons
     if (!fragment.empty()) {
         fragment_ = std::make_pair(true, fragment);
     }
-    Normalize_();
     Validate_();
+    Normalize_();
 }
 
 RqTarget::RqTarget(const RqTarget& rhs)
@@ -114,9 +117,9 @@ std::string RqTarget::ToStr() const
     if (port_.first) {
         ss << ":" << port_.second;
     }
-    ss << path_.second;
+    ss << PercentEncode_(path_.second, "/");
     if (query_.first) {
-        ss << "?" << query_.second;
+        ss << "?" << PercentEncode_(query_.second, "&=");
     }
     if (fragment_.first) {
         ss << "#" << fragment_.second;
@@ -278,7 +281,7 @@ void RqTarget::Normalize_()
         port_ = std::pair<bool, std::string>(false, "");
     }
     if (path_.first) {
-        std::pair<bool, std::string> decoded = PercentDecode_(path_.second);
+        std::pair<bool, std::string> decoded = PercentDecode_(path_.second, "/");
         if (decoded.first) {
             path_.second = decoded.second;
         } else {  // invalid encoding detected -> BAD_REQUEST
@@ -294,7 +297,8 @@ void RqTarget::Normalize_()
         }
     }
     if (query_.first) {
-        std::pair<bool, std::string> decoded = PercentDecode_(query_.second);
+        std::pair<bool, std::string> decoded =
+            PercentDecode_(query_.second, "&=");  // maybe change to "&=+,/,;?"
         if (decoded.first) {
             query_.second = decoded.second;
         } else {  // invalid encoding detected -> BAD_REQUEST
@@ -304,8 +308,9 @@ void RqTarget::Normalize_()
     }
 }
 
+// decode all percent-encoded characters, except those in the dont_decode_set
 std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
-    const std::string& str, const char* decode_set) const
+    const std::string& str, const char* dont_decode_set) const
 {
     std::string decoded;
     std::pair<bool, unsigned short> ascii;
@@ -315,13 +320,13 @@ std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
                 return std::pair<bool, std::string>(false, "");
             }
             ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
-            if (!ascii.first) {
-                return std::pair<bool, std::string>(false, "");
-            }
-            if (decode_set && strchr(decode_set, static_cast<char>(ascii.second))) {
-                decoded += static_cast<char>(ascii.second);
-            } else {
+            if (dont_decode_set && strchr(dont_decode_set, static_cast<char>(ascii.second))) {
                 decoded += str.substr(i, 3);
+            } else {
+                if (!ascii.first) {
+                    return std::pair<bool, std::string>(false, "");
+                }
+                decoded += static_cast<char>(ascii.second);
             }
             i += 2;
         } else {
@@ -329,6 +334,23 @@ std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
         }
     }
     return std::pair<bool, std::string>(true, decoded);
+}
+
+// encode all chars that are not in the unreserved set (delimiters, whitespaces, etc.) and not in
+// the dont_encode_set for example: dont encode "/" in path, but encode it in query
+std::string RqTarget::PercentEncode_(const std::string& str, const char* dont_encode_set) const
+{
+    std::string encoded;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (strchr(kUnreserved, str[i]) == NULL &&
+            (dont_encode_set && strchr(dont_encode_set, str[i]) == NULL)) {
+            encoded += '%';
+            encoded += utils::NumericToHexStr(str[i]);
+        } else {
+            encoded += str[i];
+        }
+    }
+    return encoded;
 }
 
 std::pair<bool /*valid*/, std::string> RqTarget::RemoveDotSegments_(const std::string& str) const
