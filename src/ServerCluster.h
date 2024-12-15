@@ -24,6 +24,14 @@ class ServerCluster {
   private:
     ServerCluster(const config::Config& config);
 
+    void CreateServers_(const config::Config& config);
+    void MapListenersToServer_(const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
+                               utils::shared_ptr<Server>& serv);
+    int CreateListener_(struct sockaddr_in addr);
+    int GetListenerFd_(struct sockaddr_in addr);
+    void CheckClients_();
+
+  private:
     class MasterSocketCallback : public c_api::ICallback {
       public:
         MasterSocketCallback(ServerCluster& cluster);
@@ -34,7 +42,7 @@ class ServerCluster {
         ServerCluster& cluster_;
     };
 
-
+  private:
     // Sockets
     std::map<int /*fd*/, utils::unique_ptr<c_api::MasterSocket> > sockets_;
     typedef std::map<int /*fd*/, utils::unique_ptr<c_api::MasterSocket> >::iterator SocketsIt;
@@ -49,13 +57,7 @@ class ServerCluster {
     std::map<int /*fd*/, utils::unique_ptr<ClientSession> > clients_;
     typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
 
-    void CreateServers_(const config::Config& config);
-    void MapListenersToServer_(const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
-                               utils::shared_ptr<Server>& serv);
-    int CreateListener_(struct sockaddr_in addr);
-    int GetListenerFd_(struct sockaddr_in addr);
-    void CheckClients_();
-
+  private:
     static volatile sig_atomic_t run_;
     static utils::unique_ptr<ServerCluster> instance_;
 };
