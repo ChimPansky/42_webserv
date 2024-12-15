@@ -3,6 +3,7 @@ add_library(Server
     Location.cpp
     utils/utils.cpp
     response_processors/FileProcessor.cpp
+    response_processors/CGIProcessor.cpp
 )
 
 target_link_libraries(Server PUBLIC Utils)

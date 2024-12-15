@@ -3,19 +3,24 @@
 
 #include <Request.h>
 #include <Response.h>
-#include <unique_ptr.h>
-#include <time_utils.h>
 #include <logger.h>
+#include <time_utils.h>
+#include <unique_ptr.h>
 
 class ClientSession;
 
 class AResponseProcessor {
   protected:
-    AResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb) : response_rdy_cb_(response_rdy_cb) {};
+    AResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
+        : response_rdy_cb_(response_rdy_cb),
+          err_response_processor_(utils::unique_ptr<AResponseProcessor>(NULL)) {};
+
   public:
     virtual ~AResponseProcessor() {};
+
   protected:
     utils::unique_ptr<http::IResponseCallback> response_rdy_cb_;
+    utils::unique_ptr<AResponseProcessor> err_response_processor_;
 };
 
 class HelloWorldResponseProcessor : public AResponseProcessor {

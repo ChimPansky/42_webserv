@@ -6,6 +6,7 @@
 #include "Request.h"
 #include "response_processors/FileProcessor.h"
 #include "utils/utils.h"
+#include "response_processors/CGIProcessor.h"
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
@@ -109,6 +110,7 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
 utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
+    std::string updated_path;
     const std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc = ChooseLocation(rq);
     // choose location with method,
     // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
@@ -116,18 +118,20 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     //  or response processor should be owned by client session
     switch (chosen_loc.second) {
         case NO_LOCATION:
+            LOG(ERROR) << "Path in uri: " << rq.rqTarget.path() << " not found";
             LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
             return utils::unique_ptr<AResponseProcessor>(
                 new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
         case CGI:
-            LOG(DEBUG) << "RQ_GOOD -> Process CGI";
-            // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
-            // cgi_paths, cgi_extensions, root_dir));
-        case STATIC_FILE:
-            std::string new_path = utils::UpdatePath(
+            updated_path = utils::UpdatePath(
                 chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-            LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << new_path;
-            return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
+            LOG(DEBUG) << "RQ_GOOD -> Process CGI script " << updated_path;
+            return utils::unique_ptr<AResponseProcessor>(new CGIProcessor(updated_path, rq, chosen_loc.first, cb));
+        case STATIC_FILE:
+            updated_path = utils::UpdatePath(
+                chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+            LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << updated_path;
+            return utils::unique_ptr<AResponseProcessor>(new FileProcessor(updated_path, cb));
     }
 }
 

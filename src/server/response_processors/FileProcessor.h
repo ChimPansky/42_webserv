@@ -15,9 +15,6 @@ class FileProcessor : public AResponseProcessor {
     FileProcessor(const std::string& file_path,
                   utils::unique_ptr<http::IResponseCallback> response_rdy_cb);
     ~FileProcessor() {};
-
-  private:
-    utils::unique_ptr<GeneratedErrorResponseProcessor> err_response_processor_;
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_FILE_PROCESSOR_H
