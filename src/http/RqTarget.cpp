@@ -38,7 +38,6 @@ RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GO
     ParseFragment_(raw_target, raw_target_pos);
     Validate_();
     Normalize_();
-    LOG(DEBUG) << "RqTarget: " << GetDebugString();
 }
 
 RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host,
