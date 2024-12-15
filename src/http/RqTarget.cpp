@@ -6,6 +6,8 @@
 #include <cstring>
 #include <sstream>
 
+#include "logger.h"
+
 namespace http {
 
 std::ostream& operator<<(std::ostream& out, const RqTarget& RqTarget)
@@ -34,8 +36,8 @@ RqTarget::RqTarget(const std::string& raw_target) : validity_state_(RQ_TARGET_GO
     ParsePath_(raw_target, raw_target_pos);
     ParseQuery_(raw_target, raw_target_pos);
     ParseFragment_(raw_target, raw_target_pos);
-    Normalize_();
     Validate_();
+    Normalize_();
 }
 
 RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, const std::string& host,
@@ -63,8 +65,8 @@ RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, cons
     if (!fragment.empty()) {
         fragment_ = std::make_pair(true, fragment);
     }
-    Normalize_();
     Validate_();
+    Normalize_();
 }
 
 RqTarget::RqTarget(const RqTarget& rhs)
@@ -114,9 +116,9 @@ std::string RqTarget::ToStr() const
     if (port_.first) {
         ss << ":" << port_.second;
     }
-    ss << path_.second;
+    ss << PercentEncode_(path_.second, "/");
     if (query_.first) {
-        ss << "?" << query_.second;
+        ss << "?" << PercentEncode_(query_.second, "&=");
     }
     if (fragment_.first) {
         ss << "#" << fragment_.second;
@@ -315,10 +317,11 @@ std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
                 return std::pair<bool, std::string>(false, "");
             }
             ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
-            if (!ascii.first) {
-                return std::pair<bool, std::string>(false, "");
-            }
-            if (decode_set && strchr(decode_set, static_cast<char>(ascii.second))) {
+            if (!decode_set ||
+                (decode_set && strchr(decode_set, static_cast<char>(ascii.second)))) {
+                if (!ascii.first) {
+                    return std::pair<bool, std::string>(false, "");
+                }
                 decoded += static_cast<char>(ascii.second);
             } else {
                 decoded += str.substr(i, 3);
@@ -329,6 +332,23 @@ std::pair<bool /*valid_triplet*/, std::string> RqTarget::PercentDecode_(
         }
     }
     return std::pair<bool, std::string>(true, decoded);
+}
+
+// encode all chars that are not in the unreserved set (delimiters, whitespaces, etc.) and not in
+// the no_decode_set for example: dont encode "/" in path, but encode it in query
+std::string RqTarget::PercentEncode_(const std::string& str, const char* no_decode_set) const
+{
+    std::string encoded;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (strchr(kUnreserved, str[i]) == NULL &&
+            (no_decode_set && strchr(no_decode_set, str[i]) == NULL)) {
+            encoded += '%';
+            encoded += utils::NumericToHexStr(str[i]);
+        } else {
+            encoded += str[i];
+        }
+    }
+    return encoded;
 }
 
 std::pair<bool /*valid*/, std::string> RqTarget::RemoveDotSegments_(const std::string& str) const

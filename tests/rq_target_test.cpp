@@ -497,7 +497,7 @@ TEST(PathTests, 8_Test)
 TEST(PathTests, 9_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/ok%20path");
-    EXPECT_EQ(RqTarget.path(), "/ok%20path");
+    EXPECT_EQ(RqTarget.path(), "/ok path");
     EXPECT_TRUE(RqTarget.Good());
 }
 
@@ -563,21 +563,21 @@ TEST(PathDecoding, 5_Test)
 TEST(PathDecoding, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2Fdef");
-    EXPECT_EQ(RqTarget.path(), "/abc%2Fdef");
+    EXPECT_EQ(RqTarget.path(), "/abc/def");
     EXPECT_TRUE(RqTarget.Good());
 }
 
 TEST(PathDecoding, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2fdef");
-    EXPECT_EQ(RqTarget.path(), "/abc%2Fdef");
+    EXPECT_EQ(RqTarget.path(), "/abc/def");
     EXPECT_TRUE(RqTarget.Good());
 }
 
 TEST(PathDecoding, 8_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2fdef%2Fghi");
-    EXPECT_EQ(RqTarget.path(), "/abc%2Fdef%2Fghi");
+    EXPECT_EQ(RqTarget.path(), "/abc/def/ghi");
     EXPECT_TRUE(RqTarget.Good());
 }
 
@@ -720,7 +720,7 @@ TEST(PathCollapseSlashes, 3_Test)
 TEST(PathCollapseSlashes, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/some_path/%2F%2f/b///c//////");
-    EXPECT_EQ(RqTarget.path(), "/some_path/%2F%2F/b/c/");
+    EXPECT_EQ(RqTarget.path(), "/some_path/b/c/");
     EXPECT_TRUE(RqTarget.Good());
 }
 
@@ -767,7 +767,7 @@ TEST(QueryTests, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?a=%2F%2f");
     EXPECT_TRUE(RqTarget.HasQuery());
-    EXPECT_EQ(RqTarget.query(), "a=%2F%2F");
+    EXPECT_EQ(RqTarget.query(), "a=//");
     EXPECT_TRUE(RqTarget.Good());
 }
 
@@ -775,7 +775,7 @@ TEST(QueryTests, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?search=wildcard%2a");
     EXPECT_TRUE(RqTarget.HasQuery());
-    EXPECT_EQ(RqTarget.query(), "search=wildcard%2A");
+    EXPECT_EQ(RqTarget.query(), "search=wildcard*");
     EXPECT_TRUE(RqTarget.Good());
 }
 
@@ -786,8 +786,7 @@ TEST(QueryTests, 8_Test)
         "3Fquery%3Dvalue");
     EXPECT_TRUE(RqTarget.HasQuery());
     EXPECT_EQ(RqTarget.query(),
-              "param1=value1;param2=https%3A%2F%2Fwww.example.com%3A443%2Fpath%2Fto%2Ffile%3Fquery%"
-              "3Dvalue");
+              "param1=value1;param2=https://www.example.com:443/path/to/file?query=value");
     EXPECT_TRUE(RqTarget.Good());
 }
 
@@ -795,7 +794,7 @@ TEST(QueryTests, 9_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?path=%2ffolder%2f..%2fother%20folder");
     EXPECT_TRUE(RqTarget.HasQuery());
-    EXPECT_EQ(RqTarget.query(), "path=%2Ffolder%2F..%2Fother%20folder");
+    EXPECT_EQ(RqTarget.query(), "path=/folder/../other folder");
     EXPECT_TRUE(RqTarget.Good());
 }
 
@@ -806,7 +805,7 @@ TEST(GoCrazy, 1_Test)
     EXPECT_EQ(RqTarget.user_info(), "");
     EXPECT_EQ(RqTarget.host(), "example");
     EXPECT_EQ(RqTarget.port(), "");
-    EXPECT_EQ(RqTarget.path(), "/a/b/c/%7Bfoo%7D");
+    EXPECT_EQ(RqTarget.path(), "/a/b/c/{foo}");
     EXPECT_EQ(RqTarget.query(), "");
     EXPECT_EQ(RqTarget.fragment(), "");
     EXPECT_EQ(RqTarget.HasScheme(), true);
@@ -831,10 +830,10 @@ TEST(GoCrazy, 2_Test)
     EXPECT_EQ(RqTarget.user_info(), "");
     EXPECT_EQ(RqTarget.host(), "example");
     EXPECT_EQ(RqTarget.port(), "5555");
-    EXPECT_EQ(RqTarget.path(), "/hello%20world/dot..name/");
+    EXPECT_EQ(RqTarget.path(), "/hello world/dot..name/");
     EXPECT_EQ(RqTarget.query(),
-              "search=..&link=http%3A%2F%2Fwww.example.com%2Fupload%2F%3Ffile%3D..%2F..%2F..%2Fetc%"
-              "2Fpasswd%26user%3Dadmin%26pass%3Dadmin");
+              "search=..&link=http://www.example.com/upload/?file=../../../etc/"
+              "passwd&user=admin&pass=admin");
     EXPECT_EQ(RqTarget.fragment(), "");
     EXPECT_EQ(RqTarget.HasScheme(), true);
     EXPECT_EQ(RqTarget.HasUserInfo(), false);
