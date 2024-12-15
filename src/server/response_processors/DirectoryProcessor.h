@@ -7,7 +7,6 @@
 #include "AResponseProcessor.h"
 #include "Location.h"
 #include "Request.h"
-#include "ResponseCodes.h"
 
 class DirectoryProcessor : public AResponseProcessor {
   private:
@@ -15,7 +14,7 @@ class DirectoryProcessor : public AResponseProcessor {
 
     enum DirEntryType {
         DE_FILE,
-        DE_FOLDER
+        DE_DIR
     };
     class DirEntry {
       public:
@@ -44,11 +43,12 @@ class DirectoryProcessor : public AResponseProcessor {
   private:
     utils::unique_ptr<GeneratedErrorResponseProcessor> err_response_processor_;
     const http::Request& rq_;
-    bool ListDirectory_(const std::string& path);
+    bool ListDirectory_(const std::string& path, const std::string& location_root_dir);
     std::vector<DirEntry> entries_;
 
     std::pair<bool /*success*/, std::vector<DirEntry> /*dir_entries*/> GetDirEntries_(
         const char* directory);
+    std::string RemoveRootFromPath(const std::string& path, const std::string& root);
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_DIRECTORY_PROCESSOR_H

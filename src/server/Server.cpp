@@ -144,7 +144,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
                     new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
             } else if (utils::IsDirectory(new_path.c_str())) {
                 LOG(DEBUG) << "Location is a directory -> Create DirectoryProcessor " << new_path;
-                return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(new_path, cb, rq, chosen_loc.first));
+                return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(cb, new_path, rq, chosen_loc.first));
             } else {
                  LOG(DEBUG) << "Location is not a directory -> Create FileProcessor" << new_path;
                 return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));

@@ -3,6 +3,7 @@
 #include <ResponseCodes.h>
 #include <dirent.h>
 #include <file_utils.h>
+#include <str_utils.h>
 #include <unique_ptr.h>
 #include <unistd.h>
 
@@ -22,7 +23,7 @@ DirectoryProcessor::DirectoryProcessor(utils::unique_ptr<http::IResponseCallback
     if (rq_.method == http::HTTP_GET) {
         if (loc->dir_listing()) {
             LOG(DEBUG) << "Listing directory";
-            if (!ListDirectory_(file_path)) {
+            if (!ListDirectory_(file_path, loc->root_dir())) {
                 err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
                     new GeneratedErrorResponseProcessor(response_rdy_cb_,
                                                         http::HTTP_INTERNAL_SERVER_ERROR));
@@ -43,7 +44,7 @@ DirectoryProcessor::DirectoryProcessor(utils::unique_ptr<http::IResponseCallback
     }
 }
 
-bool DirectoryProcessor::ListDirectory_(const std::string& path)
+bool DirectoryProcessor::ListDirectory_(const std::string& path, const std::string& location_root_dir)
 {
     LOG(DEBUG) << "ListDirectory_";
     LOG(DEBUG) << "Path: " << path;
@@ -53,22 +54,26 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path)
     }
     std::map<std::string, std::string> hdrs;
     std::ostringstream body_stream;
-    body_stream << "<html>\n"
-                   "<head>\n"
-                   "<title>Index of "
-                << path
-                << "</title>\n"
-                   "</head>\n"
-                   "<body>\n"
-                   "<h1>Index of "
-                << path
-                << "</h1>\n"
+
+    LOG(DEBUG) << "path: " << path;
+    std::string entry_rel_folder = RemoveRootFromPath(path, location_root_dir);
+    if (entry_rel_folder.empty() || entry_rel_folder[entry_rel_folder.size() - 1] != '/') {
+        entry_rel_folder += "/";
+    }
+    LOG(DEBUG) << "Location root dir: " << location_root_dir;
+    LOG(DEBUG) << "Entry relative folder: " << entry_rel_folder;
+    body_stream << "<html>\n<head>\n<title>Index of " << path << "</title>\n</head>\n"
+                   "<body>\n<h1>Index of " << path << "</h1>\n"
                    "<ul>\n";
     for (size_t i = 0; i < dir_entries.second.size(); i++) {
-        body_stream << "<li><a href=\"" << path << "/" << dir_entries.second[i].name() << "\">"
-                    << dir_entries.second[i].name() << "</a></li>\n";
+        body_stream << "<li><a href=\"" << entry_rel_folder << dir_entries.second[i].name() << "\"";
+        if (dir_entries.second[i].type() == DE_FILE) {  // open files in new tab
+            body_stream << " target=\"_blank\"";
+        }
+        body_stream << ">" << dir_entries.second[i].name() << "</a><a>\t" << path << dir_entries.second[i].name() << "</a></li>\n";
     }
-    body_stream << "</ul>\n</body>\n</html>\n";
+    body_stream << "</ul>\n"
+                    "</body>\n</html>\n";
 
     LOG(DEBUG) << "Body: " << body_stream.str();
     std::string body_str = body_stream.str();
@@ -94,10 +99,41 @@ DirectoryProcessor::GetDirEntries_(const char* directory)
     }
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
-        LOG(DEBUG) << "Entry: " << entry->d_name;
+        LOG(DEBUG) << "Dirent contents: " << entry->d_name << " | " << entry->d_type << " | " << entry->d_reclen << " | " << entry->d_off << " | " << entry->d_ino;
         entries.push_back(
-            DirectoryProcessor::DirEntry(entry->d_name, std::string("<path_fo_file>"), DE_FILE));
+            DirectoryProcessor::DirEntry(entry->d_name, std::string("<path_fo_file>"), (entry->d_type == DT_DIR ? DE_DIR :  DE_FILE)));
+            // use stat() to get more info about the file
     }
     closedir(dir);
     return std::make_pair(true, entries);
+}
+
+
+//     void printTimestamps(const char* path) {
+//     struct stat fileStat;
+
+//     if (stat(path, &fileStat) == 0) {
+//         // Last modified time
+//         std::cout << "Last Modified: " << std::ctime(&fileStat.st_mtime);
+
+//         // Creation time (Not supported on all POSIX systems, use `st_ctime`)
+//         #ifdef __APPLE__
+//         std::cout << "Created: " << std::ctime(&fileStat.st_birthtime);
+//         #else
+//         std::cout << "Created (ctime): " << std::ctime(&fileStat.st_ctime);
+//         #endif
+//     } else {
+//         perror("stat");
+//     }
+// }
+
+std::string DirectoryProcessor::RemoveRootFromPath(const std::string& path, const std::string& root) {
+    if (root.empty()) {
+        return path;
+    }
+    std::string prefix = root[0] == '/' ? root.substr(1) : root;
+    if (path.compare(0, prefix.size(), prefix) == 0) {
+        return path.substr(prefix.size());
+    }
+    return path;
 }
