@@ -7,6 +7,7 @@
 #include "AResponseProcessor.h"
 #include "Location.h"
 #include "Request.h"
+#include "response_processors/ErrorProcessor.h"
 
 class DirectoryProcessor : public AResponseProcessor {
   private:
@@ -39,13 +40,14 @@ class DirectoryProcessor : public AResponseProcessor {
     };
 
   public:
-    DirectoryProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
+    DirectoryProcessor(const Server& server,
+                       utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                        const std::string& file_path, const http::Request& rq,
                        utils::shared_ptr<Location> loc);
     ~DirectoryProcessor(){};
 
   private:
-    utils::unique_ptr<GeneratedErrorResponseProcessor> err_response_processor_;
+    utils::unique_ptr<AResponseProcessor> err_response_processor_;
     const http::Request& rq_;
     bool ListDirectory_(const std::string& path, const std::string& location_root_dir);
     std::vector<DirEntry> entries_;

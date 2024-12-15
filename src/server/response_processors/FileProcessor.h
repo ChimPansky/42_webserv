@@ -10,7 +10,7 @@ class FileProcessor : public AResponseProcessor {
     std::string GetContentType(const std::string& file);
 
   public:
-    FileProcessor(const std::string& file_path,
+    FileProcessor(const Server& server, const std::string& file_path,
                   utils::unique_ptr<http::IResponseCallback> response_rdy_cb);
     ~FileProcessor(){};
 

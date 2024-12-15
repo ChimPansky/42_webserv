@@ -6,12 +6,14 @@
 
 #include "Request.h"
 #include "response_processors/DirectoryProcessor.h"
+#include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
 #include "utils/utils.h"
 
-Server::Server(const config::ServerConfig& cfg)
+Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
-      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names())
+      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names()),
+      error_pages_(error_pages)
 {
     typedef std::vector<config::LocationConfig>::const_iterator LocationConfigConstIt;
 
@@ -51,6 +53,11 @@ const std::string& Server::error_log_path() const
 const std::vector<utils::shared_ptr<Location> >& Server::locations() const
 {
     return locations_;
+}
+
+const std::map<int, std::string>& Server::error_pages() const
+{
+    return error_pages_;
 }
 
 std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
@@ -96,8 +103,7 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
         return GetResponseProcessor(rq, cb);
     } else {
         LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-        return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, rq.status));
+        return utils::unique_ptr<AResponseProcessor>(new ErrorProcessor(*this, cb, rq.status));
     }
 }
 
@@ -116,13 +122,13 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
                   rq.method) == chosen_loc.first->allowed_methods().end()) {
         LOG(DEBUG) << "Method not allowed for specific location -> Create 405 ResponseProcessor";
         return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, http::HTTP_METHOD_NOT_ALLOWED));
+            new ErrorProcessor(*this, cb, http::HTTP_METHOD_NOT_ALLOWED));
     }
     switch (chosen_loc.second) {
         case NO_LOCATION:
             LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
             return utils::unique_ptr<AResponseProcessor>(
-                new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
+                new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
         case CGI:
             LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
             // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
@@ -133,14 +139,15 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             if (!utils::DoesPathExist(new_path.c_str())) {
                 LOG(DEBUG) << "Requested file not found: " << new_path;
                 return utils::unique_ptr<AResponseProcessor>(
-                    new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
+                    new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
             } else if (utils::IsDirectory(new_path.c_str())) {
                 LOG(DEBUG) << "Location is a directory -> Create DirectoryProcessor " << new_path;
                 return utils::unique_ptr<AResponseProcessor>(
-                    new DirectoryProcessor(cb, new_path, rq, chosen_loc.first));
+                    new DirectoryProcessor(*this, cb, new_path, rq, chosen_loc.first));
             } else {
                 LOG(DEBUG) << "Location is not a directory -> Create FileProcessor" << new_path;
-                return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
+                return utils::unique_ptr<AResponseProcessor>(
+                    new FileProcessor(*this, new_path, cb));
             }
     }
 }

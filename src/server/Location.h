@@ -5,8 +5,6 @@
 #include <Request.h>
 #include <unique_ptr.h>
 
-#include "response_processors/AResponseProcessor.h"
-
 class Location {
   public:
     Location(const config::LocationConfig&);

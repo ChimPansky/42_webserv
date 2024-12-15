@@ -2,8 +2,10 @@
 
 #include <dirent.h>
 
+#include "ErrorProcessor.h"
 #include "http.h"
 #include "logger.h"
+#include "response_processors/AResponseProcessor.h"
 
 const std::string DirectoryProcessor::GetDirStyle_()
 {
@@ -53,11 +55,12 @@ const std::string DirectoryProcessor::GetDirStyle_()
            "</style>\n";
 }
 
-DirectoryProcessor::DirectoryProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
+DirectoryProcessor::DirectoryProcessor(const Server& server,
+                                       utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                                        const std::string& file_path, const http::Request& rq,
                                        utils::shared_ptr<Location> loc)
-    : AResponseProcessor(response_rdy_cb),
-      err_response_processor_(utils::unique_ptr<GeneratedErrorResponseProcessor>(NULL)), rq_(rq)
+    : AResponseProcessor(server, response_rdy_cb),
+      err_response_processor_(utils::unique_ptr<AResponseProcessor>(NULL)), rq_(rq)
 {
     // LOG(DEBUG) << "DirectoryProcessor";
     // LOG(DEBUG) << "Location: " << loc->GetDebugString();
@@ -65,16 +68,15 @@ DirectoryProcessor::DirectoryProcessor(utils::unique_ptr<http::IResponseCallback
         if (loc->dir_listing()) {
             LOG(DEBUG) << "Listing directory";
             if (!ListDirectory_(file_path, loc->root_dir())) {
-                err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
-                    new GeneratedErrorResponseProcessor(response_rdy_cb_,
-                                                        http::HTTP_INTERNAL_SERVER_ERROR));
+                err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
+                    new ErrorProcessor(server, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
             }
         } else if (loc->default_files().size() > 0) {
             LOG(DEBUG) << "Serve default file: " << loc->default_files()[0];
         } else {
             LOG(DEBUG) << "Directory listing is disabled";  // 401 or 403 or 404
-            err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
-                new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_FORBIDDEN));
+            err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
+                new ErrorProcessor(server, response_rdy_cb_, http::HTTP_FORBIDDEN));
         }
     } else if (rq_.method == http::HTTP_POST) {
         LOG(DEBUG) << "POST method logic for directory...";

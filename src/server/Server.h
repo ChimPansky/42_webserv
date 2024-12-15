@@ -6,6 +6,7 @@
 #include <shared_ptr.h>
 
 #include "Location.h"
+#include "response_processors/AResponseProcessor.h"
 
 
 enum MatchType {
@@ -29,7 +30,7 @@ class Server {
 
   public:
     // create master socket, register read callback for master socket in event manager
-    Server(const config::ServerConfig&);
+    Server(const config::ServerConfig&, std::map<int, std::string> error_pages);
 
   public:
     // only check hostname probably.
@@ -48,6 +49,7 @@ class Server {
     Severity access_log_level() const;
     const std::string& error_log_path() const;
     const std::vector<utils::shared_ptr<Location> >& locations() const;
+    const std::map<int /*response_code*/, std::string /*path_to_err_page*/>& error_pages() const;
     std::string GetDebugString() const;
     std::pair<utils::shared_ptr<Location>, LocationType> ChooseLocation(
         const http::Request& rq) const;
@@ -57,6 +59,7 @@ class Server {
     Severity access_log_level_;
     std::string error_log_path_;
     std::vector<std::string> server_names_;
+    std::map<int /*response_code*/, std::string /*path_to_err_page*/> error_pages_;
 
     std::vector<utils::shared_ptr<Location> > locations_;
     typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;
