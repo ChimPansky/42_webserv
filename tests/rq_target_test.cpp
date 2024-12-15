@@ -563,21 +563,21 @@ TEST(PathDecoding, 5_Test)
 TEST(PathDecoding, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2Fdef");
-    EXPECT_EQ(RqTarget.path(), "/abc/def");
+    EXPECT_EQ(RqTarget.path(), "/abc%2Fdef");
     EXPECT_TRUE(RqTarget.Good());
 }
 
 TEST(PathDecoding, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2fdef");
-    EXPECT_EQ(RqTarget.path(), "/abc/def");
+    EXPECT_EQ(RqTarget.path(), "/abc%2Fdef");
     EXPECT_TRUE(RqTarget.Good());
 }
 
 TEST(PathDecoding, 8_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2fdef%2Fghi");
-    EXPECT_EQ(RqTarget.path(), "/abc/def/ghi");
+    EXPECT_EQ(RqTarget.path(), "/abc%2Fdef%2Fghi");
     EXPECT_TRUE(RqTarget.Good());
 }
 
@@ -720,7 +720,7 @@ TEST(PathCollapseSlashes, 3_Test)
 TEST(PathCollapseSlashes, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/some_path/%2F%2f/b///c//////");
-    EXPECT_EQ(RqTarget.path(), "/some_path/b/c/");
+    EXPECT_EQ(RqTarget.path(), "/some_path/%2F%2F/b/c/");
     EXPECT_TRUE(RqTarget.Good());
 }
 
