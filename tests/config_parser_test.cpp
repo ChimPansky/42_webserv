@@ -1,3 +1,4 @@
+#include <ConfigBuilder.h>
 #include <dirent.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -6,9 +7,8 @@
 #include <iostream>
 #include <vector>
 
-#include <ConfigBuilder.h>
-
-class ConfigInvalidTest : public ::testing::TestWithParam<std::string> {};
+class ConfigInvalidTest : public ::testing::TestWithParam<std::string> {
+};
 
 TEST_P(ConfigInvalidTest, InvalidConfigShouldThrow)
 {
@@ -43,11 +43,8 @@ std::vector<std::string> GetInvalidConfigFiles(const std::string& directory)
     return file_paths;
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    InvalidConfigTests,
-    ConfigInvalidTest,
-    ::testing::ValuesIn(GetInvalidConfigFiles("./invalid_configs"))
-);
+INSTANTIATE_TEST_SUITE_P(InvalidConfigTests, ConfigInvalidTest,
+                         ::testing::ValuesIn(GetInvalidConfigFiles("./invalid_configs")));
 
 TEST(ConfigTest, LoadValidConfig)
 {
@@ -76,18 +73,14 @@ TEST(ConfigTest, LoadValidConfig)
             for (const config::LocationConfig& location_conf : server_conf.locations()) {
                 if (location_conf.route().first == "/docs/") {
                     EXPECT_EQ(location_conf.root_dir(), "/docs");
-                    EXPECT_EQ(location_conf.allowed_methods()[0],
-                              http::Method::HTTP_GET);
-                    EXPECT_EQ(location_conf.allowed_methods()[1],
-                              http::Method::HTTP_POST);
+                    EXPECT_EQ(location_conf.allowed_methods()[0], http::Method::HTTP_GET);
+                    EXPECT_EQ(location_conf.allowed_methods()[1], http::Method::HTTP_POST);
                     EXPECT_EQ(location_conf.client_max_body_size(), 5 << 20);  // 5 MB in bytes
                 } else if (location_conf.route().first == "/error_pages/") {
                     EXPECT_EQ(location_conf.root_dir(), "/docs");
                     EXPECT_EQ(location_conf.dir_listing(), true);
-                    EXPECT_EQ(location_conf.allowed_methods()[0],
-                              http::Method::HTTP_GET);
-                    EXPECT_EQ(location_conf.allowed_methods()[1],
-                              http::Method::HTTP_POST);
+                    EXPECT_EQ(location_conf.allowed_methods()[0], http::Method::HTTP_GET);
+                    EXPECT_EQ(location_conf.allowed_methods()[1], http::Method::HTTP_POST);
                     EXPECT_EQ(location_conf.client_max_body_size(), 4 << 20);
                 }
             }

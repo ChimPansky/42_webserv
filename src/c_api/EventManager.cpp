@@ -1,9 +1,10 @@
 #include "EventManager.h"
-#include "multiplexers/IMultiplexer.h"
+
+#include <logger.h>
 
 #include <stdexcept>
 
-#include <logger.h>
+#include "multiplexers/IMultiplexer.h"
 #include <unistd.h>
 
 namespace c_api {

@@ -1,11 +1,11 @@
 #include "EpollMultiplexer.h"
 
+#include <logger.h>
 #include <stdio.h>      // for perror
 #include <sys/epoll.h>  // for epoll
 #include <unistd.h>     // close
-#include <cstring>     // close
 
-#include <logger.h>
+#include <cstring>  // close
 
 namespace c_api {
 

@@ -1,11 +1,11 @@
 #ifndef WS_C_API_CLIENT_SOCKET_H
 #define WS_C_API_CLIENT_SOCKET_H
 
+#include <netinet/in.h>
 #include <sys/types.h>
 
 #include <cstddef>
 #include <vector>
-#include <netinet/in.h>
 
 namespace c_api {
 

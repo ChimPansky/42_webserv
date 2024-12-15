@@ -49,6 +49,8 @@ class Server {
     const std::string& error_log_path() const;
     const std::vector<utils::shared_ptr<Location> >& locations() const;
     std::string GetDebugString() const;
+    std::pair<utils::shared_ptr<Location>, LocationType> ChooseLocation(
+        const http::Request& rq) const;
 
   private:
     std::string access_log_path_;
@@ -58,9 +60,6 @@ class Server {
 
     std::vector<utils::shared_ptr<Location> > locations_;
     typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;
-
-    std::pair<utils::shared_ptr<Location>, LocationType> ChooseLocation(
-        const http::Request& rq) const;
 };
 
 #endif  // WS_SERVER_SERVER_H

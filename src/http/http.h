@@ -1,12 +1,19 @@
 #ifndef WS_HTTP_H
 #define WS_HTTP_H
 
+#include <string>
+
 namespace http {
 
 #define RQ_LINE_LEN_LIMIT 8192
-#define RQ_TARGET_LEN_LIMIT 256 // todo: increase this later. keep it low for testing purposes
+#define RQ_TARGET_LEN_LIMIT 8192
+#define RQ_HEADER_SECTION_LIMIT 32768
+#define RQ_MAX_HEADER_COUNT 100
 
-inline const char* LineSep() {return "\r\n";}
+inline const char* kCRLF()
+{
+    return "\r\n";
+}
 
 enum Method {
     HTTP_NO_METHOD,
@@ -24,8 +31,16 @@ enum Version {  // probably only need to handle Ver_1_0 and Ver_1_1
     HTTP_3
 };
 
-const char* HttpVerToStr(http::Version ver);
-const char* HttpMethodToStr(http::Method method);
+std::pair<bool /*found*/, std::string /*version*/> HttpVerToStr(http::Version ver);
+std::pair<bool /*found*/, std::string /*method*/> HttpMethodToStr(http::Method method);
+std::pair<bool /*found*/, http::Version> HttpVersionFromStr(const std::string& version);
+std::pair<bool /*found*/, http::Method> HttpMethodFromStr(const std::string& method);
+
+static const char* kUnreserved =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+static const char* kGenDelims = ":/?#[]@";
+static const char* kSubDelims = "!$&'()*+,;=";
+
 
 }  // namespace http
 

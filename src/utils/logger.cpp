@@ -7,6 +7,8 @@
 
 using namespace utils;
 
+Logger::NullStream Logger::null_stream_;
+
 Logger::Logger(char* log_path) : severity_threshold_(DEBUG)
 {
     if ((log_path && *log_path != '\0')) {

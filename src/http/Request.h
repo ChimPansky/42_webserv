@@ -1,33 +1,28 @@
 #ifndef WS_HTTP_REQUEST_H
 #define WS_HTTP_REQUEST_H
 
-#include <map>
-#include <string>
-#include <vector>
-
-#include <http.h>
 #include <ResponseCodes.h>
 #include <RqTarget.h>
+#include <file_utils.h>
+#include <http.h>
+
+#include <map>
+#include <string>
 
 namespace http {
-
-enum RqStatus {
-    RQ_INCOMPLETE = 0,
-    RQ_GOOD = HTTP_OK,
-    RQ_BAD = HTTP_BAD_REQUEST,
-    RQ_URI_TOO_LONG = HTTP_URI_TOO_LONG
-};
 
 class RequestBuilder;
 struct Request {
     Request();
+    ~Request();
 
-    RqStatus status;
+    ResponseCode status;
     Method method;
     http::RqTarget rqTarget;
     Version version;
     std::map<std::string, std::string> headers;
-    std::vector<char> body;
+    bool has_body;
+    char body[utils::kMaxTempFileName];
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;

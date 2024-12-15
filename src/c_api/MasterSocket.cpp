@@ -1,8 +1,9 @@
 #include "MasterSocket.h"
-#include "c_api_utils.h"
 
 #include <cstring>
 #include <stdexcept>
+
+#include "c_api_utils.h"
 
 
 namespace {
@@ -78,7 +79,8 @@ int MasterSocket::sockfd() const
     return sockfd_;
 }
 
-const sockaddr_in& MasterSocket::addr_in() const {
+const sockaddr_in& MasterSocket::addr_in() const
+{
     return addr_in_;
 }
 

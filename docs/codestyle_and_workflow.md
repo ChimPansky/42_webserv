@@ -40,7 +40,7 @@ if (a) {
 6) Rule of 3: if either of destructor, copy-constructor, copy assignment operator is defined define all 3. otherwise define none
 7) Variables declared right before use, no empty declarations, (if you have a variable that exists only inside of a loop, it should be declared in the loop...)
 8) avoid #defines except include guards, prefer static const class variables
-9) c-style casts are forbidden (e.g. `int a = (int)x` or `int a = int(x)`)  
+9) c-style casts are forbidden (e.g. `int a = (int)x` or `int a = int(x)`)
 10) native types (int, double, char, pointer,...) go by value, complex types by const ref or ref. const when possible
 11) prefer refs to pointers
 

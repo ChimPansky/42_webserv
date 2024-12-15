@@ -1,11 +1,10 @@
 #include "ReadSocket.h"
 
+#include <logger.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <cstring>
-
-#include <logger.h>
 
 namespace c_api {
 
@@ -33,7 +32,8 @@ ssize_t ReadSocket::Recv()
     return ::recv(sockfd_, buf_, RECV_BUF_SZ, MSG_NOSIGNAL);
 }
 
-const char* ReadSocket::buf() const {
+const char* ReadSocket::buf() const
+{
     return buf_;
 }
 

@@ -1,7 +1,7 @@
 #include "FileProcessor.h"
 
 #include <ResponseCodes.h>
-#include <fcntl.h>
+#include <file_utils.h>
 #include <unique_ptr.h>
 #include <unistd.h>
 
@@ -13,12 +13,20 @@ FileProcessor::FileProcessor(const std::string& file_path,
                              utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
     : AResponseProcessor(response_rdy_cb)
 {
-    if (access(file_path.c_str(), F_OK) == -1) {
+    if (!utils::DoesPathExist(file_path.c_str())) {
         LOG(DEBUG) << "Requested file not found: " << file_path;
         err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
             new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
         return;
     }
+    // TODO if directory delegate to DirectoryProcessor or 404
+    if (utils::IsDirectory(file_path.c_str())) {
+        LOG(DEBUG) << "Requested file is a directory: " << file_path;
+        err_response_processor_ = utils::unique_ptr<GeneratedErrorResponseProcessor>(
+            new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_FOUND));
+        return;
+    }
+    // check if POST/GET/DELETE
     std::ifstream file(file_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
         LOG(DEBUG) << "Requested file cannot be opened: " << file_path;

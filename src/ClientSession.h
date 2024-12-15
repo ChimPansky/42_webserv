@@ -1,18 +1,31 @@
-#ifndef WS_CLIENT_H
-#define WS_CLIENT_H
+#ifndef WS_CLIENT_SESSION_H
+#define WS_CLIENT_SESSION_H
 
 #include <ClientSocket.h>
-#include <response_processors/AResponseProcessor.h>
 #include <RequestBuilder.h>
 #include <Server.h>
 #include <multiplexers/ICallback.h>
+#include <response_processors/AResponseProcessor.h>
 #include <shared_ptr.h>
 #include <sys/types.h>
 #include <unique_ptr.h>
 
-#define CLIENT_RD_CALLBACK_RD_SZ 2000
+#include "LocationConfig.h"
+#include "ServerConfig.h"
+
+#define CLIENT_RD_CALLBACK_RD_SZ 512
 
 class ClientSession {
+    class ChooseServerCb : public http::IChooseServerCb {
+      public:
+        ChooseServerCb(ClientSession& client);
+
+        virtual http::ChosenServerParams Call(const http::Request& rq);
+
+      private:
+        ClientSession& client_;
+    };
+
   private:
     ClientSession(const ClientSession&);
     ClientSession& operator=(const ClientSession&);
@@ -72,4 +85,5 @@ class ClientSession {
     CsState read_state_;
 };
 
-#endif  // WS_CLIENT_H
+
+#endif  // WS_CLIENT_SESSION_H

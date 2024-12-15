@@ -1,6 +1,7 @@
 #ifndef WS_HTTP_RQ_TARGET_H
 #define WS_HTTP_RQ_TARGET_H
 
+#include <http.h>
 #include <numeric_utils.h>
 
 #include <cstddef>
@@ -80,9 +81,6 @@ class RqTarget {
 
 
   private:
-    static const char* kUnreserved;
-    static const char* kGenDelims;
-    static const char* kSubDelims;
     int validity_state_;
 
     typedef std::pair<bool /*component_defined*/, std::string /*value*/> Component;

@@ -8,9 +8,28 @@
 
 #include "ServerCluster.h"
 
+
+ClientSession::ChooseServerCb::ChooseServerCb(ClientSession& client) : client_(client)
+{
+    LOG(DEBUG) << "CHOOSE SERVER CB CREATED";
+}
+
+http::ChosenServerParams ClientSession::ChooseServerCb::Call(const http::Request& rq)
+{
+    client_.associated_server_ = ServerCluster::ChooseServer(client_.master_socket_fd_, rq);
+    http::ChosenServerParams params;
+    std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc =
+        client_.associated_server_->ChooseLocation(rq);
+    params.max_body_size =
+        (chosen_loc.second != NO_LOCATION ? chosen_loc.first->client_max_body_size()
+                                          : config::LocationConfig::kDefaultClientMaxBodySize());
+    return params;
+}
+
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd,
                              utils::shared_ptr<Server> default_server)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), associated_server_(default_server),
+      rq_builder_(utils::unique_ptr<http::IChooseServerCb>(new ChooseServerCb(*this))),
       connection_closed_(false), read_state_(CS_READ)
 {
     if (c_api::EventManager::get().RegisterCallback(
@@ -42,17 +61,9 @@ bool ClientSession::connection_closed() const
 void ClientSession::ProcessNewData(size_t bytes_recvd)
 {
     rq_builder_.Build(bytes_recvd);
-    if (rq_builder_.builder_status() == http::RB_NEED_TO_MATCH_SERVER) {
-        LOG(DEBUG) << "ProcessNewData: Client " << client_sock_->sockfd()
-                   << " chooses Server on Mastersocket: " << master_socket_fd_;
-        associated_server_ = ServerCluster::ChooseServer(
-            master_socket_fd_, rq_builder_.rq() /*add here: rq_builder_.max_body_sz_*/);
-        rq_builder_.ApplyServerInfo(1000);  // then this
-        rq_builder_.Build(bytes_recvd);     // and this are obsolete
-    }
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
-                   << ((rq_builder_.rq().status == http::RQ_GOOD) ? "GOOD)" : "BAD)")
+                   << ((rq_builder_.rq().status == http::HTTP_OK) ? "GOOD)" : "BAD)")
                    << " -> Accept on Server...";
         read_state_ = CS_IGNORE;
         LOG(DEBUG) << rq_builder_.rq().GetDebugString();
@@ -74,7 +85,8 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
     if (!rs->headers().empty()) {
         ServerCluster::FillResponseHeaders(*rs);
     }
-    std::map<std::string, std::string>::const_iterator conn_it = rs->headers().find("Connection"); // TODO add find header case-independent
+    std::map<std::string, std::string>::const_iterator conn_it =
+        rs->headers().find("Connection");  // TODO add find header case-independent
     bool    close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
     LOG(DEBUG) << "Response:\n" << rs->DumpToStr();
     if (c_api::EventManager::get().RegisterCallback(

@@ -1,7 +1,9 @@
 #include "str_utils.h"
+
 #include <dirent.h>
 
 #include <fstream>
+#include <sstream>
 
 namespace utils {
 
@@ -13,7 +15,12 @@ std::string ToLowerCase(std::string str)
     return str;
 }
 
-
+void EatSpacesAndHTabs(std::stringstream& ss)
+{
+    while (ss.peek() == ' ' || ss.peek() == '\t') {
+        ss.ignore();
+    }
+}
 
 namespace fs {
 

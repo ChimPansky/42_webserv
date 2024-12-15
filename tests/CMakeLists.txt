@@ -50,6 +50,14 @@ add_test(
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/rq_target_test
 )
 
+# SyntaxChecker
+add_executable(syntax_checker_test syntax_checker_test.cpp)
+target_link_libraries(syntax_checker_test PRIVATE Http gtest gtest_main)
+add_test(
+    NAME syntax_checker_test
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/syntax_checker_test
+)
+
 # Valgrind
 add_test(
     NAME valgrind_idle_test
