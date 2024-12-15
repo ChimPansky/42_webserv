@@ -1,13 +1,13 @@
 
 #include "Server.h"
 
+#include <file_utils.h>
 #include <shared_ptr.h>
 
 #include "Request.h"
-#include "response_processors/FileProcessor.h"
 #include "response_processors/DirectoryProcessor.h"
+#include "response_processors/FileProcessor.h"
 #include "utils/utils.h"
-#include <file_utils.h>
 
 Server::Server(const config::ServerConfig& cfg)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
@@ -110,7 +110,10 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
 
-    if (chosen_loc.second != NO_LOCATION && std::find(chosen_loc.first->allowed_methods().begin(), chosen_loc.first->allowed_methods().end(), rq.method) == chosen_loc.first->allowed_methods().end()) {
+    if (chosen_loc.second != NO_LOCATION &&
+        std::find(chosen_loc.first->allowed_methods().begin(),
+                  chosen_loc.first->allowed_methods().end(),
+                  rq.method) == chosen_loc.first->allowed_methods().end()) {
         LOG(DEBUG) << "Method not allowed for specific location -> Create 405 ResponseProcessor";
         return utils::unique_ptr<AResponseProcessor>(
             new GeneratedErrorResponseProcessor(cb, http::HTTP_METHOD_NOT_ALLOWED));
@@ -127,26 +130,16 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         case STATIC_PATH:
             std::string new_path = utils::UpdatePath(
                 chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-            // if (utils::IsRegularFile(new_path.c_str())) {
-            //     LOG(DEBUG) << "Location is a regular file -> Create FileProcessor" << new_path;
-            //     return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
-            // } else if (utils::IsDirectory(new_path.c_str())) {
-            //     LOG(DEBUG) << "Location is a directory -> Create DirectoryProcessor " << new_path;
-            //     return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(new_path, cb, rq, chosen_loc.first));
-            // } else {
-            //     LOG(DEBUG) << "Location is not a reg file or directory -> Create 404 ResponseProcessor " << http::HTTP_NOT_FOUND;
-            //     return utils::unique_ptr<AResponseProcessor>(
-            //         new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
-            // }
             if (!utils::DoesPathExist(new_path.c_str())) {
                 LOG(DEBUG) << "Requested file not found: " << new_path;
                 return utils::unique_ptr<AResponseProcessor>(
                     new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
             } else if (utils::IsDirectory(new_path.c_str())) {
                 LOG(DEBUG) << "Location is a directory -> Create DirectoryProcessor " << new_path;
-                return utils::unique_ptr<AResponseProcessor>(new DirectoryProcessor(cb, new_path, rq, chosen_loc.first));
+                return utils::unique_ptr<AResponseProcessor>(
+                    new DirectoryProcessor(cb, new_path, rq, chosen_loc.first));
             } else {
-                 LOG(DEBUG) << "Location is not a directory -> Create FileProcessor" << new_path;
+                LOG(DEBUG) << "Location is not a directory -> Create FileProcessor" << new_path;
                 return utils::unique_ptr<AResponseProcessor>(new FileProcessor(new_path, cb));
             }
     }
