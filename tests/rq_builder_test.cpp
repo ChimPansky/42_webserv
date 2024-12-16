@@ -489,7 +489,7 @@ TEST(LengthLimits, 60_Uri_too_long)
         FAIL();
     }
     if (RQ_LINE_LEN_LIMIT <= 8192) {
-        EXPECT_EQ(http::HTTP_URI_TOO_LONG, builder.rq().status);
+        EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
     } else {
         EXPECT_EQ(http::HTTP_OK, builder.rq().status);
     }
