@@ -85,7 +85,7 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
     ServerCluster::FillResponseHeaders(*rs);
     std::map<std::string, std::string>::const_iterator conn_it =
         rs->headers().find("Connection");  // TODO add find header case-independent
-    bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
+    bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Closed");
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,
             utils::unique_ptr<c_api::ICallback>(
