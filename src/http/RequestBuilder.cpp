@@ -55,11 +55,8 @@ bool RequestBuilder::CanBuild_()
     return true;
 }
 
-// TODO: rm bytes_recvd
 void RequestBuilder::Build(size_t bytes_recvd)
 {
-    LOG(DEBUG) << "RequestBuilder::Build";
-    // client session will be killed earlier, so dead code, rm
     if (parser_.EndOfBuffer() && bytes_recvd == 0) {
         LOG(INFO) << "Ran out of data while Request incomplete.";
         rq_.status = HTTP_BAD_REQUEST;
@@ -102,8 +99,6 @@ std::vector<char>& RequestBuilder::buf()
 
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
 {
-    LOG(DEBUG) << "BuildFirstLine_";
-
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
@@ -194,23 +189,8 @@ ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
     return HTTP_OK;
 }
 
-// https://www.rfc-editor.org/rfc/rfc9110#name-field-lines-and-combined-fi
-// When a field name is only present once in a section, the combined "field value" for that field
-// consists of the corresponding field line value. When a field name is repeated within a section,
-// its combined field value consists of the list of corresponding field line values within that
-// section, concatenated in order, with each field line value separated by a comma.
-
-// For example, this section:
-
-// Example-Field: Foo, Bar
-// Example-Field: Baz
-// contains two field lines, both with the field name "Example-Field". The first field line has a
-// field line value of "Foo, Bar", while the second field line value is "Baz". The field value for
-// "Example-Field" is the list "Foo, Bar, Baz".
-
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
 {
-    LOG(DEBUG) << "BuildHeaderField_";
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
@@ -250,7 +230,6 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
 
 RequestBuilder::BuildState RequestBuilder::MatchServer_()
 {
-    LOG(DEBUG) << "MatchServer_";
     body_builder_.max_body_size = choose_server_cb_->Call(rq_).max_body_size;
     return BS_CHECK_HEADERS;
 }
@@ -273,7 +252,6 @@ RequestBuilder::BuildState RequestBuilder::CheckHeaders_()
 
 ResponseCode RequestBuilder::ValidateHeadersSyntax_()
 {
-    LOG(DEBUG) << "ValidateHeadersSyntax_";
     for (std::map<std::string, std::string>::const_iterator it = rq_.headers.begin();
          it != rq_.headers.end(); ++it) {
         if (!SyntaxChecker::IsValidHeaderKeyName(it->first)) {
@@ -292,8 +270,6 @@ ResponseCode RequestBuilder::ValidateHeadersSyntax_()
 // todo: do we need to differentiate btw HTTP/1.0 and HTTP/1.1?
 ResponseCode RequestBuilder::InterpretHeaders_()
 {
-    LOG(DEBUG) << "InterpretHeaders_";
-
     std::pair<bool, std::string> host = rq_.GetHeaderVal("host");
     if (!host.first) {
         LOG(INFO) << "Host header missing";
@@ -367,11 +343,8 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
     return BS_END;
 }
 
-// https://datatracker.ietf.org/doc/html/rfc2616#section-3.5
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 {
-    LOG(DEBUG) << "BuildBodyChunkSize_";
-
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
@@ -397,7 +370,6 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
 {
-    LOG(DEBUG) << "BuildBodyChunkContent_";
     switch (TryToExtractBodyContent_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
