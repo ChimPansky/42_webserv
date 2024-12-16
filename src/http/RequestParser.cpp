@@ -3,7 +3,6 @@
 #include <logger.h>
 
 #include <cstring>
-#include <sstream>
 
 #include "http.h"
 
@@ -71,7 +70,6 @@ std::string RequestParser::ExtractElement()
     size_t end = (element_end_idx_ >= 0 ? element_end_idx_ : 0);
     end = std::min(end, buf_.size());
     std::string element = std::string(buf_.data(), buf_.data() + end);
-    LOG(DEBUG) << "erasing " << end << " bytes";
     buf_.erase(buf_.begin(), buf_.begin() + end);
     element_end_idx_ = 0;
     return element;
@@ -81,7 +79,6 @@ std::string RequestParser::ExtractLine()
 {
     size_t len_without_crlf = (element_end_idx_ <= 0 ? 0 : element_end_idx_ - 1);
     std::string line = std::string(buf_.data(), buf_.data() + len_without_crlf);
-    LOG(DEBUG) << "erasing " << len_without_crlf + 1 << " bytes";
     buf_.erase(buf_.begin(), buf_.begin() + len_without_crlf + 2);
     element_end_idx_ = 0;
     return line;
