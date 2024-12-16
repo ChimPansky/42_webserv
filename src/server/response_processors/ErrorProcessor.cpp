@@ -1,12 +1,14 @@
 #include "ErrorProcessor.h"
 
 #include "../Server.h"
+#include "logger.h"
 
 ErrorProcessor::ErrorProcessor(const Server& server,
                                utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                                http::ResponseCode code)
     : AResponseProcessor(server, response_rdy_cb)
 {
+    LOG(DEBUG) << "ErrorProcessor: code: " << code;
     typedef std::map<int, std::string>::const_iterator ErrPageIt;
     ErrPageIt err_page_it = server.error_pages().find(static_cast<int>(code));
     if (err_page_it == server.error_pages().end()) {
@@ -54,6 +56,7 @@ ErrorProcessor::GeneratedErrorProcessor::GeneratedErrorProcessor(
 
 std::string ErrorProcessor::GeneratedErrorProcessor::GenerateErrorPage_(http::ResponseCode code)
 {
+    LOG(DEBUG) << "Generating error page for code: " << code;
     std::stringstream ss;
     ss << "<!DOCTYPE html>\n"
        << "<html lang=\"en\">"
