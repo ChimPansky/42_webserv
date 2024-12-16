@@ -61,9 +61,10 @@ class CGIProcessor : public AResponseProcessor {
     ~CGIProcessor();
 
   private:
+    utils::unique_ptr<c_api::SocketWrapper> wrapped_socket_;
     std::string interpreter_;
     std::vector<char> buffer_;
-    std::vector<std::string> envv_;
+    std::vector<std::string> env_;
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_CGI_PROCESSOR_H

@@ -42,7 +42,9 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
 }
 
 ClientSession::~ClientSession()
-{}
+{
+    c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READWRITE);
+}
 
 void ClientSession::CloseConnection()
 {
@@ -87,7 +89,7 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
     }
     std::map<std::string, std::string>::const_iterator conn_it =
         rs->headers().find("Connection");  // TODO add find header case-independent
-    bool    close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
+    bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
     LOG(DEBUG) << "Response:\n" << rs->DumpToStr();
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,

@@ -241,7 +241,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     ResponseCode rc = InsertHeaderField_(header_key, header_val);
-    LOG(INFO) << "Could not insert header Field";
+    // LOG(INFO) << "Could not insert header Field";
     if (rc != http::HTTP_OK) {
         return SetStatusAndExitBuilder_(rc);
     }
