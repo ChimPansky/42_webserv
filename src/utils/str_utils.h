@@ -1,8 +1,6 @@
 #ifndef WS_UTILS_STR_UTILS_H
 #define WS_UTILS_STR_UTILS_H
 
-#include <netdb.h>
-
 #include <string>
 #include <vector>
 

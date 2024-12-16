@@ -5,98 +5,33 @@
 #include <Response.h>
 #include <logger.h>
 #include <time_utils.h>
-#include <logger.h>
-#include <time_utils.h>
 #include <unique_ptr.h>
 
-class ClientSession;
+class Server;
 
 class AResponseProcessor {
   protected:
-    AResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-       
-        : response_rdy_cb_(response_rdy_cb),
-          err_response_processor_(utils::unique_ptr<AResponseProcessor>(NULL)) {};
-
+    AResponseProcessor(const Server& server,
+                       utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
+        : server_(server), response_rdy_cb_(response_rdy_cb){};
 
   public:
     virtual ~AResponseProcessor(){};
 
   protected:
+    const Server& server_;
     utils::unique_ptr<http::IResponseCallback> response_rdy_cb_;
-    utils::unique_ptr<AResponseProcessor> err_response_processor_;
+    utils::unique_ptr<AResponseProcessor> delegated_processor_;
 };
 
-class HelloWorldResponseProcessor : public AResponseProcessor {
-  public:
-    HelloWorldResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-        : AResponseProcessor(response_rdy_cb)
-    {
-        response_rdy_cb_->Call(http::GetSimpleValidResponse());
-    }
-};
-
-class GeneratedErrorResponseProcessor : public AResponseProcessor {
-  public:
-    GeneratedErrorResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                                    http::ResponseCode code)
-        : AResponseProcessor(response_rdy_cb)
-    {
-        std::string body_str = GenerateErrorPage_(code);
-        std::vector<char> body;
-        body.reserve(body_str.size());
-        std::copy(body_str.begin(), body_str.end(), std::back_inserter(body));
-        std::map<std::string, std::string> hdrs;
-        hdrs["Content-Type"] = "text/html";
-        // hdrs["Connection"] = "Closed";
-        hdrs["Content-Length"] = utils::NumericToString(body.size());
-        response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
-            new http::Response(code, http::HTTP_1_1, hdrs, body)));
-    }
-
-  private:
-    std::string GenerateErrorPage_(http::ResponseCode code)
-    {
-        std::stringstream ss;
-        ss << "<!DOCTYPE html>\n"
-           << "<html lang=\"en\">"
-           << "<head>"
-           << "<meta charset=\"UTF-8\">"
-           << "<title>" << code << " " << http::GetResponseCodeDescr(code) << "</title>"
-           << "</head>"
-           << "<body style=\"font-family: Arial, sans-serif; text-align: center; color: black; "
-              "background-color: white; padding: 20px;\">"
-           << "<h1 style=\"font-size: 48px; margin: 0;\">" << code << "</h1>"
-           << "<p style=\"font-size: 16px; margin: 10px 0;\">" << http::GetResponseCodeDescr(code)
-           << "</p>"
-           << "</body>"
-           << "</html>";
-        return ss.str();
-    }
-};
-
-// class ReadFileResponseProcessor : public AResponseProcessor {
-//   ReadFileResponseProcessor(utils::unique_ptr<http::IResponseCallback> response_rdy_cb) :
-//   AResponseProcessor(response_rdy_cb) {
-//     std::vector<char> file_content;
-//     std::string a = "asd";
-//     std::copy(a.begin(), a.end(), std::back_inserter(body));
-//     response_rdy_cb->Call(Response);
-//   }
-// }
-
-// #include <fcntl.h>
-// #include <unistd.h>
-// class FileProcessor : public IResponseProcessor {
+// class HelloWorldResponseProcessor : public AResponseProcessor {
 //   public:
-//     // change back to config
-//     FileProcessor(const std::string& file_path) {
-//       fd_ = open(file_path.c_str(), O_RDONLY);
+//     HelloWorldResponseProcessor(const Server& server, utils::unique_ptr<http::IResponseCallback>
+//     response_rdy_cb)
+//         : AResponseProcessor(server, response_rdy_cb)
+//     {
+//         response_rdy_cb_->Call(http::GetSimpleValidResponse());
 //     }
-//     ~FileProcessor() {close(fd_);};
-//   private:
-//     int fd_;
 // };
-
 
 #endif  // WS_SERVER_ARESPONSE_PROCESSOR_H

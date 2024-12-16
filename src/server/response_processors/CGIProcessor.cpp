@@ -9,6 +9,7 @@
 #include <cctype>
 
 #include "../utils/utils.h"
+#include "ErrorProcessor.h"
 
 bool IsValidExtension(const std::string& filename, const std::vector<std::string>& allowed_exts)
 {
@@ -21,34 +22,32 @@ bool IsValidExtension(const std::string& filename, const std::vector<std::string
 }
 
 
-CGIProcessor::CGIProcessor(const std::string& script_path, const http::Request& rq,
-                           utils::shared_ptr<Location> loc,
+CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
+                           const http::Request& rq, utils::shared_ptr<Location> loc,
                            utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-    : AResponseProcessor(response_rdy_cb)
+    : AResponseProcessor(server, response_rdy_cb)
 {
     std::string interpreter;
 
     if (!IsValidExtension(script_path, loc->cgi_extensions())) {
         LOG(ERROR) << "CGI script not supported: " << script_path;
-        err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(response_rdy_cb_, http::HTTP_NOT_IMPLEMENTED));
+        delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_NOT_IMPLEMENTED));
         return;
     }
 
     interpreter = utils::GetInterpreterByExt_(script_path);
     if (!utils::fs::IsReadable(script_path) || !utils::fs::IsExecutable(script_path)) {
         LOG(ERROR) << "CGI script cannot be executed: " << script_path;
-        err_response_processor_ =
-            utils::unique_ptr<AResponseProcessor>(new GeneratedErrorResponseProcessor(
-                response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+        delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
         return;
     }
 
     if (Execute_(script_path, interpreter, rq)) {
         LOG(ERROR) << "CGI script execution failed: script path: " << script_path;
-        err_response_processor_ =
-            utils::unique_ptr<AResponseProcessor>(new GeneratedErrorResponseProcessor(
-                response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+        delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
         return;
     }
 }
@@ -355,9 +354,9 @@ void CGIProcessor::ReadChildOutputCallback::Call(int fd)
         std::pair<bool, utils::unique_ptr<http::Response> > rs =
             ParseCgiResponse(processor_.buffer_);
         if (!rs.first) {
-            processor_.err_response_processor_ =
-                utils::unique_ptr<AResponseProcessor>(new GeneratedErrorResponseProcessor(
-                    processor_.response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+            processor_.delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
+                new ErrorProcessor(processor_.server_, processor_.response_rdy_cb_,
+                                   http::HTTP_INTERNAL_SERVER_ERROR));
             return;
         } else {
             processor_.response_rdy_cb_->Call(rs.second);

@@ -4,13 +4,15 @@
 #include <shared_ptr.h>
 
 #include "Request.h"
+#include "response_processors/CGIProcessor.h"
+#include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
 #include "utils/utils.h"
-#include "response_processors/CGIProcessor.h"
 
-Server::Server(const config::ServerConfig& cfg)
+Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
     : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
-      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names())
+      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names()),
+      error_pages_(error_pages)
 {
     typedef std::vector<config::LocationConfig>::const_iterator LocationConfigConstIt;
 
@@ -50,6 +52,11 @@ const std::string& Server::error_log_path() const
 const std::vector<utils::shared_ptr<Location> >& Server::locations() const
 {
     return locations_;
+}
+
+const std::map<int, std::string>& Server::error_pages() const
+{
+    return error_pages_;
 }
 
 std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
@@ -95,8 +102,7 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
         return GetResponseProcessor(rq, cb);
     } else {
         LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-        return utils::unique_ptr<AResponseProcessor>(
-            new GeneratedErrorResponseProcessor(cb, rq.status));
+        return utils::unique_ptr<AResponseProcessor>(new ErrorProcessor(*this, cb, rq.status));
     }
 }
 
@@ -114,17 +120,19 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             LOG(ERROR) << "Path in uri: " << rq.rqTarget.path() << " not found";
             LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
             return utils::unique_ptr<AResponseProcessor>(
-                new GeneratedErrorResponseProcessor(cb, http::HTTP_NOT_FOUND));
+                new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
         case CGI:
-            updated_path = utils::UpdatePath(
-                chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+            updated_path = utils::UpdatePath(chosen_loc.first->root_dir(),
+                                             chosen_loc.first->route().first, rq.rqTarget.path());
             LOG(DEBUG) << "RQ_GOOD -> Process CGI script " << updated_path;
-            return utils::unique_ptr<AResponseProcessor>(new CGIProcessor(updated_path, rq, chosen_loc.first, cb));
+            return utils::unique_ptr<AResponseProcessor>(
+                new CGIProcessor(*this, updated_path, rq, chosen_loc.first, cb));
         case STATIC_FILE:
-            updated_path = utils::UpdatePath(
-                chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+            updated_path = utils::UpdatePath(chosen_loc.first->root_dir(),
+                                             chosen_loc.first->route().first, rq.rqTarget.path());
             LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << updated_path;
-            return utils::unique_ptr<AResponseProcessor>(new FileProcessor(updated_path, cb));
+            return utils::unique_ptr<AResponseProcessor>(
+                new FileProcessor(*this, updated_path, cb));
     }
 }
 

@@ -93,7 +93,8 @@ void ServerCluster::CreateServers_(const config::Config& config)
 {
     for (config::ServerConfConstIt serv_conf_it = config.http_config().server_configs().begin();
          serv_conf_it != config.http_config().server_configs().end(); ++serv_conf_it) {
-        servers_.push_back(utils::shared_ptr<Server>(new Server(*serv_conf_it)));
+        servers_.push_back(utils::shared_ptr<Server>(
+            new Server(*serv_conf_it, config.http_config().error_pages())));
         MapListenersToServer_(serv_conf_it->listeners(), servers_.back());
     }
 }
@@ -169,5 +170,5 @@ void ServerCluster::FillResponseHeaders(http::Response& rs)
     rs.AddHeader(std::make_pair("Server", kServerClusterName()));
     rs.AddHeader(std::make_pair("Date", utils::GetFormatedTime()));
     rs.AddHeader(std::make_pair(
-        "Connection", "Close"));  // TODO fix or embrace (move to different place if embraced)
+        "Connection", "Closed"));  // TODO fix or embrace (move to different place if embraced)
 }

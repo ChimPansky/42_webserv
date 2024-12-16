@@ -37,7 +37,7 @@ class CGIProcessor : public AResponseProcessor {
     };
 
   public:
-    CGIProcessor(const std::string& script_path, const http::Request& rq,
+    CGIProcessor(const Server& server, const std::string& script_path, const http::Request& rq,
                  utils::shared_ptr<Location> loc,
                  utils::unique_ptr<http::IResponseCallback> response_rdy_cb);
     ~CGIProcessor();
