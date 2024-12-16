@@ -21,17 +21,15 @@ std::vector<char> Response::Dump() const
     str_dump += " ";
     str_dump += http::GetResponseCodeDescr(code_);
     str_dump += http::kCRLF();
-    if (!headers_.empty()) {
-
-        for (std::map<std::string, std::string>::const_iterator it = headers_.begin();
+    for (std::map<std::string, std::string>::const_iterator it = headers_.begin();
          it != headers_.end(); ++it) {
-            str_dump += it->first;
-            str_dump += ": ";
-            str_dump += it->second;
-            str_dump += http::kCRLF();
-        }
+        str_dump += it->first;
+        str_dump += ": ";
+        str_dump += it->second;
         str_dump += http::kCRLF();
     }
+    str_dump += http::kCRLF();
+
     std::vector<char> dump;
     std::copy(str_dump.begin(), str_dump.end(), std::back_inserter(dump));
     std::copy(body_.begin(), body_.end(), std::back_inserter(dump));
@@ -47,17 +45,14 @@ std::string Response::DumpToStr() const
     str_dump += " ";
     str_dump += http::GetResponseCodeDescr(code_);
     str_dump += http::kCRLF();
-    if (!headers_.empty()) {
-
-        for (std::map<std::string, std::string>::const_iterator it = headers_.begin();
+    for (std::map<std::string, std::string>::const_iterator it = headers_.begin();
          it != headers_.end(); ++it) {
-            str_dump += it->first;
-            str_dump += ": ";
-            str_dump += it->second;
-            str_dump += http::kCRLF();
-        }
+        str_dump += it->first;
+        str_dump += ": ";
+        str_dump += it->second;
         str_dump += http::kCRLF();
     }
+    str_dump += http::kCRLF();
     std::copy(body_.begin(), body_.end(), std::back_inserter(str_dump));
     return str_dump;
 }

@@ -39,6 +39,7 @@ void ServerCluster::Run()
     while (run_) {
         c_api::EventManager::get().CheckOnce();
         instance_->CheckClients_();
+        LOG(INFO) << 123;
     }
 }
 

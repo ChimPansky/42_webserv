@@ -80,10 +80,12 @@ std::vector<std::string> SetEnv(const std::string& script_path, const http::Requ
     env.push_back("REQUEST_METHOD=" + std::string(HttpMethodToStr(rq.method).second));
 
     if (rq.has_body) {
-        env.push_back("CONTENT_LENGTH=" + utils::NumericToString(std::string(rq.body).size()));
+        env.push_back("CONTENT_LENGTH=" + rq.GetHeaderVal("Content-Length").second);
         env.push_back("CONTENT_TYPE=" + rq.GetHeaderVal("Content-Type").second);
     }
     env.push_back("QUERY_STRING=" + rq.rqTarget.query());
+    // if (rq.method == http::HTTP_GET) {
+    // }
     // env.push_back("REMOTE_ADDR=" + utils::IPaddr);  TODO: pass Client Socket IP address here
     // env.push_back("SERVER_PORT=" + utils::port);  TODO: pass Master Socket port here
     env.push_back("REMOTE_HOST=" + rq.GetHeaderVal("Host").second);
@@ -145,7 +147,7 @@ void SetUpChild(int socket_fd, const std::string& script_path, const std::string
     args.push_back(const_cast<char*>(script_path.c_str()));
     args.push_back(NULL);
 
-    sleep(1000);
+    // sleep(1000);
     execve(interpreter.c_str(), args.data(), env.data());
     LOG(ERROR) << "CGI failed: ";
     // change to streerror
@@ -162,7 +164,7 @@ int CGIProcessor::Execute_(const std::string& script_path, const std::string& in
     int status = 0;
     int socket_fds[2];
 
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, socket_fds) < 0) {
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, socket_fds) < 0) {
         std::perror("socketpair failed");
         return 1;
     }
@@ -222,6 +224,115 @@ CGIProcessor::ReadChildOutputCallback::ReadChildOutputCallback(CGIProcessor& pro
     : processor_(processor)
 {}
 
+#include <cctype>
+bool IsKeyValid(const std::string& key)
+{
+    if (key.empty()) {
+        return false;
+    }
+    for (size_t i = 0; i < key.length(); ++i) {
+        char c = key[i];
+        if (!std::isalnum(c) && c != '-' && c != '_') {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool IsValValid(const std::string& val)
+{
+    for (size_t i = 0; i < val.length(); ++i) {
+        char c = val[i];
+        if (c < ' ' || c > '~') {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ExtractHeaderToMap(std::map<std::string, std::string>& headers, std::string rs_line)
+{
+    size_t separator = rs_line.find(":");
+    if (separator == std::string::npos) {
+        return false;
+    }
+    std::string key = rs_line.substr(0, separator);
+    if (!IsKeyValid(key)) {
+        return false;
+    }
+    std::string value = rs_line.substr(separator + 1);
+    value = utils::fs::Trim(value, " \t");
+    if (!IsValValid(value)) {
+        return false;
+    }
+    if (!value.empty()) {
+        headers[key] = value;
+    }
+    return true;
+}
+
+std::pair<bool, int> ExtractStatus(const std::string& status_str)
+{
+    if (status_str.length() < 5) {
+        return std::make_pair(false, 0);
+    }
+    std::pair<bool, int> status_or = utils::StrToNumericNoThrow<int>(status_str.substr(0, 3));
+    if (!status_or.first || status_or.second < 100) {
+        return std::make_pair(false, 0);
+    }
+    if ((status_str[4] != ' ' && status_str[4] != '\t') || !std::isalnum(status_str[5])) {
+        return std::make_pair(false, 0);
+    }
+    return std::make_pair(true, status_or.second);
+}
+
+std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<char>& buf)
+{
+    std::pair<bool, utils::unique_ptr<http::Response> > res =
+        std::make_pair(false, utils::unique_ptr<http::Response>(NULL));
+    if (buf.empty() || buf[0] == '\n') {
+        return res;
+    }
+
+    std::map<std::string, std::string> headers;
+
+    std::vector<char>::iterator cur_pos = buf.begin();
+    while (true) {
+        std::vector<char>::iterator line_end = std::find(cur_pos, buf.end(), '\n');
+        if (line_end == buf.end()) {
+            break;
+        }
+
+        size_t line_len = std::distance(cur_pos, line_end);
+        if (line_len == 0) {
+            ++cur_pos;
+            break;
+        }
+        if (!ExtractHeaderToMap(headers, std::string(cur_pos.base(), line_len))) {
+            return res;
+        }
+        cur_pos = line_end + 1;
+    }
+
+    // Retain the binary data in buf
+    buf.erase(buf.begin(), cur_pos);
+    http::ResponseCode rs_code = http::HTTP_OK;
+    if (headers.find("Status") != headers.end()) {
+        std::pair<bool, int> parsed_status = ExtractStatus(headers["Status"]);
+        if (!parsed_status.first) {
+            return res;
+        }
+        // TODO: add parse func
+        rs_code = static_cast<http::ResponseCode>(parsed_status.second);
+    }
+    if (headers.find("Content-Length") == headers.end() && !buf.empty()) {
+        headers["Content-Length"] = utils::NumericToString(buf.size());
+    }
+
+    return std::make_pair(true, utils::unique_ptr<http::Response>(
+                                    new http::Response(rs_code, http::HTTP_1_1, headers, buf)));
+}
+
 void CGIProcessor::ReadChildOutputCallback::Call(int fd)
 {
     LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
@@ -236,11 +347,19 @@ void CGIProcessor::ReadChildOutputCallback::Call(int fd)
         LOG(ERROR) << "error on recv: ";  // << std::strerror(errno);
         return;
     } else if (bytes_recvd == 0) {
+        processor_.buffer_.resize(old_buf_size);
         LOG(INFO) << "Returning " << processor_.buffer_.size() << " bytes from CGI script";
         c_api::EventManager::get().DeleteCallback(processor_.wrapped_socket_->sockfd());
-        processor_.response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
-            new http::Response(http::HTTP_OK, http::HTTP_1_1, std::map<std::string, std::string>(),
-                               processor_.buffer_)));
+        std::pair<bool, utils::unique_ptr<http::Response> > rs =
+            ParseCgiResponse(processor_.buffer_);
+        if (!rs.first) {
+            processor_.err_response_processor_ =
+                utils::unique_ptr<AResponseProcessor>(new GeneratedErrorResponseProcessor(
+                    processor_.response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+            return;
+        } else {
+            processor_.response_rdy_cb_->Call(rs.second);
+        }
     }
     if (processor_.buffer_.size() > old_buf_size + bytes_recvd) {
         processor_.buffer_.resize(old_buf_size + bytes_recvd);

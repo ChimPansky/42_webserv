@@ -210,7 +210,7 @@ ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
 {
-    LOG(DEBUG) << "BuildHeaderField_";
+    // LOG(DEBUG) << "BuildHeaderField_";
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;

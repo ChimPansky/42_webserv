@@ -81,7 +81,7 @@ std::string RequestParser::ExtractLine()
 {
     size_t len_without_crlf = (element_end_idx_ <= 0 ? 0 : element_end_idx_ - 1);
     std::string line = std::string(buf_.data(), buf_.data() + len_without_crlf);
-    LOG(DEBUG) << "erasing " << len_without_crlf + 1 << " bytes";
+    // LOG(DEBUG) << "erasing " << len_without_crlf + 1 << " bytes";
     buf_.erase(buf_.begin(), buf_.begin() + len_without_crlf + 2);
     element_end_idx_ = 0;
     return line;

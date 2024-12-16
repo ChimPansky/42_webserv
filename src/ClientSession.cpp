@@ -84,9 +84,7 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
 
 void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 {
-    if (!rs->headers().empty()) {
-        ServerCluster::FillResponseHeaders(*rs);
-    }
+    ServerCluster::FillResponseHeaders(*rs);
     std::map<std::string, std::string>::const_iterator conn_it =
         rs->headers().find("Connection");  // TODO add find header case-independent
     bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");

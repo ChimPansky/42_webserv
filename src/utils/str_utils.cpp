@@ -100,12 +100,12 @@ bool IsDirectory(const std::string& path)
 
 std::string Trim(const std::string& str, const std::string& trim_chars = " \t")
 {
-    std::string trimmed = str;
-    if (str.find_last_not_of(trim_chars) == std::string::npos) {
+    size_t first = str.find_first_not_of(trim_chars);
+    if (first == std::string::npos) {
         return std::string();
     }
-    trimmed.erase(trimmed.find_last_not_of(trim_chars) + 1);
-    return trimmed;
+    size_t last = str.find_last_not_of(trim_chars);
+    return str.substr(first, last - first + 1);
 }
 
 }  // namespace fs
