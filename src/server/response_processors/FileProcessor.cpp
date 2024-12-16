@@ -12,20 +12,19 @@
 
 FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
                              utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-    : AResponseProcessor(server, response_rdy_cb),
-      delegated_response_processor_(utils::unique_ptr<AResponseProcessor>(NULL))
+    : AResponseProcessor(server, response_rdy_cb)
 {
     if (!utils::DoesPathExist(file_path.c_str())) {
         LOG(DEBUG) << "Requested file not found: " << file_path;
-        delegated_response_processor_ = utils::unique_ptr<AResponseProcessor>(
+        delegated_processor_.reset(
             new ErrorProcessor(server, response_rdy_cb_, http::HTTP_NOT_FOUND));
         return;
     }
     std::ifstream file(file_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
         LOG(DEBUG) << "Requested file cannot be opened: " << file_path;
-        delegated_response_processor_ = utils::unique_ptr<AResponseProcessor>(
-            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+        delegated_processor_.reset(
+            new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
         return;
     }
     std::vector<char> body =

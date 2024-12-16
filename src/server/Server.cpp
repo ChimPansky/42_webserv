@@ -5,9 +5,11 @@
 #include <shared_ptr.h>
 
 #include "Request.h"
+#include "response_processors/AResponseProcessor.h"
 #include "response_processors/DirectoryProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
+#include "unique_ptr.h"
 #include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
@@ -116,40 +118,54 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
 
-    if (chosen_loc.second != NO_LOCATION &&
-        std::find(chosen_loc.first->allowed_methods().begin(),
+    LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
+    if (chosen_loc.second == NO_LOCATION) {
+        LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
+        return utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
+    }
+
+    if (std::find(chosen_loc.first->allowed_methods().begin(),
                   chosen_loc.first->allowed_methods().end(),
                   rq.method) == chosen_loc.first->allowed_methods().end()) {
         LOG(DEBUG) << "Method not allowed for specific location -> Create 405 ResponseProcessor";
         return utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(*this, cb, http::HTTP_METHOD_NOT_ALLOWED));
     }
-    switch (chosen_loc.second) {
-        case NO_LOCATION:
-            LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
-            return utils::unique_ptr<AResponseProcessor>(
-                new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
-        case CGI:
-            LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
-            // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
-            // cgi_paths, cgi_extensions, root_dir));
-        case STATIC_PATH:
-            std::string new_path = utils::UpdatePath(
-                chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-            if (!utils::DoesPathExist(new_path.c_str())) {
-                LOG(DEBUG) << "Requested file not found: " << new_path;
-                return utils::unique_ptr<AResponseProcessor>(
-                    new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
-            } else if (utils::IsDirectory(new_path.c_str())) {
-                LOG(DEBUG) << "Location is a directory -> Create DirectoryProcessor " << new_path;
-                return utils::unique_ptr<AResponseProcessor>(
-                    new DirectoryProcessor(*this, cb, new_path, rq, chosen_loc.first));
-            } else {
-                LOG(DEBUG) << "Location is not a directory -> Create FileProcessor" << new_path;
-                return utils::unique_ptr<AResponseProcessor>(
-                    new FileProcessor(*this, new_path, cb));
+
+    if (chosen_loc.second == CGI) {
+        LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
+        // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
+        // cgi_paths, cgi_extensions, root_dir));
+        return utils::unique_ptr<AResponseProcessor>(NULL);
+    } else {
+        std::string new_path = utils::UpdatePath(
+            chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+        if (utils::IsDirectory(new_path.c_str())) {
+            LOG(DEBUG) << "Location is a directory " << new_path;
+            if (chosen_loc.first->default_files().size() > 0) {
+                for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
+                    std::string default_file =
+                        new_path + "/" + chosen_loc.first->default_files()[i];
+                    if (utils::DoesPathExist(default_file.c_str())) {
+                        LOG(DEBUG) << "Default file found -> Create FileProcessor" << default_file;
+                        return utils::unique_ptr<AResponseProcessor>(
+                            new FileProcessor(*this, default_file, cb));
+                    }
+                }
             }
+            if (chosen_loc.first->dir_listing()) {
+                LOG(DEBUG) << "Directory listing enabled -> Create DirectoryProcessor" << new_path;
+                return utils::unique_ptr<AResponseProcessor>(
+                    new DirectoryProcessor(*this, cb, new_path, chosen_loc.first->root_dir(), rq));
+            }
+        } else {
+            LOG(DEBUG) << "Location is not a directory -> Create FileProcessor" << new_path;
+            return utils::unique_ptr<AResponseProcessor>(new FileProcessor(*this, new_path, cb));
+        }
     }
+    return utils::unique_ptr<AResponseProcessor>(
+        new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
 }
 
 std::pair<MatchType, std::string> Server::MatchHostName(

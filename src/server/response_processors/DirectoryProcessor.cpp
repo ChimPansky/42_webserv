@@ -3,11 +3,12 @@
 #include <dirent.h>
 
 #include "ErrorProcessor.h"
+#include "ResponseCodes.h"
 #include "http.h"
 #include "logger.h"
 #include "response_processors/AResponseProcessor.h"
 
-const std::string DirectoryProcessor::GetDirStyle_()
+static const std::string GetDirStyle()
 {
     return "<style>\n"
            "body {\n"
@@ -57,33 +58,20 @@ const std::string DirectoryProcessor::GetDirStyle_()
 
 DirectoryProcessor::DirectoryProcessor(const Server& server,
                                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                                       const std::string& file_path, const http::Request& rq,
-                                       utils::shared_ptr<Location> loc)
+                                       const std::string& file_path, const std::string& root_dir,
+                                       const http::Request& rq)
     : AResponseProcessor(server, response_rdy_cb),
       err_response_processor_(utils::unique_ptr<AResponseProcessor>(NULL)), rq_(rq)
 {
-    // LOG(DEBUG) << "DirectoryProcessor";
-    // LOG(DEBUG) << "Location: " << loc->GetDebugString();
-    if (rq_.method == http::HTTP_GET) {
-        if (loc->dir_listing()) {
-            LOG(DEBUG) << "Listing directory";
-            if (!ListDirectory_(file_path, loc->root_dir())) {
-                err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
-                    new ErrorProcessor(server, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
-            }
-        } else if (loc->default_files().size() > 0) {
-            LOG(DEBUG) << "Serve default file: " << loc->default_files()[0];
-        } else {
-            LOG(DEBUG) << "Directory listing is disabled";  // 401 or 403 or 404
-            err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
-                new ErrorProcessor(server, response_rdy_cb_, http::HTTP_FORBIDDEN));
-        }
-    } else if (rq_.method == http::HTTP_POST) {
-        LOG(DEBUG) << "POST method logic for directory...";
-    } else if (rq_.method == http::HTTP_DELETE) {
-        LOG(DEBUG) << "DELETE method logic for directory...";
-    } else {
-        throw std::logic_error("Unknown Method for DirectoryProcessor");
+    if (rq_.method != http::HTTP_GET) {
+        LOG(DEBUG) << "Only GET method is supported for directory listing";
+        err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_METHOD_NOT_ALLOWED));
+        return;
+    }
+    if (!ListDirectory_(file_path, root_dir)) {
+        err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
     }
 }
 
@@ -102,7 +90,7 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path,
         entry_rel_folder += "/";
     }
     body_stream << "<html>\n<head>\n<title>Index of " << path << "</title>\n</head>\n"
-                << GetDirStyle_() << "<body>\n<h1>Index of " << path
+                << GetDirStyle() << "<body>\n<h1>Index of " << path
                 << "</h1>\n"
                    "<table border=\"0\">\n"
                    "<thead>\n"
@@ -114,7 +102,7 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path,
                    "</thead>\n"
                    "<tbody>\n";
 
-    std::sort(dir_entries.second.begin(), dir_entries.second.end(), CompareDirEntriesByName);
+    std::sort(dir_entries.second.begin(), dir_entries.second.end());
     for (size_t i = 0; i < dir_entries.second.size(); i++) {
         const DirEntry& entry = dir_entries.second[i];
         std::string time_str = utils::GetFormatedTime(entry.last_modified());
@@ -185,10 +173,4 @@ std::string DirectoryProcessor::RemoveRootFromPath(const std::string& path, cons
         return path.substr(prefix.size());
     }
     return path;
-}
-
-bool CompareDirEntriesByName(const DirectoryProcessor::DirEntry& a,
-                             const DirectoryProcessor::DirEntry& b)
-{
-    return a.name() < b.name();
 }

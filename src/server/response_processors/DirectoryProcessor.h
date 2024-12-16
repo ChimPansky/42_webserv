@@ -11,7 +11,6 @@
 
 class DirectoryProcessor : public AResponseProcessor {
   private:
-    static const std::string GetDirStyle_();
     enum DirEntryType {
         DE_FILE,
         DE_DIR
@@ -24,6 +23,8 @@ class DirectoryProcessor : public AResponseProcessor {
                  std::time_t last_modified, size_t size)
             : name_(name), fpath_(fpath), type_(type), last_modified_(last_modified), size_(size)
         {}
+
+        inline bool operator<(const DirEntry rhs) { return name_ < rhs.name_; }
 
         const std::string& name() const { return name_; }
         const std::string& fpath() const { return fpath_; }
@@ -42,8 +43,8 @@ class DirectoryProcessor : public AResponseProcessor {
   public:
     DirectoryProcessor(const Server& server,
                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                       const std::string& file_path, const http::Request& rq,
-                       utils::shared_ptr<Location> loc);
+                       const std::string& file_path, const std::string& root_dir,
+                       const http::Request& rq);
     ~DirectoryProcessor(){};
 
   private:
@@ -56,8 +57,5 @@ class DirectoryProcessor : public AResponseProcessor {
         const char* directory);
     std::string RemoveRootFromPath(const std::string& path, const std::string& root);
 };
-
-bool CompareDirEntriesByName(const DirectoryProcessor::DirEntry& a,
-                             const DirectoryProcessor::DirEntry& b);
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_DIRECTORY_PROCESSOR_H
