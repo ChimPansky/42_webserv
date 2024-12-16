@@ -5,6 +5,7 @@
 #include <shared_ptr.h>
 
 #include "Request.h"
+#include "ResponseCodes.h"
 #include "response_processors/AResponseProcessor.h"
 #include "response_processors/DirectoryProcessor.h"
 #include "response_processors/ErrorProcessor.h"
@@ -159,13 +160,14 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
                 return utils::unique_ptr<AResponseProcessor>(
                     new DirectoryProcessor(*this, cb, new_path, chosen_loc.first->root_dir(), rq));
             }
+            LOG(DEBUG) << "Directory listing disabled -> 403 Forbidden";
+            return utils::unique_ptr<AResponseProcessor>(
+                new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));
         } else {
-            LOG(DEBUG) << "Location is not a directory -> Create FileProcessor" << new_path;
+            LOG(DEBUG) << "Location is not a directory -> Create FileProcessor: " << new_path;
             return utils::unique_ptr<AResponseProcessor>(new FileProcessor(*this, new_path, cb));
         }
     }
-    return utils::unique_ptr<AResponseProcessor>(
-        new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
 }
 
 std::pair<MatchType, std::string> Server::MatchHostName(
