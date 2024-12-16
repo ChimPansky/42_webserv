@@ -5,7 +5,10 @@
 #include <str_utils.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
-#include <utils/utils.h>
+
+#include <cctype>
+
+#include "../utils/utils.h"
 
 bool IsValidExtension(const std::string& filename, const std::vector<std::string>& allowed_exts)
 {
@@ -224,7 +227,6 @@ CGIProcessor::ReadChildOutputCallback::ReadChildOutputCallback(CGIProcessor& pro
     : processor_(processor)
 {}
 
-#include <cctype>
 bool IsKeyValid(const std::string& key)
 {
     if (key.empty()) {
