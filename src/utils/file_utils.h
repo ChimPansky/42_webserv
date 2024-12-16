@@ -6,7 +6,6 @@
 #include <unistd.h>
 
 #include <cstdio>
-#include <fstream>
 #include <string>
 
 namespace utils {
@@ -31,6 +30,8 @@ bool CreateAndOpenTmpFileToStream(FileStream &fs, char *tmp_file_path)
     fs.open(tmp_file_path);
     return fs.is_open();
 }
+
+std::string GetPathWithoutRoot(const std::string &path, const std::string &root);
 
 }  // namespace utils
 

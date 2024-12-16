@@ -9,6 +9,8 @@ namespace utils {
 
 bool DoesPathExist(const char *path)
 {
+    LOG(DEBUG) << "Check access for: {" << path << "}";
+    LOG(DEBUG) << "Access(" << path << ", F_OK) = " << access(path, F_OK);
     return access(path, F_OK) != -1;
 }
 
@@ -22,7 +24,8 @@ bool IsDirectory(const char *path)
     return (info.st_mode & S_IFDIR) != 0;
 }
 
-bool IsRegularFile(const char *path) {
+bool IsRegularFile(const char *path)
+{
     struct stat info;
 
     if (stat(path, &info) != 0) {
@@ -47,4 +50,15 @@ std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const
     return std::make_pair(true, buffer.str());
 }
 
+std::string GetPathWithoutRoot(const std::string &path, const std::string &root)
+{
+    if (root.empty()) {
+        return path;
+    }
+    std::string prefix = root[0] == '/' ? root.substr(1) : root;
+    if (path.compare(0, prefix.size(), prefix) == 0) {
+        return path.substr(prefix.size());
+    }
+    return path;
+}
 }  // namespace utils

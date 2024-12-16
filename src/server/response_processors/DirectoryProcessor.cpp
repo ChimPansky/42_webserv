@@ -4,6 +4,7 @@
 
 #include "ErrorProcessor.h"
 #include "ResponseCodes.h"
+#include "file_utils.h"
 #include "http.h"
 #include "logger.h"
 #include "response_processors/AResponseProcessor.h"
@@ -64,7 +65,6 @@ DirectoryProcessor::DirectoryProcessor(const Server& server,
       err_response_processor_(utils::unique_ptr<AResponseProcessor>(NULL)), rq_(rq)
 {
     if (rq_.method != http::HTTP_GET) {
-        LOG(DEBUG) << "Only GET method is supported for directory listing";
         err_response_processor_ = utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(server, response_rdy_cb_, http::HTTP_METHOD_NOT_ALLOWED));
         return;
@@ -84,8 +84,8 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path,
     }
     std::map<std::string, std::string> hdrs;
     std::ostringstream body_stream;
-
-    std::string entry_rel_folder = RemoveRootFromPath(path, location_root_dir);
+    LOG(DEBUG) << "Location root dir: " << location_root_dir;
+    std::string entry_rel_folder = utils::GetPathWithoutRoot(path, location_root_dir);
     if (entry_rel_folder.empty() || entry_rel_folder[entry_rel_folder.size() - 1] != '/') {
         entry_rel_folder += "/";
     }
@@ -109,7 +109,8 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path,
 
         body_stream << "<tr>\n"
                        "<td><a href=\""
-                    << entry_rel_folder << entry.name() << "\"";
+                    << entry_rel_folder << entry.name()
+                    << "\"";            // todo: this needs to be reworked...
         if (entry.type() == DE_FILE) {  // open files in new tab
             body_stream << " target=\"_blank\"";
         }
@@ -123,8 +124,8 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path,
     }
     body_stream << "</tbody>\n</table>\n</body>\n</html>\n";
 
-    std::string body_str = body_stream.str();
-    std::vector<char> body(body_str.begin(), body_str.end());
+    std::string body_string = body_stream.str();
+    std::vector<char> body(body_string.begin(), body_string.end());
     hdrs["Content-Type"] = "text/html";
     hdrs["Content-Length"] = utils::NumericToString(body.size());
     // todo: instead of creating the whole response at once, stream the body to the client with
@@ -161,16 +162,4 @@ DirectoryProcessor::GetDirEntries_(const char* directory)
     }
     closedir(dir);
     return std::make_pair(true, entries);
-}
-
-std::string DirectoryProcessor::RemoveRootFromPath(const std::string& path, const std::string& root)
-{
-    if (root.empty()) {
-        return path;
-    }
-    std::string prefix = root[0] == '/' ? root.substr(1) : root;
-    if (path.compare(0, prefix.size(), prefix) == 0) {
-        return path.substr(prefix.size());
-    }
-    return path;
 }

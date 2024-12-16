@@ -55,7 +55,6 @@ class DirectoryProcessor : public AResponseProcessor {
 
     std::pair<bool /*success*/, std::vector<DirEntry> /*dir_entries*/> GetDirEntries_(
         const char* directory);
-    std::string RemoveRootFromPath(const std::string& path, const std::string& root);
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_DIRECTORY_PROCESSOR_H

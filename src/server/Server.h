@@ -63,6 +63,8 @@ class Server {
 
     std::vector<utils::shared_ptr<Location> > locations_;
     typedef std::vector<utils::shared_ptr<Location> >::const_iterator LocationsConstIt;
+
+  private:
 };
 
 #endif  // WS_SERVER_SERVER_H

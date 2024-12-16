@@ -6,6 +6,7 @@
 
 #include "Request.h"
 #include "ResponseCodes.h"
+#include "logger.h"
 #include "response_processors/AResponseProcessor.h"
 #include "response_processors/DirectoryProcessor.h"
 #include "response_processors/ErrorProcessor.h"
@@ -143,28 +144,22 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         std::string new_path = utils::UpdatePath(
             chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
         if (utils::IsDirectory(new_path.c_str())) {
-            LOG(DEBUG) << "Location is a directory " << new_path;
             if (chosen_loc.first->default_files().size() > 0) {
                 for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
-                    std::string default_file =
-                        new_path + "/" + chosen_loc.first->default_files()[i];
+                    std::string default_file = new_path + chosen_loc.first->default_files()[i];
                     if (utils::DoesPathExist(default_file.c_str())) {
-                        LOG(DEBUG) << "Default file found -> Create FileProcessor" << default_file;
                         return utils::unique_ptr<AResponseProcessor>(
                             new FileProcessor(*this, default_file, cb));
                     }
                 }
             }
             if (chosen_loc.first->dir_listing()) {
-                LOG(DEBUG) << "Directory listing enabled -> Create DirectoryProcessor" << new_path;
                 return utils::unique_ptr<AResponseProcessor>(
                     new DirectoryProcessor(*this, cb, new_path, chosen_loc.first->root_dir(), rq));
             }
-            LOG(DEBUG) << "Directory listing disabled -> 403 Forbidden";
             return utils::unique_ptr<AResponseProcessor>(
                 new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));
         } else {
-            LOG(DEBUG) << "Location is not a directory -> Create FileProcessor: " << new_path;
             return utils::unique_ptr<AResponseProcessor>(new FileProcessor(*this, new_path, cb));
         }
     }
