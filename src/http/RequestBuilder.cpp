@@ -107,6 +107,7 @@ RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_RQ_LINE;
+        case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_URI_TOO_LONG);
         default: {
             LOG(INFO) << "Request Line Syntax Error";
             return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
