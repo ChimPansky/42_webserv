@@ -33,8 +33,8 @@ ErrorProcessor::ErrorProcessor(const Server& server,
     hdrs["Content-Type"] = "text/html";
     hdrs["Connection"] = "Closed";
     hdrs["Content-Length"] = utils::NumericToString(body.size());
-    response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
-        new http::Response(http::HTTP_OK, http::HTTP_1_1, hdrs, body)));
+    response_rdy_cb_->Call(
+        utils::unique_ptr<http::Response>(new http::Response(code, http::HTTP_1_1, hdrs, body)));
 }
 
 ErrorProcessor::GeneratedErrorProcessor::GeneratedErrorProcessor(
