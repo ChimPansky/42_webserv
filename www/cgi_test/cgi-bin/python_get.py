@@ -1,5 +1,3 @@
-#!C:\Python311\python.exe
-
 import cgi, cgitb
 
 form = cgi.FieldStorage()

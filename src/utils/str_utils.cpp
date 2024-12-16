@@ -1,6 +1,7 @@
 #include "str_utils.h"
 
 #include <dirent.h>
+#include <unistd.h>
 
 #include <fstream>
 #include <sstream>
@@ -23,6 +24,22 @@ void EatSpacesAndHTabs(std::stringstream& ss)
 }
 
 namespace fs {
+
+bool IsReadable(const std::string& filename)
+{
+    if (access(filename.c_str(), R_OK) < 0) {
+        return false;
+    }
+    return true;
+}
+
+bool IsExecutable(const std::string& filename)
+{
+    if (access(filename.c_str(), X_OK) < 0) {
+        return false;
+    }
+    return true;
+}
 
 std::vector<std::string> SplitLine(const std::string& line)
 {

@@ -13,6 +13,8 @@ void EatSpacesAndHTabs(std::stringstream& ss);
 
 namespace fs {
 
+bool IsReadable(const std::string& filename);
+bool IsExecutable(const std::string& filename);
 std::vector<std::string> SplitLine(const std::string& line);
 bool CheckFileExtension(const std::string& file, const std::string& extention);
 bool ValidPath(const std::string& val);

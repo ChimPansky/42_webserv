@@ -1,45 +1,27 @@
 #ifndef WS_SERVER_RESPONSE_PROCESSORS_CGI_PROCESSOR_H
 #define WS_SERVER_RESPONSE_PROCESSORS_CGI_PROCESSOR_H
 
+#include <Location.h>
 #include <SocketWrapper.h>
-#include <fcntl.h>
 #include <multiplexers/ICallback.h>
 #include <shared_ptr.h>
-#include <sys/wait.h>
 #include <unique_ptr.h>
-#include <unistd.h>
-
-#include <fstream>
 
 #include "AResponseProcessor.h"
-#include "Location.h"
 
 class CGIProcessor : public AResponseProcessor {
   private:
-    std::string GetInterpreterByExt_(utils::shared_ptr<Location> loc, const std::string& script);
-    void SetEnv_(const std::string& script_path, const http::Request& rq);
-    int Execute_(const std::string& script_path, const http::Request& rq);
+    int Execute_(const std::string& script_path, const std::string& interpreter,
+                 const http::Request& rq);
     bool IsValidMethod_(utils::shared_ptr<Location> loc, const http::Request& rq);
 
-    class CGIReadCallback : public c_api::ICallback {
+    class ReadChildOutputCallback : public c_api::ICallback {
       public:
-        CGIReadCallback(c_api::SocketWrapper& socket, std::vector<char>& buffer);
+        ReadChildOutputCallback(CGIProcessor& processor);
         virtual void Call(int);
 
       private:
-        c_api::SocketWrapper& socket_;
-        std::vector<char>& buffer_;
-    };
-
-    class CGIWriteCallback : public c_api::ICallback {
-      public:
-        CGIWriteCallback(c_api::SocketWrapper& socket, std::vector<char> content);
-        virtual void Call(int);
-
-      private:
-        c_api::SocketWrapper& socket_;
-        std::vector<char> buf_;
-        size_t buf_send_idx_;
+        CGIProcessor& processor_;
     };
 
     class ChildProcess {
@@ -62,9 +44,7 @@ class CGIProcessor : public AResponseProcessor {
 
   private:
     utils::unique_ptr<c_api::SocketWrapper> wrapped_socket_;
-    std::string interpreter_;
     std::vector<char> buffer_;
-    std::vector<std::string> env_;
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_CGI_PROCESSOR_H

@@ -1,11 +1,12 @@
-#!C:\Python311\python.exe
-
 import cgi, cgitb
 
-form = cgi.FieldStorage()
+# val = input("Enter your value: ")
+# print(val)
 
-username = form["username"].value
-emailaddress = form["emailaddress"].value
+form = cgi.FieldStorage()
+print(form)
+#username = form["username"].value
+# emailaddress = form["emailaddress"].value
 
 print("Content-Type: text/html\r\n\r\n")
 
@@ -15,7 +16,7 @@ print("<title> MY FIRST CGI FILE </title>")
 print("</head>")
 print("<body>")
 print("<h3> This is HTML's Body Section </h3>")
-print(username)
-print(emailaddress)
+# print(username)
+# print(emailaddress)
 print("</body>")
 print("</html>")
