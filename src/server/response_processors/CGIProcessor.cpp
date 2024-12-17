@@ -4,7 +4,6 @@
 #include <cgi/cgi.h>
 #include <file_utils.h>
 #include <http.h>
-#include <str_utils.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 
@@ -17,7 +16,7 @@
 bool IsValidExtension(const std::string& filename, const std::vector<std::string>& allowed_exts)
 {
     for (size_t i = 0; i < allowed_exts.size(); i++) {
-        if (utils::fs::CheckFileExtension(filename, allowed_exts[i])) {
+        if (utils::CheckFileExtension(filename, allowed_exts[i])) {
             return true;
         }
     }

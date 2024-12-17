@@ -48,4 +48,13 @@ std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const
     return std::make_pair(true, buffer.str());
 }
 
+bool CheckFileExtension(const std::string &file, const std::string &extention)
+{
+    if (file.length() > extention.length() && file[file.size() - 6] == '/') {
+        return false;
+    }
+    return file.length() > extention.length() && (file.find_last_of('.') != std::string::npos &&
+                                                  file.substr(file.find_last_of('.')) == extention);
+}
+
 }  // namespace utils

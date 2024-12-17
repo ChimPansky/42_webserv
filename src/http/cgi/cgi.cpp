@@ -112,7 +112,6 @@ std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector
             LOG(ERROR) << "Incorrect Status header formatting in CGI output: " << headers["Status"];
             return res;
         }
-        // TODO: add parse func
         rs_code = static_cast<http::ResponseCode>(parsed_status.second);
     }
     if (headers.find("Content-Length") == headers.end() && !buf.empty()) {
@@ -139,8 +138,6 @@ std::vector<std::string> GetEnv(const std::string& script_path, const http::Requ
         env.push_back("CONTENT_TYPE=" + rq.GetHeaderVal("Content-Type").second);
     }
     env.push_back("QUERY_STRING=" + rq.rqTarget.query());
-    // if (rq.method == http::HTTP_GET) {
-    // }
     // env.push_back("REMOTE_ADDR=" + utils::IPaddr);  TODO: pass Client Socket IP address here
     // env.push_back("SERVER_PORT=" + utils::port);  TODO: pass Master Socket port here
     env.push_back("REMOTE_HOST=" + rq.GetHeaderVal("Host").second);
