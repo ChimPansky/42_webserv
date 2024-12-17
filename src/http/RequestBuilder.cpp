@@ -288,7 +288,6 @@ ResponseCode RequestBuilder::InterpretHeaders_()
         rq_.has_body = true;
         std::pair<bool, size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(content_length.second);
-        LOG(DEBUG) << "InterpretHeaders_() Max_body_size: " << body_builder_.max_body_size;
         if (content_length_num.first) {
             if (content_length_num.second > body_builder_.max_body_size) {
                 LOG(INFO) << "Content-Length too large";

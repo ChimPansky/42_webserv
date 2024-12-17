@@ -120,12 +120,12 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
 
-    LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
     if (chosen_loc.second == NO_LOCATION) {
         LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
         return utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
     }
+    LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
 
     if (std::find(chosen_loc.first->allowed_methods().begin(),
                   chosen_loc.first->allowed_methods().end(),
@@ -139,7 +139,8 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
         // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
         // cgi_paths, cgi_extensions, root_dir));
-        return utils::unique_ptr<AResponseProcessor>(NULL);
+        return utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(*this, cb, http::HTTP_NOT_IMPLEMENTED));
     } else {
         std::string new_path = utils::UpdatePath(
             chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
