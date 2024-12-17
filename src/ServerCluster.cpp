@@ -170,5 +170,5 @@ void ServerCluster::FillResponseHeaders(http::Response& rs)
     rs.AddHeader(std::make_pair("Server", kServerClusterName()));
     rs.AddHeader(std::make_pair("Date", utils::GetFormatedTime()));
     rs.AddHeader(std::make_pair(
-        "Connection", "Closed"));  // TODO fix or embrace (move to different place if embraced)
+        "Connection", "Close"));  // TODO fix or embrace (move to different place if embraced)
 }

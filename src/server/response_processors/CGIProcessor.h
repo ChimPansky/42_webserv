@@ -24,18 +24,6 @@ class CGIProcessor : public AResponseProcessor {
         CGIProcessor& processor_;
     };
 
-    class ChildProcess {
-      public:
-        ChildProcess(pid_t pid);
-        void Monitor();
-        int status() const;
-
-      private:
-        pid_t child_pid_;
-        std::time_t start_time_;
-        int status_;
-    };
-
   public:
     CGIProcessor(const Server& server, const std::string& script_path, const http::Request& rq,
                  utils::shared_ptr<Location> loc,
@@ -44,7 +32,7 @@ class CGIProcessor : public AResponseProcessor {
 
   private:
     utils::unique_ptr<c_api::SocketWrapper> wrapped_socket_;
-    std::vector<char> buffer_;
+    std::vector<char> cgi_out_buffer_;
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_CGI_PROCESSOR_H

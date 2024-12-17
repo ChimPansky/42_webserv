@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 
 #include <cctype>
+#include <cstring>
 
 #include "../utils/utils.h"
 #include "ErrorProcessor.h"
@@ -22,14 +23,17 @@ bool IsValidExtension(const std::string& filename, const std::vector<std::string
     return false;
 }
 
-
 CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
                            const http::Request& rq, utils::shared_ptr<Location> loc,
                            utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
     : AResponseProcessor(server, response_rdy_cb)
 {
-    std::string interpreter;
-
+    if (!IsValidMethod_(loc, rq)) {
+        LOG(ERROR) << "Method " << http::HttpMethodToStr(rq.method).second << " isn't allowed";
+        delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_METHOD_NOT_ALLOWED));
+        return;
+    }
     if (!IsValidExtension(script_path, loc->cgi_extensions())) {
         LOG(ERROR) << "CGI script not supported: " << script_path;
         delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
@@ -37,8 +41,8 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
         return;
     }
 
-    interpreter = utils::GetInterpreterByExt(script_path);
-    if (!utils::IsReadable(script_path.c_str()) || !utils::IsExecutable(script_path.c_str())) {
+    std::string interpreter = utils::GetInterpreterByExt(script_path);
+    if (!utils::IsReadable(script_path.c_str()) || !utils::IsExecutable(interpreter.c_str())) {
         LOG(ERROR) << "CGI script cannot be executed: " << script_path;
         delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
@@ -58,18 +62,18 @@ CGIProcessor::~CGIProcessor()
     c_api::EventManager::get().DeleteCallback(wrapped_socket_->sockfd());
 }
 
-// bool CGIProcessor::IsValidMethod_(utils::shared_ptr<Location> loc, const http::Request& rq)
-// {
-//     if (rq.method == http::HTTP_DELETE) {
-//         return false;
-//     }
-//     for (size_t i = 0; i < loc->allowed_methods().size(); i++) {
-//         if (rq.method == loc->allowed_methods()[i]) {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
+bool CGIProcessor::IsValidMethod_(utils::shared_ptr<Location> loc, const http::Request& rq)
+{
+    if (rq.method == http::HTTP_DELETE) {
+        return false;
+    }
+    for (size_t i = 0; i < loc->allowed_methods().size(); i++) {
+        if (rq.method == loc->allowed_methods()[i]) {
+            return true;
+        }
+    }
+    return false;
+}
 
 std::vector<std::string> SetEnv(const std::string& script_path, const http::Request& rq)
 {
@@ -191,34 +195,6 @@ int CGIProcessor::Execute_(const std::string& script_path, const std::string& in
         SetUpChild(socket_fds[kChildSocket], script_path, interpreter, rq);
     }
     close(socket_fds[kChildSocket]);
-
-    // close(socket_fds[1]);
-    // if (waitpid(child_pid, &status, 0) < 0) {
-    //     std::perror("waitpid failed");
-    //     close(socket_fds[0]);
-    //     close(socket_fds[1]);
-    //     if (rq_body_fd) {
-    //         close(rq_body_fd);
-    //     }
-    //     return 1;
-    // }
-    /*  else if (WIFEXITED(status)) {
-        LOG(ERROR) << "Child process exited with " << WEXITSTATUS(status);
-        return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-        LOG(ERROR) << "Child process exited with signal " << WTERMSIG(status);
-        return WTERMSIG(status);
-    } */
-
-    // wrapped_socket_.reset(new c_api::SocketWrapper(socket_fd));
-    // LOG(WARNING) << "wrapped SOCK FD: " << wrapped_socket_->sockfd();
-    // if (c_api::EventManager::get().RegisterCallback(
-    //         wrapped_socket_->sockfd(), c_api::CT_READ,
-    //         utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this))) !=
-    //     0) {
-    //     LOG(ERROR) << "Could not register CGI read callback";
-    //     return 1;
-    // }
     return status;
 }
 
@@ -339,21 +315,21 @@ void CGIProcessor::ReadChildOutputCallback::Call(int fd)
 {
     LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
 
-    size_t old_buf_size = processor_.buffer_.size();
-    processor_.buffer_.resize(processor_.buffer_.size() + 1000);
-    LOG(DEBUG) << "ReadChildOutputCallback::Call processor_.buffer_.size(): "
-               << processor_.buffer_.size();
-    ssize_t bytes_recvd = processor_.wrapped_socket_->Recv(processor_.buffer_, 1000);
+    size_t old_buf_size = processor_.cgi_out_buffer_.size();
+    processor_.cgi_out_buffer_.resize(processor_.cgi_out_buffer_.size() + 1000);
+    LOG(DEBUG) << "ReadChildOutputCallback::Call processor_.cgi_out_buffer_.size(): "
+               << processor_.cgi_out_buffer_.size();
+    ssize_t bytes_recvd = processor_.wrapped_socket_->Recv(processor_.cgi_out_buffer_, 1000);
     LOG(DEBUG) << "ReadChildOutputCallback::Call bytes_recvd: " << bytes_recvd;
     if (bytes_recvd < 0) {
-        LOG(ERROR) << "error on recv: ";  // << std::strerror(errno);
+        LOG(ERROR) << "error on recv" << std::strerror(errno);
         return;
     } else if (bytes_recvd == 0) {
-        processor_.buffer_.resize(old_buf_size);
-        LOG(INFO) << "Returning " << processor_.buffer_.size() << " bytes from CGI script";
+        processor_.cgi_out_buffer_.resize(old_buf_size);
+        LOG(INFO) << "Returning " << processor_.cgi_out_buffer_.size() << " bytes from CGI script";
         c_api::EventManager::get().DeleteCallback(processor_.wrapped_socket_->sockfd());
         std::pair<bool, utils::unique_ptr<http::Response> > rs =
-            ParseCgiResponse(processor_.buffer_);
+            ParseCgiResponse(processor_.cgi_out_buffer_);
         if (!rs.first) {
             processor_.delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
                 new ErrorProcessor(processor_.server_, processor_.response_rdy_cb_,
@@ -363,8 +339,8 @@ void CGIProcessor::ReadChildOutputCallback::Call(int fd)
             processor_.response_rdy_cb_->Call(rs.second);
         }
     }
-    if (processor_.buffer_.size() > old_buf_size + bytes_recvd) {
-        processor_.buffer_.resize(old_buf_size + bytes_recvd);
+    if (processor_.cgi_out_buffer_.size() > old_buf_size + bytes_recvd) {
+        processor_.cgi_out_buffer_.resize(old_buf_size + bytes_recvd);
     }
 }
 

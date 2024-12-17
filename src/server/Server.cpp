@@ -117,7 +117,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     //  or response processor should be owned by client session
     switch (chosen_loc.second) {
         case NO_LOCATION:
-            LOG(ERROR) << "Path in uri: " << rq.rqTarget.path() << " not found";
+            LOG(DEBUG) << "Path in uri: " << rq.rqTarget.path() << " not found";
             LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
             return utils::unique_ptr<AResponseProcessor>(
                 new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
