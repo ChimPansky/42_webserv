@@ -1,7 +1,6 @@
 #include "str_utils.h"
 
 #include <dirent.h>
-#include <unistd.h>
 
 #include <fstream>
 #include <sstream>
@@ -23,23 +22,17 @@ void EatSpacesAndHTabs(std::stringstream& ss)
     }
 }
 
+std::string Trim(const std::string& str, const std::string& trim_chars = " \t")
+{
+    size_t first = str.find_first_not_of(trim_chars);
+    if (first == std::string::npos) {
+        return std::string();
+    }
+    size_t last = str.find_last_not_of(trim_chars);
+    return str.substr(first, last - first + 1);
+}
+
 namespace fs {
-
-bool IsReadable(const std::string& filename)
-{
-    if (access(filename.c_str(), R_OK) < 0) {
-        return false;
-    }
-    return true;
-}
-
-bool IsExecutable(const std::string& filename)
-{
-    if (access(filename.c_str(), X_OK) < 0) {
-        return false;
-    }
-    return true;
-}
 
 std::vector<std::string> SplitLine(const std::string& line)
 {
@@ -96,16 +89,6 @@ bool IsDirectory(const std::string& path)
     } else {
         return false;
     }
-}
-
-std::string Trim(const std::string& str, const std::string& trim_chars = " \t")
-{
-    size_t first = str.find_first_not_of(trim_chars);
-    if (first == std::string::npos) {
-        return std::string();
-    }
-    size_t last = str.find_last_not_of(trim_chars);
-    return str.substr(first, last - first + 1);
 }
 
 }  // namespace fs

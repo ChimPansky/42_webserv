@@ -1,6 +1,7 @@
 #include "CGIProcessor.h"
 
 #include <EventManager.h>
+#include <file_utils.h>
 #include <http.h>
 #include <str_utils.h>
 #include <sys/socket.h>
@@ -36,8 +37,8 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
         return;
     }
 
-    interpreter = utils::GetInterpreterByExt_(script_path);
-    if (!utils::fs::IsReadable(script_path) || !utils::fs::IsExecutable(script_path)) {
+    interpreter = utils::GetInterpreterByExt(script_path);
+    if (!utils::IsReadable(script_path.c_str()) || !utils::IsExecutable(script_path.c_str())) {
         LOG(ERROR) << "CGI script cannot be executed: " << script_path;
         delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
@@ -262,7 +263,7 @@ bool ExtractHeaderToMap(std::map<std::string, std::string>& headers, std::string
         return false;
     }
     std::string value = rs_line.substr(separator + 1);
-    value = utils::fs::Trim(value, " \t");
+    value = utils::Trim(value, " \t");
     if (!IsValValid(value)) {
         return false;
     }

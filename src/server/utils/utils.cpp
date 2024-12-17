@@ -28,7 +28,7 @@ const char* GetTypeByExt(const std::string& ext)
         return kDefaultContentType();
 }
 
-std::string GetInterpreterByExt_(const std::string& filename)
+std::string GetInterpreterByExt(const std::string& filename)
 {
     if (filename.find_last_of(".") == std::string::npos) {
         return std::string();

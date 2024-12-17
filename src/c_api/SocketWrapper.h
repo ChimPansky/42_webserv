@@ -2,6 +2,7 @@
 #define WS_C_API_SOCKET_WRAPPER_H
 
 #include <sys/types.h>
+
 #include <vector>
 
 namespace c_api {

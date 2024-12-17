@@ -2,17 +2,23 @@
 
 #include <netinet/in.h>
 #include <unistd.h>
+
 #include <stdexcept>
 
 namespace c_api {
 
-SocketWrapper::SocketWrapper(int fd) : sockfd_(fd) {}
+SocketWrapper::SocketWrapper(int fd) : sockfd_(fd)
+{}
 
-SocketWrapper::~SocketWrapper() {
+SocketWrapper::~SocketWrapper()
+{
     close(sockfd_);
 }
 
-int SocketWrapper::sockfd() const { return sockfd_; }
+int SocketWrapper::sockfd() const
+{
+    return sockfd_;
+}
 
 ssize_t SocketWrapper::Recv(std::vector<char>& buf, size_t read_size) const
 {

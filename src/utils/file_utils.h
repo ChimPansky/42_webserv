@@ -15,6 +15,10 @@ const static int kMaxTempFileName = TMP_MAX;
 
 bool DoesPathExist(const char *path);
 
+bool IsReadable(const char *path);
+
+bool IsExecutable(const char *path);
+
 bool IsDirectory(const char *path);
 
 std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath);
