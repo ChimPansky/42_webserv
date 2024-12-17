@@ -13,10 +13,10 @@ const std::string DirectoryProcessor::kAutoIndexStyle = "/default_css/autoindex.
 
 DirectoryProcessor::DirectoryProcessor(const Server& server,
                                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                                       const std::string& file_path, const http::Request& rq)
-    : AResponseProcessor(server, response_rdy_cb), rq_(rq)
+                                       const std::string& file_path, http::Method method)
+    : AResponseProcessor(server, response_rdy_cb)
 {
-    if (rq_.method != http::HTTP_GET) {
+    if (method != http::HTTP_GET) {
         delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(server, response_rdy_cb_, http::HTTP_METHOD_NOT_ALLOWED));
         return;

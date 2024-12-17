@@ -157,7 +157,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             }
             if (chosen_loc.first->dir_listing()) {
                 return utils::unique_ptr<AResponseProcessor>(
-                    new DirectoryProcessor(*this, cb, updated_path, rq));
+                    new DirectoryProcessor(*this, cb, updated_path, rq.method));
             }
             return utils::unique_ptr<AResponseProcessor>(
                 new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));
