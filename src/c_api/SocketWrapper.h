@@ -2,6 +2,7 @@
 #define WS_C_API_SOCKET_WRAPPER_H
 
 #include <sys/types.h>
+#include <unique_ptr.h>
 
 #include <vector>
 
@@ -20,6 +21,9 @@ class SocketWrapper {
 
     ssize_t Recv(std::vector<char>& buf, size_t sz) const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
+
+    static std::pair<utils::unique_ptr<SocketWrapper>, utils::unique_ptr<SocketWrapper> >
+    CreateSocketPair();
 
   private:
     int sockfd_;

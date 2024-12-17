@@ -2,6 +2,7 @@
 
 #include <EventManager.h>
 #include <c_api_utils.h>
+#include <time_utils.h>
 
 namespace {
 void SigIntHandler(int /*signum*/)
@@ -39,7 +40,7 @@ void ServerCluster::Run()
     while (run_) {
         c_api::EventManager::get().CheckOnce();
         instance_->CheckClients_();
-        LOG(INFO) << 123;
+        LOG(INFO) << utils::GetFormatedTime();
     }
 }
 

@@ -88,6 +88,7 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
     std::map<std::string, std::string>::const_iterator conn_it =
         rs->headers().find("Connection");  // TODO add find header case-independent
     bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
+    LOG(DEBUG) << "Sending rs from ClientSession with fd " << this->client_sock_->sockfd();
     LOG(DEBUG) << "Response:\n" << rs->DumpToStr();
     if (c_api::EventManager::get().RegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,

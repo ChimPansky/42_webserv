@@ -17,6 +17,7 @@ add_custom_command(
 
 add_library(Http
     http.cpp
+    cgi/cgi.cpp
     Request.cpp
     RequestBuilder.cpp
     RequestParser.cpp

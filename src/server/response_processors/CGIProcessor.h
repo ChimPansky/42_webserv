@@ -31,7 +31,7 @@ class CGIProcessor : public AResponseProcessor {
     ~CGIProcessor();
 
   private:
-    utils::unique_ptr<c_api::SocketWrapper> wrapped_socket_;
+    utils::unique_ptr<c_api::SocketWrapper> parent_socket_;
     std::vector<char> cgi_out_buffer_;
 };
 

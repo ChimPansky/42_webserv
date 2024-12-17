@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include <cstdio>
 #include <stdexcept>
 
 namespace c_api {
@@ -35,6 +36,20 @@ ssize_t SocketWrapper::Send(const std::vector<char>& buf, size_t& idx, size_t sz
         idx += bytes_sent;
     }
     return bytes_sent;
+}
+
+std::pair<utils::unique_ptr<SocketWrapper>, utils::unique_ptr<SocketWrapper> >
+SocketWrapper::CreateSocketPair()
+{
+    int socket_fds[2];
+
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, socket_fds) < 0) {
+        std::perror("socketpair failed");
+        return std::make_pair(utils::unique_ptr<SocketWrapper>(NULL),
+                              utils::unique_ptr<SocketWrapper>(NULL));
+    }
+    return std::make_pair(utils::unique_ptr<SocketWrapper>(new SocketWrapper(socket_fds[0])),
+                          utils::unique_ptr<SocketWrapper>(new SocketWrapper((socket_fds[1]))));
 }
 
 }  // namespace c_api

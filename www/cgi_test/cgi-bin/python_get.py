@@ -1,11 +1,21 @@
 import cgi, cgitb
 
+import os
+import sys
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+for key, value in os.environ.items():
+    eprint(f"{key}: {value}")
+
+
 form = cgi.FieldStorage()
 
 username = form["username"].value
 emailaddress = form["emailaddress"].value
 
-print("Content-type:text/html\r\n")
+print("Content-Type: text/html\n")
 
 print("<html>")
 print("<head>")
