@@ -1,7 +1,6 @@
 #ifndef WS_SERVER_UTILS_UTILS_H
 #define WS_SERVER_UTILS_UTILS_H
 
-#include <map>
 #include <string>
 
 namespace utils {

@@ -142,12 +142,13 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         return utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(*this, cb, http::HTTP_NOT_IMPLEMENTED));
     } else {
-        std::string new_path = utils::UpdatePath(
+        std::string updated_path = utils::UpdatePath(
             chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-        if (utils::IsDirectory(new_path.c_str())) {
+        LOG(DEBUG) << "Updated path: " << updated_path;
+        if (utils::IsDirectory(updated_path.c_str())) {
             if (chosen_loc.first->default_files().size() > 0) {
                 for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
-                    std::string default_file = new_path + chosen_loc.first->default_files()[i];
+                    std::string default_file = updated_path + chosen_loc.first->default_files()[i];
                     if (utils::DoesPathExist(default_file.c_str())) {
                         return utils::unique_ptr<AResponseProcessor>(
                             new FileProcessor(*this, default_file, cb));
@@ -156,12 +157,13 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             }
             if (chosen_loc.first->dir_listing()) {
                 return utils::unique_ptr<AResponseProcessor>(
-                    new DirectoryProcessor(*this, cb, new_path, chosen_loc.first->root_dir(), rq));
+                    new DirectoryProcessor(*this, cb, updated_path, rq));
             }
             return utils::unique_ptr<AResponseProcessor>(
                 new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));
         } else {
-            return utils::unique_ptr<AResponseProcessor>(new FileProcessor(*this, new_path, cb));
+            return utils::unique_ptr<AResponseProcessor>(
+                new FileProcessor(*this, updated_path, cb));
         }
     }
 }

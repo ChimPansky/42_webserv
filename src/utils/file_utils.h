@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <string>
+#include <vector>
 
 namespace utils {
 
@@ -31,7 +32,34 @@ bool CreateAndOpenTmpFileToStream(FileStream &fs, char *tmp_file_path)
     return fs.is_open();
 }
 
-std::string GetPathWithoutRoot(const std::string &path, const std::string &root);
+
+enum DirEntryType {
+    DE_FILE,
+    DE_DIR
+};
+
+class DirEntry {
+  public:
+    DirEntry(const std::string &name, DirEntryType type, time_t last_modified, size_t size)
+        : name_(name), type_(type), last_modified_(last_modified), size_(size)
+    {}
+
+    const std::string &name() const { return name_; }
+    const DirEntryType &type() const { return type_; }
+    const time_t &last_modified() const { return last_modified_; }
+    size_t size() const { return size_; }
+
+    inline bool operator<(const DirEntry rhs) { return name_ < rhs.name_; }
+
+  private:
+    std::string name_;
+    DirEntryType type_;
+    time_t last_modified_;
+    size_t size_;
+};
+
+std::pair<bool /*success*/, std::vector<DirEntry> /*dir_entries*/> GetDirEntries(
+    const char *directory);
 
 }  // namespace utils
 

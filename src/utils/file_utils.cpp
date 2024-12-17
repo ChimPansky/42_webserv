@@ -1,5 +1,7 @@
 #include "file_utils.h"
 
+#include <dirent.h>
+
 #include <fstream>
 #include <sstream>
 
@@ -9,8 +11,6 @@ namespace utils {
 
 bool DoesPathExist(const char *path)
 {
-    LOG(DEBUG) << "Check access for: {" << path << "}";
-    LOG(DEBUG) << "Access(" << path << ", F_OK) = " << access(path, F_OK);
     return access(path, F_OK) != -1;
 }
 
@@ -42,7 +42,7 @@ std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const
     }
     std::ifstream file(filePath);
     if (!file.is_open()) {
-        LOG(ERROR) << "utils::ReadFileToString: Could not open file: " << filePath;
+        LOG(ERROR) << "Could not open file: " << filePath;
         return std::make_pair(false, "");
     }
     std::stringstream buffer;
@@ -50,15 +50,34 @@ std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const
     return std::make_pair(true, buffer.str());
 }
 
-std::string GetPathWithoutRoot(const std::string &path, const std::string &root)
+std::pair<bool /*success*/, std::vector<utils::DirEntry> /*dir_entries*/> GetDirEntries(
+    const char *directory)
 {
-    if (root.empty()) {
-        return path;
+    std::vector<utils::DirEntry> entries;
+    DIR *dir = opendir(directory);
+    if (dir == NULL) {
+        LOG(ERROR) << "Unable to read directory: " << directory;
+        return std::make_pair(false, entries);
     }
-    std::string prefix = root[0] == '/' ? root.substr(1) : root;
-    if (path.compare(0, prefix.size(), prefix) == 0) {
-        return path.substr(prefix.size());
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        std::string entry_path = std::string(directory) + "/" + entry->d_name;
+        struct stat entry_stat;
+        if (stat(entry_path.c_str(), &entry_stat) == 0) {
+            time_t lastModified = entry_stat.st_mtime;
+            size_t size = static_cast<size_t>(entry_stat.st_size);
+            utils::DirEntryType type = (entry->d_type == DT_DIR ? utils::DE_DIR : utils::DE_FILE);
+            std::string entry_name =
+                std::string(entry->d_name) + (type == utils::DE_DIR ? "/" : "");
+
+            entries.push_back(utils::DirEntry(entry_name, type, lastModified, size));
+        } else {
+            LOG(ERROR) << "Unable to read directory stats for file: " << entry_path;
+        }
     }
-    return path;
+    closedir(dir);
+    return std::make_pair(true, entries);
 }
+
 }  // namespace utils
