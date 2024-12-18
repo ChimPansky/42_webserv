@@ -138,6 +138,11 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
         LOG(DEBUG) << "Updated path: " << updated_path;
         if (utils::IsDirectory(updated_path.c_str())) {
+            if (updated_path[updated_path.size() - 1] != '/') {
+                return utils::unique_ptr<AResponseProcessor>(
+                    new ErrorProcessor(*this, cb, http::HTTP_MOVED_PERMANENTLY));
+                // new RedirectProcessor(),...
+            }
             if (chosen_loc.first->default_files().size() > 0) {
                 for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
                     std::string default_file = updated_path + chosen_loc.first->default_files()[i];
