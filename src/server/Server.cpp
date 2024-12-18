@@ -112,6 +112,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
 
+  // TODO: add redirect processor
     if (chosen_loc.second == NO_LOCATION) {
         LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
         return utils::unique_ptr<AResponseProcessor>(
