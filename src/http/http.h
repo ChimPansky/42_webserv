@@ -35,6 +35,9 @@ std::pair<bool /*found*/, std::string /*version*/> HttpVerToStr(http::Version ve
 std::pair<bool /*found*/, std::string /*method*/> HttpMethodToStr(http::Method method);
 std::pair<bool /*found*/, http::Version> HttpVersionFromStr(const std::string& version);
 std::pair<bool /*found*/, http::Method> HttpMethodFromStr(const std::string& method);
+std::pair<bool /*decoding_successful*/, std::string /*decoded_str*/> PercentDecode(
+    const std::string& str, const char* dont_decode_set = NULL);
+std::string PercentEncode(const std::string& str, const char* dont_encode_set = NULL);
 
 static const char* kUnreserved =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
