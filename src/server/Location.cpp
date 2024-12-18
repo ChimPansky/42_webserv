@@ -116,6 +116,7 @@ std::string Location::GetDebugString() const
     }
     oss << "\n"
         << "Client max body size: " << client_max_body_size() << " bytes\n";
+    oss << "Directory listing: " << (dir_listing_ ? "enabled" : "disabled") << "\n";
 
     return oss.str();
 }

@@ -1,12 +1,18 @@
 
 #include "Server.h"
 
+#include <file_utils.h>
 #include <shared_ptr.h>
 
 #include "Request.h"
+#include "ResponseCodes.h"
+#include "logger.h"
+#include "response_processors/AResponseProcessor.h"
 #include "response_processors/CGIProcessor.h"
+#include "response_processors/DirectoryProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
+#include "unique_ptr.h"
 #include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
@@ -82,18 +88,10 @@ std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
     } else if (matched_location->is_cgi()) {
         type = CGI;
     } else {
-        type = STATIC_FILE;
+        type = STATIC_PATH;
     }
     return std::make_pair(matched_location, type);
 }
-
-// if returns nullptr, rs is the valid response right away
-// utils::unique_ptr<IProcessor> AcceptRequest(const http::Request& rq, http::Response& rs)
-// {
-//     utils::unique_ptr<IProcessor> processor(new FileProcessor("www/index.html", rq, rs));
-
-//     return processor;
-// }
 
 utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
@@ -109,30 +107,56 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
 utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
-    std::string updated_path;
     const std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc = ChooseLocation(rq);
     // choose location with method,
     // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
-    switch (chosen_loc.second) {
-        case NO_LOCATION:
-            LOG(DEBUG) << "Path in uri: " << rq.rqTarget.path() << " not found";
-            LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
+
+    // TODO: add redirect processor
+    if (chosen_loc.second == NO_LOCATION) {
+        LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
+        return utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
+    }
+    LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
+
+    if (std::find(chosen_loc.first->allowed_methods().begin(),
+                  chosen_loc.first->allowed_methods().end(),
+                  rq.method) == chosen_loc.first->allowed_methods().end()) {
+        LOG(DEBUG) << "Method not allowed for specific location -> Create 405 ResponseProcessor";
+        return utils::unique_ptr<AResponseProcessor>(
+            new ErrorProcessor(*this, cb, http::HTTP_METHOD_NOT_ALLOWED));
+    }
+
+    std::string updated_path = utils::UpdatePath(
+        chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+    LOG(DEBUG) << "Updated path: " << updated_path;
+    if (chosen_loc.second == CGI) {
+        LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
+        return utils::unique_ptr<AResponseProcessor>(
+            new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
+    } else {
+        if (utils::IsDirectory(updated_path.c_str())) {
+            if (chosen_loc.first->default_files().size() > 0) {
+                for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
+                    std::string default_file = updated_path + chosen_loc.first->default_files()[i];
+                    if (utils::DoesPathExist(default_file.c_str())) {
+                        return utils::unique_ptr<AResponseProcessor>(
+                            new FileProcessor(*this, default_file, cb));
+                    }
+                }
+            }
+            if (chosen_loc.first->dir_listing()) {
+                return utils::unique_ptr<AResponseProcessor>(
+                    new DirectoryProcessor(*this, cb, updated_path, rq.method));
+            }
             return utils::unique_ptr<AResponseProcessor>(
-                new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
-        case CGI:
-            updated_path = utils::UpdatePath(chosen_loc.first->root_dir(),
-                                             chosen_loc.first->route().first, rq.rqTarget.path());
-            LOG(DEBUG) << "RQ_GOOD -> Process CGI script " << updated_path;
-            return utils::unique_ptr<AResponseProcessor>(
-                new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
-        case STATIC_FILE:
-            updated_path = utils::UpdatePath(chosen_loc.first->root_dir(),
-                                             chosen_loc.first->route().first, rq.rqTarget.path());
-            LOG(DEBUG) << "RQ_GOOD -> Send the File requested " << updated_path;
+                new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));
+        } else {
             return utils::unique_ptr<AResponseProcessor>(
                 new FileProcessor(*this, updated_path, cb));
+        }
     }
 }
 
