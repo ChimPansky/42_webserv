@@ -3,6 +3,7 @@ add_library(Server
     Location.cpp
     utils/utils.cpp
     response_processors/FileProcessor.cpp
+    response_processors/DirectoryProcessor.cpp
     response_processors/ErrorProcessor.cpp
 )
 
