@@ -113,6 +113,8 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
+    
+    // TODO: add redirect processor
     switch (chosen_loc.second) {
         case NO_LOCATION:
             LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << http::HTTP_NOT_FOUND;
