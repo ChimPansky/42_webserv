@@ -9,7 +9,7 @@
 #include "response_processors/AResponseProcessor.h"
 
 
-const std::string DirectoryProcessor::kAutoIndexStyle = "/default_css/autoindex.css";
+const std::string DirectoryProcessor::kAutoIndexStyle = "/resources/css/autoindex.css";
 
 DirectoryProcessor::DirectoryProcessor(const Server& server,
                                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
