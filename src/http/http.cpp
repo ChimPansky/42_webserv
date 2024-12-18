@@ -1,8 +1,9 @@
 #include "http.h"
 
-#include <stdexcept>
+#include <cstring>
 
 #include "logger.h"
+#include "numeric_utils.h"
 
 namespace http {
 
@@ -58,4 +59,50 @@ std::pair<bool /*found*/, http::Version> HttpVersionFromStr(const std::string& r
         return std::make_pair(false, HTTP_NO_VERSION);
     }
 }
+
+// decode all percent-encoded characters, except those in the dont_decode_set
+std::pair<bool /*decoding_successful*/, std::string /*decoded_str*/> PercentDecode(
+    const std::string& str, const char* dont_decode_set)
+{
+    std::string decoded;
+    std::pair<bool, unsigned short> ascii;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (str[i] == '%') {
+            if (i + 2 >= str.size()) {
+                return std::pair<bool, std::string>(false, "");
+            }
+            ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
+            if (dont_decode_set && strchr(dont_decode_set, static_cast<char>(ascii.second))) {
+                decoded += str.substr(i, 3);
+            } else {
+                if (!ascii.first) {
+                    return std::pair<bool, std::string>(false, "");
+                }
+                decoded += static_cast<char>(ascii.second);
+            }
+            i += 2;
+        } else {
+            decoded += str[i];
+        }
+    }
+    return std::pair<bool, std::string>(true, decoded);
+}
+
+// encode all chars that are not in the unreserved set (delimiters, whitespaces, etc.) and not in
+// the dont_encode_set for example: dont encode "/" in path, but encode it in query
+std::string PercentEncode(const std::string& str, const char* dont_encode_set)
+{
+    std::string encoded;
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (strchr(kUnreserved, str[i]) == NULL &&
+            (dont_encode_set && strchr(dont_encode_set, str[i]) == NULL)) {
+            encoded += '%';
+            encoded += utils::NumericToHexStr(str[i]);
+        } else {
+            encoded += str[i];
+        }
+    }
+    return encoded;
+}
+
 }  // namespace http
