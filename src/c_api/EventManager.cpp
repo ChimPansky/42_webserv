@@ -68,6 +68,7 @@ void EventManager::DeleteCallback(int fd, CallbackType type)
         fds_to_delete_.push_back(std::make_pair(fd, CT_WRITE));
     }
 }
+
 void EventManager::ClearCallback_(int fd, CallbackType type)
 {
     if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {

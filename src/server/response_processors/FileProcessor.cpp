@@ -16,15 +16,13 @@ FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
 {
     if (!utils::DoesPathExist(file_path.c_str())) {
         LOG(DEBUG) << "Requested file not found: " << file_path;
-        delegated_processor_.reset(
-            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_NOT_FOUND));
+        DelegateToErrProc(http::HTTP_NOT_FOUND);
         return;
     }
     std::ifstream file(file_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
         LOG(DEBUG) << "Requested file cannot be opened: " << file_path;
-        delegated_processor_.reset(
-            new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+        DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
     std::vector<char> body =

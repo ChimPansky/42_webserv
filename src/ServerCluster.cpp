@@ -1,5 +1,6 @@
 #include "ServerCluster.h"
 
+#include <ChildProcessesManager.h>
 #include <EventManager.h>
 #include <c_api_utils.h>
 #include <time_utils.h>
@@ -30,6 +31,7 @@ ServerCluster::ServerCluster(const config::Config& config)
 {
     utils::Logger::get().set_severity_threshold(config.error_log_level());
     c_api::EventManager::init(config.mx_type());
+    c_api::ChildProcessesManager::init();
     CreateServers_(config);
 }
 
@@ -39,6 +41,7 @@ void ServerCluster::Run()
     // instance_->PrintDebugInfo();
     while (run_) {
         c_api::EventManager::get().CheckOnce();
+        c_api::ChildProcessesManager::get().CheckOnce();
         instance_->CheckClients_();
         LOG(INFO) << utils::GetFormatedTime();
     }

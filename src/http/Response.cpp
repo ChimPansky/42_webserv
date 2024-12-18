@@ -53,7 +53,7 @@ std::string Response::DumpToStr() const
         str_dump += http::kCRLF();
     }
     str_dump += http::kCRLF();
-    std::copy(body_.begin(), body_.end(), std::back_inserter(str_dump));
+    // std::copy(body_.begin(), body_.end(), std::back_inserter(str_dump));
     return str_dump;
 }
 

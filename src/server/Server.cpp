@@ -135,7 +135,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     if (chosen_loc.second == CGI) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
         return utils::unique_ptr<AResponseProcessor>(
-            new CGIProcessor(*this, updated_path, rq, chosen_loc.first, cb));
+            new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
     } else {
         if (utils::IsDirectory(updated_path.c_str())) {
             if (chosen_loc.first->default_files().size() > 0) {

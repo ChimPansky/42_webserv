@@ -1,11 +1,12 @@
 add_library(Server
-    Server.cpp
     Location.cpp
-    utils/utils.cpp
+    Server.cpp
+    response_processors/AResponseProcessor.cpp
     response_processors/CGIProcessor.cpp
     response_processors/DirectoryProcessor.cpp
     response_processors/ErrorProcessor.cpp
     response_processors/FileProcessor.cpp
+    utils/utils.cpp
 )
 
 target_link_libraries(Server PUBLIC Utils)
