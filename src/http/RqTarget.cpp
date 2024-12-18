@@ -123,6 +123,13 @@ std::string RqTarget::ToStr() const
     return ss.str();
 }
 
+void RqTarget::AddTrailingSlashToPath()
+{
+    if (path_.first && path_.second[path_.second.size() - 1] != '/') {
+        path_.second += "/";
+    }
+}
+
 std::string RqTarget::GetDebugString() const
 {
     std::ostringstream oss;

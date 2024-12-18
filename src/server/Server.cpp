@@ -6,11 +6,14 @@
 
 #include "Request.h"
 #include "ResponseCodes.h"
+#include "RqTarget.h"
+#include "http.h"
 #include "logger.h"
 #include "response_processors/AResponseProcessor.h"
 #include "response_processors/DirectoryProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
+#include "response_processors/RedirectProcessor.h"
 #include "unique_ptr.h"
 #include "utils/utils.h"
 
@@ -112,7 +115,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     //      if not rdy register callback in event manager with client cb
     //  or response processor should be owned by client session
 
-  // TODO: add redirect processor
+    // TODO: add redirect processor
     if (chosen_loc.second == NO_LOCATION) {
         LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
         return utils::unique_ptr<AResponseProcessor>(
@@ -140,9 +143,11 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         LOG(DEBUG) << "Updated path: " << updated_path;
         if (utils::IsDirectory(updated_path.c_str())) {
             if (updated_path[updated_path.size() - 1] != '/') {
-                return utils::unique_ptr<AResponseProcessor>(
-                    new ErrorProcessor(*this, cb, http::HTTP_MOVED_PERMANENTLY));
-                // new RedirectProcessor(),...
+                LOG(DEBUG) << "Path is a directory but does not end with / -> Redirect";
+                http::RqTarget redirected_target = rq.rqTarget;
+                redirected_target.AddTrailingSlashToPath();
+                return utils::unique_ptr<AResponseProcessor>(new RedirectProcessor(
+                    *this, cb, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
             }
             if (chosen_loc.first->default_files().size() > 0) {
                 for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
