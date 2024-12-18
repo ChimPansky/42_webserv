@@ -9,7 +9,7 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 # Correct CGI header
-print("Content-Type: text/html")
+print("Content-Type: text/html"
 print()
 
 i = 0

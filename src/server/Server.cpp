@@ -126,7 +126,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
                                              chosen_loc.first->route().first, rq.rqTarget.path());
             LOG(DEBUG) << "RQ_GOOD -> Process CGI script " << updated_path;
             return utils::unique_ptr<AResponseProcessor>(
-                new CGIProcessor(*this, updated_path, rq, chosen_loc.first, cb));
+                new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
         case STATIC_FILE:
             updated_path = utils::UpdatePath(chosen_loc.first->root_dir(),
                                              chosen_loc.first->route().first, rq.rqTarget.path());
