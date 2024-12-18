@@ -5,13 +5,14 @@
 #include <unique_ptr.h>
 
 #include "AResponseProcessor.h"
+#include "Request.h"
 #include "file_utils.h"
 
 class DirectoryProcessor : public AResponseProcessor {
   public:
     DirectoryProcessor(const Server& server,
                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                       const std::string& file_path, http::Method method);
+                       const http::Request& rq, const std::string& file_path);
     ~DirectoryProcessor(){};
 
   private:

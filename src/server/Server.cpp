@@ -110,10 +110,6 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
     const std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc = ChooseLocation(rq);
-    // choose location with method,
-    // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
-    //      if not rdy register callback in event manager with client cb
-    //  or response processor should be owned by client session
 
     // TODO: add redirect processor
     if (chosen_loc.second == NO_LOCATION) {
@@ -142,13 +138,6 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
         LOG(DEBUG) << "Updated path: " << updated_path;
         if (utils::IsDirectory(updated_path.c_str())) {
-            if (updated_path[updated_path.size() - 1] != '/') {
-                LOG(DEBUG) << "Path is a directory but does not end with / -> Redirect";
-                http::RqTarget redirected_target = rq.rqTarget;
-                redirected_target.AddTrailingSlashToPath();
-                return utils::unique_ptr<AResponseProcessor>(new RedirectProcessor(
-                    *this, cb, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
-            }
             if (chosen_loc.first->default_files().size() > 0) {
                 for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
                     std::string default_file = updated_path + chosen_loc.first->default_files()[i];
@@ -160,7 +149,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             }
             if (chosen_loc.first->dir_listing()) {
                 return utils::unique_ptr<AResponseProcessor>(
-                    new DirectoryProcessor(*this, cb, updated_path, rq.method));
+                    new DirectoryProcessor(*this, cb, rq, updated_path));
             }
             return utils::unique_ptr<AResponseProcessor>(
                 new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));
