@@ -69,6 +69,7 @@ class RqTarget {
     bool HasQuery() const { return query_.first; };
     bool HasFragment() const { return fragment_.first; };
     std::string ToStr() const;
+    void AddTrailingSlashToPath();
     std::string GetDebugString() const;
 
     const std::string& scheme() const { return scheme_.second; };

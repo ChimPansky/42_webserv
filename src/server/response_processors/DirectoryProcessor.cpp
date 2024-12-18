@@ -7,16 +7,25 @@
 #include "http.h"
 #include "logger.h"
 #include "response_processors/AResponseProcessor.h"
+#include "response_processors/RedirectProcessor.h"
 
 
 const std::string DirectoryProcessor::kAutoIndexStyle = "/default_css/autoindex.css";
 
 DirectoryProcessor::DirectoryProcessor(const Server& server,
                                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                                       const std::string& file_path, http::Method method)
+                                       const http::Request& rq, const std::string& file_path)
     : AResponseProcessor(server, response_rdy_cb)
 {
-    if (method != http::HTTP_GET) {
+    if (*file_path.rbegin() != '/') {
+        LOG(DEBUG) << "Path is a directory but does not end with / -> Redirect";
+        http::RqTarget redirected_target = rq.rqTarget;
+        redirected_target.AddTrailingSlashToPath();
+        delegated_processor_.reset(new RedirectProcessor(
+            server_, response_rdy_cb_, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
+        return;
+    }
+    if (rq.method != http::HTTP_GET) {
         delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(server, response_rdy_cb_, http::HTTP_METHOD_NOT_ALLOWED));
         return;
@@ -24,6 +33,7 @@ DirectoryProcessor::DirectoryProcessor(const Server& server,
     if (!ListDirectory_(file_path)) {
         delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(server, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+        return;
     }
 }
 

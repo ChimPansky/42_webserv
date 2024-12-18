@@ -6,6 +6,7 @@ add_library(Server
     response_processors/DirectoryProcessor.cpp
     response_processors/ErrorProcessor.cpp
     response_processors/FileProcessor.cpp
+    response_processors/RedirectProcessor.cpp
     utils/utils.cpp
 )
 
