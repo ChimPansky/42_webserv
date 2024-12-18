@@ -92,14 +92,6 @@ std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
     return std::make_pair(matched_location, type);
 }
 
-// if returns nullptr, rs is the valid response right away
-// utils::unique_ptr<IProcessor> AcceptRequest(const http::Request& rq, http::Response& rs)
-// {
-//     utils::unique_ptr<IProcessor> processor(new FileProcessor("www/index.html", rq, rs));
-
-//     return processor;
-// }
-
 utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
