@@ -17,17 +17,9 @@ FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
     if (!utils::DoesPathExist(file_path.c_str())) {
         LOG(DEBUG) << "Requested file not found: " << file_path;
         delegated_processor_.reset(
-            new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_NOT_FOUND));
+            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_NOT_FOUND));
         return;
     }
-    // TODO if directory delegate to DirectoryProcessor or 404
-    if (utils::IsDirectory(file_path.c_str())) {
-        LOG(DEBUG) << "Requested file is a directory: " << file_path;
-        delegated_processor_.reset(
-            new ErrorProcessor(server_, response_rdy_cb_, http::HTTP_NOT_FOUND));
-        return;
-    }
-    // check if POST/GET/DELETE
     std::ifstream file(file_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
         LOG(DEBUG) << "Requested file cannot be opened: " << file_path;

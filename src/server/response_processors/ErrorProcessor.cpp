@@ -1,6 +1,7 @@
 #include "ErrorProcessor.h"
 
 #include "../Server.h"
+#include "logger.h"
 
 ErrorProcessor::ErrorProcessor(const Server& server,
                                utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
