@@ -6,11 +6,14 @@
 
 #include "Request.h"
 #include "ResponseCodes.h"
+#include "RqTarget.h"
+#include "http.h"
 #include "logger.h"
 #include "response_processors/AResponseProcessor.h"
 #include "response_processors/DirectoryProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
+#include "response_processors/RedirectProcessor.h"
 #include "unique_ptr.h"
 #include "utils/utils.h"
 
@@ -107,12 +110,8 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
 {
     const std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc = ChooseLocation(rq);
-    // choose location with method,
-    // host, uri, more? 2 options: rq on creation if rs ready right away calls callback
-    //      if not rdy register callback in event manager with client cb
-    //  or response processor should be owned by client session
 
-  // TODO: add redirect processor
+    // TODO: add redirect processor
     if (chosen_loc.second == NO_LOCATION) {
         LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
         return utils::unique_ptr<AResponseProcessor>(
@@ -150,7 +149,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             }
             if (chosen_loc.first->dir_listing()) {
                 return utils::unique_ptr<AResponseProcessor>(
-                    new DirectoryProcessor(*this, cb, updated_path, rq.method));
+                    new DirectoryProcessor(*this, cb, rq, updated_path));
             }
             return utils::unique_ptr<AResponseProcessor>(
                 new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));

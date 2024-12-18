@@ -5,6 +5,7 @@ add_library(Server
     response_processors/FileProcessor.cpp
     response_processors/DirectoryProcessor.cpp
     response_processors/ErrorProcessor.cpp
+    response_processors/RedirectProcessor.cpp
 )
 
 target_link_libraries(Server PUBLIC Utils)
