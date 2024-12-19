@@ -190,6 +190,7 @@ ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
 {
+    // LOG(DEBUG) << "BuildHeaderField_";
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
@@ -220,6 +221,7 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
     ResponseCode rc = InsertHeaderField_(header_key, header_val);
+    // LOG(INFO) << "Could not insert header Field";
     if (rc != http::HTTP_OK) {
         LOG(INFO) << "Could not insert header Field";
         return SetStatusAndExitBuilder_(rc);

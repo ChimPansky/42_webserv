@@ -10,6 +10,7 @@
 #include "http.h"
 #include "logger.h"
 #include "response_processors/AResponseProcessor.h"
+#include "response_processors/CGIProcessor.h"
 #include "response_processors/DirectoryProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
@@ -127,16 +128,14 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             new ErrorProcessor(*this, cb, http::HTTP_METHOD_NOT_ALLOWED));
     }
 
+    std::string updated_path = utils::UpdatePath(
+        chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+    LOG(DEBUG) << "Updated path: " << updated_path;
     if (chosen_loc.second == CGI) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
-        // return utils::unique_ptr<AResponseProcessor>(new CgiResponseProcessor(cb, rq,
-        // cgi_paths, cgi_extensions, root_dir));
         return utils::unique_ptr<AResponseProcessor>(
-            new ErrorProcessor(*this, cb, http::HTTP_NOT_IMPLEMENTED));
+            new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
     } else {
-        std::string updated_path = utils::UpdatePath(
-            chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-        LOG(DEBUG) << "Updated path: " << updated_path;
         if (utils::IsDirectory(updated_path.c_str())) {
             if (chosen_loc.first->default_files().size() > 0) {
                 for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {

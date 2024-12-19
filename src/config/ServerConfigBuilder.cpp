@@ -38,7 +38,7 @@ static std::pair<std::string, Severity> BuildAccessLog(const std::vector<std::st
     } else if (vals.size() > 1) {
         throw std::runtime_error("Invalid configuration file: duplicated access_log value.");
     }
-    std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
+    std::vector<std::string> val_elements = utils::SplitLine(vals[0]);
     if (val_elements.size() == 1) {
         return std::make_pair(val_elements[0], ServerConfig::kDefaultAccessLogLevel());
     } else if (val_elements.size() == 2) {
@@ -141,7 +141,7 @@ static std::vector<std::string> ParseServerNames(const std::vector<std::string>&
     std::vector<std::string> server_names;
 
     for (size_t i = 0; i < vals.size(); i++) {
-        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[i]);
+        std::vector<std::string> val_elements = utils::SplitLine(vals[i]);
         if (!val_elements.empty()) {
             for (size_t j = 0; j < val_elements.size(); j++) {
                 if (val_elements[j] == "\"\"") {

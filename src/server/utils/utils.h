@@ -6,6 +6,7 @@
 namespace utils {
 
 const char* GetTypeByExt(const std::string& ext);
+std::string GetInterpreterByExt(const std::string& filename);
 inline const char* kDefaultContentType()
 {
     return "application/octet-stream";
