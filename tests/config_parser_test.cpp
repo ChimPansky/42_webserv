@@ -72,12 +72,12 @@ TEST(ConfigTest, LoadValidConfig)
 
             for (const config::LocationConfig& location_conf : server_conf.locations()) {
                 if (location_conf.route().first == "/docs/") {
-                    EXPECT_EQ(location_conf.root_dir(), "/docs");
+                    EXPECT_EQ(location_conf.alias_dir(), "/docs");
                     EXPECT_EQ(location_conf.allowed_methods()[0], http::Method::HTTP_GET);
                     EXPECT_EQ(location_conf.allowed_methods()[1], http::Method::HTTP_POST);
                     EXPECT_EQ(location_conf.client_max_body_size(), 5 << 20);  // 5 MB in bytes
                 } else if (location_conf.route().first == "/error_pages/") {
-                    EXPECT_EQ(location_conf.root_dir(), "/docs");
+                    EXPECT_EQ(location_conf.alias_dir(), "/docs");
                     EXPECT_EQ(location_conf.dir_listing(), true);
                     EXPECT_EQ(location_conf.allowed_methods()[0], http::Method::HTTP_GET);
                     EXPECT_EQ(location_conf.allowed_methods()[1], http::Method::HTTP_POST);
@@ -94,7 +94,7 @@ TEST(ConfigTest, LoadValidConfig)
                     EXPECT_EQ(location_conf.redirect().second, "/error_pages/404.html");
                     EXPECT_EQ(location_conf.client_max_body_size(), 1 << 20);
                 } else if (location_conf.route().first == "/cgi-bin/") {
-                    EXPECT_EQ(location_conf.root_dir(), "/cgi-bin");
+                    EXPECT_EQ(location_conf.alias_dir(), "/cgi-bin");
                     EXPECT_EQ(location_conf.cgi_paths()[0], "/cgi-bin");
                     EXPECT_EQ(location_conf.cgi_extensions()[0], ".php");
                     EXPECT_EQ(location_conf.cgi_extensions()[1], ".py");

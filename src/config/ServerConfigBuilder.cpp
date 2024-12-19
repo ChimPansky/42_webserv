@@ -178,7 +178,7 @@ static std::vector<LocationConfig> BuildLocationConfigs(
 bool ServerConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "listen" || key == "server_name" || key == "access_log" || key == "error_log" ||
-           key == "root" || key == "index" || key == "autoindex" || "client_max_body_size";
+           key == "alias" || key == "index" || key == "autoindex" || "client_max_body_size";
 }
 
 bool ServerConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
@@ -208,8 +208,8 @@ ServerConfig ServerConfigBuilder::Build(const ParsedConfig& f,
     std::vector<std::string> server_names = BuildServerNames(f.FindSetting("server_name"));
 
     InheritedSettings server_inherited_settings = InheritedSettings();
-    server_inherited_settings.root =
-        InheritedSettings::BuildRootDir(f.FindSetting("root"), inherited_settings.root);
+    server_inherited_settings.alias =
+        InheritedSettings::BuildAliasDir(f.FindSetting("alias"), inherited_settings.alias);
     server_inherited_settings.def_files =
         InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     server_inherited_settings.dir_listing = InheritedSettings::BuildDirListing(

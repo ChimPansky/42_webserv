@@ -7,11 +7,11 @@ LocationConfig::LocationConfig(
     const std::vector<http::Method>& allowed_methods,
     const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect,
     const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,
-    const std::string& root_dir, const std::vector<std::string>& default_files, bool dir_listing,
+    const std::string& alias_dir, const std::vector<std::string>& default_files, bool dir_listing,
     unsigned int client_max_body_size)
     : route_(route), allowed_methods_(allowed_methods), redirect_(InitRedirect(redirect)),
       is_cgi_(route.first == "/cgi-bin/" || route.first == "/cgi-bin"), cgi_paths_(cgi_paths),
-      cgi_extensions_(cgi_extensions), root_dir_(root_dir), default_files_(default_files),
+      cgi_extensions_(cgi_extensions), alias_dir_(alias_dir), default_files_(default_files),
       dir_listing_(dir_listing), client_max_body_size_(client_max_body_size)
 {}
 
@@ -45,9 +45,9 @@ const std::vector<std::string>& LocationConfig::cgi_extensions() const
     return cgi_extensions_;
 }
 
-const std::string& LocationConfig::root_dir() const
+const std::string& LocationConfig::alias_dir() const
 {
-    return root_dir_;
+    return alias_dir_;
 }
 
 const std::vector<std::string>& LocationConfig::default_files() const
@@ -93,7 +93,7 @@ void LocationConfig::Print() const
     for (size_t i = 0; i < cgi_extensions_.size(); i++) {
         LOG(DEBUG) << "  " << cgi_extensions_[i];
     }
-    LOG(DEBUG) << "Root directory: " << root_dir_;
+    LOG(DEBUG) << "Alias directory: " << alias_dir_;
     LOG(DEBUG) << "Default file: ";
     for (size_t i = 0; i < default_files_.size(); i++) {
         LOG(DEBUG) << "  " << default_files_[i];

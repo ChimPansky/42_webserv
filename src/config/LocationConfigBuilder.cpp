@@ -127,13 +127,13 @@ static std::vector<std::string> BuildCgiExtensions(const std::vector<std::string
     return ParseCgiExtensions(cgi_extensions);
 }
 
-static const std::string BuildRootDir(const std::vector<std::string>& vals,
-                                      const std::string& inherited_root)
+static const std::string BuildAliasDir(const std::vector<std::string>& vals,
+                                       const std::string& inherited_alias)
 {
-    if (vals.empty() && inherited_root.empty()) {
-        return LocationConfig::kDefaultRootDir();
+    if (vals.empty() && inherited_alias.empty()) {
+        return LocationConfig::kDefaultAliasDir();
     }
-    return InheritedSettings::BuildRootDir(vals, inherited_root);
+    return InheritedSettings::BuildAliasDir(vals, inherited_alias);
 }
 
 static std::vector<std::string> BuildDefaultFile(
@@ -202,7 +202,7 @@ unsigned int BuildClientMaxBodySize(const std::vector<std::string>& vals,
 bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "limit_except" || key == "return" || key == "cgi_path" ||
-           key == "cgi_extension" || key == "root" || key == "index" || key == "autoindex" ||
+           key == "cgi_extension" || key == "alias" || key == "index" || key == "autoindex" ||
            "client_max_body_size";
 }
 
@@ -228,7 +228,7 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
     std::pair<int, std::string> redirect = BuildRedirect(f.FindSetting("return"));
     std::vector<std::string> cgi_paths = BuildCgiPaths(f.FindSetting("cgi_path"));
     std::vector<std::string> cgi_extensions = BuildCgiExtensions(f.FindSetting("cgi_extension"));
-    std::string root_dir = BuildRootDir(f.FindSetting("root"), inherited_settings.root);
+    std::string alias_dir = BuildAliasDir(f.FindSetting("alias"), inherited_settings.alias);
     std::vector<std::string> default_file =
         BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
@@ -238,7 +238,7 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
     if (!AreNestingsValid(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
-    return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, root_dir,
+    return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, alias_dir,
                           default_file, dir_listing, client_max_body_size);
 }
 

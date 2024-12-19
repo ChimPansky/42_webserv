@@ -23,7 +23,7 @@ class LocationConfig {
                    const std::vector<http::Method>& allowed_methods,
                    const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect,
                    const std::vector<std::string>& cgi_paths,
-                   const std::vector<std::string>& cgi_extensions, const std::string& root_dir,
+                   const std::vector<std::string>& cgi_extensions, const std::string& alias_dir,
                    const std::vector<std::string>& default_files, bool dir_listing,
                    unsigned int client_max_body_size);
 
@@ -33,13 +33,13 @@ class LocationConfig {
     bool is_cgi() const;
     const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
-    const std::string& root_dir() const;
+    const std::string& alias_dir() const;
     const std::vector<std::string>& default_files() const;
     bool dir_listing() const;
     unsigned int client_max_body_size() const;
     static inline int kDefaultRedirectCode() { return http::HTTP_MOVED_PERMANENTLY; }
     static inline const char* kDefaultRedirectPath() { return "/new_location"; }
-    static inline const char* kDefaultRootDir() { return "/docs"; }
+    static inline const char* kDefaultAliasDir() { return "/docs"; }
     static inline unsigned int kDefaultClientMaxBodySize() { return 2ul << 20; }
     static inline std::vector<std::string> kDefaultIndexFile()
     {
@@ -81,7 +81,7 @@ class LocationConfig {
     bool is_cgi_;
     std::vector<std::string> cgi_paths_;
     std::vector<std::string> cgi_extensions_;
-    std::string root_dir_;
+    std::string alias_dir_;
     std::vector<std::string> default_files_;
     bool dir_listing_;
     unsigned int client_max_body_size_;

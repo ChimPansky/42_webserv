@@ -68,7 +68,7 @@ static std::vector<ServerConfig> BuildServerConfigs(const std::vector<ParsedConf
 bool HttpConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "keepalive_timeout" || key == "client_max_body_size" || key == "error_page" ||
-           key == "root" || key == "index" || key == "autoindex" || "client_max_body_size";
+           key == "alias" || key == "index" || key == "autoindex" || "client_max_body_size";
 }
 
 bool HttpConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
@@ -98,8 +98,8 @@ HttpConfig HttpConfigBuilder::Build(const ParsedConfig& f,
     std::map<int, std::string> error_pages = BuildErrorPages(f.FindSetting("error_page"));
 
     InheritedSettings http_inherited_settings = inherited_settings;
-    http_inherited_settings.root =
-        InheritedSettings::BuildRootDir(f.FindSetting("root"), inherited_settings.root);
+    http_inherited_settings.alias =
+        InheritedSettings::BuildAliasDir(f.FindSetting("alias"), inherited_settings.alias);
     http_inherited_settings.def_files =
         InheritedSettings::BuildDefaultFile(f.FindSetting("index"), inherited_settings.def_files);
     http_inherited_settings.dir_listing = InheritedSettings::BuildDirListing(
