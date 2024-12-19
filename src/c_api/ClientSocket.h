@@ -7,6 +7,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "Socket.h"
+
 namespace c_api {
 
 // socker binded to addr
@@ -20,16 +22,15 @@ class ClientSocket {
   public:
     ClientSocket(int sockfd, sockaddr_in addr_in);
     ~ClientSocket();
-    int sockfd() const;
+    inline int sockfd() const { return sock_.sockfd(); };
     const sockaddr_in& addr_in() const;
 
     // come up with a better signature for recv/send
     ssize_t Recv(std::vector<char>& buf, size_t sz) const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
-    size_t buf_sz() const;  // TODO remove
 
   private:
-    int sockfd_;
+    Socket sock_;
     sockaddr_in addr_in_;
 };
 
