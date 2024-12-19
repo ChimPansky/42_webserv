@@ -50,7 +50,7 @@ bool EpollMultiplexer::TryRegisterFd(int fd, CallbackType type, const FdToCallba
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
     }
     if (res != 0) {
-        LOG(ERROR) << "epoll_ctl failed: " << strerror(errno);
+        LOG(ERROR) << "epoll_ctl failed for " << fd << ": " << strerror(errno);
     }
     return (res == 0);
 }
@@ -69,7 +69,7 @@ void EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallbac
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
     }
     if (res != 0) {
-        LOG(ERROR) << "epoll_ctl failed: " << strerror(errno);
+        LOG(ERROR) << "epoll_ctl failed for " << fd << ": " << strerror(errno);
     }
 }
 

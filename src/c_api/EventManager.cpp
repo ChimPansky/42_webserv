@@ -33,11 +33,11 @@ EventManager& EventManager::get()
 
 void EventManager::CheckOnce()
 {
-    fds_to_delete_.clear();
-    multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
     for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
         ClearCallback_(fds_to_delete_[i].first, fds_to_delete_[i].second);
     }
+    fds_to_delete_.clear();
+    multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
 }
 
 bool EventManager::TryRegisterCallback(int fd, CallbackType type,
