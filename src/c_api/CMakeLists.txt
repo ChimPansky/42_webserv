@@ -8,6 +8,8 @@ add_library(CApi
     EventManager.cpp
     MasterSocket.cpp
     ReadSocket.cpp
+    SocketWrapper.cpp
+    ChildProcessesManager.cpp
 )
 
 target_link_libraries(CApi PUBLIC Utils)

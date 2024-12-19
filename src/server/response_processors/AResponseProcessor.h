@@ -15,6 +15,8 @@ class AResponseProcessor {
                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
         : server_(server), response_rdy_cb_(response_rdy_cb){};
 
+    void DelegateToErrProc(http::ResponseCode err_code);
+
   public:
     virtual ~AResponseProcessor(){};
 

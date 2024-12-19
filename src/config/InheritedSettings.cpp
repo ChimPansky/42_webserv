@@ -32,7 +32,7 @@ std::vector<std::string> InheritedSettings::BuildDefaultFile(
         if (vals[i].empty()) {
             throw std::runtime_error("Invalid configuration file: no index file specified.");
         }
-        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
+        std::vector<std::string> val_elements = utils::SplitLine(vals[0]);
         default_files.insert(default_files.end(), val_elements.begin(), val_elements.end());
     }
     return default_files;
@@ -81,7 +81,7 @@ const std::string& InheritedSettings::BuildClientMaxBodySize(
     } else if (vals.size() > 1) {
         throw std::runtime_error("Invalid configuration file: duplicated client_max_body_size.");
     }
-    std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
+    std::vector<std::string> val_elements = utils::SplitLine(vals[0]);
     if (val_elements.size() == 1) {
         ParseClientMaxBodySize(val_elements[0], "");
         return vals[0];

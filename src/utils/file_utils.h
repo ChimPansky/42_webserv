@@ -15,11 +15,17 @@ const static int kMaxTempFileName = TMP_MAX;
 
 bool DoesPathExist(const char *path);
 
+bool IsReadable(const char *path);
+
+bool IsExecutable(const char *path);
+
 bool IsDirectory(const char *path);
 
 bool IsRegularFile(const char *path);
 
 std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath);
+
+bool CheckFileExtension(const std::string &file, const std::string &extention);
 
 template <class FileStream>
 bool CreateAndOpenTmpFileToStream(FileStream &fs, char *tmp_file_path)
