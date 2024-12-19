@@ -1,7 +1,9 @@
 #include "ServerCluster.h"
 
+#include <ChildProcessesManager.h>
 #include <EventManager.h>
 #include <c_api_utils.h>
+#include <time_utils.h>
 
 namespace {
 void SigIntHandler(int /*signum*/)
@@ -29,6 +31,7 @@ ServerCluster::ServerCluster(const config::Config& config)
 {
     utils::Logger::get().set_severity_threshold(config.error_log_level());
     c_api::EventManager::init(config.mx_type());
+    c_api::ChildProcessesManager::init();
     CreateServers_(config);
 }
 
@@ -38,7 +41,9 @@ void ServerCluster::Run()
     // instance_->PrintDebugInfo();
     while (run_) {
         c_api::EventManager::get().CheckOnce();
+        c_api::ChildProcessesManager::get().CheckOnce();
         instance_->CheckClients_();
+        LOG(INFO) << utils::GetFormatedTime();
     }
 }
 
@@ -169,5 +174,5 @@ void ServerCluster::FillResponseHeaders(http::Response& rs)
     rs.AddHeader(std::make_pair("Server", kServerClusterName()));
     rs.AddHeader(std::make_pair("Date", utils::GetFormatedTime()));
     rs.AddHeader(std::make_pair(
-        "Connection", "Closed"));  // TODO fix or embrace (move to different place if embraced)
+        "Connection", "Close"));  // TODO fix or embrace (move to different place if embraced)
 }

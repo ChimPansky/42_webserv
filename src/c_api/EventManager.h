@@ -24,7 +24,7 @@ class EventManager {
     // all select-poll-epoll logic goes in here
     int CheckOnce();
     int RegisterCallback(int fd, CallbackType type, utils::unique_ptr<ICallback>);
-    void DeleteCallback(int fd, CallbackType type);
+    void DeleteCallback(int fd, CallbackType type = CT_READWRITE);
 
   private:
     void ClearCallback_(int fd, CallbackType type);

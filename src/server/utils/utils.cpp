@@ -28,6 +28,24 @@ const char* GetTypeByExt(const std::string& ext)
         return kDefaultContentType();
 }
 
+std::string GetInterpreterByExt(const std::string& filename)
+{
+    if (filename.find_last_of(".") == std::string::npos) {
+        return std::string();
+    }
+    std::string ext = filename.substr(filename.find_last_of("."));
+    if (ext == ".py") {
+        return "/usr/bin/python3";
+    } else if (ext == ".php") {
+        return "/usr/bin/php";
+    } else if (ext == ".pl") {
+        return "/usr/bin/perl";
+    } else if (ext == ".sh") {
+        return "/bin/sh";
+    }
+    return std::string();
+}
+
 std::string UpdatePath(const std::string& loc, const std::string& matched_prefix,
                        const std::string& uri_path)
 {

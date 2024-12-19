@@ -13,9 +13,9 @@ ParsedConfig::ParsedConfig(std::ifstream& ifs, const std::string& nesting_lvl,
         if (content.empty() || content[0] == '#') {
             continue;
         }
-        content = utils::fs::Trim(content, " \t");
+        content = utils::Trim(content, " \t");
         char last_char = *content.rbegin();
-        content = utils::fs::Trim(content, " \t" + std::string(1, last_char));
+        content = utils::Trim(content, " \t" + std::string(1, last_char));
 
         if (last_char == ';') {
             if (content.empty()) {

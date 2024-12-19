@@ -27,14 +27,10 @@ static std::map<int, std::string> ParseErrorPages(const std::vector<std::string>
     std::map<int, std::string> error_pages;
 
     for (size_t i = 0; i < vals.size(); i++) {
-        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[i]);
+        std::vector<std::string> val_elements = utils::SplitLine(vals[i]);
         if (val_elements.size() < 2) {
             throw std::runtime_error("Invalid configuration file: invalid error_page: " + vals[i]);
-        } /* else if (access(val_elements[val_elements.size() - 1].c_str(), F_OK | R_OK) == -1)
-        { throw std::runtime_error("Invalid configuration file: error page doesn't exist: " +
-                                        val_elements[val_elements.size() - 1]); // temprorary
-        comment for valgrind CI test
-        } */
+        }
         for (size_t j = 0; j < val_elements.size() - 1; j++) {
             if (j != val_elements.size() - 1) {
                 error_pages[utils::StrToNumeric<int>(val_elements[j])] =
