@@ -78,6 +78,7 @@ void ServerCluster::PrintDebugInfo() const
 
 void ServerCluster::CheckClients_()
 {
+    time_t now = time(NULL);
     client_iterator it = clients_.begin();
     while (it != clients_.end()) {
         ClientSession& client = *it->second;
@@ -86,6 +87,9 @@ void ServerCluster::CheckClients_()
             ++it;
             clients_.erase(tmp);
             continue;
+        }
+        if (now - client.last_activity_time() > kKeepAliveTimeoutS()) {
+            client.CloseConnection();
         }
         ++it;
     }

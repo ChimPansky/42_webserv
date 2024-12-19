@@ -8,33 +8,16 @@
 
 #include "ServerCluster.h"
 
-
-ClientSession::ChooseServerCb::ChooseServerCb(ClientSession& client) : client_(client)
-{
-    LOG(DEBUG) << "CHOOSE SERVER CB CREATED";
-}
-
-http::ChosenServerParams ClientSession::ChooseServerCb::Call(const http::Request& rq)
-{
-    client_.associated_server_ = ServerCluster::ChooseServer(client_.master_socket_fd_, rq);
-    http::ChosenServerParams params;
-    std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc =
-        client_.associated_server_->ChooseLocation(rq);
-    params.max_body_size =
-        (chosen_loc.second != NO_LOCATION ? chosen_loc.first->client_max_body_size()
-                                          : config::LocationConfig::kDefaultClientMaxBodySize());
-    return params;
-}
-
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd,
                              utils::shared_ptr<Server> default_server)
     : client_sock_(sock), master_socket_fd_(master_sock_fd), associated_server_(default_server),
       rq_builder_(utils::unique_ptr<http::IChooseServerCb>(new ChooseServerCb(*this))),
       connection_closed_(false), read_state_(CS_READ)
 {
+    UpdateLastActivitiTime_();
     if (!c_api::EventManager::get().TryRegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
-            utils::unique_ptr<c_api::ICallback>(new ClientReadCallback(*this)))) {
+            utils::unique_ptr<c_api::ICallback>(new OnReadyToRecvFromClientCb(*this)))) {
         LOG(ERROR) << "Could not register read callback for client: " << client_sock_->sockfd();
         CloseConnection();
         return;
@@ -49,19 +32,12 @@ ClientSession::~ClientSession()
 void ClientSession::CloseConnection()
 {
     connection_closed_ = true;
-    c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READWRITE);
     LOG(INFO) << "Client " << client_sock_->sockfd() << ": Connection closed";
 }
 
-bool ClientSession::connection_closed() const
-{
-    return connection_closed_;
-}
-
-
-// RECV REQUEST
 void ClientSession::ProcessNewData(size_t bytes_recvd)
 {
+    UpdateLastActivitiTime_();
     rq_builder_.Build(bytes_recvd);
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
@@ -81,7 +57,6 @@ void ClientSession::ProcessNewData(size_t bytes_recvd)
     }
 }
 
-
 void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 {
     ServerCluster::FillResponseHeaders(*rs);
@@ -93,7 +68,7 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
     if (!c_api::EventManager::get().TryRegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,
             utils::unique_ptr<c_api::ICallback>(
-                new ClientWriteCallback(*this, rs->Dump(), close_connection)))) {
+                new OnReadyToSendToClientCb(*this, rs->Dump(), close_connection)))) {
         LOG(ERROR) << "Could not register write callback for client: " << client_sock_->sockfd();
         CloseConnection();
     }
@@ -108,13 +83,30 @@ void ClientSession::ResponseSentCleanup(bool close_connection)
     }
 }
 
-
-ClientSession::ClientReadCallback::ClientReadCallback(ClientSession& client) : client_(client)
-{}
-
-void ClientSession::ClientReadCallback::Call(int /*fd*/)
+void ClientSession::UpdateLastActivitiTime_()
 {
-    LOG(DEBUG) << "ClientReadCallback::Call";
+    last_activity_time_ = time(NULL);
+}
+
+///////////////////////////////////
+//////////// CALLBACKS ////////////
+///////////////////////////////////
+
+http::ChosenServerParams ClientSession::ChooseServerCb::Call(const http::Request& rq)
+{
+    client_.associated_server_ = ServerCluster::ChooseServer(client_.master_socket_fd_, rq);
+    http::ChosenServerParams params;
+    std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc =
+        client_.associated_server_->ChooseLocation(rq);
+    params.max_body_size =
+        (chosen_loc.second != NO_LOCATION ? chosen_loc.first->client_max_body_size()
+                                          : config::LocationConfig::kDefaultClientMaxBodySize());
+    return params;
+}
+
+void ClientSession::OnReadyToRecvFromClientCb::Call(int /*fd*/)
+{
+    LOG(DEBUG) << "OnReadyToRecvFromClientCb::Call";
     if (client_.read_state_ == CS_IGNORE) {
         std::vector<char> buf;
         buf.resize(1000);
@@ -146,17 +138,15 @@ void ClientSession::ClientReadCallback::Call(int /*fd*/)
     }
 }
 
-
-ClientSession::ClientWriteCallback::ClientWriteCallback(ClientSession& client,
-                                                        std::vector<char> content,
-                                                        bool close_connection)
+ClientSession::OnReadyToSendToClientCb::OnReadyToSendToClientCb(ClientSession& client,
+                                                                std::vector<char> content,
+                                                                bool close_connection)
     : client_(client), buf_(content), buf_send_idx_(0), close_after_sending_rs_(close_connection)
 {}
 
-void ClientSession::ClientWriteCallback::Call(int /*fd*/)
+void ClientSession::OnReadyToSendToClientCb::Call(int /*fd*/)
 {
-    LOG(DEBUG) << "ClientWriteCallback::Call";
-    // assert fd == client_sock.fd
+    LOG(DEBUG) << "OnReadyToSendToClientCb::Call";
     ssize_t bytes_sent =
         client_.client_sock_->Send(buf_, buf_send_idx_, buf_.size() - buf_send_idx_);
     if (bytes_sent <= 0) {
@@ -164,28 +154,14 @@ void ClientSession::ClientWriteCallback::Call(int /*fd*/)
         client_.CloseConnection();
         return;
     }
+    client_.UpdateLastActivitiTime_();
     if (buf_send_idx_ == buf_.size()) {
         LOG(INFO) << buf_send_idx_ << " bytes sent";
         client_.ResponseSentCleanup(close_after_sending_rs_);
     }
 }
 
-
-ClientSession::ClientProceedWithResponseCallback::ClientProceedWithResponseCallback(
-    ClientSession& client)
-    : client_(client)
-{}
-
 void ClientSession::ClientProceedWithResponseCallback::Call(utils::unique_ptr<http::Response> rs)
 {
-    LOG(DEBUG) << "ClientProceedWithResponseCallback::Call -> client_.PrepareResponse";
     client_.PrepareResponse(rs);
-    // ssize_t bytes_recvd = rs_builder_.bodygen_sock()->Recv();
-    // if (bytes_recvd < 0) {
-    //     // change rs to 503?
-    // } else if (bytes_recvd == 0) {
-    //     rs_builder_.Finalize();
-    // } else {
-    //     rs_builder_.AddToBody(bytes_recvd, rs_builder_.bodygen_sock()->buf());
-    // }
 }
