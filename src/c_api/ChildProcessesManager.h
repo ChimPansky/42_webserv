@@ -1,9 +1,8 @@
 #ifndef WS_C_API_CHILD_PROCESSES_MANAGER_H
 #define WS_C_API_CHILD_PROCESSES_MANAGER_H
 
-#include <SocketWrapper.h>
+#include <Socket.h>
 #include <logger.h>
-#include <signal.h>
 #include <sys/wait.h>
 #include <unique_ptr.h>
 
@@ -62,8 +61,8 @@ class ChildProcessesManager {
     static ChildProcessesManager& get();
 
     void CheckOnce();
-    std::pair<bool, utils::unique_ptr<SocketWrapper> > TryRunChildProcess(
-        const ExecParams&, utils::unique_ptr<IChildDiedCb>);
+    std::pair<bool, utils::unique_ptr<Socket> > TryRunChildProcess(const ExecParams&,
+                                                                   utils::unique_ptr<IChildDiedCb>);
 
   private:
     static utils::unique_ptr<ChildProcessesManager> instance_;
