@@ -30,7 +30,7 @@ ErrorProcessor::ErrorProcessor(const Server& server,
         std::vector<char>(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     std::map<std::string, std::string> hdrs;
     hdrs["Content-Type"] = "text/html";
-    hdrs["Connection"] = "Closed";
+    hdrs["Connection"] = "Close";
     hdrs["Content-Length"] = utils::NumericToString(body.size());
     response_rdy_cb_->Call(
         utils::unique_ptr<http::Response>(new http::Response(code, http::HTTP_1_1, hdrs, body)));
@@ -47,7 +47,7 @@ ErrorProcessor::GeneratedErrorProcessor::GeneratedErrorProcessor(
     std::copy(body_str.begin(), body_str.end(), std::back_inserter(body));
     std::map<std::string, std::string> hdrs;
     hdrs["Content-Type"] = "text/html";
-    hdrs["Connection"] = "Closed";
+    hdrs["Connection"] = "Close";
     hdrs["Content-Length"] = utils::NumericToString(body.size());
     response_rdy_cb_->Call(
         utils::unique_ptr<http::Response>(new http::Response(code, http::HTTP_1_1, hdrs, body)));
