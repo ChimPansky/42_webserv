@@ -1,7 +1,9 @@
 #include "PollMultiplexer.h"
 
+#include <logger.h>
 #include <poll.h>
 
+#include <cstring>
 #include <vector>
 
 namespace c_api {
@@ -25,7 +27,7 @@ int PollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCall
 
     int num_of_fds = poll(fds.data(), nb_of_fds, timeout);
     if (num_of_fds < 0) {
-        // poll error or empty array of structs
+        LOG(ERROR) << "poll failed: " << std::strerror(errno);
         return 1;
     }
     for (std::vector<struct pollfd>::iterator it = fds.begin(); it != fds.end(); ++it) {
