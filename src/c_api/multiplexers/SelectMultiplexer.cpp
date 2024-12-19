@@ -31,13 +31,17 @@ int SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
     }
     // iterate over i here cuz call can change callbacks map
     for (int ready_fd = 0; ready_fd <= max_fd; ++ready_fd) {
-        FdToCallbackMapIt it = rd_sockets.find(ready_fd);
-        if (FD_ISSET(ready_fd, &select_rd_set) && it != rd_sockets.end()) {
-            it->second->Call(it->first);
+        if (FD_ISSET(ready_fd, &select_rd_set)) {
+            FdToCallbackMapIt it = rd_sockets.find(ready_fd);
+            if (it != rd_sockets.end()) {
+                it->second->Call(it->first);
+            }
         }
-        it = wr_sockets.find(ready_fd);
-        if (FD_ISSET(ready_fd, &select_wr_set) && it != wr_sockets.end()) {
-            it->second->Call(it->first);
+        if (FD_ISSET(ready_fd, &select_wr_set)) {
+            FdToCallbackMapIt it = wr_sockets.find(ready_fd);
+            if (it != wr_sockets.end()) {
+                it->second->Call(it->first);
+            }
         }
     }
     return 0;
