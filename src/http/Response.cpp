@@ -28,7 +28,8 @@ std::vector<char> Response::Dump() const
         str_dump += it->second;
         str_dump += http::kCRLF();
     }
-    str_dump += http::kCRLF();  // if no body?
+    str_dump += http::kCRLF();
+
     std::vector<char> dump;
     std::copy(str_dump.begin(), str_dump.end(), std::back_inserter(dump));
     std::copy(body_.begin(), body_.end(), std::back_inserter(dump));
@@ -51,8 +52,8 @@ std::string Response::DumpToStr() const
         str_dump += it->second;
         str_dump += http::kCRLF();
     }
-    str_dump += http::kCRLF();  // if no body?
-    std::copy(body_.begin(), body_.end(), std::back_inserter(str_dump));
+    str_dump += http::kCRLF();
+    // std::copy(body_.begin(), body_.end(), std::back_inserter(str_dump));
     return str_dump;
 }
 

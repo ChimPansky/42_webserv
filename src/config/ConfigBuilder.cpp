@@ -1,5 +1,6 @@
 #include "ConfigBuilder.h"
 
+#include <file_utils.h>
 #include <str_utils.h>
 
 #include "HttpConfig.h"
@@ -54,7 +55,7 @@ static std::pair<std::string, Severity> BuildErrorLog(const std::vector<std::str
     } else if (vals.size() > 1) {
         throw std::runtime_error("Invalid configuration file: duplicated error_log value.");
     }
-    std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
+    std::vector<std::string> val_elements = utils::SplitLine(vals[0]);
     if (val_elements.size() == 1) {
         return std::make_pair(val_elements[0], Config::kDefaultErrorLogLevel());
     } else if (val_elements.size() == 2) {
@@ -104,7 +105,7 @@ Config ConfigBuilder::Build(const ParsedConfig& f,
 
 const Config ConfigBuilder::GetConfigFromConfFile(const std::string& config_path)
 {
-    if (!utils::fs::CheckFileExtension(config_path, ".conf")) {
+    if (!utils::CheckFileExtension(config_path, ".conf")) {
         throw std::invalid_argument("Invalid config file suffix.");
     }
 

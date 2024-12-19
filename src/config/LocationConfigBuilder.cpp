@@ -28,7 +28,7 @@ static std::pair<std::string, bool> BuildRoute(const std::string& vals)
     if (vals.empty()) {
         throw std::runtime_error("Invalid configuration file: no route specified.");
     }
-    std::vector<std::string> route_elements = utils::fs::SplitLine(vals);
+    std::vector<std::string> route_elements = utils::SplitLine(vals);
     return ParseRoute(route_elements);
 }
 
@@ -60,7 +60,7 @@ static std::vector<http::Method> BuildAllowedMethods(const std::vector<std::stri
         if (vals[i].empty()) {
             throw std::runtime_error("Invalid configuration file: no allowed methods specified.");
         }
-        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
+        std::vector<std::string> val_elements = utils::SplitLine(vals[0]);
         allowed_methods.insert(allowed_methods.end(), val_elements.begin(), val_elements.end());
     }
     return ParseAllowedMethods(allowed_methods);
@@ -83,7 +83,7 @@ static std::pair<int, std::string> BuildRedirect(const std::vector<std::string>&
     } else if (vals.size() > 1) {
         throw std::runtime_error("Invalid configuration file: duplicated return value.");
     }
-    std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
+    std::vector<std::string> val_elements = utils::SplitLine(vals[0]);
     return ParseRedirect(val_elements);
 }
 
@@ -121,7 +121,7 @@ static std::vector<std::string> BuildCgiExtensions(const std::vector<std::string
         if (vals[i].empty()) {
             throw std::runtime_error("Invalid configuration file: no cgi extension specified.");
         }
-        std::vector<std::string> val_elements = utils::fs::SplitLine(vals[0]);
+        std::vector<std::string> val_elements = utils::SplitLine(vals[0]);
         cgi_extensions.insert(cgi_extensions.end(), val_elements.begin(), val_elements.end());
     }
     return ParseCgiExtensions(cgi_extensions);
@@ -188,7 +188,7 @@ unsigned int BuildClientMaxBodySize(const std::vector<std::string>& vals,
     } else if (vals.size() > 1) {
         throw std::runtime_error("Invalid configuration file: duplicated client_max_body_size.");
     }
-    std::vector<std::string> val_elements = utils::fs::SplitLine(
+    std::vector<std::string> val_elements = utils::SplitLine(
         InheritedSettings::BuildClientMaxBodySize(vals, inherited_client_max_body_size));
     if (val_elements.size() == 1) {
         return ParseClientMaxBodySize(val_elements[0], "");
