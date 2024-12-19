@@ -11,7 +11,7 @@ class SelectMultiplexer : public IMultiplexer {
     void CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
 
   private:
-    struct timeval* timeout_;
+    struct timeval* __restrict timeout_;
     struct timeval timeout_descr_;
     static int kMaxSelectFds_() { return 1023; }
 };
