@@ -31,7 +31,7 @@ EventManager& EventManager::get()
     return (*EventManager::instance_);
 }
 
-void EventManager::CheckOnce()
+void EventManager::CheckOnce_()
 {
     fds_to_delete_.clear();
     multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
@@ -40,8 +40,8 @@ void EventManager::CheckOnce()
     }
 }
 
-bool EventManager::TryRegisterCallback(int fd, CallbackType type,
-                                       utils::unique_ptr<c_api::ICallback> callback)
+bool EventManager::TryRegisterCallback_(int fd, CallbackType type,
+                                        utils::unique_ptr<c_api::ICallback> callback)
 {
     if (!multiplexer_->TryRegisterFd(fd, type, rd_sockets_, wr_sockets_)) {
         return false;
@@ -55,7 +55,7 @@ bool EventManager::TryRegisterCallback(int fd, CallbackType type,
     return true;
 }
 
-void EventManager::DeleteCallback(int fd, CallbackType type)
+void EventManager::DeleteCallback_(int fd, CallbackType type)
 {
     if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
         fds_to_delete_.push_back(std::make_pair(fd, CT_READ));

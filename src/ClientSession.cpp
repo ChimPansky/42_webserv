@@ -18,7 +18,7 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
       read_state_(CS_READ)
 {
     UpdateLastActivitiTime_();
-    if (!c_api::EventManager::get().TryRegisterCallback(
+    if (!c_api::EventManager::TryRegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new OnReadyToRecvFromClientCb(*this)))) {
         LOG(ERROR) << "Could not register read callback for client: " << client_sock_->sockfd();
@@ -29,7 +29,7 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
 
 ClientSession::~ClientSession()
 {
-    c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_READWRITE);
+    c_api::EventManager::DeleteCallback(client_sock_->sockfd(), c_api::CT_READWRITE);
 }
 
 void ClientSession::CloseConnection()
@@ -68,7 +68,7 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
     bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
     LOG(DEBUG) << "Sending rs from ClientSession with fd " << this->client_sock_->sockfd();
     LOG(DEBUG) << "Response:\n" << rs->DumpToStr();
-    if (!c_api::EventManager::get().TryRegisterCallback(
+    if (!c_api::EventManager::TryRegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,
             utils::unique_ptr<c_api::ICallback>(
                 new OnReadyToSendToClientCb(*this, rs->Dump(), close_connection)))) {
@@ -79,7 +79,7 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 
 void ClientSession::ResponseSentCleanup(bool close_connection)
 {
-    c_api::EventManager::get().DeleteCallback(client_sock_->sockfd(), c_api::CT_WRITE);
+    c_api::EventManager::DeleteCallback(client_sock_->sockfd(), c_api::CT_WRITE);
     read_state_ = CS_READ;
     if (close_connection) {
         CloseConnection();
