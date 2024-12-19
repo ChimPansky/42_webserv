@@ -6,11 +6,14 @@
 namespace c_api {
 
 class SelectMultiplexer : public IMultiplexer {
-    int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
-    int RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                   const FdToCallbackMap& wr_sockets);
-    int UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                     const FdToCallbackMap& wr_sockets);
+  public:
+    SelectMultiplexer(int timeout_ms);
+    void CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
+
+  private:
+    struct timeval* timeout_;
+    struct timeval timeout_descr_;
+    static int kMaxSelectFds_() { return 1023; }
 };
 
 }  // namespace c_api
