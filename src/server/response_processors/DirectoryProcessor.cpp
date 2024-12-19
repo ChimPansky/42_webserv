@@ -17,14 +17,14 @@ DirectoryProcessor::DirectoryProcessor(const Server& server,
                                        const http::Request& rq, const std::string& file_path)
     : AResponseProcessor(server, response_rdy_cb)
 {
-    if (*file_path.rbegin() != '/') {
-        LOG(DEBUG) << "Path is a directory but does not end with / -> Redirect";
-        http::RqTarget redirected_target = rq.rqTarget;
-        redirected_target.AddTrailingSlashToPath();
-        delegated_processor_.reset(new RedirectProcessor(
-            server_, response_rdy_cb_, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
-        return;
-    }
+    // if (*file_path.rbegin() != '/') {
+    //     LOG(DEBUG) << "Path is a directory but does not end with / -> Redirect";
+    //     http::RqTarget redirected_target = rq.rqTarget;
+    //     redirected_target.AddTrailingSlashToPath();
+    //     delegated_processor_.reset(new RedirectProcessor(
+    //         server_, response_rdy_cb_, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
+    //     return;
+    // }
     if (rq.method != http::HTTP_GET) {
         delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(server, response_rdy_cb_, http::HTTP_METHOD_NOT_ALLOWED));
