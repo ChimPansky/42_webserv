@@ -129,7 +129,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     }
 
     std::string updated_path = utils::UpdatePath(
-        chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+        chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
     LOG(DEBUG) << "Updated path: " << updated_path;
     if (chosen_loc.second == CGI) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";

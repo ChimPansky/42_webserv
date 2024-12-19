@@ -7,15 +7,15 @@
 
 namespace config {
 
-const std::string& InheritedSettings::BuildRootDir(const std::vector<std::string>& vals,
-                                                   const std::string& inherited_root)
+const std::string& InheritedSettings::BuildAliasDir(const std::vector<std::string>& vals,
+                                                    const std::string& inherited_alias)
 {
     if (vals.empty()) {
-        return inherited_root;
+        return inherited_alias;
     } else if (vals.size() > 1) {
-        throw std::runtime_error("Invalid configuration file: duplicated root value.");
+        throw std::runtime_error("Invalid configuration file: duplicated alias value.");
     } else if (vals[0][0] != '/') {
-        throw std::runtime_error("Invalid configuration file: root isn't a directory.");
+        throw std::runtime_error("Invalid configuration file: alias isn't a directory.");
     }
     return vals[0];
 }
