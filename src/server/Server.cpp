@@ -19,8 +19,10 @@
 #include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
-    : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
-      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names()),
+    : access_log_path_(cfg.access_log_path()),
+      access_log_level_(cfg.access_log_level()),
+      error_log_path_(cfg.error_log_path()),
+      server_names_(cfg.server_names()),
       error_pages_(error_pages)
 {
     typedef std::vector<config::LocationConfig>::const_iterator LocationConfigConstIt;

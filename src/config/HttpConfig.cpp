@@ -5,7 +5,8 @@ namespace config {
 HttpConfig::HttpConfig(unsigned int keepalive_timeout,
                        const std::map<int, std::string>& error_pages,
                        const std::vector<ServerConfig>& server_configs)
-    : keepalive_timeout_(keepalive_timeout), error_pages_(InitErrorPages(error_pages)),
+    : keepalive_timeout_(keepalive_timeout),
+      error_pages_(InitErrorPages(error_pages)),
       server_configs_(server_configs)
 {}
 

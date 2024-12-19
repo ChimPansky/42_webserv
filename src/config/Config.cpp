@@ -4,7 +4,9 @@ namespace config {
 
 Config::Config(MxType mx_type, const std::pair<std::string, Severity>& error_log,
                const HttpConfig& http_config)
-    : mx_type_(mx_type), error_log_path_(error_log.first), error_log_level_(error_log.second),
+    : mx_type_(mx_type),
+      error_log_path_(error_log.first),
+      error_log_level_(error_log.second),
       http_config_(http_config)
 {}
 

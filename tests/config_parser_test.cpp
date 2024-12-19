@@ -7,8 +7,7 @@
 #include <iostream>
 #include <vector>
 
-class ConfigInvalidTest : public ::testing::TestWithParam<std::string> {
-};
+class ConfigInvalidTest : public ::testing::TestWithParam<std::string> {};
 
 TEST_P(ConfigInvalidTest, InvalidConfigShouldThrow)
 {

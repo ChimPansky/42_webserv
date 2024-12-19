@@ -16,14 +16,16 @@ namespace c_api {
 class IChildDiedCb {
   public:
     virtual void Call(int child_exit_status) = 0;
-    virtual ~IChildDiedCb(){};
+    virtual ~IChildDiedCb() {};
 };
 
 
 struct ExecParams {
     ExecParams(const std::string& interpreter, const std::string& script_path,
                std::vector<std::string> child_env, const std::string& redirect_input_from_file)
-        : interpreter(interpreter), script_path(script_path), child_env(child_env),
+        : interpreter(interpreter),
+          script_path(script_path),
+          child_env(child_env),
           redirect_input_from_file(redirect_input_from_file)
     {}
     const std::string& interpreter;

@@ -1,10 +1,16 @@
 #include "Location.h"
 
 Location::Location(const config::LocationConfig& cfg)
-    : route_(cfg.route()), allowed_methods_(cfg.allowed_methods()), redirect_(cfg.redirect()),
-      is_cgi_(cfg.is_cgi()), cgi_paths_(cfg.cgi_paths()), cgi_extensions_(cfg.cgi_extensions()),
-      alias_dir_(cfg.alias_dir()), default_files_(cfg.default_files()),
-      dir_listing_(cfg.dir_listing()), client_max_body_size_(cfg.client_max_body_size())
+    : route_(cfg.route()),
+      allowed_methods_(cfg.allowed_methods()),
+      redirect_(cfg.redirect()),
+      is_cgi_(cfg.is_cgi()),
+      cgi_paths_(cfg.cgi_paths()),
+      cgi_extensions_(cfg.cgi_extensions()),
+      alias_dir_(cfg.alias_dir()),
+      default_files_(cfg.default_files()),
+      dir_listing_(cfg.dir_listing()),
+      client_max_body_size_(cfg.client_max_body_size())
 {}
 
 const std::pair<std::string /*path*/, bool /*is_exact_match*/>& Location::route() const
