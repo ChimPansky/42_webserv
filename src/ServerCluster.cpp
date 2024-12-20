@@ -122,9 +122,9 @@ int ServerCluster::CreateListener_(struct sockaddr_in addr)
 {
     utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
     int sockfd = listener->sockfd();
-    if (c_api::EventManager::get().RegisterCallback(
+    if (!c_api::EventManager::get().TryRegisterCallback(
             sockfd, c_api::CT_READ,
-            utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
+            utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this)))) {
         LOG(FATAL) << "Could not register callback for listener: " << sockfd;
     }
     sockets_[sockfd] = listener;

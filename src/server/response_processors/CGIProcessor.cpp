@@ -57,9 +57,9 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
         return;
     }
     parent_socket_ = res.second;
-    if (c_api::EventManager::get().RegisterCallback(
+    if (!c_api::EventManager::get().TryRegisterCallback(
             parent_socket_->sockfd(), c_api::CT_READ,
-            utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this))) != 0) {
+            utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
