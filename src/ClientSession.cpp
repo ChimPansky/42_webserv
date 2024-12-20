@@ -17,7 +17,7 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
       connection_closed_(false),
       read_state_(CS_READ)
 {
-    UpdateLastActivitiTime_();
+    UpdateLastActivityTime_();
     if (!c_api::EventManager::TryRegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new OnReadyToRecvFromClientCb(*this)))) {
@@ -38,10 +38,10 @@ void ClientSession::CloseConnection()
     LOG(INFO) << "Client " << client_sock_->sockfd() << ": Connection closed";
 }
 
-void ClientSession::ProcessNewData(size_t bytes_recvd)
+void ClientSession::ProcessNewData(c_api::RecvPackage& pack)
 {
-    UpdateLastActivitiTime_();
-    rq_builder_.Build(bytes_recvd);
+    UpdateLastActivityTime_();
+    rq_builder_.Build(pack.data, pack.data_size);
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
                    << ((rq_builder_.rq().status == http::HTTP_OK) ? "GOOD)" : "BAD)")
@@ -86,7 +86,7 @@ void ClientSession::ResponseSentCleanup(bool close_connection)
     }
 }
 
-void ClientSession::UpdateLastActivitiTime_()
+void ClientSession::UpdateLastActivityTime_()
 {
     last_activity_time_ = time(NULL);
 }
@@ -110,56 +110,41 @@ http::ChosenServerParams ClientSession::ChooseServerCb::Call(const http::Request
 void ClientSession::OnReadyToRecvFromClientCb::Call(int /*fd*/)
 {
     LOG(DEBUG) << "OnReadyToRecvFromClientCb::Call";
-    if (client_.read_state_ == CS_IGNORE) {
-        std::vector<char> buf;
-        buf.resize(1000);
-        ssize_t bytes_recvd = client_.client_sock_->Recv(buf, 1000);
-        LOG(DEBUG) << "RdCB::Call (ignored) bytes_recvd: " << bytes_recvd
-                   << " from: " << client_.client_sock_->sockfd();
-        if (bytes_recvd <= 0) {
-            LOG(DEBUG) << "Client disconnected -> terminating Session";
-            client_.CloseConnection();
-            return;
-        }
-    } else {
-        client_.rq_builder_.PrepareToRecvData(CLIENT_RD_CALLBACK_RD_SZ);
-        ssize_t bytes_recvd =
-            client_.client_sock_->Recv(client_.rq_builder_.buf(), CLIENT_RD_CALLBACK_RD_SZ);
+    if (client_.read_state_ != CS_IGNORE) {
+        c_api::RecvPackage pack = client_.client_sock_->Recv();
         // what u gonna do with the closed connection in builder?
-        LOG(DEBUG) << "RdCB::Call (not ignored) bytes_recvd: " << bytes_recvd
+        LOG(DEBUG) << "RdCB::Call (not ignored) bytes_recvd: " << pack.data_size
                    << " from: " << client_.client_sock_->sockfd();
         // TODO: what if read-size == length of (invalid) request?
         // we need to recv 0 bytes and forward it to builder in order to realize its bad:
         // read_size == 10 && rq == "GET / HTTP"
-        if (bytes_recvd <= 0) {
+        if (pack.status != c_api::RS_OK) {
             LOG(DEBUG) << "Client disconnected -> terminating Session";
             client_.CloseConnection();
             return;
         }
-        client_.rq_builder_.AdjustBufferSize(bytes_recvd);
-        client_.ProcessNewData(bytes_recvd);
+        client_.ProcessNewData(pack);
     }
 }
 
 ClientSession::OnReadyToSendToClientCb::OnReadyToSendToClientCb(ClientSession& client,
                                                                 std::vector<char> content,
                                                                 bool close_connection)
-    : client_(client), buf_(content), buf_send_idx_(0), close_after_sending_rs_(close_connection)
+    : client_(client), pack_(content), close_after_sending_rs_(close_connection)
 {}
 
 void ClientSession::OnReadyToSendToClientCb::Call(int /*fd*/)
 {
     LOG(DEBUG) << "OnReadyToSendToClientCb::Call";
-    ssize_t bytes_sent =
-        client_.client_sock_->Send(buf_, buf_send_idx_, buf_.size() - buf_send_idx_);
-    if (bytes_sent <= 0) {
-        LOG(ERROR) << "error on send";  // add perror
+    c_api::SockStatus status = client_.client_sock_->Send(pack_);
+    if (status != c_api::RS_OK) {
+        LOG(ERROR) << "error on send";  // TODO: add perror?
         client_.CloseConnection();
         return;
     }
-    client_.UpdateLastActivitiTime_();
-    if (buf_send_idx_ == buf_.size()) {
-        LOG(INFO) << buf_send_idx_ << " bytes sent";
+    client_.UpdateLastActivityTime_();
+    if (pack_.AllDataSent()) {
+        LOG(INFO) << pack_.bytes_sent << " bytes sent into " << client_.client_sock_->sockfd();
         client_.ResponseSentCleanup(close_after_sending_rs_);
     }
 }

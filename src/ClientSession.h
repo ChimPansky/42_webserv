@@ -10,8 +10,6 @@
 #include <sys/types.h>
 #include <unique_ptr.h>
 
-#define CLIENT_RD_CALLBACK_RD_SZ 512
-
 class ClientSession {
   private:
     ClientSession(const ClientSession&);
@@ -46,8 +44,7 @@ class ClientSession {
 
       private:
         ClientSession& client_;
-        std::vector<char> buf_;
-        size_t buf_send_idx_;
+        c_api::SendPackage pack_;
         bool close_after_sending_rs_;
     };
 
@@ -78,13 +75,13 @@ class ClientSession {
   public:
     bool connection_closed() const { return connection_closed_; }
     time_t last_activity_time() const { return last_activity_time_; }
-    void ProcessNewData(size_t bytes_recvd);
+    void ProcessNewData(c_api::RecvPackage& data_pack);
     void CloseConnection();
     void PrepareResponse(utils::unique_ptr<http::Response> rs);
     void ResponseSentCleanup(bool close_connection);
 
   private:
-    void UpdateLastActivitiTime_();
+    void UpdateLastActivityTime_();
 
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;

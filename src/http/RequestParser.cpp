@@ -17,17 +17,10 @@ std::vector<char>& RequestParser::buf()
     return buf_;
 }
 
-void RequestParser::PrepareToRecvData(size_t recv_size)
+void RequestParser::AddNewData(const char* data, size_t data_sz)
 {
-    old_buf_size_ = buf_.size();
-    buf_.resize(buf_.size() + recv_size);
-}
-
-void RequestParser::AdjustBufferSize(size_t bytes_recvd)
-{
-    if (buf_.size() > old_buf_size_ + bytes_recvd) {
-        buf_.resize(old_buf_size_ + bytes_recvd);
-    }
+    buf_.reserve(buf_.size() + data_sz);
+    std::copy(data, data + data_sz, std::back_inserter(buf_));
 }
 
 bool RequestParser::Advance(ssize_t n)
