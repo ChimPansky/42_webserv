@@ -57,7 +57,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
         return;
     }
     parent_socket_ = res.second;
-    if (!c_api::EventManager::get().TryRegisterCallback(
+    if (!c_api::EventManager::TryRegisterCallback(
             parent_socket_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
@@ -69,7 +69,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
 CGIProcessor::~CGIProcessor()
 {
     if (parent_socket_) {
-        c_api::EventManager::get().DeleteCallback(parent_socket_->sockfd());
+        c_api::EventManager::DeleteCallback(parent_socket_->sockfd());
     }
 }
 
@@ -89,7 +89,6 @@ void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
     } else if (bytes_recvd == 0) {
         processor_.cgi_out_buffer_.resize(old_buf_size);
         LOG(INFO) << "Returning " << processor_.cgi_out_buffer_.size() << " bytes from CGI script";
-        c_api::EventManager::get().DeleteCallback(processor_.parent_socket_->sockfd());
     }
     if (processor_.cgi_out_buffer_.size() > old_buf_size + bytes_recvd) {
         processor_.cgi_out_buffer_.resize(old_buf_size + bytes_recvd);

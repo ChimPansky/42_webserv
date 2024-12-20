@@ -40,7 +40,7 @@ void ServerCluster::Run()
     run_ = true;
     // instance_->PrintDebugInfo();
     while (run_) {
-        c_api::EventManager::get().CheckOnce();
+        c_api::EventManager::CheckOnce();
         c_api::ChildProcessesManager::get().CheckOnce();
         instance_->CheckClients_();
         LOG(INFO) << utils::GetFormatedTime();
@@ -126,7 +126,7 @@ int ServerCluster::CreateListener_(struct sockaddr_in addr)
 {
     utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
     int sockfd = listener->sockfd();
-    if (!c_api::EventManager::get().TryRegisterCallback(
+    if (!c_api::EventManager::TryRegisterCallback(
             sockfd, c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this)))) {
         LOG(FATAL) << "Could not register callback for listener: " << sockfd;
