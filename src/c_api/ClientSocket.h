@@ -5,7 +5,6 @@
 #include <sys/types.h>
 
 #include <cstddef>
-#include <vector>
 
 #include "Socket.h"
 
@@ -23,11 +22,9 @@ class ClientSocket {
     ClientSocket(int sockfd, sockaddr_in addr_in);
     ~ClientSocket();
     inline int sockfd() const { return sock_.sockfd(); };
-    const sockaddr_in& addr_in() const;
-
-    // come up with a better signature for recv/send
-    ssize_t Recv(std::vector<char>& buf, size_t sz) const;
-    ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
+    const sockaddr_in& addr_in() const { return addr_in_; };
+    RecvPackage Recv(size_t read_size = SOCK_READ_BUF_SZ) const { return sock_.Recv(read_size); }
+    SockStatus Send(SendPackage& pack) const { return sock_.Send(pack); };
 
   private:
     Socket sock_;

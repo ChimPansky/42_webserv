@@ -23,19 +23,4 @@ ClientSocket::~ClientSocket()
     /* shutdown(sockfd_, SHUT_RDWR); */
 }
 
-const sockaddr_in& ClientSocket::addr_in() const
-{
-    return addr_in_;
-}
-
-ssize_t ClientSocket::Recv(std::vector<char>& buf, size_t read_size) const
-{
-    return sock_.Recv(buf, read_size);
-}
-
-ssize_t ClientSocket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const
-{
-    return sock_.Send(buf, idx, sz);
-}
-
 }  // namespace c_api

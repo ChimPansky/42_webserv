@@ -76,22 +76,17 @@ CGIProcessor::~CGIProcessor()
 void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
 {
     // LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
-
-    size_t old_buf_size = processor_.cgi_out_buffer_.size();
-    processor_.cgi_out_buffer_.resize(processor_.cgi_out_buffer_.size() + 1000);
-    // LOG(DEBUG) << "ReadChildOutputCallback::Call processor_.cgi_out_buffer_.size(): "
-    //    << processor_.cgi_out_buffer_.size();
-    ssize_t bytes_recvd = processor_.parent_socket_->Recv(processor_.cgi_out_buffer_, 1000);
-    // LOG(DEBUG) << "ReadChildOutputCallback::Call bytes_recvd: " << bytes_recvd;
-    if (bytes_recvd < 0) {
-        LOG(ERROR) << "error on recv" << std::strerror(errno);
+    std::vector<char>& buf = processor_.cgi_out_buffer_;
+    c_api::RecvPackage pack = processor_.parent_socket_->Recv();
+    if (pack.status == c_api::RS_SOCK_ERR) {
+        LOG(ERROR) << "error on recv" << std::strerror(errno);  // TODO: is errno check allowed?
         return;
-    } else if (bytes_recvd == 0) {
-        processor_.cgi_out_buffer_.resize(old_buf_size);
-        LOG(INFO) << "Returning " << processor_.cgi_out_buffer_.size() << " bytes from CGI script";
-    }
-    if (processor_.cgi_out_buffer_.size() > old_buf_size + bytes_recvd) {
-        processor_.cgi_out_buffer_.resize(old_buf_size + bytes_recvd);
+    } else if (pack.status == c_api::RS_SOCK_CLOSED) {
+        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes";
+        return;
+    } else if (pack.status == c_api::RS_OK) {
+        buf.reserve(buf.size() + pack.data_size);
+        std::copy(pack.data, pack.data + pack.data_size, std::back_inserter(buf));
     }
 }
 

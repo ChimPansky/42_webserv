@@ -21,21 +21,31 @@ int Socket::sockfd() const
     return sockfd_;
 }
 
-ssize_t Socket::Recv(std::vector<char>& buf, size_t read_size) const
+RecvPackage Socket::Recv(size_t read_size) const
 {
-    return ::recv(sockfd_, (void*)(buf.data() + buf.size() - read_size), read_size, MSG_NOSIGNAL);
+    RecvPackage pack = {};
+    pack.data_size =
+        ::recv(sockfd_, (void*)buf_, std::min(read_size, SOCK_READ_BUF_SZ), MSG_NOSIGNAL);
+    if (pack.data_size < 0) {
+        pack.status = RS_SOCK_ERR;
+    } else if (pack.data_size == 0) {
+        pack.status = RS_SOCK_CLOSED;
+    } else {
+        pack.status = RS_OK;
+        pack.data = buf_;
+    }
+    return pack;
 }
 
-ssize_t Socket::Send(const std::vector<char>& buf, size_t& idx, size_t sz) const
+SockStatus Socket::Send(SendPackage& pack) const
 {
-    if (idx + sz > buf.size()) {
-        throw std::runtime_error("index is too big");
-    }
-    ssize_t bytes_sent = send(sockfd_, buf.data() + idx, sz, MSG_NOSIGNAL);
+    ssize_t bytes_sent = ::send(sockfd_, pack.buf.data() + pack.bytes_sent,
+                                pack.buf.size() - pack.bytes_sent, MSG_NOSIGNAL);
     if (bytes_sent > 0) {
-        idx += bytes_sent;
+        pack.bytes_sent += bytes_sent;
+        return RS_OK;
     }
-    return bytes_sent;
+    return RS_SOCK_ERR;
 }
 
 std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > Socket::CreateSocketPair()
