@@ -14,7 +14,7 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
       rq_builder_(utils::unique_ptr<http::IChooseServerCb>(new ChooseServerCb(*this))),
       connection_closed_(false), read_state_(CS_READ)
 {
-    UpdateLastActivitiTime_();
+    UpdateLastActivityTime_();
     if (!c_api::EventManager::get().TryRegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new OnReadyToRecvFromClientCb(*this)))) {
@@ -37,7 +37,7 @@ void ClientSession::CloseConnection()
 
 void ClientSession::ProcessNewData(size_t bytes_recvd)
 {
-    UpdateLastActivitiTime_();
+    UpdateLastActivityTime_();
     rq_builder_.Build(bytes_recvd);
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
@@ -83,7 +83,7 @@ void ClientSession::ResponseSentCleanup(bool close_connection)
     }
 }
 
-void ClientSession::UpdateLastActivitiTime_()
+void ClientSession::UpdateLastActivityTime_()
 {
     last_activity_time_ = time(NULL);
 }
@@ -154,7 +154,7 @@ void ClientSession::OnReadyToSendToClientCb::Call(int /*fd*/)
         client_.CloseConnection();
         return;
     }
-    client_.UpdateLastActivitiTime_();
+    client_.UpdateLastActivityTime_();
     if (buf_send_idx_ == buf_.size()) {
         LOG(INFO) << buf_send_idx_ << " bytes sent";
         client_.ResponseSentCleanup(close_after_sending_rs_);
