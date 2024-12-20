@@ -7,6 +7,7 @@
 #include <unistd.h>  // close
 
 #include "ClientSocket.h"
+#include "Socket.h"
 
 namespace c_api {
 
@@ -21,7 +22,8 @@ class MasterSocket {
     MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock = true);
     MasterSocket(const struct sockaddr_in& addr, bool set_nonblock = true);
     ~MasterSocket();
-    int sockfd() const;
+
+    inline int sockfd() const { return sock_.sockfd(); };
     const sockaddr_in& addr_in() const;
     // check result for null!
     utils::unique_ptr<ClientSocket> Accept() const;
@@ -32,7 +34,7 @@ class MasterSocket {
 
   private:
     struct sockaddr_in addr_in_;
-    int sockfd_;
+    Socket sock_;
 };
 
 }  // namespace c_api

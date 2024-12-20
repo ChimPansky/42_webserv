@@ -33,6 +33,12 @@ ServerCluster::ServerCluster(const config::Config& config)
     c_api::EventManager::init(config.mx_type());
     c_api::ChildProcessesManager::init();
     CreateServers_(config);
+    for (SocketsIt sock_it = sockets_.begin(); sock_it != sockets_.end(); ++sock_it) {
+        LOG_IF(FATAL, !c_api::EventManager::TryRegisterCallback(
+                          sock_it->second->sockfd(), c_api::CT_READ,
+                          utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))))
+            << "Could not register callback for listener: " << sock_it->second->sockfd();
+    }
 }
 
 void ServerCluster::Run()
@@ -40,7 +46,7 @@ void ServerCluster::Run()
     run_ = true;
     // instance_->PrintDebugInfo();
     while (run_) {
-        c_api::EventManager::get().CheckOnce();
+        c_api::EventManager::CheckOnce();
         c_api::ChildProcessesManager::get().CheckOnce();
         instance_->CheckClients_();
         LOG(INFO) << utils::GetFormatedTime();
@@ -78,6 +84,7 @@ void ServerCluster::PrintDebugInfo() const
 
 void ServerCluster::CheckClients_()
 {
+    time_t now = time(NULL);
     client_iterator it = clients_.begin();
     while (it != clients_.end()) {
         ClientSession& client = *it->second;
@@ -87,12 +94,13 @@ void ServerCluster::CheckClients_()
             clients_.erase(tmp);
             continue;
         }
+        if (now - client.last_activity_time() > kKeepAliveTimeoutS()) {
+            client.CloseConnection();
+        }
         ++it;
     }
 }
 
-// Wrap to serverHolder class c'tor probably as well?
-// then server holder will keep servers, the map socket to servers
 void ServerCluster::CreateServers_(const config::Config& config)
 {
     for (config::ServerConfConstIt serv_conf_it = config.http_config().server_configs().begin();
@@ -107,38 +115,25 @@ void ServerCluster::MapListenersToServer_(
     const std::vector<std::pair<in_addr_t, in_port_t> >& listeners, utils::shared_ptr<Server>& serv)
 {
     for (config::ListenersConfConstIt l_it = listeners.begin(); l_it != listeners.end(); ++l_it) {
-        struct sockaddr_in addr = c_api::GetIPv4SockAddr(l_it->first, l_it->second);
-        int sockfd = GetListenerFd_(addr);
-        if (sockfd == -1) {
-            sockfd = CreateListener_(addr);
-        }
+        int sockfd = GetListenerFdForServer_(*l_it);
         sockets_to_servers_[sockfd].push_back(serv);
         LOG(INFO) << serv->name() << " is listening on " << c_api::IPv4ToString(l_it->first) << ":"
                   << l_it->second << " (fd: " << sockfd << ")";
     }
 }
 
-int ServerCluster::CreateListener_(struct sockaddr_in addr)
+int ServerCluster::GetListenerFdForServer_(const std::pair<unsigned int, unsigned short>& address)
 {
-    utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
-    int sockfd = listener->sockfd();
-    if (c_api::EventManager::get().RegisterCallback(
-            sockfd, c_api::CT_READ,
-            utils::unique_ptr<c_api::ICallback>(new MasterSocketCallback(*this))) != 0) {
-        LOG(FATAL) << "Could not register callback for listener: " << sockfd;
-    }
-    sockets_[sockfd] = listener;
-    return sockfd;
-}
-
-int ServerCluster::GetListenerFd_(struct sockaddr_in addr)
-{
+    struct sockaddr_in addr = c_api::GetIPv4SockAddr(address.first, address.second);
     for (SocketsIt sock_it = sockets_.begin(); sock_it != sockets_.end(); ++sock_it) {
         if (sock_it->second->IsSameSockAddr(addr)) {
             return sock_it->second->sockfd();
         }
     }
-    return -1;
+    utils::unique_ptr<c_api::MasterSocket> listener(new c_api::MasterSocket(addr));
+    int sockfd = listener->sockfd();
+    sockets_[sockfd] = listener;
+    return sockfd;
 }
 
 ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)

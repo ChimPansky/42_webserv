@@ -6,11 +6,12 @@
 namespace c_api {
 
 class PollMultiplexer : public IMultiplexer {
-    int CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
-    int RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                   const FdToCallbackMap& wr_sockets);
-    int UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                     const FdToCallbackMap& wr_sockets);
+  public:
+    PollMultiplexer(int timeout_ms);
+    void CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
+
+  private:
+    unsigned short timeout_ms_;
 };
 
 }  // namespace c_api

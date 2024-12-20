@@ -7,7 +7,7 @@
 
 
 namespace {
-int CreateSocket(bool set_nonblock)
+int CreateTcpSocket(bool set_nonblock)
 {
     int sockfd = ::socket(/* IPv4 */ AF_INET,
                           /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
@@ -40,23 +40,23 @@ namespace c_api {
 
 // REUSEADDR in case port already open in the kernel but has no associated socket
 MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
+    : sock_(CreateTcpSocket(set_nonblock))
 {
-    sockfd_ = CreateSocket(set_nonblock);
     addr_in_ = GetIPv4SockAddr(ip, port);
-    BindAndListen(sockfd_, addr_in_);
+    BindAndListen(sockfd(), addr_in_);
 }
 
-MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock) : addr_in_(addr)
+MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock)
+    : addr_in_(addr), sock_(CreateTcpSocket(set_nonblock))
 {
-    sockfd_ = CreateSocket(set_nonblock);
-    BindAndListen(sockfd_, addr_in_);
+    BindAndListen(sockfd(), addr_in_);
 }
 
 utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
 {
     struct sockaddr_in addr = {};
     socklen_t addr_len = sizeof(addr);
-    int client_fd = ::accept(sockfd_, (struct sockaddr*)&addr, &addr_len);
+    int client_fd = ::accept(sockfd(), (struct sockaddr*)&addr, &addr_len);
     if (client_fd < 0) {
         return utils::unique_ptr<ClientSocket>();
     }
@@ -71,12 +71,6 @@ utils::unique_ptr<ClientSocket> MasterSocket::Accept() const
 MasterSocket::~MasterSocket()
 {
     /* shutdown(sockfd_, SHUT_RDWR); */
-    close(sockfd_);
-}
-
-int MasterSocket::sockfd() const
-{
-    return sockfd_;
 }
 
 const sockaddr_in& MasterSocket::addr_in() const

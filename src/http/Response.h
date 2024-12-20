@@ -35,7 +35,7 @@ class Response {
 class IResponseCallback {
   public:
     virtual void Call(utils::unique_ptr<http::Response> rs) = 0;
-    virtual ~IResponseCallback(){};
+    virtual ~IResponseCallback() {};
 };
 
 /*

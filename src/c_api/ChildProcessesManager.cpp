@@ -9,7 +9,7 @@ namespace c_api {
 namespace {
 
 void SetUpChild(const ExecParams& params,
-                utils::unique_ptr<SocketWrapper> child_socket)  // noreturn
+                utils::unique_ptr<Socket> child_socket)  // noreturn
 {
     if (!params.redirect_input_from_file.empty()) {
         int rq_body_fd = open(params.redirect_input_from_file.c_str(), O_RDONLY);
@@ -100,16 +100,15 @@ void ChildProcessesManager::RegisterChildProcess_(pid_t child_pid, time_t timeou
     child_processes_.insert(std::make_pair(child_pid, Child(timeout_ts, cb)));
 }
 
-std::pair<bool, utils::unique_ptr<SocketWrapper> > ChildProcessesManager::TryRunChildProcess(
+std::pair<bool, utils::unique_ptr<Socket> > ChildProcessesManager::TryRunChildProcess(
     const ExecParams& params, utils::unique_ptr<IChildDiedCb> cb)
 {
-    std::pair<bool, utils::unique_ptr<SocketWrapper> > fail_res(
-        false, utils::unique_ptr<SocketWrapper>(NULL));
+    std::pair<bool, utils::unique_ptr<Socket> > fail_res(false, utils::unique_ptr<Socket>(NULL));
 
-    std::pair<utils::unique_ptr<c_api::SocketWrapper>, utils::unique_ptr<c_api::SocketWrapper> >
-        socket_pair = c_api::SocketWrapper::CreateSocketPair();
-    utils::unique_ptr<c_api::SocketWrapper> parent_socket;
-    utils::unique_ptr<c_api::SocketWrapper> child_socket;
+    std::pair<utils::unique_ptr<c_api::Socket>, utils::unique_ptr<c_api::Socket> > socket_pair =
+        c_api::Socket::CreateUnixSocketPair();
+    utils::unique_ptr<c_api::Socket> parent_socket;
+    utils::unique_ptr<c_api::Socket> child_socket;
     if (socket_pair.first) {
         parent_socket = socket_pair.first;
         child_socket = socket_pair.second;

@@ -27,9 +27,10 @@ class ServerCluster {
     void CreateServers_(const config::Config& config);
     void MapListenersToServer_(const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
                                utils::shared_ptr<Server>& serv);
-    int CreateListener_(struct sockaddr_in addr);
-    int GetListenerFd_(struct sockaddr_in addr);
+    int GetListenerFdForServer_(const std::pair<unsigned int, unsigned short>& address);
     void CheckClients_();
+
+    static int kKeepAliveTimeoutS() { return 10; };
 
   private:
     class MasterSocketCallback : public c_api::ICallback {

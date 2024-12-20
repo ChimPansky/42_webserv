@@ -9,10 +9,16 @@ LocationConfig::LocationConfig(
     const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,
     const std::string& alias_dir, const std::vector<std::string>& default_files, bool dir_listing,
     unsigned int client_max_body_size, const std::string& upload_dir)
-    : route_(route), allowed_methods_(allowed_methods), redirect_(InitRedirect(redirect)),
-      is_cgi_(route.first == "/cgi-bin/" || route.first == "/cgi-bin"), cgi_paths_(cgi_paths),
-      cgi_extensions_(cgi_extensions), alias_dir_(alias_dir), default_files_(default_files),
-      dir_listing_(dir_listing), client_max_body_size_(client_max_body_size),
+    : route_(route),
+      allowed_methods_(allowed_methods),
+      redirect_(InitRedirect(redirect)),
+      is_cgi_(route.first == "/cgi-bin/" || route.first == "/cgi-bin"),
+      cgi_paths_(cgi_paths),
+      cgi_extensions_(cgi_extensions),
+      alias_dir_(alias_dir),
+      default_files_(default_files),
+      dir_listing_(dir_listing),
+      client_max_body_size_(client_max_body_size),
       upload_dir_(upload_dir)
 {}
 
