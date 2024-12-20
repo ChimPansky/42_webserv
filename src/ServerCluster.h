@@ -31,6 +31,8 @@ class ServerCluster {
     int GetListenerFd_(struct sockaddr_in addr);
     void CheckClients_();
 
+    static int kKeepAliveTimeoutS() { return 10; };
+
   private:
     class MasterSocketCallback : public c_api::ICallback {
       public:

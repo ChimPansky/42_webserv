@@ -28,6 +28,8 @@ class CGIProcessor : public AResponseProcessor {
     };
 
   private:
+    // TODO: client session closed before cb is invoked
+    // dont include proc mb, make it autonomus
     class ChildProcessDoneCb : public c_api::IChildDiedCb {
       public:
         ChildProcessDoneCb(CGIProcessor& processor) : processor_(processor) {}
