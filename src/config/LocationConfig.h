@@ -25,7 +25,7 @@ class LocationConfig {
                    const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& alias_dir,
                    const std::vector<std::string>& default_files, bool dir_listing,
-                   unsigned int client_max_body_size);
+                   unsigned int client_max_body_size, const std::string& upload_dir);
 
     const std::pair<std::string /*path*/, /*is_exact_match*/ bool>& route() const;
     const std::vector<http::Method>& allowed_methods() const;
@@ -37,6 +37,7 @@ class LocationConfig {
     const std::vector<std::string>& default_files() const;
     bool dir_listing() const;
     unsigned int client_max_body_size() const;
+    const std::string& upload_dir() const;
     static inline int kDefaultRedirectCode() { return http::HTTP_MOVED_PERMANENTLY; }
     static inline const char* kDefaultRedirectPath() { return "/new_location"; }
     static inline const char* kDefaultAliasDir() { return "/docs"; }
@@ -85,6 +86,7 @@ class LocationConfig {
     std::vector<std::string> default_files_;
     bool dir_listing_;
     unsigned int client_max_body_size_;
+    std::string upload_dir_;
 };
 
 }  // namespace config
