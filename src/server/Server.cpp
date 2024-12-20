@@ -19,8 +19,10 @@
 #include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
-    : access_log_path_(cfg.access_log_path()), access_log_level_(cfg.access_log_level()),
-      error_log_path_(cfg.error_log_path()), server_names_(cfg.server_names()),
+    : access_log_path_(cfg.access_log_path()),
+      access_log_level_(cfg.access_log_level()),
+      error_log_path_(cfg.error_log_path()),
+      server_names_(cfg.server_names()),
       error_pages_(error_pages)
 {
     typedef std::vector<config::LocationConfig>::const_iterator LocationConfigConstIt;
@@ -129,7 +131,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     }
 
     std::string updated_path = utils::UpdatePath(
-        chosen_loc.first->root_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+        chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
     LOG(DEBUG) << "Updated path: " << updated_path;
     if (chosen_loc.second == CGI) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";

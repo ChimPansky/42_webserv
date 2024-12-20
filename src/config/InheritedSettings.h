@@ -7,18 +7,18 @@
 namespace config {
 
 struct InheritedSettings {
-    std::string root;
+    std::string alias;
     std::vector<std::string> def_files;
     std::string dir_listing;
     std::string client_max_body_size;
 
   public:
     InheritedSettings()
-        : root(std::string()), def_files(std::vector<std::string>()), dir_listing(std::string())
+        : alias(std::string()), def_files(std::vector<std::string>()), dir_listing(std::string())
     {}
 
-    static const std::string& BuildRootDir(const std::vector<std::string>& vals,
-                                           const std::string& inherited_root);
+    static const std::string& BuildAliasDir(const std::vector<std::string>& vals,
+                                            const std::string& inherited_alias);
     static std::vector<std::string> BuildDefaultFile(
         const std::vector<std::string>& vals, const std::vector<std::string>& inherited_def_files);
     static const std::string& ParseDirListing(const std::string& vals);

@@ -71,6 +71,6 @@ jobs:
       - name: generate Makefiles
         run: mkdir -p build && cd build && cmake ..
       - name: compilation
-        run: cd build && make
+        run: cd build && make -j
       - name: test
         run: cd build && ctest

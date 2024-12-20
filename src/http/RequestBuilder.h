@@ -28,7 +28,7 @@ struct ChosenServerParams {
 class IChooseServerCb {
   public:
     virtual ChosenServerParams Call(const http::Request& rq) = 0;
-    virtual ~IChooseServerCb(){};
+    virtual ~IChooseServerCb() {};
 };
 
 
@@ -67,9 +67,7 @@ class RequestBuilder {
 
   public:
     RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb);
-    void PrepareToRecvData(size_t recv_size);
-    void AdjustBufferSize(size_t bytes_recvd);
-    void Build(size_t bytes_recvd);
+    void Build(const char* data, size_t data_sz);
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
     std::vector<char>& buf();

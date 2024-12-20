@@ -1,10 +1,16 @@
 #include "Location.h"
 
 Location::Location(const config::LocationConfig& cfg)
-    : route_(cfg.route()), allowed_methods_(cfg.allowed_methods()), redirect_(cfg.redirect()),
-      is_cgi_(cfg.is_cgi()), cgi_paths_(cfg.cgi_paths()), cgi_extensions_(cfg.cgi_extensions()),
-      root_dir_(cfg.root_dir()), default_files_(cfg.default_files()),
-      dir_listing_(cfg.dir_listing()), client_max_body_size_(cfg.client_max_body_size())
+    : route_(cfg.route()),
+      allowed_methods_(cfg.allowed_methods()),
+      redirect_(cfg.redirect()),
+      is_cgi_(cfg.is_cgi()),
+      cgi_paths_(cfg.cgi_paths()),
+      cgi_extensions_(cfg.cgi_extensions()),
+      alias_dir_(cfg.alias_dir()),
+      default_files_(cfg.default_files()),
+      dir_listing_(cfg.dir_listing()),
+      client_max_body_size_(cfg.client_max_body_size())
 {}
 
 const std::pair<std::string /*path*/, bool /*is_exact_match*/>& Location::route() const
@@ -37,9 +43,9 @@ const std::vector<std::string>& Location::cgi_extensions() const
     return cgi_extensions_;
 }
 
-const std::string& Location::root_dir() const
+const std::string& Location::alias_dir() const
 {
-    return root_dir_;
+    return alias_dir_;
 }
 
 const std::vector<std::string>& Location::default_files() const
@@ -109,7 +115,7 @@ std::string Location::GetDebugString() const
         oss << "  " << cgi_extensions_[i];
     }
     oss << "\n"
-        << "Root directory: " << root_dir() << "\n"
+        << "Alias directory: " << alias_dir() << "\n"
         << "Default files: ";
     for (size_t i = 0; i < default_files_.size(); ++i) {
         oss << "  " << default_files_[i];

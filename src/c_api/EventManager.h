@@ -16,18 +16,44 @@ class EventManager {
     EventManager();
     EventManager(const EventManager&);
     EventManager& operator=(const EventManager&);
+
+  private:
     EventManager(MultiplexType mx_type_);
+
+    bool TryRegisterCallback_(int fd, CallbackType type, utils::unique_ptr<ICallback>);
+    void DeleteCallback_(int fd, CallbackType type);
+    void CheckOnce_();
+
+    void ClearCallback_(int fd, CallbackType type);
 
   public:
     static void init(MultiplexType mx_type_);
     static EventManager& get();
+
+    static inline int kDefaultTimeoutSeconds_() { return 10; }
+
     // all select-poll-epoll logic goes in here
-    int CheckOnce();
-    int RegisterCallback(int fd, CallbackType type, utils::unique_ptr<ICallback>);
-    void DeleteCallback(int fd, CallbackType type = CT_READWRITE);
+    static inline void CheckOnce()
+    {
+        if (instance_) {
+            instance_->CheckOnce_();
+        }
+    }
+    static bool TryRegisterCallback(int fd, CallbackType type, utils::unique_ptr<ICallback> cb)
+    {
+        if (instance_) {
+            return instance_->TryRegisterCallback_(fd, type, cb);
+        }
+        return false;
+    }
+    static void DeleteCallback(int fd, CallbackType type = CT_READWRITE)
+    {
+        if (instance_) {
+            instance_->DeleteCallback_(fd, type);
+        }
+    }
 
   private:
-    void ClearCallback_(int fd, CallbackType type);
     static utils::unique_ptr<EventManager> instance_;
     utils::unique_ptr<IMultiplexer> multiplexer_;
     FdToCallbackMap rd_sockets_;  // this contains callbacks for both: listeners & clients

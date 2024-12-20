@@ -21,8 +21,11 @@
 namespace http {
 
 RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb)
-    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb),
-      header_count_(0), header_section_size_(0)
+    : builder_status_(RB_BUILDING),
+      build_state_(BS_RQ_LINE),
+      choose_server_cb_(choose_server_cb),
+      header_count_(0),
+      header_section_size_(0)
 {
     if (!choose_server_cb_) {
         throw std::logic_error("No Choose Server Callback specified");
@@ -32,16 +35,6 @@ RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_
 RequestBuilder::BodyBuilder::BodyBuilder()
     : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
 {}
-
-void RequestBuilder::PrepareToRecvData(size_t recv_size)
-{
-    parser_.PrepareToRecvData(recv_size);
-}
-
-void RequestBuilder::AdjustBufferSize(size_t bytes_recvd)
-{
-    parser_.AdjustBufferSize(bytes_recvd);
-}
 
 bool RequestBuilder::CanBuild_()
 {
@@ -55,14 +48,16 @@ bool RequestBuilder::CanBuild_()
     return true;
 }
 
-void RequestBuilder::Build(size_t bytes_recvd)
+void RequestBuilder::Build(const char* data, size_t data_size)
 {
-    if (parser_.EndOfBuffer() && bytes_recvd == 0) {
+    if (parser_.EndOfBuffer() && data_size == 0) {
+        // TODO why if throw here test dont pass? data_size == 0 should never happen
         LOG(INFO) << "Ran out of data while Request incomplete.";
         rq_.status = HTTP_BAD_REQUEST;
         builder_status_ = RB_DONE;
         return;
     }
+    parser_.AddNewData(data, data_size);
     while (CanBuild_()) {
         switch (build_state_) {
             case BS_RQ_LINE: build_state_ = BuildFirstLine_(); break;

@@ -14,7 +14,7 @@ bonus:
 	@echo no bonus yet
 
 build:
-	$(CMAKE) -S . -B ./build && make -j$(nproc) -C ./build
+	$(CMAKE) -S . -B ./build && make -j -C ./build
 	ln -fs $(NAME) $(ROOT_NAME)
 
 run: build

@@ -13,8 +13,7 @@ class RequestParser {
     RequestParser();
 
     std::vector<char>& buf();
-    void PrepareToRecvData(size_t recv_size);
-    void AdjustBufferSize(size_t bytes_recvd);
+    void AddNewData(const char* data, size_t data_sz);
 
     char Peek(ssize_t offset = 0) const;
     bool Advance(ssize_t n = 1);

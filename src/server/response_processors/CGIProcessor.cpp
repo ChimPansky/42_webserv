@@ -48,7 +48,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
     }
 
     c_api::ExecParams exec_params(interpreter, script_path, cgi::GetEnv(script_path, rq), rq.body);
-    std::pair<bool, utils::unique_ptr<c_api::SocketWrapper> > res =
+    std::pair<bool, utils::unique_ptr<c_api::Socket> > res =
         c_api::ChildProcessesManager::get().TryRunChildProcess(
             exec_params, utils::unique_ptr<c_api::IChildDiedCb>(new ChildProcessDoneCb(*this)));
     if (!res.first) {
@@ -57,9 +57,9 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
         return;
     }
     parent_socket_ = res.second;
-    if (c_api::EventManager::get().RegisterCallback(
+    if (!c_api::EventManager::TryRegisterCallback(
             parent_socket_->sockfd(), c_api::CT_READ,
-            utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this))) != 0) {
+            utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
@@ -68,29 +68,25 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
 
 CGIProcessor::~CGIProcessor()
 {
-    c_api::EventManager::get().DeleteCallback(parent_socket_->sockfd());
+    if (parent_socket_) {
+        c_api::EventManager::DeleteCallback(parent_socket_->sockfd());
+    }
 }
 
 void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
 {
     // LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
-
-    size_t old_buf_size = processor_.cgi_out_buffer_.size();
-    processor_.cgi_out_buffer_.resize(processor_.cgi_out_buffer_.size() + 1000);
-    // LOG(DEBUG) << "ReadChildOutputCallback::Call processor_.cgi_out_buffer_.size(): "
-    //    << processor_.cgi_out_buffer_.size();
-    ssize_t bytes_recvd = processor_.parent_socket_->Recv(processor_.cgi_out_buffer_, 1000);
-    // LOG(DEBUG) << "ReadChildOutputCallback::Call bytes_recvd: " << bytes_recvd;
-    if (bytes_recvd < 0) {
-        LOG(ERROR) << "error on recv" << std::strerror(errno);
+    std::vector<char>& buf = processor_.cgi_out_buffer_;
+    c_api::RecvPackage pack = processor_.parent_socket_->Recv();
+    if (pack.status == c_api::RS_SOCK_ERR) {
+        LOG(ERROR) << "error on recv" << std::strerror(errno);  // TODO: is errno check allowed?
         return;
-    } else if (bytes_recvd == 0) {
-        processor_.cgi_out_buffer_.resize(old_buf_size);
-        LOG(INFO) << "Returning " << processor_.cgi_out_buffer_.size() << " bytes from CGI script";
-        c_api::EventManager::get().DeleteCallback(processor_.parent_socket_->sockfd());
-    }
-    if (processor_.cgi_out_buffer_.size() > old_buf_size + bytes_recvd) {
-        processor_.cgi_out_buffer_.resize(old_buf_size + bytes_recvd);
+    } else if (pack.status == c_api::RS_SOCK_CLOSED) {
+        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes";
+        return;
+    } else if (pack.status == c_api::RS_OK) {
+        buf.reserve(buf.size() + pack.data_size);
+        std::copy(pack.data, pack.data + pack.data_size, std::back_inserter(buf));
     }
 }
 

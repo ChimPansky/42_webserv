@@ -13,7 +13,7 @@ class DirectoryProcessor : public AResponseProcessor {
     DirectoryProcessor(const Server& server,
                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                        const http::Request& rq, const std::string& file_path);
-    ~DirectoryProcessor(){};
+    ~DirectoryProcessor() {};
 
   private:
     bool ListDirectory_(const std::string& path);

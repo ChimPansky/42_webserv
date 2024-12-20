@@ -35,7 +35,7 @@ class Response {
 class IResponseCallback {
   public:
     virtual void Call(utils::unique_ptr<http::Response> rs) = 0;
-    virtual ~IResponseCallback(){};
+    virtual ~IResponseCallback() {};
 };
 
 /*
@@ -45,7 +45,7 @@ Server: \n\r\
 Last-Modified: \n\r\
 Content-Length: 88\n\r\
 Content-Type: text/html\n\r\
-Connection: Closed\n\r\
+Connection: Close\n\r\
 \n\r\
 <html>\n\r\
 <body>\n\r\
@@ -66,7 +66,7 @@ inline utils::unique_ptr<http::Response> GetSimpleValidResponse()
     hdrs["Last-Modified"] = "Wed, 22 Jul 2009 19:15:56 GMT";
     hdrs["Content-Length"] = utils::NumericToString(txt_body.size());
     hdrs["Content-Type"] = "text/html";
-    hdrs["Connection"] = "Closed";
+    hdrs["Connection"] = "Close";
 
     std::vector<char> body;
     std::copy(txt_body.begin(), txt_body.end(), std::back_inserter(body));

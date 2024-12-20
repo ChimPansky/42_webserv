@@ -1,9 +1,8 @@
 #ifndef WS_C_API_CHILD_PROCESSES_MANAGER_H
 #define WS_C_API_CHILD_PROCESSES_MANAGER_H
 
-#include <SocketWrapper.h>
+#include <Socket.h>
 #include <logger.h>
-#include <signal.h>
 #include <sys/wait.h>
 #include <unique_ptr.h>
 
@@ -16,14 +15,16 @@ namespace c_api {
 class IChildDiedCb {
   public:
     virtual void Call(int child_exit_status) = 0;
-    virtual ~IChildDiedCb(){};
+    virtual ~IChildDiedCb() {};
 };
 
 
 struct ExecParams {
     ExecParams(const std::string& interpreter, const std::string& script_path,
                std::vector<std::string> child_env, const std::string& redirect_input_from_file)
-        : interpreter(interpreter), script_path(script_path), child_env(child_env),
+        : interpreter(interpreter),
+          script_path(script_path),
+          child_env(child_env),
           redirect_input_from_file(redirect_input_from_file)
     {}
     const std::string& interpreter;
@@ -60,8 +61,8 @@ class ChildProcessesManager {
     static ChildProcessesManager& get();
 
     void CheckOnce();
-    std::pair<bool, utils::unique_ptr<SocketWrapper> > TryRunChildProcess(
-        const ExecParams&, utils::unique_ptr<IChildDiedCb>);
+    std::pair<bool, utils::unique_ptr<Socket> > TryRunChildProcess(const ExecParams&,
+                                                                   utils::unique_ptr<IChildDiedCb>);
 
   private:
     static utils::unique_ptr<ChildProcessesManager> instance_;

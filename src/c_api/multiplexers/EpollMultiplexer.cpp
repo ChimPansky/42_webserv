@@ -9,7 +9,29 @@
 
 namespace c_api {
 
-EpollMultiplexer::EpollMultiplexer()
+namespace {
+
+int GetRegisteredEventType(int fd, const FdToCallbackMap& rd_sockets,
+                           const FdToCallbackMap& wr_sockets)
+{
+    int reg_events = 0;
+    if (rd_sockets.find(fd) != rd_sockets.end()) {
+        reg_events |= EPOLLIN;
+    }
+    if (wr_sockets.find(fd) != wr_sockets.end()) {
+        reg_events |= EPOLLOUT;
+    }
+    return reg_events;
+}
+
+int32_t CbTypeToEpollEvents(CallbackType type)
+{
+    return ((type & CT_READ) ? EPOLLIN : 0) | ((type & CT_WRITE) ? EPOLLOUT : 0);
+}
+
+}  // namespace
+
+EpollMultiplexer::EpollMultiplexer(int timeout_ms) : timeout_ms_(timeout_ms)
 {
     epoll_fd_ = epoll_create(/*deprecated arg, must be gt 0*/ 1);
     if (epoll_fd_ == -1) {
@@ -22,12 +44,12 @@ EpollMultiplexer::~EpollMultiplexer()
     close(epoll_fd_);
 }
 
-int EpollMultiplexer::RegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                                 const FdToCallbackMap& wr_sockets)
+bool EpollMultiplexer::TryRegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
+                                     const FdToCallbackMap& wr_sockets)
 {
     struct epoll_event ev = {};
     ev.data.fd = fd;
-    ev.events = type;
+    ev.events = CbTypeToEpollEvents(type);
 
     int res = 0;
     if (rd_sockets.find(fd) != rd_sockets.end() || wr_sockets.find(fd) != wr_sockets.end()) {
@@ -36,56 +58,41 @@ int EpollMultiplexer::RegisterFd(int fd, CallbackType type, const FdToCallbackMa
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
     }
     if (res != 0) {
-        LOG(ERROR) << "epoll_ctl failed: " << strerror(errno);
+        LOG(ERROR) << "epoll_ctl failed for " << fd << ": " << strerror(errno);
     }
-    return res;
-    // fcntl(fd, F_SETFL, O_NONBLOCK);  // not allowed as per subject... figure out if needed
+    return (res == 0);
 }
 
-int EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                                   const FdToCallbackMap& wr_sockets)
+void EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
+                                    const FdToCallbackMap& wr_sockets)
 {
-    int new_events = GetEventType(fd, rd_sockets, wr_sockets) & ~type;
+    uint32_t mod_events =
+        GetRegisteredEventType(fd, rd_sockets, wr_sockets) & ~CbTypeToEpollEvents(type);
     int res = 0;
-    if (new_events == 0) {
+    if (mod_events == 0) {
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL);
     } else {
         struct epoll_event ev = {};
         ev.data.fd = fd;
-        ev.events = new_events;
+        ev.events = mod_events;
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
     }
+    // TODO: fail happens cuz client close socket when dies and kernel removes socket from epoll
+    // automatically
+    //  possibly just ignore removing log
     if (res != 0) {
-        LOG(ERROR) << "epoll_ctl failed: " << strerror(errno);
+        LOG(ERROR) << "epoll_ctl failed for " << fd << ": " << strerror(errno);
     }
-    return res;
 }
 
-int EpollMultiplexer::GetEventType(int fd, const FdToCallbackMap& rd_sockets,
-                                   const FdToCallbackMap& wr_sockets)
-{
-    int reg_events = 0;
-    if (rd_sockets.find(fd) != rd_sockets.end()) {
-        reg_events |= EPOLLIN;
-    }
-    if (wr_sockets.find(fd) != wr_sockets.end()) {
-        reg_events |= EPOLLOUT;
-    }
-    return reg_events;
-}
-
-int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
-                                const FdToCallbackMap& wr_sockets)
+void EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
+                                 const FdToCallbackMap& wr_sockets)
 {
     struct epoll_event events[EPOLL_MAX_EVENTS];
-    int ready_fds = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, -1);
-    if (ready_fds == -1) {
-        if (errno == EINTR) {
-            return 0;
-        } else {
-            LOG(ERROR) << "epoll_wait unsuccessful: " << strerror(errno);
-            return 1;
-        }
+    int ready_fds = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, timeout_ms_);
+    if (ready_fds < 0) {
+        LOG_IF(ERROR, errno != EINTR) << "epoll_wait unsuccessful: " << strerror(errno);
+        return;
     }
     for (int rdy_fd = 0; rdy_fd < ready_fds; rdy_fd++) {
         struct epoll_event& ev = events[rdy_fd];
@@ -102,7 +109,6 @@ int EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
             }
         }
     }
-    return 0;
 }
 
 }  // namespace c_api
