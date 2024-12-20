@@ -8,6 +8,7 @@
 
 #include "Request.h"
 #include "ResponseCodes.h"
+#include "Socket.h"
 #include "file_utils.h"
 #include "http.h"
 
@@ -47,33 +48,38 @@
     "convallis est est, sit amet bibendum purus egestas sed. Nulla vel turpis vehicula, lobortis " \
     "dolor id, blandit dolor. Sed dignissim eleifend justo, a accumsan purus tell."
 
-// #define CLIENT_MAX_BODY_SIZE 1500
 // max body size is set to 1500 in RequestBuilder::MatchServer_()
 
-ssize_t Recv(std::ifstream& file, std::vector<char>& buf, size_t read_sz)
+#define MAX_READ_SZ 1500ul
+
+char buf[MAX_READ_SZ];
+
+c_api::RecvPackage Recv(std::ifstream& file, size_t read_sz)
 {
-    file.read(buf.data() + buf.size() - read_sz, read_sz);
-    return file.gcount();
+    c_api::RecvPackage pack;
+    file.read(buf, std::max(read_sz, MAX_READ_SZ));
+    pack.data_size = file.gcount();
+    if (pack.data_size < 0) {
+        pack.data = NULL;
+        pack.status = c_api::RS_SOCK_ERR;
+    } else {
+        pack.data = buf;
+        pack.status = c_api::RS_OK;
+    }
+    return pack;
 }
 
-// Client Context
-void ProcessNewData(http::RequestBuilder& builder, size_t bytes_recvd)
-{
-    builder.Build(bytes_recvd);
-}
 
 // Client Callback context
 bool Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz)
 {
-    builder.PrepareToRecvData(read_sz);
-    ssize_t bytes_recvd = Recv(file, builder.buf(), read_sz);
-    if (bytes_recvd < 0) {
+    c_api::RecvPackage pack = Recv(file, read_sz);
+    if (pack.status == c_api::RS_SOCK_ERR) {
         std::cerr << "Could not read from client: closing connection..." << std::endl;
         // client_.CloseConnection();
         return false;
     }
-    builder.AdjustBufferSize(bytes_recvd);
-    ProcessNewData(builder, bytes_recvd);
+    builder.Build(pack.data, pack.data_size);
     return true;
 }
 

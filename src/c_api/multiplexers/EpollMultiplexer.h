@@ -3,6 +3,7 @@
 
 #include "IMultiplexer.h"
 
+// TODO: does it need to change?
 #define EPOLL_MAX_EVENTS 64
 
 namespace c_api {
