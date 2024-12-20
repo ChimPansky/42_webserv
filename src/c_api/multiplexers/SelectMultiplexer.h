@@ -13,9 +13,13 @@ class SelectMultiplexer : public IMultiplexer {
     void CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
 
   private:
-    struct timeval* timeout_;
-    struct timeval timeout_descr_;
+    struct timeval* GetTimeout_();
+
+  private:
     static int kMaxSelectFds_() { return 1023; }
+
+    int timeout_ms_;
+    struct timeval timeout_storage_;
 };
 
 }  // namespace c_api
