@@ -136,6 +136,18 @@ static const std::string BuildAliasDir(const std::vector<std::string>& vals,
     return InheritedSettings::BuildAliasDir(vals, inherited_alias);
 }
 
+static const std::string BuildUploadDir(const std::vector<std::string>& vals)
+{
+    if (vals.empty()) {
+        return std::string();
+    } else if (vals.size() > 1) {
+        throw std::runtime_error("Invalid configuration file: duplicated upload_store value.");
+    } else if (vals[0][0] != '/') {
+        throw std::runtime_error("Invalid configuration file: upload_store isn't a directory.");
+    }
+    return vals[0];
+}
+
 static std::vector<std::string> BuildDefaultFile(
     const std::vector<std::string>& vals, const std::vector<std::string>& inherited_def_files)
 {
@@ -203,7 +215,7 @@ bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "limit_except" || key == "return" || key == "cgi_path" ||
            key == "cgi_extension" || key == "alias" || key == "index" || key == "autoindex" ||
-           "client_max_body_size";
+           "client_max_body_size" || key == "upload_store";
 }
 
 bool LocationConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
@@ -234,12 +246,13 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
     bool dir_listing = BuildDirListing(f.FindSetting("autoindex"), inherited_settings.dir_listing);
     unsigned int client_max_body_size = BuildClientMaxBodySize(
         f.FindSetting("client_max_body_size"), inherited_settings.client_max_body_size);
+    std::string upload_dir = BuildUploadDir(f.FindSetting("upload_store"));
 
     if (!AreNestingsValid(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
     return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, alias_dir,
-                          default_file, dir_listing, client_max_body_size);
+                          default_file, dir_listing, client_max_body_size, upload_dir);
 }
 
 }  // namespace config

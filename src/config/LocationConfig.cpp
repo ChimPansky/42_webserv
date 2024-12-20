@@ -8,7 +8,7 @@ LocationConfig::LocationConfig(
     const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect,
     const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,
     const std::string& alias_dir, const std::vector<std::string>& default_files, bool dir_listing,
-    unsigned int client_max_body_size)
+    unsigned int client_max_body_size, const std::string& upload_dir)
     : route_(route),
       allowed_methods_(allowed_methods),
       redirect_(InitRedirect(redirect)),
@@ -18,7 +18,8 @@ LocationConfig::LocationConfig(
       alias_dir_(alias_dir),
       default_files_(default_files),
       dir_listing_(dir_listing),
-      client_max_body_size_(client_max_body_size)
+      client_max_body_size_(client_max_body_size),
+      upload_dir_(upload_dir)
 {}
 
 const std::pair<std::string /*path*/, bool /*is_exact_match*/>& LocationConfig::route() const
@@ -69,6 +70,11 @@ bool LocationConfig::dir_listing() const
 unsigned int LocationConfig::client_max_body_size() const
 {
     return client_max_body_size_;
+}
+
+const std::string& LocationConfig::upload_dir() const
+{
+    return upload_dir_;
 }
 
 std::pair<int /*status_code*/, std::string /*new_route*/> LocationConfig::InitRedirect(
