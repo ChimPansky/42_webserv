@@ -7,13 +7,17 @@
 
 namespace c_api {
 
-SelectMultiplexer::SelectMultiplexer(int timeout_ms) : timeout_(NULL), timeout_descr_()
+SelectMultiplexer::SelectMultiplexer(int timeout_ms) : timeout_ms_(timeout_ms)
+{}
+
+timeval* SelectMultiplexer::GetTimeout_()
 {
-    if (timeout_ms >= 0) {
-        timeout_descr_.tv_sec = timeout_ms / 1000;
-        timeout_descr_.tv_usec = (timeout_ms % 1000) * 1000;
-        timeout_ = &timeout_descr_;
+    if (timeout_ms_ < 0) {
+        return NULL;
     }
+    timeout_storage_.tv_sec = timeout_ms_ / 1000;
+    timeout_storage_.tv_usec = (timeout_ms_ % 1000) * 1000;
+    return &timeout_storage_;
 }
 
 void SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
@@ -38,7 +42,8 @@ void SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
         max_fd = kMaxSelectFds_();
     }
 
-    int num_of_fds = select(max_fd + 1, &select_rd_set, &select_wr_set, /*err_fds*/ NULL, timeout_);
+    int num_of_fds =
+        select(max_fd + 1, &select_rd_set, &select_wr_set, /*err_fds*/ NULL, GetTimeout_());
     if (num_of_fds < 0) {
         LOG_IF(ERROR, errno != EINTR) << "select failed: " << strerror(errno);
         return;
