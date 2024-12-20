@@ -84,7 +84,7 @@ class ClientSession {
     void ResponseSentCleanup(bool close_connection);
 
   private:
-    void UpdateLastActivitiTime_();
+    void UpdateLastActivityTime_();
 
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
