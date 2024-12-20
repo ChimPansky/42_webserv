@@ -68,7 +68,9 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
 
 CGIProcessor::~CGIProcessor()
 {
-    c_api::EventManager::get().DeleteCallback(parent_socket_->sockfd());
+    if (parent_socket_) {
+        c_api::EventManager::get().DeleteCallback(parent_socket_->sockfd());
+    }
 }
 
 void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
