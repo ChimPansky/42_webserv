@@ -17,7 +17,7 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
       connection_closed_(false),
       read_state_(CS_READ)
 {
-    UpdateLastActivitiTime_();
+    UpdateLastActivityTime_();
     if (!c_api::EventManager::TryRegisterCallback(
             client_sock_->sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new OnReadyToRecvFromClientCb(*this)))) {
@@ -40,7 +40,7 @@ void ClientSession::CloseConnection()
 
 void ClientSession::ProcessNewData(c_api::RecvPackage& pack)
 {
-    UpdateLastActivitiTime_();
+    UpdateLastActivityTime_();
     rq_builder_.Build(pack.data, pack.data_size);
     if (rq_builder_.builder_status() == http::RB_DONE) {
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
@@ -86,7 +86,7 @@ void ClientSession::ResponseSentCleanup(bool close_connection)
     }
 }
 
-void ClientSession::UpdateLastActivitiTime_()
+void ClientSession::UpdateLastActivityTime_()
 {
     last_activity_time_ = time(NULL);
 }
@@ -142,7 +142,7 @@ void ClientSession::OnReadyToSendToClientCb::Call(int /*fd*/)
         client_.CloseConnection();
         return;
     }
-    client_.UpdateLastActivitiTime_();
+    client_.UpdateLastActivityTime_();
     if (pack_.AllDataSent()) {
         LOG(INFO) << pack_.bytes_sent << " bytes sent into " << client_.client_sock_->sockfd();
         client_.ResponseSentCleanup(close_after_sending_rs_);
