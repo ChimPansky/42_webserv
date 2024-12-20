@@ -48,11 +48,13 @@ SockStatus Socket::Send(SendPackage& pack) const
     return RS_SOCK_ERR;
 }
 
-std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > Socket::CreateSocketPair()
+std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > Socket::CreateUnixSocketPair(
+    bool set_nonblock)
 {
     int socket_fds[2];
 
-    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, socket_fds) < 0) {
+    if (::socketpair(AF_UNIX, SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
+                     /*default for unix sock*/ 0, socket_fds) < 0) {
         std::perror("socketpair failed");
         return std::make_pair(utils::unique_ptr<Socket>(NULL), utils::unique_ptr<Socket>(NULL));
     }

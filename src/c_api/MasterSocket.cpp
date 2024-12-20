@@ -7,7 +7,7 @@
 
 
 namespace {
-int CreateSocket(bool set_nonblock)
+int CreateTcpSocket(bool set_nonblock)
 {
     int sockfd = ::socket(/* IPv4 */ AF_INET,
                           /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
@@ -40,14 +40,14 @@ namespace c_api {
 
 // REUSEADDR in case port already open in the kernel but has no associated socket
 MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
-    : sock_(CreateSocket(set_nonblock))
+    : sock_(CreateTcpSocket(set_nonblock))
 {
     addr_in_ = GetIPv4SockAddr(ip, port);
     BindAndListen(sockfd(), addr_in_);
 }
 
 MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock)
-    : addr_in_(addr), sock_(CreateSocket(set_nonblock))
+    : addr_in_(addr), sock_(CreateTcpSocket(set_nonblock))
 {
     BindAndListen(sockfd(), addr_in_);
 }

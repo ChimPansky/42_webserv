@@ -45,7 +45,8 @@ class Socket {
     RecvPackage Recv(size_t max_read_sz = SOCK_READ_BUF_SZ) const;
     SockStatus Send(SendPackage&) const;
 
-    static std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > CreateSocketPair();
+    static std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > CreateUnixSocketPair(
+        bool set_nonblock = true);
 
   private:
     int sockfd_;

@@ -106,7 +106,7 @@ std::pair<bool, utils::unique_ptr<Socket> > ChildProcessesManager::TryRunChildPr
     std::pair<bool, utils::unique_ptr<Socket> > fail_res(false, utils::unique_ptr<Socket>(NULL));
 
     std::pair<utils::unique_ptr<c_api::Socket>, utils::unique_ptr<c_api::Socket> > socket_pair =
-        c_api::Socket::CreateSocketPair();
+        c_api::Socket::CreateUnixSocketPair();
     utils::unique_ptr<c_api::Socket> parent_socket;
     utils::unique_ptr<c_api::Socket> child_socket;
     if (socket_pair.first) {

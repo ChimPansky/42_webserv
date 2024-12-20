@@ -1,8 +1,5 @@
 #include "str_utils.h"
 
-#include <dirent.h>
-
-#include <fstream>
 #include <sstream>
 
 namespace utils {
