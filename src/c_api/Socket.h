@@ -22,7 +22,8 @@ class Socket {
     ssize_t Recv(std::vector<char>& buf, size_t sz) const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
 
-    static std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > CreateSocketPair();
+    static std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > CreateUnixSocketPair(
+        bool set_nonblock = true);
 
   private:
     int sockfd_;
