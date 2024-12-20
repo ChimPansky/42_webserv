@@ -10,7 +10,9 @@
 namespace c_api {
 
 namespace {
-int GetEventType(int fd, const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets)
+
+int GetRegisteredEventType(int fd, const FdToCallbackMap& rd_sockets,
+                           const FdToCallbackMap& wr_sockets)
 {
     int reg_events = 0;
     if (rd_sockets.find(fd) != rd_sockets.end()) {
@@ -21,6 +23,12 @@ int GetEventType(int fd, const FdToCallbackMap& rd_sockets, const FdToCallbackMa
     }
     return reg_events;
 }
+
+int32_t CbTypeToEpollEvents(CallbackType type)
+{
+    return ((type & CT_READ) ? EPOLLIN : 0) | ((type & CT_WRITE) ? EPOLLOUT : 0);
+}
+
 }  // namespace
 
 EpollMultiplexer::EpollMultiplexer(int timeout_ms) : timeout_ms_(timeout_ms)
@@ -41,7 +49,7 @@ bool EpollMultiplexer::TryRegisterFd(int fd, CallbackType type, const FdToCallba
 {
     struct epoll_event ev = {};
     ev.data.fd = fd;
-    ev.events = type;
+    ev.events = CbTypeToEpollEvents(type);
 
     int res = 0;
     if (rd_sockets.find(fd) != rd_sockets.end() || wr_sockets.find(fd) != wr_sockets.end()) {
@@ -50,7 +58,7 @@ bool EpollMultiplexer::TryRegisterFd(int fd, CallbackType type, const FdToCallba
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
     }
     if (res != 0) {
-        LOG(ERROR) << "epoll_ctl failed: " << strerror(errno);
+        LOG(ERROR) << "epoll_ctl failed for " << fd << ": " << strerror(errno);
     }
     return (res == 0);
 }
@@ -58,18 +66,22 @@ bool EpollMultiplexer::TryRegisterFd(int fd, CallbackType type, const FdToCallba
 void EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
                                     const FdToCallbackMap& wr_sockets)
 {
-    int new_events = GetEventType(fd, rd_sockets, wr_sockets) & ~type;
+    uint32_t mod_events =
+        GetRegisteredEventType(fd, rd_sockets, wr_sockets) & ~CbTypeToEpollEvents(type);
     int res = 0;
-    if (new_events == 0) {
+    if (mod_events == 0) {
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL);
     } else {
         struct epoll_event ev = {};
         ev.data.fd = fd;
-        ev.events = new_events;
+        ev.events = mod_events;
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
     }
+    // TODO: fail happens cuz client close socket when dies and kernel removes socket from epoll
+    // automatically
+    //  possibly just ignore removing log
     if (res != 0) {
-        LOG(ERROR) << "epoll_ctl failed: " << strerror(errno);
+        LOG(ERROR) << "epoll_ctl failed for " << fd << ": " << strerror(errno);
     }
 }
 
