@@ -69,7 +69,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
 CGIProcessor::~CGIProcessor()
 {
     if (parent_socket_) {
-        c_api::EventManager::get().DeleteCallback(parent_socket_->sockfd());
+        c_api::EventManager::DeleteCallback(parent_socket_->sockfd());
     }
 }
 
