@@ -21,8 +21,11 @@
 namespace http {
 
 RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb)
-    : builder_status_(RB_BUILDING), build_state_(BS_RQ_LINE), choose_server_cb_(choose_server_cb),
-      header_count_(0), header_section_size_(0)
+    : builder_status_(RB_BUILDING),
+      build_state_(BS_RQ_LINE),
+      choose_server_cb_(choose_server_cb),
+      header_count_(0),
+      header_section_size_(0)
 {
     if (!choose_server_cb_) {
         throw std::logic_error("No Choose Server Callback specified");

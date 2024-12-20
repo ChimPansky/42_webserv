@@ -8,8 +8,8 @@
 class RedirectProcessor : public AResponseProcessor {
   public:
     RedirectProcessor(const Server& server,
-                                utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                                http::ResponseCode code, const std::string& redirect_uri);
+                      utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
+                      http::ResponseCode code, const std::string& redirect_uri);
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_REDIRECT_PROCESSOR_H

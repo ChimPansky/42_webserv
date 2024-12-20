@@ -10,9 +10,12 @@
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd,
                              utils::shared_ptr<Server> default_server)
-    : client_sock_(sock), master_socket_fd_(master_sock_fd), associated_server_(default_server),
+    : client_sock_(sock),
+      master_socket_fd_(master_sock_fd),
+      associated_server_(default_server),
       rq_builder_(utils::unique_ptr<http::IChooseServerCb>(new ChooseServerCb(*this))),
-      connection_closed_(false), read_state_(CS_READ)
+      connection_closed_(false),
+      read_state_(CS_READ)
 {
     UpdateLastActivityTime_();
     if (!c_api::EventManager::get().TryRegisterCallback(

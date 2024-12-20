@@ -28,7 +28,7 @@ struct ChosenServerParams {
 class IChooseServerCb {
   public:
     virtual ChosenServerParams Call(const http::Request& rq) = 0;
-    virtual ~IChooseServerCb(){};
+    virtual ~IChooseServerCb() {};
 };
 
 

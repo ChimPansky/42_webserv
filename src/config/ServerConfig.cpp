@@ -9,8 +9,11 @@ ServerConfig::ServerConfig(const std::pair<std::string, Severity>& access_log,
                            const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
                            const std::vector<std::string>& server_names,
                            const std::vector<LocationConfig>& locations)
-    : access_log_path_(access_log.first), access_log_level_(access_log.second),
-      error_log_path_(error_log_path), listeners_(listeners), server_names_(server_names),
+    : access_log_path_(access_log.first),
+      access_log_level_(access_log.second),
+      error_log_path_(error_log_path),
+      listeners_(listeners),
+      server_names_(server_names),
       locations_(locations)
 {}
 
