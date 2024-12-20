@@ -144,7 +144,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
                     std::string default_file = updated_path + chosen_loc.first->default_files()[i];
                     if (utils::DoesPathExist(default_file.c_str())) {
                         return utils::unique_ptr<AResponseProcessor>(
-                            new FileProcessor(*this, default_file, cb));
+                            new FileProcessor(*this, default_file, cb, rq));
                     }
                 }
             }
@@ -156,7 +156,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
                 new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));
         } else {
             return utils::unique_ptr<AResponseProcessor>(
-                new FileProcessor(*this, updated_path, cb));
+                new FileProcessor(*this, updated_path, cb, rq));
         }
     }
 }
