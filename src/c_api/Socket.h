@@ -8,22 +8,21 @@
 
 namespace c_api {
 
-class SocketWrapper {
+class Socket {
   private:
-    SocketWrapper();
-    SocketWrapper(const SocketWrapper&);
-    SocketWrapper& operator=(const SocketWrapper&);
+    Socket();
+    Socket(const Socket&);
+    Socket& operator=(const Socket&);
 
   public:
-    SocketWrapper(int sockfd);
-    ~SocketWrapper();
+    Socket(int sockfd);
+    ~Socket();
     int sockfd() const;
 
     ssize_t Recv(std::vector<char>& buf, size_t sz) const;
     ssize_t Send(const std::vector<char>& buf, size_t& start_idx, size_t sz) const;
 
-    static std::pair<utils::unique_ptr<SocketWrapper>, utils::unique_ptr<SocketWrapper> >
-    CreateSocketPair();
+    static std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > CreateSocketPair();
 
   private:
     int sockfd_;

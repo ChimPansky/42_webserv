@@ -7,8 +7,7 @@ add_library(CApi
     ClientSocket.cpp
     EventManager.cpp
     MasterSocket.cpp
-    ReadSocket.cpp
-    SocketWrapper.cpp
+    Socket.cpp
     ChildProcessesManager.cpp
 )
 

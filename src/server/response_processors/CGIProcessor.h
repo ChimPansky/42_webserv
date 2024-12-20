@@ -3,7 +3,7 @@
 
 #include <ChildProcessesManager.h>
 #include <Location.h>
-#include <SocketWrapper.h>
+#include <Socket.h>
 #include <multiplexers/ICallback.h>
 #include <shared_ptr.h>
 #include <unique_ptr.h>
@@ -40,7 +40,7 @@ class CGIProcessor : public AResponseProcessor {
     };
 
   private:
-    utils::unique_ptr<c_api::SocketWrapper> parent_socket_;
+    utils::unique_ptr<c_api::Socket> parent_socket_;
     std::vector<char> cgi_out_buffer_;
 };
 
