@@ -307,10 +307,13 @@ ResponseCode RequestBuilder::InterpretHeaders_()
 
 RequestBuilder::BuildState RequestBuilder::PrepareBody_()
 {
-    if (!utils::CreateAndOpenTmpFileToStream(body_builder_.body_stream, rq_.body)) {
+    std::pair<bool, std::string> tmp_f =
+        utils::CreateAndOpenTmpFileToStream(body_builder_.body_stream);
+    if (!tmp_f.first) {
         LOG(ERROR) << "Failed to create temporary file.";
         return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
     }
+    rq_.body = tmp_f.second;
     if (body_builder_.chunked) {
         return BS_BODY_CHUNK_SIZE;
     } else {

@@ -43,8 +43,11 @@ void FileProcessor::ProcessPost_(const std::string& file_path, const http::Reque
         DelegateToErrProc(http::HTTP_BAD_REQUEST);
         return;
     }
-
-    if (std::rename(rq.body, file_path.c_str()) != 0) {
+    if (utils::DoesPathExist(file_path.c_str())) {
+        DelegateToErrProc(http::HTTP_CONFLICT);
+        return;
+    }
+    if (std::rename(rq.body.c_str(), file_path.c_str()) != 0) {
         LOG(DEBUG) << "upload failed: " << file_path.c_str() << " Strerror: " << strerror(errno);
         DelegateToErrProc(http::HTTP_CONFLICT);
         return;

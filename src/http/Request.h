@@ -27,7 +27,7 @@ struct Request {
     http::RqTarget rqTarget;
     Version version;
     std::map<std::string, std::string> headers;
-    char body[utils::kMaxTempFileName];
+    std::string body;
 };
 
 }  // namespace http
