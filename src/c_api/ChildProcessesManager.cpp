@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <cstring>
+
 namespace c_api {
 
 namespace {
@@ -105,17 +106,14 @@ std::pair<bool, utils::unique_ptr<Socket> > ChildProcessesManager::TryRunChildPr
 {
     std::pair<bool, utils::unique_ptr<Socket> > fail_res(false, utils::unique_ptr<Socket>(NULL));
 
-    std::pair<utils::unique_ptr<c_api::Socket>, utils::unique_ptr<c_api::Socket> > socket_pair =
-        c_api::Socket::CreateUnixSocketPair();
-    utils::unique_ptr<c_api::Socket> parent_socket;
-    utils::unique_ptr<c_api::Socket> child_socket;
-    if (socket_pair.first) {
-        parent_socket = socket_pair.first;
-        child_socket = socket_pair.second;
-    } else {
+    utils::maybe<c_api::Socket::SocketPair> socket_pair =
+        c_api::Socket::CreateLocalNonblockSocketPair();
+    if (!socket_pair.ok()) {
         LOG(ERROR) << "Failed to create a socket_pair";
         return fail_res;
     }
+    utils::unique_ptr<c_api::Socket>& parent_socket = socket_pair->first;
+    utils::unique_ptr<c_api::Socket>& child_socket = socket_pair->second;
 
     pid_t child_pid = fork();
     if (child_pid < 0) {
