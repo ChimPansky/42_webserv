@@ -22,7 +22,7 @@ struct Request {
     Version version;
     std::map<std::string, std::string> headers;
     bool has_body;
-    char body[utils::kMaxTempFileName];
+    std::string body;
 
     std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
         const std::string& key) const;
