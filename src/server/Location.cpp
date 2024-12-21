@@ -90,11 +90,6 @@ std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> Location::Matche
     return MatchUriPath(rq.rqTarget.path(), route_);
 }
 
-bool Location::IsUploadFilesAllowed() const
-{
-    return !upload_dir().empty();
-}
-
 std::string Location::GetDebugString() const
 {
     std::ostringstream oss;

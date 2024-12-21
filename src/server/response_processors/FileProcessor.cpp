@@ -24,7 +24,7 @@ FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
     switch (rq.method) {
         case http::HTTP_GET: ProcessGet_(file_path, rq, loc); break;
         case http::HTTP_POST: ProcessPost_(file_path, rq, loc); break;
-        case http::HTTP_DELETE: ProcessDelete_(file_path, loc); break;
+        case http::HTTP_DELETE: ProcessDelete_(file_path); break;
         default: throw std::logic_error("FileProcessor: Unsupported HTTP method"); break;
     }
 }
@@ -33,52 +33,29 @@ void FileProcessor::ProcessPost_(const std::string& file_path, const http::Reque
                                  const Location& loc)
 {
     LOG(INFO) << "Processing POST request for file: " << file_path;
-
-    if (!loc.IsUploadFilesAllowed()) {
-        LOG(DEBUG) << "Upload files not allowed for this location";
-        DelegateToErrProc(http::HTTP_FORBIDDEN);
-        return;
-    }
     if (!rq.has_body()) {
         DelegateToErrProc(http::HTTP_BAD_REQUEST);
         return;
     }
+    LOG(DEBUG) << "file_path: " << file_path;
+    LOG(DEBUG) << "loc.upload_dir(): " << loc.upload_dir();
     if (utils::DoesPathExist(file_path.c_str())) {
         DelegateToErrProc(http::HTTP_CONFLICT);
         return;
     }
     if (std::rename(rq.body.c_str(), file_path.c_str()) != 0) {
-        LOG(DEBUG) << "upload failed: " << file_path.c_str() << " Strerror: " << strerror(errno);
+        LOG(DEBUG) << "Upload of file " << file_path << " failed: " << strerror(errno);
         DelegateToErrProc(http::HTTP_CONFLICT);
         return;
     }
     std::map<std::string, std::string> hdrs;
     response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
         new http::Response(http::HTTP_CREATED, http::HTTP_1_1, hdrs, std::vector<char>())));
-
-    // if (rq.GetHeaderVal("content-type").second == "multipart/form-data") {
-    //     LOG(DEBUG) << "Posting file via multipart/form-data request";
-    //     DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
-    //     return;
-    // }
-    // // moving body of request to file...
-    // LOG(DEBUG) << "Moving bodycontent of request from: " << rq.body << " to: " << file_path;
-    // LOG(DEBUG) << "Todo: get filename from querypart (?): " << rq.rqTarget.query();
-    // // return;
-
-    // DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
 }
 
-void FileProcessor::ProcessDelete_(const std::string& file_path, const Location& loc)
+void FileProcessor::ProcessDelete_(const std::string& file_path)
 {
     LOG(INFO) << "Processing DELETE request for file: " << file_path;
-
-    if (!loc.IsUploadFilesAllowed()) {
-        LOG(DEBUG) << "Upload files not allowed for this location";
-        DelegateToErrProc(http::HTTP_FORBIDDEN);
-        return;
-    }
-
     if (std::remove(file_path.c_str()) != 0) {
         DelegateToErrProc(http::HTTP_NOT_FOUND);
         return;

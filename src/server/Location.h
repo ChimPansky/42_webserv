@@ -24,7 +24,6 @@ class Location {
     unsigned int client_max_body_size() const;
     std::string upload_dir() const;
 
-    bool IsUploadFilesAllowed() const;
     std::string GetDebugString() const;
 
   private:
