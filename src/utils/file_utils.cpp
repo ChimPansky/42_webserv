@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "logger.h"
+#include "rand.h"
 
 namespace utils {
 
@@ -97,6 +98,16 @@ std::pair<bool /*success*/, std::vector<utils::DirEntry> /*dir_entries*/> GetDir
     }
     closedir(dir);
     return std::make_pair(true, entries);
+}
+
+std::pair<bool, std::string> CreateAndOpenTmpFileToStream(std::ofstream &fs)
+{
+    std::string tmp_name;
+    do {
+        tmp_name = TMP_DIR + GenerateRandomString(TMP_FILE_NAME_LEN);
+    } while (DoesPathExist(tmp_name.c_str()));
+    fs.open(tmp_name.c_str());
+    return std::make_pair(fs.is_open(), tmp_name);
 }
 
 }  // namespace utils
