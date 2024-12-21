@@ -134,11 +134,11 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
     LOG(DEBUG) << "Updated path: " << updated_path;
     if (chosen_loc.second == CGI) {
-        LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
+        LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI";
         return utils::unique_ptr<AResponseProcessor>(
             new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
     } else {
-        if (utils::IsDirectory(updated_path.c_str())) {
+        if (utils::IsDirectory(updated_path.c_str()) && rq.method == http::HTTP_GET) {
             if (chosen_loc.first->default_files().size() > 0) {
                 for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
                     std::string default_file = updated_path + chosen_loc.first->default_files()[i];

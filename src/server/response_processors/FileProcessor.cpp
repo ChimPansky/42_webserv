@@ -8,6 +8,7 @@
 #include <fstream>
 #include <stdexcept>
 
+#include "Request.h"
 #include "utils/utils.h"
 
 FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
@@ -17,15 +18,29 @@ FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
 {
     switch (rq.method) {
         case http::HTTP_GET: ProcessGet_(file_path); break;
-        case http::HTTP_POST: ProcessPost_(file_path); break;
+        case http::HTTP_POST: ProcessPost_(file_path, rq); break;
         case http::HTTP_DELETE: ProcessDelete_(file_path); break;
         default: throw std::logic_error("FileProcessor: Unsupported HTTP method"); break;
     }
 }
 
-void FileProcessor::ProcessPost_(const std::string& file_path)
+void FileProcessor::ProcessPost_(const std::string& file_path, const http::Request& rq)
 {
     LOG(INFO) << "Processing POST request for file: " << file_path;
+    if (!rq.has_body) {
+        throw std::logic_error("FileProcessor: POST request without body");
+    }
+    if (rq.GetHeaderVal("content-type").second == "multipart/form-data") {
+        LOG(DEBUG) << "Posting file via multipart/form-data request";
+        DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
+        return;
+    }
+    // moving body of request to file...
+    LOG(DEBUG) << "Moving bodycontent of request from: " << rq.body << " to: " << file_path;
+    LOG(DEBUG) << "Todo: get filename from querypart (?): " << rq.rqTarget.query();
+    // std::rename
+    // return;
+
     DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
 }
 
@@ -37,6 +52,7 @@ void FileProcessor::ProcessDelete_(const std::string& file_path)
 
 void FileProcessor::ProcessGet_(const std::string& file_path)
 {
+    LOG(INFO) << "Processing GET request for file: " << file_path;
     if (!utils::DoesPathExist(file_path.c_str())) {
         LOG(DEBUG) << "Requested file not found: " << file_path;
         DelegateToErrProc(http::HTTP_NOT_FOUND);

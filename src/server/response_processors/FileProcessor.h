@@ -15,7 +15,7 @@ class FileProcessor : public AResponseProcessor {
   private:
     std::string GetContentType_(const std::string& file);
     void ProcessGet_(const std::string& file_path);
-    void ProcessPost_(const std::string& file_path);
+    void ProcessPost_(const std::string& file_path, const http::Request& rq);
     void ProcessDelete_(const std::string& file_path);
 };
 
