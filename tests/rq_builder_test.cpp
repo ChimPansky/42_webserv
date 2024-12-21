@@ -51,6 +51,7 @@
 // max body size is set to 1500 in RequestBuilder::MatchServer_()
 
 #define MAX_READ_SZ 1500ul
+#define RQ_DIR "test_data/requests/"
 
 char buf[MAX_READ_SZ];
 
@@ -85,7 +86,8 @@ bool Call(http::RequestBuilder& builder, std::ifstream& file, size_t read_sz)
 
 int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read_size = 10)
 {
-    std::ifstream file(rq_path);
+    std::string fname = RQ_DIR + std::string(rq_path);
+    std::ifstream file(fname);
     if (!file.is_open()) {
         std::cerr << "Could not open Request File: " << rq_path << std::endl;
         return 1;
