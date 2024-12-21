@@ -1,9 +1,10 @@
 #include "Socket.h"
 
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include <cstdio>
+#include <cstring>
 #include <stdexcept>
 
 namespace c_api {
@@ -11,14 +12,34 @@ namespace c_api {
 Socket::Socket(int fd) : sockfd_(fd)
 {}
 
+Socket::Socket(SockType type)
+{
+    if (type != ST_TCP_V4) {
+        throw std::logic_error("Sock constructor is only implemented for TCP sockets");
+    }
+    sockfd_ = ::socket(/* IPv4 */ AF_INET,
+                       /* TCP */ SOCK_STREAM,
+                       /* explicit tcp */ IPPROTO_TCP);
+    if (sockfd_ < 0) {
+        throw std::runtime_error("cannot create socket");
+    }
+}
+bool Socket::TrySetFlags(int flags)
+{
+    int cur_flags = fcntl(sockfd_, F_GETFL);
+    if (cur_flags < 0) {
+        return false;
+    }
+    int flags_to_set = (cur_flags ^ flags) & flags;
+    if (!flags_to_set) {
+        return true;
+    }
+    return (fcntl(sockfd_, F_SETFL, cur_flags | flags_to_set) >= 0);
+}
+
 Socket::~Socket()
 {
     close(sockfd_);
-}
-
-int Socket::sockfd() const
-{
-    return sockfd_;
 }
 
 RecvPackage Socket::Recv(size_t read_size) const
@@ -48,15 +69,13 @@ SockStatus Socket::Send(SendPackage& pack) const
     return RS_SOCK_ERR;
 }
 
-std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > Socket::CreateUnixSocketPair(
-    bool set_nonblock)
+utils::maybe<Socket::SocketPair> Socket::CreateLocalNonblockSocketPair()
 {
     int socket_fds[2];
 
-    if (::socketpair(AF_UNIX, SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
+    if (::socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK,
                      /*default for unix sock*/ 0, socket_fds) < 0) {
-        std::perror("socketpair failed");
-        return std::make_pair(utils::unique_ptr<Socket>(NULL), utils::unique_ptr<Socket>(NULL));
+        return utils::maybe<SocketPair>();
     }
     return std::make_pair(utils::unique_ptr<Socket>(new Socket(socket_fds[0])),
                           utils::unique_ptr<Socket>(new Socket((socket_fds[1]))));

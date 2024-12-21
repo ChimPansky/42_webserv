@@ -5,13 +5,14 @@
 #include <unistd.h>
 
 #include <cstring>
-#include <stdexcept>
-#include <vector>
 
 namespace c_api {
 
 ClientSocket::ClientSocket(int fd, sockaddr_in addr_in) : sock_(fd), addr_in_(addr_in)
-{}
+{
+    // TODO: possible fd leak if error here
+    sock_.TrySetFlags(SOCK_NONBLOCK | SOCK_CLOEXEC);
+}
 
 // technically at this point socket must be unbinded
 //   probably with 'shutdown', which is not in the allowed funcs
