@@ -40,7 +40,7 @@ class CGIProcessor : public AResponseProcessor {
     };
 
   private:
-    utils::unique_ptr<c_api::Socket> parent_socket_;
+    utils::maybe<c_api::ChildProcessDescription> child_process_description_;
     std::vector<char> cgi_out_buffer_;
 };
 

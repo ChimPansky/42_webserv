@@ -24,6 +24,7 @@ Socket::Socket(SockType type)
         throw std::runtime_error("cannot create socket");
     }
 }
+
 bool Socket::TrySetFlags(int flags)
 {
     int cur_flags = fcntl(sockfd_, F_GETFL);
