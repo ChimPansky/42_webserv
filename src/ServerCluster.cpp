@@ -150,13 +150,13 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     }
     c_api::MasterSocket& acceptor = *acceptor_it->second;
     utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor.Accept();
-    const int client_fd = client_sock->sockfd();
     if (!client_sock) {
         LOG(ERROR) << "error accepting connection on: "
                    << c_api::PrintIPv4SockAddr(acceptor.addr_in());
         perror("MasterSocket::Accept");
         return;
     }
+    const int client_fd = client_sock->sockfd();
     LOG(INFO) << "New incoming connection on: " << c_api::PrintIPv4SockAddr(acceptor.addr_in())
               << ", client_fd: " << client_fd
               << " From: " << c_api::PrintIPv4SockAddr(client_sock->addr_in());
