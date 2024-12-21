@@ -1,6 +1,7 @@
 #include "ChildProcessesManager.h"
 
 #include <fcntl.h>
+#include <file_utils.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -35,9 +36,13 @@ void SetUpChild(const ExecParams& params,
 
     std::vector<char*> args;
     args.push_back(const_cast<char*>(params.interpreter.c_str()));
-    args.push_back(const_cast<char*>(params.script_path.c_str()));
+    args.push_back(const_cast<char*>(params.script_name.c_str()));
     args.push_back(NULL);
 
+    if (!utils::HasChangedDirectory(params.script_location.c_str())) {
+        LOG(ERROR) << "Chdir failed: " << std::strerror(errno);
+        exit(EXIT_FAILURE);
+    }
     execve(params.interpreter.c_str(), args.data(), env.data());
     LOG(ERROR) << "CGI failed with error " << std::strerror(errno);
     exit(EXIT_FAILURE);

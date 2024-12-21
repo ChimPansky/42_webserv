@@ -44,6 +44,11 @@ bool IsRegularFile(const char *path)
     return (info.st_mode & S_IFREG) != 0;
 }
 
+bool HasChangedDirectory(const char *path)
+{
+    return chdir(path) != -1;
+}
+
 std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath)
 {
     if (!filePath[0]) {

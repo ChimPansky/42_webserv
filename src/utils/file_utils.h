@@ -23,6 +23,8 @@ bool IsDirectory(const char *path);
 
 bool IsRegularFile(const char *path);
 
+bool HasChangedDirectory(const char *path);
+
 std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath);
 
 bool CheckFileExtension(const std::string &file, const std::string &extention);

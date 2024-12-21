@@ -122,7 +122,7 @@ std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector
                                     new http::Response(rs_code, http::HTTP_1_1, headers, buf)));
 }
 
-std::vector<std::string> GetEnv(const std::string& script_path, const http::Request& rq)
+std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request& rq)
 {
     std::vector<std::string> env;
 
@@ -130,7 +130,7 @@ std::vector<std::string> GetEnv(const std::string& script_path, const http::Requ
     env.push_back("SERVER_SOFTWARE=webserv/1.0");
 
     env.push_back("SERVER_PROTOCOL=" + std::string(HttpVerToStr(rq.version).second));
-    env.push_back("SCRIPT_NAME=" + rq.rqTarget.path());
+    env.push_back("SCRIPT_NAME=" + script.name);
     env.push_back("REQUEST_METHOD=" + std::string(HttpMethodToStr(rq.method).second));
 
     if (rq.has_body) {
@@ -147,16 +147,45 @@ std::vector<std::string> GetEnv(const std::string& script_path, const http::Requ
         env.push_back("AUTH_TYPE=" + rq.GetHeaderVal("Authorization").second);
     }
 
-    env.push_back("PATH_INFO=" + script_path);
+    env.push_back("PATH_INFO=" + script.extra_path);
     if (rq.GetHeaderVal("Authorization").first) {
         env.push_back("ACCEPT=" + rq.GetHeaderVal("Accept").second);
     }
     if (rq.GetHeaderVal("Accept").first) {
         env.push_back("ACCEPT=" + rq.GetHeaderVal("Accept").second);
     }
-    env.push_back("PATH_TRANSLATED=" + script_path);
     // env.push_back("HTTP_COOKIE=" + rq.GetHeaderVal("Cookie").second); bonuses
     return env;
+}
+
+std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
+    const std::string& path_from_url)
+{
+    std::pair<bool, utils::unique_ptr<ScriptDetails> > res(false,
+                                                           utils::unique_ptr<ScriptDetails>(NULL));
+
+    size_t cgi_pos = path_from_url.find("/cgi-bin/");
+    if (cgi_pos == std::string::npos) {
+        LOG(ERROR) << "Path in the url does not contain /cgi-bin/: " << path_from_url;
+        return res;
+    }
+
+    size_t script_pos = cgi_pos + std::string("/cgi-bin/").length();
+    if (script_pos == path_from_url.length()) {
+        LOG(ERROR) << "No script in /cgi-bin/ is specified: " << path_from_url;
+        return res;
+    }
+    size_t extra_path_pos = path_from_url.find('/', script_pos);
+    std::string script_location = path_from_url.substr(0, script_pos);
+    std::string script_name = (extra_path_pos == std::string::npos)
+                                  ? path_from_url.substr(script_pos)
+                                  : path_from_url.substr(script_pos, extra_path_pos - script_pos);
+    std::string extra_path = (extra_path_pos == std::string::npos)
+                                 ? std::string()
+                                 : path_from_url.substr(extra_path_pos);
+    res.first = true;
+    res.second.reset(new ScriptDetails(script_location, script_name, extra_path));
+    return res;
 }
 
 }  // namespace cgi

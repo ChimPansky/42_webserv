@@ -130,14 +130,13 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
             new ErrorProcessor(*this, cb, http::HTTP_METHOD_NOT_ALLOWED));
     }
 
-    std::string updated_path = utils::UpdatePath(
-        chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-    LOG(DEBUG) << "Updated path: " << updated_path;
     if (chosen_loc.second == CGI) {
-        LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI (not implemented yet)";
-        return utils::unique_ptr<AResponseProcessor>(
-            new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
+        return utils::unique_ptr<AResponseProcessor>(new CGIProcessor(
+            *this, chosen_loc.first->alias_dir(), rq, chosen_loc.first->cgi_extensions(), cb));
     } else {
+        std::string updated_path = utils::UpdatePath(
+            chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+        LOG(DEBUG) << "Updated path: " << updated_path;
         if (utils::IsDirectory(updated_path.c_str())) {
             if (chosen_loc.first->default_files().size() > 0) {
                 for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
