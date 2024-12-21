@@ -11,13 +11,13 @@
 namespace http {
 
 Request::Request()
-    : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false), body("")
+    : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false)
 {}
 
 Request::~Request()
 {
     if (has_body && body[0] != '\0') {
-        std::remove(body);
+        std::remove(body.c_str());
     }
 }
 
