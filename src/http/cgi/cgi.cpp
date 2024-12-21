@@ -133,7 +133,7 @@ std::vector<std::string> GetEnv(const std::string& script_path, const http::Requ
     env.push_back("SCRIPT_NAME=" + rq.rqTarget.path());
     env.push_back("REQUEST_METHOD=" + std::string(HttpMethodToStr(rq.method).second));
 
-    if (rq.has_body) {
+    if (rq.has_body()) {
         env.push_back("CONTENT_LENGTH=" + rq.GetHeaderVal("Content-Length").second);
         env.push_back("CONTENT_TYPE=" + rq.GetHeaderVal("Content-Type").second);
     }

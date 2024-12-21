@@ -101,7 +101,7 @@ int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read
 std::string GetBodyContent_(const http::Request& rq)
 {
     std::pair<bool, std::string> body_str;
-    if (!rq.has_body) {
+    if (!rq.has_body()) {
         return "";
     }
     body_str = utils::ReadFileToString(rq.body);
@@ -138,7 +138,7 @@ TEST(ValidWithBody, 1_Bodylen_14)
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
-    EXPECT_TRUE(builder.rq().has_body);
+    EXPECT_TRUE(builder.rq().has_body());
     EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length").second);
     EXPECT_EQ(std::string(BODY_14), GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
@@ -213,7 +213,7 @@ TEST(ValidWithoutBody, 6_SimpleGet)
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("", builder.rq().GetHeaderVal("content-length").second);
-    EXPECT_FALSE(builder.rq().has_body);
+    EXPECT_FALSE(builder.rq().has_body());
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -228,7 +228,7 @@ TEST(ValidWithoutBody, 7_GetWithQuery)
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
     EXPECT_EQ("www.search.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("", builder.rq().GetHeaderVal("content-length").second);
-    EXPECT_FALSE(builder.rq().has_body);
+    EXPECT_FALSE(builder.rq().has_body());
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -244,7 +244,7 @@ TEST(ValidWithoutBody, 8_GetWithHeaders)
     EXPECT_EQ("shop.example.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("application/json", builder.rq().GetHeaderVal("accept").second);
     EXPECT_EQ("CustomClient/1.0", builder.rq().GetHeaderVal("user-agent").second);
-    EXPECT_FALSE(builder.rq().has_body);
+    EXPECT_FALSE(builder.rq().has_body());
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 
@@ -262,7 +262,7 @@ TEST(InValidWithoutBody, 9_PostWithHeaders)
     EXPECT_EQ("application/x-www-form-urlencoded",
               builder.rq().GetHeaderVal("content-type").second);
     EXPECT_EQ("http://www.example.com", builder.rq().GetHeaderVal("referer").second);
-    EXPECT_FALSE(builder.rq().has_body);
+    EXPECT_FALSE(builder.rq().has_body());
     EXPECT_EQ(http::HTTP_LENGTH_REQUIRED, builder.rq().status);
 }
 
@@ -277,7 +277,7 @@ TEST(ValidWithoutBody, 10_DeleteWithHeaders)
     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
     EXPECT_EQ("api.items.com", builder.rq().GetHeaderVal("host").second);
     EXPECT_EQ("Bearer_some_token", builder.rq().GetHeaderVal("authorization").second);
-    EXPECT_FALSE(builder.rq().has_body);
+    EXPECT_FALSE(builder.rq().has_body());
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
 

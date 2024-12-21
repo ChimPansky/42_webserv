@@ -16,17 +16,18 @@ struct Request {
     Request();
     ~Request();
 
+    std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
+        const std::string& key) const;
+    std::string GetDebugString() const;
+
+    bool has_body() const;
+
     ResponseCode status;
     Method method;
     http::RqTarget rqTarget;
     Version version;
     std::map<std::string, std::string> headers;
-    bool has_body;
     char body[utils::kMaxTempFileName];
-
-    std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
-        const std::string& key) const;
-    std::string GetDebugString() const;
 };
 
 }  // namespace http

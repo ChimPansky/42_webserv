@@ -10,7 +10,8 @@ Location::Location(const config::LocationConfig& cfg)
       alias_dir_(cfg.alias_dir()),
       default_files_(cfg.default_files()),
       dir_listing_(cfg.dir_listing()),
-      client_max_body_size_(cfg.client_max_body_size())
+      client_max_body_size_(cfg.client_max_body_size()),
+      upload_dir_(cfg.upload_dir())
 {}
 
 const std::pair<std::string /*path*/, bool /*is_exact_match*/>& Location::route() const
@@ -64,6 +65,11 @@ unsigned int Location::client_max_body_size() const
     return client_max_body_size_;
 }
 
+std::string Location::upload_dir() const
+{
+    return upload_dir_;
+}
+
 std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> Location::MatchUriPath(
     const std::string& path, const std::pair<std::string, bool>& route)
 {
@@ -82,6 +88,11 @@ std::pair<std::string /*path_in_uri*/, bool /*is_exact_match*/> Location::Matche
     const http::Request& rq) const
 {
     return MatchUriPath(rq.rqTarget.path(), route_);
+}
+
+bool Location::IsUploadFilesAllowed() const
+{
+    return !upload_dir().empty();
 }
 
 std::string Location::GetDebugString() const
@@ -123,6 +134,7 @@ std::string Location::GetDebugString() const
     oss << "\n"
         << "Client max body size: " << client_max_body_size() << " bytes\n";
     oss << "Directory listing: " << (dir_listing_ ? "enabled" : "disabled") << "\n";
+    oss << "Upload Dir: " << upload_dir() << "\n";
 
     return oss.str();
 }

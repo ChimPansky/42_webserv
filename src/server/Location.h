@@ -22,6 +22,9 @@ class Location {
     const std::vector<std::string>& default_files() const;
     bool dir_listing() const;
     unsigned int client_max_body_size() const;
+    std::string upload_dir() const;
+
+    bool IsUploadFilesAllowed() const;
     std::string GetDebugString() const;
 
   private:
@@ -35,6 +38,7 @@ class Location {
     std::vector<std::string> default_files_;
     bool dir_listing_;
     unsigned int client_max_body_size_;
+    std::string upload_dir_;
 };
 
 #endif  // WS_SERVER_LOCATION_H

@@ -138,26 +138,8 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         return utils::unique_ptr<AResponseProcessor>(
             new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
     } else {
-        if (utils::IsDirectory(updated_path.c_str()) && rq.method == http::HTTP_GET) {
-            if (chosen_loc.first->default_files().size() > 0) {
-                for (size_t i = 0; i < chosen_loc.first->default_files().size(); i++) {
-                    std::string default_file = updated_path + chosen_loc.first->default_files()[i];
-                    if (utils::DoesPathExist(default_file.c_str())) {
-                        return utils::unique_ptr<AResponseProcessor>(
-                            new FileProcessor(*this, default_file, cb, rq));
-                    }
-                }
-            }
-            if (chosen_loc.first->dir_listing()) {
-                return utils::unique_ptr<AResponseProcessor>(
-                    new DirectoryProcessor(*this, cb, rq, updated_path));
-            }
-            return utils::unique_ptr<AResponseProcessor>(
-                new ErrorProcessor(*this, cb, http::HTTP_FORBIDDEN));
-        } else {
-            return utils::unique_ptr<AResponseProcessor>(
-                new FileProcessor(*this, updated_path, cb, rq));
-        }
+        return utils::unique_ptr<AResponseProcessor>(
+            new FileProcessor(*this, updated_path, cb, rq, *chosen_loc.first));
     }
 }
 

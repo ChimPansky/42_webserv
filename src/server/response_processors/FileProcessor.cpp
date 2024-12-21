@@ -5,54 +5,111 @@
 #include <unique_ptr.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <fstream>
 #include <stdexcept>
 
+#include "DirectoryProcessor.h"
+#include "Location.h"
+#include "RedirectProcessor.h"
 #include "Request.h"
+#include "cstring"
 #include "utils/utils.h"
 
 FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
                              utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                             const http::Request& rq)
+                             const http::Request& rq, const Location& loc)
     : AResponseProcessor(server, response_rdy_cb)
 {
     switch (rq.method) {
-        case http::HTTP_GET: ProcessGet_(file_path); break;
-        case http::HTTP_POST: ProcessPost_(file_path, rq); break;
-        case http::HTTP_DELETE: ProcessDelete_(file_path); break;
+        case http::HTTP_GET: ProcessGet_(file_path, rq, loc); break;
+        case http::HTTP_POST: ProcessPost_(file_path, rq, loc); break;
+        case http::HTTP_DELETE: ProcessDelete_(file_path, loc); break;
         default: throw std::logic_error("FileProcessor: Unsupported HTTP method"); break;
     }
 }
 
-void FileProcessor::ProcessPost_(const std::string& file_path, const http::Request& rq)
+void FileProcessor::ProcessPost_(const std::string& file_path, const http::Request& rq,
+                                 const Location& loc)
 {
     LOG(INFO) << "Processing POST request for file: " << file_path;
-    if (!rq.has_body) {
-        throw std::logic_error("FileProcessor: POST request without body");
-    }
-    if (rq.GetHeaderVal("content-type").second == "multipart/form-data") {
-        LOG(DEBUG) << "Posting file via multipart/form-data request";
-        DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
+
+    if (!loc.IsUploadFilesAllowed()) {
+        LOG(DEBUG) << "Upload files not allowed for this location";
+        DelegateToErrProc(http::HTTP_FORBIDDEN);
         return;
     }
-    // moving body of request to file...
-    LOG(DEBUG) << "Moving bodycontent of request from: " << rq.body << " to: " << file_path;
-    LOG(DEBUG) << "Todo: get filename from querypart (?): " << rq.rqTarget.query();
-    // std::rename
-    // return;
+    if (!rq.has_body()) {
+        DelegateToErrProc(http::HTTP_BAD_REQUEST);
+        return;
+    }
 
-    DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
+    if (std::rename(rq.body, file_path.c_str()) != 0) {
+        LOG(DEBUG) << "upload failed: " << file_path.c_str() << " Strerror: " << strerror(errno);
+        DelegateToErrProc(http::HTTP_CONFLICT);
+        return;
+    }
+    std::map<std::string, std::string> hdrs;
+    response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
+        new http::Response(http::HTTP_CREATED, http::HTTP_1_1, hdrs, std::vector<char>())));
+
+    // if (rq.GetHeaderVal("content-type").second == "multipart/form-data") {
+    //     LOG(DEBUG) << "Posting file via multipart/form-data request";
+    //     DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
+    //     return;
+    // }
+    // // moving body of request to file...
+    // LOG(DEBUG) << "Moving bodycontent of request from: " << rq.body << " to: " << file_path;
+    // LOG(DEBUG) << "Todo: get filename from querypart (?): " << rq.rqTarget.query();
+    // // return;
+
+    // DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
 }
 
-void FileProcessor::ProcessDelete_(const std::string& file_path)
+void FileProcessor::ProcessDelete_(const std::string& file_path, const Location& loc)
 {
     LOG(INFO) << "Processing DELETE request for file: " << file_path;
-    DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
+
+    if (!loc.IsUploadFilesAllowed()) {
+        LOG(DEBUG) << "Upload files not allowed for this location";
+        DelegateToErrProc(http::HTTP_FORBIDDEN);
+        return;
+    }
+
+    if (std::remove(file_path.c_str()) != 0) {
+        DelegateToErrProc(http::HTTP_NOT_FOUND);
+        return;
+    }
+    std::map<std::string, std::string> hdrs;
+    response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
+        new http::Response(http::HTTP_NO_CONTENT, http::HTTP_1_1, hdrs, std::vector<char>())));
 }
 
-void FileProcessor::ProcessGet_(const std::string& file_path)
+void FileProcessor::ProcessGet_(const std::string& file_path, const http::Request& rq,
+                                const Location& loc)
 {
     LOG(INFO) << "Processing GET request for file: " << file_path;
+    if (utils::IsDirectory(file_path.c_str())) {
+        if (loc.default_files().size() > 0) {
+            for (size_t i = 0; i < loc.default_files().size(); i++) {
+                std::string default_file = file_path + loc.default_files()[i];
+                if (utils::DoesPathExist(default_file.c_str())) {
+                    delegated_processor_.reset(
+                        new RedirectProcessor(server_, response_rdy_cb_, http::HTTP_FOUND,
+                                              rq.rqTarget.path() + loc.default_files()[i]));
+                    ProcessGet_(default_file, rq, loc);
+                    return;
+                }
+            }
+        }
+        if (loc.dir_listing()) {
+            delegated_processor_.reset(
+                new DirectoryProcessor(server_, response_rdy_cb_, rq, file_path));
+            return;
+        }
+        DelegateToErrProc(http::HTTP_FORBIDDEN);
+        return;
+    }
     if (!utils::DoesPathExist(file_path.c_str())) {
         LOG(DEBUG) << "Requested file not found: " << file_path;
         DelegateToErrProc(http::HTTP_NOT_FOUND);
