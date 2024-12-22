@@ -328,7 +328,6 @@ RequestBuilder::BuildState RequestBuilder::PrepareBody_()
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
-    LOG(DEBUG) << "BUILD BODY REGULAR";
     size_t copy_size = std::min(body_builder_.remaining_length, parser_.RemainingLength());
     const char* begin = parser_.buf().data() + body_builder_.body_idx;
     const char* end = begin + copy_size;
