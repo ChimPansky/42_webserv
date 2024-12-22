@@ -87,18 +87,6 @@ static std::pair<int, std::string> BuildRedirect(const std::vector<std::string>&
     return ParseRedirect(val_elements);
 }
 
-static std::vector<std::string> BuildCgiPaths(const std::vector<std::string>& vals)
-{
-    if (vals.empty()) {
-        return LocationConfig::kDefaultCgiPath();
-    } else if (vals.size() > 1) {
-        throw std::runtime_error("Invalid configuration file: duplicated cgi_path value.");
-    } else if (vals[0][0] != '/') {
-        throw std::runtime_error("Invalid configuration file: cgi_path isn't a directory.");
-    }
-    return vals;
-}
-
 static const std::vector<std::string>& ParseCgiExtensions(const std::vector<std::string>& vals)
 {
     for (size_t i = 0; i < vals.size(); i++) {
@@ -213,9 +201,8 @@ unsigned int BuildClientMaxBodySize(const std::vector<std::string>& vals,
 
 bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
-    return key == "limit_except" || key == "return" || key == "cgi_path" ||
-           key == "cgi_extension" || key == "alias" || key == "index" || key == "autoindex" ||
-           "client_max_body_size" || key == "upload_store";
+    return key == "limit_except" || key == "return" || key == "cgi_extension" || key == "alias" ||
+           key == "index" || key == "autoindex" || "client_max_body_size" || key == "upload_store";
 }
 
 bool LocationConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
@@ -238,7 +225,6 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
     std::pair<std::string, bool> route = BuildRoute(f.nesting_lvl_descr());
     std::vector<http::Method> allowed_methods = BuildAllowedMethods(f.FindSetting("limit_except"));
     std::pair<int, std::string> redirect = BuildRedirect(f.FindSetting("return"));
-    std::vector<std::string> cgi_paths = BuildCgiPaths(f.FindSetting("cgi_path"));
     std::vector<std::string> cgi_extensions = BuildCgiExtensions(f.FindSetting("cgi_extension"));
     std::string alias_dir = BuildAliasDir(f.FindSetting("alias"), inherited_settings.alias);
     std::vector<std::string> default_file =
@@ -251,8 +237,8 @@ LocationConfig LocationConfigBuilder::Build(const ParsedConfig& f,
     if (!AreNestingsValid(f)) {
         throw std::runtime_error("Invalid configuration file: invalid nesting.");
     }
-    return LocationConfig(route, allowed_methods, redirect, cgi_paths, cgi_extensions, alias_dir,
-                          default_file, dir_listing, client_max_body_size, upload_dir);
+    return LocationConfig(route, allowed_methods, redirect, cgi_extensions, alias_dir, default_file,
+                          dir_listing, client_max_body_size, upload_dir);
 }
 
 }  // namespace config

@@ -24,6 +24,18 @@ The Common Gateway Interface (CGI) is a standard protocol that defines how web s
 - **CGI Directory**: The server identifies CGI requests based on the `/cgi-bin/` directory. This directory is reserved for executable scripts.
 - **Customizability**: While other servers may use file extensions (e.g., `.cgi`) or custom directories for CGI detection, our implementation strictly relies on the `/cgi-bin/` directory.
 
+### Configuration Block for CGI Requests
+
+In the server configuration file, CGI requests are defined using a location block for the `/cgi-bin/` directory:
+
+```plaintext
+location /cgi-bin/ {
+  ...
+}
+```
+
+The location block can also be defined as /cgi-bin. By default, if no `cgi_extensions` are specified, the server handles `.py` and `.php` extensions.
+
 ### Execution Environment
 
 - **Execution Context**: CGI scripts are executed in the directory where they are located. This ensures that relative path access within the script works correctly.
@@ -75,5 +87,6 @@ Scripts with extensions outside this list are not executed, and the server retur
   - **400 Bad Request**: Returned if the request does not specify a valid script after `/cgi-bin/`.
   - **500 Internal Server Error**: Returned for execution errors within the script.
   - **501 Not Implemented**: Returned if the script has an unsupported extension.
+
 
 By adhering to these guidelines, our server ensures robust and predictable CGI behavior while maintaining compatibility with the CGI 1.1 standard.

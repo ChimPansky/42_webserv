@@ -53,7 +53,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
                << script.second->name << "\nScript extra path " << script.second->extra_path
                << "\nFull path to the script " << full_path_to_script;
     if (!IsValidExtension(script.second->name, allowed_cgi_extensions)) {
-        LOG(ERROR) << "CGI extension not supported: " << script.second->name;
+        LOG(ERROR) << "CGI script extension is not supported: " << script.second->name;
         DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
         return;
     }

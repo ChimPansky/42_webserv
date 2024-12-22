@@ -5,7 +5,6 @@ Location::Location(const config::LocationConfig& cfg)
       allowed_methods_(cfg.allowed_methods()),
       redirect_(cfg.redirect()),
       is_cgi_(cfg.is_cgi()),
-      cgi_paths_(cfg.cgi_paths()),
       cgi_extensions_(cfg.cgi_extensions()),
       alias_dir_(cfg.alias_dir()),
       default_files_(cfg.default_files()),
@@ -31,11 +30,6 @@ const std::pair<int /*status_code*/, std::string /*new_route*/>& Location::redir
 bool Location::is_cgi() const
 {
     return is_cgi_;
-}
-
-const std::vector<std::string>& Location::cgi_paths() const
-{
-    return cgi_paths_;
 }
 
 const std::vector<std::string>& Location::cgi_extensions() const
@@ -105,11 +99,6 @@ std::string Location::GetDebugString() const
     }
     oss << "\n"
         << "CGI: " << (is_cgi_ ? "enabled" : "disabled") << "\n"
-        << "CGI paths: ";
-    for (size_t i = 0; i < cgi_paths_.size(); ++i) {
-        oss << "  " << cgi_paths_[i];
-    }
-    oss << "\n"
         << "CGI extensions: ";
     for (size_t i = 0; i < cgi_extensions_.size(); ++i) {
         oss << "  " << cgi_extensions_[i];

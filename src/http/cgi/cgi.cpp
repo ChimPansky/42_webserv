@@ -166,13 +166,13 @@ std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
 
     size_t cgi_pos = path_from_url.find("/cgi-bin/");
     if (cgi_pos == std::string::npos) {
-        LOG(ERROR) << "Path in the url does not contain /cgi-bin/: " << path_from_url;
+        LOG(ERROR) << "Path in the url does not contain /cgi-bin/";
         return res;
     }
 
     size_t script_pos = cgi_pos + std::string("/cgi-bin/").length();
     if (script_pos == path_from_url.length()) {
-        LOG(ERROR) << "No script in /cgi-bin/ is specified: " << path_from_url;
+        LOG(ERROR) << "No script after /cgi-bin/ is specified";
         return res;
     }
     size_t extra_path_pos = path_from_url.find('/', script_pos);
@@ -180,6 +180,11 @@ std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
     std::string script_name = (extra_path_pos == std::string::npos)
                                   ? path_from_url.substr(script_pos)
                                   : path_from_url.substr(script_pos, extra_path_pos - script_pos);
+    if (script_location.find('.') == std::string::npos) {
+        LOG(ERROR) << "The path must include the name of the script after /cgi-bin/ "
+                   << path_from_url;
+        return res;
+    }
     std::string extra_path = (extra_path_pos == std::string::npos)
                                  ? std::string()
                                  : path_from_url.substr(extra_path_pos);
