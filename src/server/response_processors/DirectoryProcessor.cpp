@@ -79,9 +79,7 @@ void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body, const 
          << "\n</style>\n"
             "<base href=\""
          << "\">"
-            "<body>\n<h1>Index of "
-         << path
-         << "</h1>\n"
+            "<body>"
             "<table border=\"0\">\n"
             "<thead>\n"
             "<tr>\n"
