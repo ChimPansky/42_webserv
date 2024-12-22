@@ -33,8 +33,8 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
                            utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
     : AResponseProcessor(server, response_rdy_cb)
 {
-    std::pair<bool, utils::unique_ptr<cgi::ScriptDetails> > script =
-        cgi::GetScriptDetails(rq.rqTarget.path(), alias_dir);
+    std::pair<bool, utils::unique_ptr<cgi::ScriptLocDetails> > script =
+        cgi::GetScriptLocDetails(rq.rqTarget.path(), alias_dir);
     if (!script.first) {
         LOG(ERROR) << "Invalid path to the CGI script";
         DelegateToErrProc(http::HTTP_BAD_REQUEST);

@@ -121,7 +121,7 @@ utils::maybe<utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<ch
         new http::Response(rs_code, http::HTTP_1_1, headers, buf));
 }
 
-std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request& rq)
+std::vector<std::string> GetEnv(const ScriptLocDetails& script, const http::Request& rq)
 {
     std::vector<std::string> env;
 
@@ -163,11 +163,11 @@ std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request
     return env;
 }
 
-std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
+std::pair<bool, utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
     const std::string& path_from_url, const std::string& alias_dir)
 {
-    std::pair<bool, utils::unique_ptr<ScriptDetails> > res(false,
-                                                           utils::unique_ptr<ScriptDetails>(NULL));
+    std::pair<bool, utils::unique_ptr<ScriptLocDetails> > res(
+        false, utils::unique_ptr<ScriptLocDetails>(NULL));
 
     size_t cgi_pos = path_from_url.find("/cgi-bin/");
     if (cgi_pos == std::string::npos) {
@@ -198,7 +198,7 @@ std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
                                  : path_from_url.substr(extra_path_pos);
     std::string full_path = script_location + extra_path + "/";
     res.first = true;
-    res.second.reset(new ScriptDetails(script_location, script_name, extra_path, full_path));
+    res.second.reset(new ScriptLocDetails(script_location, script_name, extra_path, full_path));
     return res;
 }
 
