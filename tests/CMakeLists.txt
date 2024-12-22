@@ -72,3 +72,10 @@ add_test(
               "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/test_data/valgrind_test.conf"
               ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
 )
+
+add_test(
+    NAME valgrind_cgi_test
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/valgrind_cgi_test.sh
+              "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/test_data/valgrind_cgi_test.conf"
+              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
+)
