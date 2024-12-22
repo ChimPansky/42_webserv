@@ -22,6 +22,16 @@ enum LocationType {
     NO_LOCATION
 };
 
+struct RequestDestination {
+    RequestDestination(utils::shared_ptr<Server> server)
+        : server(server), loc(NULL), updated_path(""), is_cgi(false)
+    {}
+    utils::shared_ptr<Server> server;
+    utils::shared_ptr<Location> loc;
+    std::string updated_path;
+    bool is_cgi;
+};
+
 class Server {
   private:
     Server();
@@ -39,9 +49,11 @@ class Server {
     std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
     // has to call IResponseCallback with rs when the last is rdy
     utils::unique_ptr<AResponseProcessor> ProcessRequest(
-        const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+        const http::Request& rq, const RequestDestination& rq_dest,
+        utils::unique_ptr<http::IResponseCallback> cb) const;
     utils::unique_ptr<AResponseProcessor> GetResponseProcessor(
-        const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+        const http::Request& rq, const RequestDestination& rq_dest,
+        utils::unique_ptr<http::IResponseCallback> cb) const;
 
     std::string name() const;
     const std::vector<std::string>& server_names() const;

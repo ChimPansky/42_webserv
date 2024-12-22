@@ -4,17 +4,17 @@
 #include <file_utils.h>
 #include <shared_ptr.h>
 
+#include <cstdlib>
+
+#include "Location.h"
 #include "Request.h"
 #include "ResponseCodes.h"
 #include "RqTarget.h"
-#include "http.h"
 #include "logger.h"
 #include "response_processors/AResponseProcessor.h"
 #include "response_processors/CGIProcessor.h"
-#include "response_processors/DirectoryProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
-#include "response_processors/RedirectProcessor.h"
 #include "unique_ptr.h"
 #include "utils/utils.h"
 
@@ -87,7 +87,6 @@ std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
             matched_location = *it;
         }
     }
-
     if (!matched_location) {
         type = NO_LOCATION;
     } else if (matched_location->is_cgi()) {
@@ -99,10 +98,11 @@ std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
 }
 
 utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
-    const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
+    const http::Request& rq, const RequestDestination& rq_dest,
+    utils::unique_ptr<http::IResponseCallback> cb) const
 {
     if (rq.status == http::HTTP_OK) {
-        return GetResponseProcessor(rq, cb);
+        return GetResponseProcessor(rq, rq_dest, cb);
     } else {
         LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
         return utils::unique_ptr<AResponseProcessor>(new ErrorProcessor(*this, cb, rq.status));
@@ -110,36 +110,17 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
 }
 
 utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
-    const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const
+    const http::Request& rq, const RequestDestination& rq_dest,
+    utils::unique_ptr<http::IResponseCallback> cb) const
 {
-    const std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc = ChooseLocation(rq);
-
     // TODO: add redirect processor
-    if (chosen_loc.second == NO_LOCATION) {
-        LOG(DEBUG) << "No location match ->  Create 404 ResponseProcessor";
-        return utils::unique_ptr<AResponseProcessor>(
-            new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
-    }
-    LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
-
-    if (std::find(chosen_loc.first->allowed_methods().begin(),
-                  chosen_loc.first->allowed_methods().end(),
-                  rq.method) == chosen_loc.first->allowed_methods().end()) {
-        LOG(DEBUG) << "Method not allowed for specific location -> Create 405 ResponseProcessor";
-        return utils::unique_ptr<AResponseProcessor>(
-            new ErrorProcessor(*this, cb, http::HTTP_METHOD_NOT_ALLOWED));
-    }
-
-    std::string updated_path = utils::UpdatePath(
-        chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-    LOG(DEBUG) << "Updated path: " << updated_path;
-    if (chosen_loc.second == CGI) {
+    if (rq_dest.is_cgi) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI";
         return utils::unique_ptr<AResponseProcessor>(
-            new CGIProcessor(*this, updated_path, rq, chosen_loc.first->cgi_extensions(), cb));
+            new CGIProcessor(*this, rq_dest.updated_path, rq, rq_dest.loc->cgi_extensions(), cb));
     } else {
         return utils::unique_ptr<AResponseProcessor>(
-            new FileProcessor(*this, updated_path, cb, rq, *chosen_loc.first));
+            new FileProcessor(*this, rq_dest.updated_path, cb, rq, *rq_dest.loc));
     }
 }
 

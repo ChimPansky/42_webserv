@@ -6,14 +6,19 @@
 #include <multiplexers/ICallback.h>
 #include <unique_ptr.h>
 
+#include "ResponseCodes.h"
+#include "Server.h"
 #include "ServerCluster.h"
+#include "maybe.h"
+#include "shared_ptr.h"
+#include "utils/utils.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd,
                              utils::shared_ptr<Server> default_server)
     : client_sock_(sock),
       master_socket_fd_(master_sock_fd),
-      associated_server_(default_server),
-      rq_builder_(utils::unique_ptr<http::IChooseServerCb>(new ChooseServerCb(*this))),
+      rq_destination_(default_server),
+      rq_builder_(utils::unique_ptr<http::IOnHeadersReadyCb>(new ChooseServerCb(*this))),
       connection_closed_(false),
       read_state_(CS_READ)
 {
@@ -50,10 +55,11 @@ void ClientSession::ProcessNewData(c_api::RecvPackage& pack)
         LOG(DEBUG) << rq_builder_.rq().GetDebugString();
         // server returns rs with basic headers and status complete/body generation in process +
         // generator func
-        if (associated_server_) {  // just to make sure we never dereference NULL...
-            response_processor_ = associated_server_->ProcessRequest(
-                rq_builder_.rq(), utils::unique_ptr<http::IResponseCallback>(
-                                      new ClientProceedWithResponseCallback(*this)));
+        if (rq_destination_.server) {  // just to make sure we never dereference NULL...
+            response_processor_ = rq_destination_.server->ProcessRequest(
+                rq_builder_.rq(), rq_destination_,
+                utils::unique_ptr<http::IResponseCallback>(
+                    new ClientProceedWithResponseCallback(*this)));
         } else {
             throw std::logic_error("trying to accept forward rq to non-existent server");
         }
@@ -95,16 +101,31 @@ void ClientSession::UpdateLastActivityTime_()
 //////////// CALLBACKS ////////////
 ///////////////////////////////////
 
-http::ChosenServerParams ClientSession::ChooseServerCb::Call(const http::Request& rq)
+http::HeadersValidationResult ClientSession::ChooseServerCb::Call(const http::Request& rq)
 {
-    client_.associated_server_ = ServerCluster::ChooseServer(client_.master_socket_fd_, rq);
-    http::ChosenServerParams params;
+    RequestDestination& rq_dest = client_.rq_destination_;
+    rq_dest.server = ServerCluster::ChooseServer(client_.master_socket_fd_, rq);
     std::pair<utils::shared_ptr<Location>, LocationType> chosen_loc =
-        client_.associated_server_->ChooseLocation(rq);
-    params.max_body_size =
-        (chosen_loc.second != NO_LOCATION ? chosen_loc.first->client_max_body_size()
-                                          : config::LocationConfig::kDefaultClientMaxBodySize());
-    return params;
+        rq_dest.server->ChooseLocation(rq);
+    if (chosen_loc.second == NO_LOCATION) {
+        LOG(DEBUG) << "No location match -> 404";
+        return http::HeadersValidationResult(http::HTTP_NOT_FOUND);
+    }
+    LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
+    if (std::find(chosen_loc.first->allowed_methods().begin(),
+                  chosen_loc.first->allowed_methods().end(),
+                  rq.method) == chosen_loc.first->allowed_methods().end()) {
+        LOG(DEBUG) << "Method not allowed for specific location -> 405";
+        return http::HeadersValidationResult(http::HTTP_NOT_FOUND);
+    }
+    if (chosen_loc.second == CGI) {
+        rq_dest.is_cgi = true;
+    }
+    http::HeadersValidationResult validation_result(http::HTTP_OK);
+    validation_result.max_body_size = chosen_loc.first->client_max_body_size();
+    validation_result.upload_path = utils::UpdatePath(
+        chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+    return validation_result;
 }
 
 void ClientSession::OnReadyToRecvFromClientCb::Call(int /*fd*/)
