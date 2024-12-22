@@ -39,14 +39,14 @@ DirectoryProcessor::DirectoryProcessor(const Server& server,
 
 bool DirectoryProcessor::ListDirectory_(const std::string& path)
 {
-    std::pair<bool, std::vector<utils::DirEntry> > dir_entries = utils::GetDirEntries(path.c_str());
-    if (!dir_entries.first) {
+    utils::maybe<std::vector<utils::DirEntry> > dir_entries = utils::GetDirEntries(path.c_str());
+    if (!dir_entries) {
         return false;
     }
     std::map<std::string, std::string> hdrs;
-    std::sort(dir_entries.second.begin(), dir_entries.second.end());
+    std::sort(dir_entries->begin(), dir_entries->end());
     std::ostringstream body_stream;
-    GenerateAutoIndexPage_(body_stream, path, dir_entries.second);
+    GenerateAutoIndexPage_(body_stream, path, *dir_entries);
     std::string body_string = body_stream.str();
     std::vector<char> body(body_string.begin(), body_string.end());
     hdrs["Content-Type"] = "text/html";

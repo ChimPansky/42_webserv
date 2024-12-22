@@ -76,7 +76,7 @@ utils::maybe<Socket::SocketPair> Socket::CreateLocalNonblockSocketPair()
 
     if (::socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK,
                      /*default for unix sock*/ 0, socket_fds) < 0) {
-        return utils::maybe<SocketPair>();
+        return utils::maybe_not();
     }
     return std::make_pair(utils::unique_ptr<Socket>(new Socket(socket_fds[0])),
                           utils::unique_ptr<Socket>(new Socket((socket_fds[1]))));

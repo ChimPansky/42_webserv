@@ -1,91 +1,91 @@
 #include "http.h"
 
-#include <cstring>
+#include <logger.h>
+#include <maybe.h>
+#include <numeric_utils.h>
 
-#include "logger.h"
-#include "numeric_utils.h"
+#include <cstring>
 
 namespace http {
 
-std::pair<bool /*found*/, std::string /*version*/> HttpVerToStr(Version ver)
+std::string HttpVerToStr(Version ver)
 {
     switch (ver) {
-        case HTTP_0_9: return std::make_pair(true, "HTTP/0.9");
-        case HTTP_1_0: return std::make_pair(true, "HTTP/1.0");
-        case HTTP_1_1: return std::make_pair(true, "HTTP/1.1");
-        case HTTP_2: return std::make_pair(true, "HTTP/2");
-        case HTTP_3: return std::make_pair(true, "HTTP/3");
-        default: return std::make_pair(false, "Version not found");
+        case HTTP_0_9: return std::string("HTTP/0.9");
+        case HTTP_1_0: return std::string("HTTP/1.0");
+        case HTTP_1_1: return std::string("HTTP/1.1");
+        case HTTP_2: return std::string("HTTP/2");
+        case HTTP_3: return std::string("HTTP/3");
+        default: return "UNKNOWN VERSION";
     }
 }
 
-std::pair<bool /*found*/, std::string /*method*/> HttpMethodToStr(Method method)
+std::string HttpMethodToStr(Method method)
 {
     switch (method) {
-        case HTTP_GET: return std::make_pair(true, "GET");
-        case HTTP_POST: return std::make_pair(true, "POST");
-        case HTTP_DELETE: return std::make_pair(true, "DELETE");
-        default: return std::make_pair(false, "Method not found");
+        case HTTP_GET: return std::string("GET");
+        case HTTP_POST: return std::string("POST");
+        case HTTP_DELETE: return std::string("DELETE");
+        default: return "UNKNOWN METHOD";
     }
 }
 
-std::pair<bool /*found*/, http::Method> HttpMethodFromStr(const std::string& raw_method)
+utils::maybe<http::Method> HttpMethodFromStr(const std::string& raw_method)
 {
     if (raw_method == "GET") {
-        return std::make_pair(true, HTTP_GET);
+        return HTTP_GET;
     } else if (raw_method == "POST") {
-        return std::make_pair(true, HTTP_POST);
+        return HTTP_POST;
     } else if (raw_method == "DELETE") {
-        return std::make_pair(true, HTTP_DELETE);
+        return HTTP_DELETE;
     } else {
-        return std::make_pair(false, HTTP_NO_METHOD);
+        return utils::maybe_not();
     }
 }
 
-std::pair<bool /*found*/, http::Version> HttpVersionFromStr(const std::string& raw_version)
+utils::maybe<http::Version> HttpVersionFromStr(const std::string& raw_version)
 {
     if (raw_version == "HTTP/0.9") {
-        return std::make_pair(true, HTTP_0_9);
+        return HTTP_0_9;
     } else if (raw_version == "HTTP/1.0") {
-        return std::make_pair(true, HTTP_1_0);
+        return HTTP_1_0;
     } else if (raw_version == "HTTP/1.1") {
-        return std::make_pair(true, HTTP_1_1);
+        return HTTP_1_1;
     } else if (raw_version == "HTTP/2") {
-        return std::make_pair(true, HTTP_2);
+        return HTTP_2;
     } else if (raw_version == "HTTP/3") {
-        return std::make_pair(true, HTTP_3);
+        return HTTP_3;
     } else {
         LOG(INFO) << "HttpVersionFromStr: DID NOT MATCH ANY VERSION";
-        return std::make_pair(false, HTTP_NO_VERSION);
+        return utils::maybe_not();
     }
 }
 
 // decode all percent-encoded characters, except those in the dont_decode_set
-std::pair<bool /*decoding_successful*/, std::string /*decoded_str*/> PercentDecode(
-    const std::string& str, const char* dont_decode_set)
+utils::maybe<std::string> PercentDecode(const std::string& str, const char* dont_decode_set)
 {
     std::string decoded;
-    std::pair<bool, unsigned short> ascii;
     for (size_t i = 0; i < str.size(); ++i) {
         if (str[i] == '%') {
             if (i + 2 >= str.size()) {
-                return std::pair<bool, std::string>(false, "");
+                return utils::maybe_not();
             }
-            ascii = utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
-            if (dont_decode_set && strchr(dont_decode_set, static_cast<char>(ascii.second))) {
+            utils::maybe<unsigned short> ascii =
+                utils::HexToUnsignedNumericNoThrow<unsigned short>(str.substr(i + 1, 2));
+            if (!ascii.ok()) {
+                return utils::maybe_not();
+            }
+            if (dont_decode_set && strchr(dont_decode_set, static_cast<char>(*ascii))) {
                 decoded += str.substr(i, 3);
             } else {
-                if (!ascii.first) {
-                    return std::pair<bool, std::string>(false, "");
-                }
-                decoded += static_cast<char>(ascii.second);
+                decoded += static_cast<char>(*ascii);
             }
             i += 2;
         } else {
             decoded += str[i];
         }
     }
-    return std::pair<bool, std::string>(true, decoded);
+    return decoded;
 }
 
 // encode all chars that are not in the unreserved set (delimiters, whitespaces, etc.) and not in

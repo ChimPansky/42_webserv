@@ -100,15 +100,15 @@ int BuildRequest(http::RequestBuilder& builder, const char* rq_path, size_t read
 
 std::string GetBodyContent_(const http::Request& rq)
 {
-    std::pair<bool, std::string> body_str;
+    utils::maybe<std::string> body_str;
     if (!rq.has_body) {
         return "";
     }
     body_str = utils::ReadFileToString(rq.body);
-    if (!body_str.first) {
+    if (!body_str) {
         ADD_FAILURE() << "Error reading body content from file";
     }
-    return body_str.second;
+    return *body_str;
 }
 
 class DummyCb : public http::IChooseServerCb {
@@ -137,9 +137,9 @@ TEST(ValidWithBody, 1_Bodylen_14)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
+    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").value());
     EXPECT_TRUE(builder.rq().has_body);
-    EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length").second);
+    EXPECT_EQ("14", builder.rq().GetHeaderVal("content-length").value());
     EXPECT_EQ(std::string(BODY_14), GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -153,7 +153,7 @@ TEST(ValidWithBody, 2_One_Chunk_1100)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").value());
     EXPECT_EQ(std::string(BODY_1100), GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -167,7 +167,7 @@ TEST(ValidWithBody, 3_One_Chunk_1100)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").value());
     EXPECT_EQ(std::string(BODY_1100), GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -181,8 +181,8 @@ TEST(ValidWithBody, 4_Bodylen_1)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
-    EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length").second);
+    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").value());
+    EXPECT_EQ("1", builder.rq().GetHeaderVal("content-length").value());
     EXPECT_EQ("a", GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -196,7 +196,7 @@ TEST(ValidWithBody, 5_Chunked_1)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/upload", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
-    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").second);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("transfer-encoding").value());
     EXPECT_EQ("L", GetBodyContent_(builder.rq()));
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -211,8 +211,8 @@ TEST(ValidWithoutBody, 6_SimpleGet)
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
-    EXPECT_EQ("", builder.rq().GetHeaderVal("content-length").second);
+    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").value());
+    EXPECT_FALSE(builder.rq().GetHeaderVal("content-length").ok());
     EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -226,8 +226,8 @@ TEST(ValidWithoutBody, 7_GetWithQuery)
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/search?q=example", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("www.search.com", builder.rq().GetHeaderVal("host").second);
-    EXPECT_EQ("", builder.rq().GetHeaderVal("content-length").second);
+    EXPECT_EQ("www.search.com", builder.rq().GetHeaderVal("host").value());
+    EXPECT_FALSE(builder.rq().GetHeaderVal("content-length").ok());
     EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -241,9 +241,9 @@ TEST(ValidWithoutBody, 8_GetWithHeaders)
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/products", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("shop.example.com", builder.rq().GetHeaderVal("host").second);
-    EXPECT_EQ("application/json", builder.rq().GetHeaderVal("accept").second);
-    EXPECT_EQ("CustomClient/1.0", builder.rq().GetHeaderVal("user-agent").second);
+    EXPECT_EQ("shop.example.com", builder.rq().GetHeaderVal("host").value());
+    EXPECT_EQ("application/json", builder.rq().GetHeaderVal("accept").value());
+    EXPECT_EQ("CustomClient/1.0", builder.rq().GetHeaderVal("user-agent").value());
     EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -258,10 +258,10 @@ TEST(InValidWithoutBody, 9_PostWithHeaders)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/submit", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").second);
+    EXPECT_EQ("www.example.com", builder.rq().GetHeaderVal("host").value());
     EXPECT_EQ("application/x-www-form-urlencoded",
-              builder.rq().GetHeaderVal("content-type").second);
-    EXPECT_EQ("http://www.example.com", builder.rq().GetHeaderVal("referer").second);
+              builder.rq().GetHeaderVal("content-type").value());
+    EXPECT_EQ("http://www.example.com", builder.rq().GetHeaderVal("referer").value());
     EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_LENGTH_REQUIRED, builder.rq().status);
 }
@@ -275,8 +275,8 @@ TEST(ValidWithoutBody, 10_DeleteWithHeaders)
     EXPECT_EQ(http::HTTP_DELETE, builder.rq().method);
     EXPECT_EQ("/items/123", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_0, builder.rq().version);
-    EXPECT_EQ("api.items.com", builder.rq().GetHeaderVal("host").second);
-    EXPECT_EQ("Bearer_some_token", builder.rq().GetHeaderVal("authorization").second);
+    EXPECT_EQ("api.items.com", builder.rq().GetHeaderVal("host").value());
+    EXPECT_EQ("Bearer_some_token", builder.rq().GetHeaderVal("authorization").value());
     EXPECT_FALSE(builder.rq().has_body);
     EXPECT_EQ(http::HTTP_OK, builder.rq().status);
 }
@@ -413,7 +413,7 @@ TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value)
     EXPECT_EQ(http::HTTP_GET, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_FALSE(builder.rq().GetHeaderVal("host").first);
+    EXPECT_FALSE(builder.rq().GetHeaderVal("host").ok());
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
@@ -435,7 +435,7 @@ TEST(InValidWithBody, 50_Bad_Chunk_size_has_plus)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").value());
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
@@ -448,7 +448,7 @@ TEST(InValidWithBody, 51_Bad_Chunk_size_has_minus)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").value());
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
@@ -461,7 +461,7 @@ TEST(InValidWithBody, 52_Bad_Chunk_size_has_leading_spaces)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").value());
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
@@ -474,7 +474,7 @@ TEST(InValidWithBody, 53_Bad_Chunk_size_has_trailing_spaces)
     EXPECT_EQ(http::HTTP_POST, builder.rq().method);
     EXPECT_EQ("/", builder.rq().rqTarget.ToStr());
     EXPECT_EQ(http::HTTP_1_1, builder.rq().version);
-    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").second);
+    EXPECT_EQ("chunked", builder.rq().GetHeaderVal("Transfer-Encoding").value());
     EXPECT_EQ(http::HTTP_BAD_REQUEST, builder.rq().status);
 }
 
@@ -484,7 +484,7 @@ TEST(MaxBodySize, 55_Body_too_large)
     if (BuildRequest(builder, "rq55.txt", 1000) != 0) {
         FAIL();
     }
-    EXPECT_EQ("1501", builder.rq().GetHeaderVal("content-length").second);
+    EXPECT_EQ("1501", builder.rq().GetHeaderVal("content-length").value());
     EXPECT_EQ(http::HTTP_PAYLOAD_TOO_LARGE, builder.rq().status);
 }
 

@@ -24,8 +24,7 @@ struct Request {
     bool has_body;
     std::string body;
 
-    std::pair<bool /*header-key found*/, std::string /*header-value*/> GetHeaderVal(
-        const std::string& key) const;
+    utils::maybe<std::string> GetHeaderVal(const std::string& key) const;
     std::string GetDebugString() const;
 };
 
