@@ -25,7 +25,8 @@ RequestBuilder::RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_
       build_state_(BS_RQ_LINE),
       choose_server_cb_(choose_server_cb),
       header_count_(0),
-      header_section_size_(0)
+      header_section_size_(0),
+      rq_has_body_(false)
 {
     if (!choose_server_cb_) {
         throw std::logic_error("No Choose Server Callback specified");
@@ -240,7 +241,7 @@ RequestBuilder::BuildState RequestBuilder::CheckHeaders_()
     if (rc != http::HTTP_OK) {
         return SetStatusAndExitBuilder_(rc);
     }
-    if (rq_.has_body) {
+    if (rq_has_body_) {
         return BS_PREPARE_TO_READ_BODY;
     }
     return BS_END;
@@ -278,11 +279,11 @@ ResponseCode RequestBuilder::InterpretHeaders_()
         return HTTP_BAD_REQUEST;
     }
     if (transfer_encoding && *transfer_encoding == "chunked") {
-        rq_.has_body = true;
+        rq_has_body_ = true;
         body_builder_.chunked = true;
     }
     if (content_length) {
-        rq_.has_body = true;
+        rq_has_body_ = true;
         utils::maybe<size_t> content_length_num =
             utils::StrToNumericNoThrow<size_t>(*content_length);
         if (content_length_num) {

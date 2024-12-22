@@ -16,12 +16,13 @@ struct Request {
     Request();
     ~Request();
 
+    bool has_body() const;
+
     ResponseCode status;
     Method method;
     http::RqTarget rqTarget;
     Version version;
     std::map<std::string, std::string> headers;
-    bool has_body;
     std::string body;
 
     utils::maybe<std::string> GetHeaderVal(const std::string& key) const;

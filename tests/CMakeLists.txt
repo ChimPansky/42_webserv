@@ -14,7 +14,7 @@ target_link_libraries(rq_builder_test PRIVATE Http gtest gtest_main)
 add_test(
     NAME rq_builder_test
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/rq_builder_test
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test_data/requests
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 # ConfigParser

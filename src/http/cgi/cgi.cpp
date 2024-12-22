@@ -142,8 +142,7 @@ std::vector<std::string> GetEnv(const std::string& script_path, const http::Requ
     env.push_back("REMOTE_HOST=" + rq.GetHeaderVal("Host").value());
     env.push_back("SERVER_NAME=" +
                   rq.GetHeaderVal("Host").value());  // TODO: REMOTE_HOST == SERVER_NAME?
-
-    if (rq.has_body) {
+    if (rq.has_body()) {
         // todo: chanked?
         utils::maybe<std::string> cont_len = rq.GetHeaderVal("Content-Length");
         utils::maybe<std::string> cont_type = rq.GetHeaderVal("Content-Type");

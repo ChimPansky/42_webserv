@@ -82,6 +82,7 @@ class RequestBuilder {
     utils::unique_ptr<IChooseServerCb> choose_server_cb_;
     size_t header_count_;
     size_t header_section_size_;
+    bool rq_has_body_;
 
     BuildState BuildFirstLine_();
     http::ResponseCode TrySetMethod_(const std::string& raw_method);

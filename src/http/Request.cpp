@@ -10,15 +10,19 @@
 
 namespace http {
 
-Request::Request()
-    : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false)
+Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
 {}
 
 Request::~Request()
 {
-    if (has_body && body[0] != '\0') {
+    if (has_body()) {
         std::remove(body.c_str());
     }
+}
+
+bool Request::has_body() const
+{
+    return body[0] != '\0';
 }
 
 utils::maybe<std::string> Request::GetHeaderVal(const std::string& key) const
@@ -44,7 +48,7 @@ std::string Request::GetDebugString() const
         ret << "\n\t" << it->first << ": " << it->second;
     }
 
-    ret << "\n\tHas body: " << (has_body ? "Yes" : "No");
+    ret << "\n\tHas body: " << (has_body() ? "Yes" : "No");
     ret << "\n\tBodypath: " << body;
 
     return ret.str();
