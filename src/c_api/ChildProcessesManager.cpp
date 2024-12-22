@@ -106,8 +106,8 @@ void ChildProcessesManager::KillChildProcess(pid_t pid)
     if (it != child_processes_.end()) {
         LOG(ERROR) << "Child process termination requested...";
         kill(it->first, SIGKILL);
+        child_processes_.erase(it);
     }
-    child_processes_.erase(it);
 }
 
 void ChildProcessesManager::RegisterChildProcess_(pid_t child_pid, time_t timeout_ts,
