@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "maybe.h"
+
 #define TMP_FILE_NAME_LEN 20
 // todo move to config?
 #define TMP_DIR "./tmp/"
@@ -27,10 +29,9 @@ bool IsDirectory(const char *path);
 
 bool IsRegularFile(const char *path);
 
-std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath);
+utils::maybe<std::string> ReadFileToString(const char *filePath);
 
-inline std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(
-    const std::string &filePath)
+inline utils::maybe<std::string> ReadFileToString(const std::string &filePath)
 {
     return ReadFileToString(filePath.c_str());
 }
@@ -38,7 +39,7 @@ inline std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToStrin
 
 bool CheckFileExtension(const std::string &file, const std::string &extention);
 
-std::pair<bool, std::string> CreateAndOpenTmpFileToStream(std::ofstream &fs);
+maybe<std::string /*filename*/> CreateAndOpenTmpFileToStream(std::ofstream &fs);
 
 enum DirEntryType {
     DE_FILE,
@@ -65,8 +66,7 @@ class DirEntry {
     size_t size_;
 };
 
-std::pair<bool /*success*/, std::vector<DirEntry> /*dir_entries*/> GetDirEntries(
-    const char *directory);
+utils::maybe<std::vector<DirEntry> > GetDirEntries(const char *directory);
 
 }  // namespace utils
 

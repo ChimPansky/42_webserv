@@ -45,20 +45,20 @@ bool IsRegularFile(const char *path)
     return (info.st_mode & S_IFREG) != 0;
 }
 
-std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath)
+utils::maybe<std::string> ReadFileToString(const char *filePath)
 {
     if (!filePath[0]) {
         LOG(ERROR) << "Empty file path";
-        return std::make_pair(false, "");
+        return utils::maybe_not();
     }
     std::ifstream file(filePath);
     if (!file.is_open()) {
         LOG(ERROR) << "Could not open file: " << filePath;
-        return std::make_pair(false, "");
+        return utils::maybe_not();
     }
     std::stringstream buffer;
     buffer << file.rdbuf();
-    return std::make_pair(true, buffer.str());
+    return buffer.str();
 }
 
 bool CheckFileExtension(const std::string &file, const std::string &extention)
@@ -70,14 +70,13 @@ bool CheckFileExtension(const std::string &file, const std::string &extention)
                                                   file.substr(file.find_last_of('.')) == extention);
 }
 
-std::pair<bool /*success*/, std::vector<utils::DirEntry> /*dir_entries*/> GetDirEntries(
-    const char *directory)
+utils::maybe<std::vector<utils::DirEntry> > GetDirEntries(const char *directory)
 {
     std::vector<utils::DirEntry> entries;
     DIR *dir = opendir(directory);
     if (dir == NULL) {
         LOG(ERROR) << "Unable to read directory: " << directory;
-        return std::make_pair(false, entries);
+        return utils::maybe_not();
     }
 
     struct dirent *entry;
@@ -97,17 +96,20 @@ std::pair<bool /*success*/, std::vector<utils::DirEntry> /*dir_entries*/> GetDir
         }
     }
     closedir(dir);
-    return std::make_pair(true, entries);
+    return entries;
 }
 
-std::pair<bool, std::string> CreateAndOpenTmpFileToStream(std::ofstream &fs)
+utils::maybe<std::string> CreateAndOpenTmpFileToStream(std::ofstream &fs)
 {
     std::string tmp_name;
     do {
         tmp_name = TMP_DIR + GenerateRandomString(TMP_FILE_NAME_LEN);
     } while (DoesPathExist(tmp_name.c_str()));
     fs.open(tmp_name.c_str());
-    return std::make_pair(fs.is_open(), tmp_name);
+    if (!fs.is_open()) {
+        return maybe_not();
+    }
+    return tmp_name;
 }
 
 }  // namespace utils

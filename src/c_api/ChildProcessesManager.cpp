@@ -118,7 +118,7 @@ utils::maybe<ChildProcessDescription> ChildProcessesManager::TryRunChildProcess(
         c_api::Socket::CreateLocalNonblockSocketPair();
     if (!socket_pair.ok()) {
         LOG(ERROR) << "Failed to create a socket_pair";
-        return utils::maybe<ChildProcessDescription>();
+        return utils::maybe_not();
     }
     utils::unique_ptr<c_api::Socket>& parent_socket = socket_pair->first;
     utils::unique_ptr<c_api::Socket>& child_socket = socket_pair->second;
@@ -126,7 +126,7 @@ utils::maybe<ChildProcessDescription> ChildProcessesManager::TryRunChildProcess(
     pid_t child_pid = fork();
     if (child_pid < 0) {
         LOG(ERROR) << "Fork failed: " << std::strerror(errno);
-        return utils::maybe<ChildProcessDescription>();
+        return utils::maybe_not();
     } else if (child_pid == 0) {
         parent_socket.reset();
         SetUpChild(params, child_socket);  // noreturn

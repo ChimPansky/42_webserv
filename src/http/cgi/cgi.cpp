@@ -58,28 +58,26 @@ bool ExtractHeaderToMap(std::map<std::string, std::string>& headers, std::string
     return true;
 }
 
-std::pair<bool, int> ExtractStatus(const std::string& status_str)
+utils::maybe<int> ExtractStatus(const std::string& status_str)
 {
     if (status_str.length() < 5) {
-        return std::make_pair(false, 0);
+        return utils::maybe_not();
     }
-    std::pair<bool, int> status_or = utils::StrToNumericNoThrow<int>(status_str.substr(0, 3));
-    if (!status_or.first || status_or.second < 100) {
-        return std::make_pair(false, 0);
+    utils::maybe<int> status = utils::StrToNumericNoThrow<int>(status_str.substr(0, 3));
+    if (!status || *status < 100) {
+        return utils::maybe_not();
     }
     if ((status_str[4] != ' ' && status_str[4] != '\t') || !std::isalnum(status_str[5])) {
-        return std::make_pair(false, 0);
+        return utils::maybe_not();
     }
-    return std::make_pair(true, status_or.second);
+    return *status;
 }
 
-std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<char>& buf)
+utils::maybe<utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<char>& buf)
 {
-    std::pair<bool, utils::unique_ptr<http::Response> > res =
-        std::make_pair(false, utils::unique_ptr<http::Response>(NULL));
     if (buf.empty() || buf[0] == '\n') {
         LOG(ERROR) << "Empty output or no headers in cgi output";
-        return res;
+        return utils::maybe_not();
     }
 
     std::map<std::string, std::string> headers;
@@ -99,7 +97,7 @@ std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector
         std::string cur_line = std::string(cur_pos.base(), line_len);
         if (!ExtractHeaderToMap(headers, cur_line)) {
             LOG(ERROR) << "Cannot parse header in CGI out: " << cur_line;
-            return res;
+            return utils::maybe_not();
         }
         cur_pos = line_end + 1;
     }
@@ -107,19 +105,20 @@ std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector
     buf.erase(buf.begin(), cur_pos);
     http::ResponseCode rs_code = http::HTTP_OK;
     if (headers.find("Status") != headers.end()) {
-        std::pair<bool, int> parsed_status = ExtractStatus(headers["Status"]);
-        if (!parsed_status.first) {
+        utils::maybe<int> parsed_status = ExtractStatus(headers["Status"]);
+        if (!parsed_status) {
             LOG(ERROR) << "Incorrect Status header formatting in CGI output: " << headers["Status"];
-            return res;
+            return utils::maybe_not();
         }
-        rs_code = static_cast<http::ResponseCode>(parsed_status.second);
+        // todo: check if we know http code
+        rs_code = static_cast<http::ResponseCode>(*parsed_status);
     }
     if (headers.find("Content-Length") == headers.end() && !buf.empty()) {
         headers["Content-Length"] = utils::NumericToString(buf.size());
     }
 
-    return std::make_pair(true, utils::unique_ptr<http::Response>(
-                                    new http::Response(rs_code, http::HTTP_1_1, headers, buf)));
+    return utils::unique_ptr<http::Response>(
+        new http::Response(rs_code, http::HTTP_1_1, headers, buf));
 }
 
 std::vector<std::string> GetEnv(const std::string& script_path, const http::Request& rq)
@@ -129,33 +128,41 @@ std::vector<std::string> GetEnv(const std::string& script_path, const http::Requ
     env.push_back("GATEWAY_INTERFACE=CGI/1.1");
     env.push_back("SERVER_SOFTWARE=webserv/1.0");
 
-    env.push_back("SERVER_PROTOCOL=" + std::string(HttpVerToStr(rq.version).second));
+    env.push_back("SERVER_PROTOCOL=" + HttpVerToStr(rq.version));
     env.push_back("SCRIPT_NAME=" + rq.rqTarget.path());
-    env.push_back("REQUEST_METHOD=" + std::string(HttpMethodToStr(rq.method).second));
+    env.push_back("REQUEST_METHOD=" + HttpMethodToStr(rq.method));
 
-    if (rq.has_body) {
-        env.push_back("CONTENT_LENGTH=" + rq.GetHeaderVal("Content-Length").second);
-        env.push_back("CONTENT_TYPE=" + rq.GetHeaderVal("Content-Type").second);
-    }
+    env.push_back("PATH_INFO=" + script_path);
+    env.push_back("PATH_TRANSLATED=" + script_path);
+    // env.push_back("HTTP_COOKIE=" + rq.GetHeaderVal("Cookie").second); bonuses
+
     env.push_back("QUERY_STRING=" + rq.rqTarget.query());
     // env.push_back("REMOTE_ADDR=" + utils::IPaddr);  TODO: pass Client Socket IP address here
     // env.push_back("SERVER_PORT=" + utils::port);  TODO: pass Master Socket port here
-    env.push_back("REMOTE_HOST=" + rq.GetHeaderVal("Host").second);
-    env.push_back("SERVER_NAME=" + rq.GetHeaderVal("Host").second);
+    env.push_back("REMOTE_HOST=" + rq.GetHeaderVal("Host").value());
+    env.push_back("SERVER_NAME=" +
+                  rq.GetHeaderVal("Host").value());  // TODO: REMOTE_HOST == SERVER_NAME?
 
-    if (rq.GetHeaderVal("Authorization").first) {
-        env.push_back("AUTH_TYPE=" + rq.GetHeaderVal("Authorization").second);
+    if (rq.has_body) {
+        // todo: chanked?
+        utils::maybe<std::string> cont_len = rq.GetHeaderVal("Content-Length");
+        utils::maybe<std::string> cont_type = rq.GetHeaderVal("Content-Type");
+        if (cont_len) {
+            env.push_back("CONTENT_LENGTH=" + cont_len.value());
+        }
+        if (cont_type) {
+            env.push_back("CONTENT_TYPE=" + cont_type.value());
+        }
     }
 
-    env.push_back("PATH_INFO=" + script_path);
-    if (rq.GetHeaderVal("Authorization").first) {
-        env.push_back("ACCEPT=" + rq.GetHeaderVal("Accept").second);
+    utils::maybe<std::string> auth = rq.GetHeaderVal("Authorization");
+    utils::maybe<std::string> accept = rq.GetHeaderVal("Accept");
+    if (auth) {
+        env.push_back("AUTH_TYPE=" + *auth);
     }
-    if (rq.GetHeaderVal("Accept").first) {
-        env.push_back("ACCEPT=" + rq.GetHeaderVal("Accept").second);
+    if (accept) {
+        env.push_back("ACCEPT=" + *accept);
     }
-    env.push_back("PATH_TRANSLATED=" + script_path);
-    // env.push_back("HTTP_COOKIE=" + rq.GetHeaderVal("Cookie").second); bonuses
     return env;
 }
 

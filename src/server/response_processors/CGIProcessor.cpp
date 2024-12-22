@@ -67,7 +67,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
 
 CGIProcessor::~CGIProcessor()
 {
-    if (child_process_description_.ok()) {
+    if (child_process_description_) {
         c_api::EventManager::DeleteCallback(child_process_description_->sock().sockfd());
         c_api::ChildProcessesManager::get().KillChildProcess(child_process_description_->pid());
     }
@@ -97,11 +97,11 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    std::pair<bool, utils::unique_ptr<http::Response> > rs =
+    utils::maybe<utils::unique_ptr<http::Response> > rs =
         cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
-    if (!rs.first) {
+    if (!rs) {
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    processor_.response_rdy_cb_->Call(rs.second);
+    processor_.response_rdy_cb_->Call(*rs);
 }
