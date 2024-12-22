@@ -44,6 +44,12 @@ void SetUpChild(const ExecParams& params,
         LOG(ERROR) << "Chdir failed: " << std::strerror(errno);
         exit(EXIT_FAILURE);
     }
+    // LOG(ERROR) << "\nInterpreter: " << params.interpreter
+    //         << "\nScript path: " << args[1]
+    //         << "\nenv: " << env[0];
+    // char cwd[1024];
+    // getcwd(cwd, sizeof(cwd));
+    // LOG(ERROR) << "Current dir: " << cwd;
     execve(params.interpreter.c_str(), args.data(), env.data());
     LOG(ERROR) << "CGI failed with error " << std::strerror(errno);
     exit(EXIT_FAILURE);

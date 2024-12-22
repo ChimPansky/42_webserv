@@ -14,7 +14,7 @@ VALGRIND_LOGFILE=$2
 # Start ws in background
 vg "$VALGRIND_LOGFILE" "$WS_RUN_COMMAND"
 WS_PID=$!
-sleep 4  # wait for server to start
+sleep 1  # wait for server to start
 
 if ! is_job_active "$WS_PID"; then
 	>&2 echo "Error starting server"
