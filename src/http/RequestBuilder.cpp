@@ -235,6 +235,7 @@ RequestBuilder::BuildState RequestBuilder::ProcessHeaders_()
     if (rc != http::HTTP_OK) {
         return SetStatusAndExitBuilder_(rc);
     }
+    LOG(DEBUG) << "Request: " << rq_.GetDebugString();
     HeadersValidationResult validation_result = headers_ready_cb_->Call(rq_);
     if (validation_result.status != HTTP_OK) {
         LOG(DEBUG) << "ChooseServerCb returned error: " << validation_result.status;
@@ -304,10 +305,12 @@ ResponseCode RequestBuilder::InterpretHeaders_()
         return HTTP_BAD_REQUEST;
     }
     if (transfer_encoding && *transfer_encoding == "chunked") {
+        LOG(INFO) << "BotasdAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAers present";
         rq_has_body_ = true;
         body_builder_.chunked = true;
     }
     if (content_length) {
+        LOG(INFO) << "Both Content-Length and Transfer-Encoding headers present";
         rq_has_body_ = true;
     }
     if (rq_.method == HTTP_POST && !content_length && !transfer_encoding) {
