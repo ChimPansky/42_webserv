@@ -95,17 +95,27 @@ void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body, const 
     for (size_t i = 0; i < entries.size(); i++) {
         const utils::DirEntry& entry = entries[i];
         std::string time_str = utils::GetFormatedTime(entry.last_modified());
-
+        if (entry.name() == "./") {
+            continue;
+        }
         body << "<tr><td><a href=\"" << entry.name() << "\"";
         if (entry.type() == utils::DE_FILE) {
             body << " target=\"_blank\"";
         }
-        body << ">" << entry.name() << "</a></td>\n";
+        body << ">";
+        if (entry.name() == "../") {
+            body << "&#x21B0; Parent Directory";
+        } else {
+            body << entry.name();
+        }
+        body << "</a></td>\n";
         body << "<td>" << time_str
              << "</td>\n"
-                "<td>"
-             << entry.size()
-             << "</td>\n"
+                "<td>";
+        if (entry.type() == utils::DE_FILE) {
+            body << entry.size();
+        };
+        body << "</td>\n"
                 "</tr>\n";
     }
     body << "</tbody>\n</table>\n</body>\n</html>\n";
