@@ -43,8 +43,6 @@ inline utils::maybe<std::string> ReadFileToString(const std::string &filePath)
 bool CheckFileExtension(const std::string &file, const std::string &extention);
 
 maybe<std::string /*filename*/> CreateAndOpenTmpFileToStream(std::ofstream &fs);
-std::string UpdatePath(const std::string &loc, const std::string &matched_prefix,
-                       const std::string &uri_path);
 
 enum DirEntryType {
     DE_FILE,

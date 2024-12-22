@@ -15,8 +15,8 @@
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
 #include "response_processors/RedirectProcessor.h"
-#include "str_utils.h"
 #include "unique_ptr.h"
+#include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
     : access_log_path_(cfg.access_log_path()),
@@ -131,6 +131,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     }
 
     if (chosen_loc.second == CGI) {
+        LOG(DEBUG) << "Location starts with /cgi-bin/ -> Process CGI";
         return utils::unique_ptr<AResponseProcessor>(new CGIProcessor(
             *this, chosen_loc.first->alias_dir(), rq, chosen_loc.first->cgi_extensions(), cb));
     } else {
