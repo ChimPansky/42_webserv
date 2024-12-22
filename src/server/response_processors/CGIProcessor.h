@@ -4,6 +4,7 @@
 #include <ChildProcessesManager.h>
 #include <Location.h>
 #include <Socket.h>
+#include <cgi/cgi.h>
 #include <multiplexers/ICallback.h>
 #include <shared_ptr.h>
 #include <unique_ptr.h>

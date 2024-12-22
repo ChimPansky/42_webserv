@@ -132,8 +132,7 @@ std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request
     env.push_back("SCRIPT_NAME=" + script.name);
     env.push_back("REQUEST_METHOD=" + HttpMethodToStr(rq.method));
 
-    env.push_back("PATH_INFO=" + script_path);
-    env.push_back("PATH_TRANSLATED=" + script_path);
+    env.push_back("PATH_INFO=" + script.extra_path);
     // env.push_back("HTTP_COOKIE=" + rq.GetHeaderVal("Cookie").second); bonuses
 
     env.push_back("QUERY_STRING=" + rq.rqTarget.query());
@@ -155,7 +154,6 @@ std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request
         }
     }
 
-    env.push_back("PATH_INFO=" + script.extra_path);
     utils::maybe<std::string> auth = rq.GetHeaderVal("Authorization");
     utils::maybe<std::string> accept = rq.GetHeaderVal("Accept");
     if (auth) {
