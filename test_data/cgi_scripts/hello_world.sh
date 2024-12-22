@@ -1,5 +1,5 @@
-echo "Content-type: text/html"
-echo ""
+echo 'Content-type: text/html'
+echo ''
 
 echo '<html>'
 echo '<head>'
@@ -10,5 +10,3 @@ echo '<body>'
 echo 'Hello World'
 echo '</body>'
 echo '</html>'
-
-exit 0

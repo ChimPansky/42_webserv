@@ -10,8 +10,8 @@ namespace c_api {
 
 ClientSocket::ClientSocket(int fd, sockaddr_in addr_in) : sock_(fd), addr_in_(addr_in)
 {
-    // TODO: possible fd leak if error here
-    sock_.TrySetFlags(SOCK_NONBLOCK | SOCK_CLOEXEC);
+    // actually redundant, cuz with recv/send works with blocking sockets as well
+    sock_.TrySetFlags(SOCK_NONBLOCK);
 }
 
 // technically at this point socket must be unbinded

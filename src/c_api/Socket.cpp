@@ -18,7 +18,7 @@ Socket::Socket(SockType type)
         throw std::logic_error("Sock constructor is only implemented for TCP sockets");
     }
     sockfd_ = ::socket(/* IPv4 */ AF_INET,
-                       /* TCP */ SOCK_STREAM,
+                       /* TCP */ SOCK_STREAM | SOCK_NONBLOCK,
                        /* explicit tcp */ IPPROTO_TCP);
     if (sockfd_ < 0) {
         throw std::runtime_error("cannot create socket");
