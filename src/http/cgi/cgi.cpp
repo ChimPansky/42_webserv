@@ -136,8 +136,6 @@ std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request
     // env.push_back("HTTP_COOKIE=" + rq.GetHeaderVal("Cookie").second); bonuses
 
     env.push_back("QUERY_STRING=" + rq.rqTarget.query());
-    // env.push_back("REMOTE_ADDR=" + utils::IPaddr);  TODO: pass Client Socket IP address here
-    // env.push_back("SERVER_PORT=" + utils::port);  TODO: pass Master Socket port here
     env.push_back("REMOTE_HOST=" + rq.GetHeaderVal("Host").value());
     env.push_back("SERVER_NAME=" +
                   rq.GetHeaderVal("Host").value());  // TODO: REMOTE_HOST == SERVER_NAME?
