@@ -10,7 +10,21 @@
 #include "response_processors/RedirectProcessor.h"
 
 
-const std::string DirectoryProcessor::kAutoIndexStyle = "/default_css/autoindex.css";
+const std::string DirectoryProcessor::kAutoIndexStyle()
+{
+    return "body { font-family: 'Courier New', Courier, monospace; background-color: "
+           "#121212;color: #e0e0e0;margin: 0; padding: 0; }"
+           "h1 { padding: 20px; background-color: #1e1e1e; margin: 0; border-bottom: 1px solid "
+           "#444; }"
+           "table { width: 100%; border-collapse: collapse; margin: 20px 0; }"
+           "th, td { padding: 10px; text-align: left; border: 1px solid #444; }"
+           "th { background-color: #1e1e1e;    color: #e0e0e0; text-transform: uppercase; "
+           "font-size: 14px; }"
+           "tr:nth-child(odd) { background-color: #1a1a1a; }"
+           "tr:nth-child(even) { background-color: #2a2a2a; }"
+           "a { color: #80c0ff; text-decoration: none; }"
+           "a:hover { text-decoration: underline; }";
+}
 
 DirectoryProcessor::DirectoryProcessor(const Server& server,
                                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
@@ -59,10 +73,11 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path)
 void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body, const std::string& path,
                                                 const std::vector<utils::DirEntry>& entries)
 {
-    body << "<html>\n<head>\n<title>Index of " << path
-         << "</title>\n</head>\n"
-            "<link rel=\"stylesheet\" href=\""
-         << kAutoIndexStyle
+    body << "<html>\n<head>\n<title>Index of " << path << "</title>\n</head>\n"
+         << "<style>\n"
+         << kAutoIndexStyle()
+         << "\n</style>\n"
+            "<base href=\""
          << "\">"
             "<body>\n<h1>Index of "
          << path
