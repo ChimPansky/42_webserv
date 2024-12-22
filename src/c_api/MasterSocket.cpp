@@ -7,30 +7,23 @@
 
 
 namespace {
-int CreateTcpSocket(bool set_nonblock)
-{
-    int sockfd = ::socket(/* IPv4 */ AF_INET,
-                          /* TCP */ SOCK_STREAM | (set_nonblock ? SOCK_NONBLOCK : 0),
-                          /* explicit tcp */ IPPROTO_TCP);
-    if (sockfd < 0) {
-        throw std::runtime_error("cannot create socket");
-    }
-    int optval = 1;
-    ::setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-    return sockfd;
-}
 
 // TODO convertion from addrin to addr here is technically a UB
-void BindAndListen(int sockfd_, struct sockaddr_in& addr_in)
+void BindAndListen(c_api::Socket& sock, struct sockaddr_in& addr_in)
 {
+    if (!sock.TrySetFlags(SOCK_NONBLOCK | SOCK_CLOEXEC)) {
+        throw std::runtime_error("cannot set socket flags");
+    }
+    int optval = 1;
+    ::setsockopt(sock.sockfd(), SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     // bind socket to ip address and port
-    if (::bind(sockfd_, (struct sockaddr*)&addr_in, sizeof(addr_in)) != 0) {
+    if (::bind(sock.sockfd(), (struct sockaddr*)&addr_in, sizeof(addr_in)) != 0) {
         throw std::runtime_error("cannot bind master_socket to the address");
     }
 
     // start listening for incoming connections, if more then SOMAXCONN are not accepted,
     // rest will be ignored
-    if (::listen(sockfd_, SOMAXCONN) != 0) {
+    if (::listen(sock.sockfd(), SOMAXCONN) != 0) {
         throw std::runtime_error("cannot bind master_socket");
     }
 }
@@ -39,17 +32,15 @@ void BindAndListen(int sockfd_, struct sockaddr_in& addr_in)
 namespace c_api {
 
 // REUSEADDR in case port already open in the kernel but has no associated socket
-MasterSocket::MasterSocket(in_addr_t ip, in_port_t port, bool set_nonblock)
-    : sock_(CreateTcpSocket(set_nonblock))
+MasterSocket::MasterSocket(in_addr_t ip, in_port_t port) : sock_(ST_TCP_V4)
 {
     addr_in_ = GetIPv4SockAddr(ip, port);
-    BindAndListen(sockfd(), addr_in_);
+    BindAndListen(sock_, addr_in_);
 }
 
-MasterSocket::MasterSocket(const struct sockaddr_in& addr, bool set_nonblock)
-    : addr_in_(addr), sock_(CreateTcpSocket(set_nonblock))
+MasterSocket::MasterSocket(const struct sockaddr_in& addr) : addr_in_(addr), sock_(ST_TCP_V4)
 {
-    BindAndListen(sockfd(), addr_in_);
+    BindAndListen(sock_, addr_in_);
 }
 
 utils::unique_ptr<ClientSocket> MasterSocket::Accept() const

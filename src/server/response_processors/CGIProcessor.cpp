@@ -56,18 +56,16 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
     }
 
     c_api::ExecParams exec_params(interpreter, script.second->full_path, script.second->name,
-                                  cgi::GetEnv(*script.second, rq), rq.body);
-    std::pair<bool, utils::unique_ptr<c_api::Socket> > res =
-        c_api::ChildProcessesManager::get().TryRunChildProcess(
-            exec_params, utils::unique_ptr<c_api::IChildDiedCb>(new ChildProcessDoneCb(*this)));
-    if (!res.first) {
+                                  cgi::GetEnv(*script.second, rq), rq.body.c_str());
+    child_process_description_ = c_api::ChildProcessesManager::get().TryRunChildProcess(
+        exec_params, utils::unique_ptr<c_api::IChildDiedCb>(new ChildProcessDoneCb(*this)));
+    if (!child_process_description_.ok()) {
         LOG(ERROR) << "Cannot run child process";
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    parent_socket_ = res.second;
     if (!c_api::EventManager::TryRegisterCallback(
-            parent_socket_->sockfd(), c_api::CT_READ,
+            child_process_description_->sock().sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
@@ -77,8 +75,9 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
 
 CGIProcessor::~CGIProcessor()
 {
-    if (parent_socket_) {
-        c_api::EventManager::DeleteCallback(parent_socket_->sockfd());
+    if (child_process_description_) {
+        c_api::EventManager::DeleteCallback(child_process_description_->sock().sockfd());
+        c_api::ChildProcessesManager::get().KillChildProcess(child_process_description_->pid());
     }
 }
 
@@ -86,7 +85,7 @@ void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
 {
     // LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
     std::vector<char>& buf = processor_.cgi_out_buffer_;
-    c_api::RecvPackage pack = processor_.parent_socket_->Recv();
+    c_api::RecvPackage pack = processor_.child_process_description_->sock().Recv();
     if (pack.status == c_api::RS_SOCK_ERR) {
         LOG(ERROR) << "error on recv" << std::strerror(errno);  // TODO: is errno check allowed?
         return;
@@ -106,11 +105,11 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    std::pair<bool, utils::unique_ptr<http::Response> > rs =
+    utils::maybe<utils::unique_ptr<http::Response> > rs =
         cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
-    if (!rs.first) {
+    if (!rs) {
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    processor_.response_rdy_cb_->Call(rs.second);
+    processor_.response_rdy_cb_->Call(*rs);
 }

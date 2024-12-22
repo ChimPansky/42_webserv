@@ -21,7 +21,7 @@ class DirectoryProcessor : public AResponseProcessor {
                                 const std::vector<utils::DirEntry>& entries);
 
   private:
-    static const std::string kAutoIndexStyle;
+    static const char* kAutoIndexStyle();
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_DIRECTORY_PROCESSOR_H

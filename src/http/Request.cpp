@@ -11,24 +11,23 @@
 namespace http {
 
 Request::Request()
-    : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false), body("")
+    : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION), has_body(false)
 {}
 
 Request::~Request()
 {
     if (has_body && body[0] != '\0') {
-        std::remove(body);
+        std::remove(body.c_str());
     }
 }
 
-std::pair<bool /*header_key_found*/, std::string /*header_value*/> Request::GetHeaderVal(
-    const std::string& key) const
+utils::maybe<std::string> Request::GetHeaderVal(const std::string& key) const
 {
     std::map<std::string, std::string>::const_iterator it = headers.find(utils::ToLowerCase(key));
     if (it != headers.end()) {
-        return std::make_pair(true, it->second);
+        return it->second;
     }
-    return std::make_pair(false, "");
+    return utils::maybe_not();
 }
 
 std::string Request::GetDebugString() const
@@ -36,9 +35,9 @@ std::string Request::GetDebugString() const
     std::ostringstream ret;
     ret << "---Request---"
         << "\n\tStatus: " << (status == HTTP_OK ? "OK " : "BAD ") << status
-        << "\n\tMethod: " << method << "\n\tMethod: " << HttpMethodToStr(method).second
-        << "\n\tRequest-Target: " << rqTarget.ToStr()
-        << "\n\tVersion: " << HttpVerToStr(version).second << "\n\t~Headers~";
+        << "\n\tMethod: " << method << "\n\tMethod: " << HttpMethodToStr(method)
+        << "\n\tRequest-Target: " << rqTarget.ToStr() << "\n\tVersion: " << HttpVerToStr(version)
+        << "\n\t~Headers~";
 
     for (std::map<std::string, std::string>::const_iterator it = headers.begin();
          it != headers.end(); ++it) {

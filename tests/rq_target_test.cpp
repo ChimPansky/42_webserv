@@ -35,7 +35,6 @@ TEST(BasicTests, 1_Test)
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_HAS_FRAGMENT);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/path/to/file?a=20&b=30#fragment");
@@ -57,7 +56,6 @@ TEST(BasicTests, 2_Test)
     EXPECT_EQ(RqTarget.validity_state(), http::RqTarget::RQ_TARGET_HAS_FRAGMENT);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://host:1234/path/to/file?somequery");
@@ -78,7 +76,6 @@ TEST(BasicTests, 3_Test)
     EXPECT_FALSE(RqTarget.HasFragment());
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(BasicTests, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://user:password@www.test.com/?");
@@ -100,21 +97,18 @@ TEST(BasicTests, 4_Test)
     EXPECT_EQ(RqTarget.validity_state(), http::RqTarget::RQ_TARGET_HAS_USER_INFO);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 5_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget(".");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/");
@@ -134,35 +128,30 @@ TEST(BasicTests, 7_Test)
     EXPECT_EQ(RqTarget.HasFragment(), false);
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(BasicTests, 8_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("?");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 9_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("#");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 10_Test)
 {
     http::RqTarget RqTarget = http::RqTarget(" ");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 11_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("abc");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(BasicTests, 12_Test)
 {
     http::RqTarget RqTarget = http::RqTarget(
@@ -301,28 +290,24 @@ TEST(BasicTests, 12_Test)
         EXPECT_TRUE(RqTarget.Good());
     }
 }
-
 TEST(SchemeTests, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("htp://");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_SCHEME);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(SchemeTests, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("1://");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_SCHEME);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(SchemeTests, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("://");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_SCHEME);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(SchemeTests, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://www.example.com/");
@@ -342,29 +327,24 @@ TEST(SchemeTests, 4_Test)
     EXPECT_EQ(RqTarget.HasFragment(), false);
     EXPECT_TRUE(RqTarget.Good());
 }
-
-
 TEST(HostTests, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://:1234");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_HOST);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(HostTests, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://host:");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PORT);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(HostTests, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://host:port");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PORT);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(HostTests, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://*/");
@@ -372,7 +352,6 @@ TEST(HostTests, 4_Test)
     EXPECT_EQ(RqTarget.path(), "/");
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(HostTests, 5_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://abc=def/path");
@@ -380,7 +359,6 @@ TEST(HostTests, 5_Test)
     EXPECT_EQ(RqTarget.path(), "/path");
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(HostTests, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://äöü/path/to/file?query");
@@ -389,7 +367,6 @@ TEST(HostTests, 6_Test)
     EXPECT_EQ(RqTarget.query(), "query");
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(HostTests, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://www.abc]def.com/");
@@ -397,7 +374,6 @@ TEST(HostTests, 7_Test)
     EXPECT_EQ(RqTarget.path(), "/");
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(HostTests, 8_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://www.crazy!website.com");
@@ -405,28 +381,24 @@ TEST(HostTests, 8_Test)
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(PortTests, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://host:port");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PORT);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(PortTests, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://host:-1");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PORT);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(PortTests, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://host:65536");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PORT);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(PortTests, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://host:65535/");
@@ -434,7 +406,6 @@ TEST(PortTests, 4_Test)
     EXPECT_TRUE(RqTarget.HasPort());
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PortTests, 5_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://host:80/");
@@ -442,288 +413,245 @@ TEST(PortTests, 5_Test)
     EXPECT_FALSE(RqTarget.HasPort());
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathTests, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("//");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(PathTests, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
     EXPECT_FALSE(RqTarget.Good());
 }
-
 TEST(PathTests, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/ä");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathTests, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/[bad]path");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathTests, 5_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/badpath[]");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathTests, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/{badpath}/some_more");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathTests, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/bad path");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathTests, 8_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/ok+path");
     EXPECT_EQ(RqTarget.path(), "/ok+path");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathTests, 9_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/ok%20path");
     EXPECT_EQ(RqTarget.path(), "/ok path");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathTests, 10_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/this_is_allowed/~");
     EXPECT_EQ(RqTarget.path(), "/this_is_allowed/~");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathTests, 11_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/this+is+fine/9.9/.abc");
     EXPECT_EQ(RqTarget.path(), "/this+is+fine/9.9/.abc");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathTests, 12_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/sub_delims_are_fine/!$&'()*+,;");
     EXPECT_EQ(RqTarget.path(), "/sub_delims_are_fine/!$&'()*+,;");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathTests, 13_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/unreserved_chars_are_fine/abcABC123-_.~");
     EXPECT_EQ(RqTarget.path(), "/unreserved_chars_are_fine/abcABC123-_.~");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDecoding, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/invalid_encoding%2");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathDecoding, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/invalid_encoding%2G");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathDecoding, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/invalid_encoding%Z");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathDecoding, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/invalid_encoding%9xabc");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathDecoding, 5_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/%5A%5a%5a");
     EXPECT_EQ(RqTarget.path(), "/ZZZ");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDecoding, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2Fdef");
     EXPECT_EQ(RqTarget.path(), "/abc%2Fdef");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDecoding, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2fdef");
     EXPECT_EQ(RqTarget.path(), "/abc%2Fdef");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDecoding, 8_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc%2fdef%2Fghi");
     EXPECT_EQ(RqTarget.path(), "/abc%2Fdef%2Fghi");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDecoding, 9_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/encoded/dots/will/be/decoded%2E%2E%2E");
     EXPECT_EQ(RqTarget.path(), "/encoded/dots/will/be/decoded...");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/.");
     EXPECT_EQ(RqTarget.path(), "/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/./");
     EXPECT_EQ(RqTarget.path(), "/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/..");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathDotSegments, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/../");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathDotSegments, 5_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a.b/");
     EXPECT_EQ(RqTarget.path(), "/a.b/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a..b/");
     EXPECT_EQ(RqTarget.path(), "/a..b/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a...b/");
     EXPECT_EQ(RqTarget.path(), "/a...b/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 8_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/some_path/../");
     EXPECT_EQ(RqTarget.path(), "/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 9_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/some_path/../../");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathDotSegments, 10_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/some_path/../.../");
     EXPECT_EQ(RqTarget.path(), "/.../");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 11_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/abc/./def/../ghi");
     EXPECT_EQ(RqTarget.path(), "/abc/ghi");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 12_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a/b/c/./../../g");
     EXPECT_EQ(RqTarget.path(), "/a/g");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 13_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a/b/./c/../d/.");
     EXPECT_EQ(RqTarget.path(), "/a/b/d/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 14_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a/b/c/./../../g/../h/./i/../j");
     EXPECT_EQ(RqTarget.path(), "/a/h/j");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 15_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a/./b/c/../../d/e/../f/./g/../h");
     EXPECT_EQ(RqTarget.path(), "/a/d/f/h");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathDotSegments, 16_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a/./b/../c/././d/../../e/../f/..");
     EXPECT_EQ(RqTarget.path(), "/a/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathCollapseSlashes, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a//b/c//d//e");
     EXPECT_EQ(RqTarget.path(), "/a/b/c/d/e");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathCollapseSlashes, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/a////////////");
     EXPECT_EQ(RqTarget.path(), "/a/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(PathCollapseSlashes, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("//");
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_PATH);
 }
-
 TEST(PathCollapseSlashes, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/some_path/%2F%2f/b///c//////");
     EXPECT_EQ(RqTarget.path(), "/some_path/%2F%2F/b/c/");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(QueryTests, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?");
@@ -731,7 +659,6 @@ TEST(QueryTests, 1_Test)
     EXPECT_EQ(RqTarget.query(), "");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(QueryTests, 2_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?a");
@@ -739,14 +666,12 @@ TEST(QueryTests, 2_Test)
     EXPECT_EQ(RqTarget.query(), "a");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(QueryTests, 3_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/? ");
     EXPECT_TRUE(RqTarget.HasQuery());
     EXPECT_TRUE(RqTarget.validity_state() & http::RqTarget::RQ_TARGET_BAD_QUERY);
 }
-
 TEST(QueryTests, 4_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?:@/?");
@@ -754,7 +679,6 @@ TEST(QueryTests, 4_Test)
     EXPECT_EQ(RqTarget.query(), ":@/?");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(QueryTests, 5_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?abcABC123-_.~");
@@ -762,7 +686,6 @@ TEST(QueryTests, 5_Test)
     EXPECT_EQ(RqTarget.query(), "abcABC123-_.~");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(QueryTests, 6_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?a=%2F%2f");
@@ -770,7 +693,6 @@ TEST(QueryTests, 6_Test)
     EXPECT_EQ(RqTarget.query(), "a=//");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(QueryTests, 7_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?search=wildcard%2a");
@@ -778,7 +700,6 @@ TEST(QueryTests, 7_Test)
     EXPECT_EQ(RqTarget.query(), "search=wildcard*");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(QueryTests, 8_Test)
 {
     http::RqTarget RqTarget = http::RqTarget(
@@ -789,7 +710,6 @@ TEST(QueryTests, 8_Test)
               "param1=value1;param2=https://www.example.com:443/path/to/file?query%3Dvalue");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(QueryTests, 9_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("/?path=%2ffolder%2f..%2fother%20folder");
@@ -797,7 +717,6 @@ TEST(QueryTests, 9_Test)
     EXPECT_EQ(RqTarget.query(), "path=/folder/../other folder");
     EXPECT_TRUE(RqTarget.Good());
 }
-
 TEST(GoCrazy, 1_Test)
 {
     http::RqTarget RqTarget = http::RqTarget("http://eXAMPLE/a/./b/../b/%63/%7bfoo%7d");
@@ -817,8 +736,6 @@ TEST(GoCrazy, 1_Test)
     EXPECT_EQ(RqTarget.HasFragment(), false);
     EXPECT_TRUE(RqTarget.Good());
 }
-
-
 // malicious (directory-traversal) encoded uri in query...
 TEST(GoCrazy, 2_Test)
 {

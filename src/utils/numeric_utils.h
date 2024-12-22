@@ -5,6 +5,8 @@
 #include <limits>
 #include <sstream>
 
+#include "maybe.h"
+
 namespace utils {
 
 namespace {
@@ -38,43 +40,43 @@ int StrToNumeric(const std::string& str)
 
 
 template <typename NumType>
-std::pair<bool /*is_valid*/, NumType> StrToNumericNoThrow(const std::string& str)
+utils::maybe<NumType> StrToNumericNoThrow(const std::string& str)
 {
     std::stringstream ss(str);
     NumType num;
     ss >> std::ws;
     std::string numstr = ss.str();
     if (numstr.empty() || (!IsSignedType<NumType>() && numstr[0] == '-')) {
-        return std::make_pair(false, 0);
+        return maybe_not();
     }
     ss >> num;
     if (ss.fail()) {
-        return std::make_pair(false, 0);
+        return maybe_not();
     }
     ss >> std::ws;
     if (!ss.eof()) {
-        return std::make_pair(false, 0);
+        return maybe_not();
     }
-    return std::make_pair(true, num);
+    return num;
 }
 
 
 template <typename NumType>
-std::pair<bool /* is_valid*/, NumType> HexToUnsignedNumericNoThrow(const std::string& str)
+utils::maybe<NumType> HexToUnsignedNumericNoThrow(const std::string& str)
 {
     NumType num;
     if (str.empty() || (IsSignedType<NumType>())) {
-        return std::make_pair(false, 0);
+        return utils::maybe_not();
     }
     if (!std::isxdigit(str[0])) {
-        return std::make_pair(false, 0);
+        return utils::maybe_not();
     }
     std::stringstream ss(str);
     ss >> std::hex >> num;
     if (ss.fail() || !ss.eof()) {
-        return std::make_pair(false, 0);
+        return utils::maybe_not();
     }
-    return std::make_pair(true, num);
+    return num;
 }
 
 

@@ -1,6 +1,7 @@
 #ifndef WS_C_API_SOCKET_WRAPPER_H
 #define WS_C_API_SOCKET_WRAPPER_H
 
+#include <maybe.h>
 #include <sys/types.h>
 #include <unique_ptr.h>
 
@@ -31,6 +32,10 @@ struct SendPackage {
     size_t bytes_sent;
 };
 
+enum SockType {
+    ST_TCP_V4,
+};
+
 class Socket {
   private:
     Socket();
@@ -38,15 +43,18 @@ class Socket {
     Socket& operator=(const Socket&);
 
   public:
-    Socket(int sockfd);
+    Socket(int sockfd);  // acquire owning of the fd
+    Socket(SockType type);
     ~Socket();
-    int sockfd() const;
+
+    bool TrySetFlags(int flags);
+    int sockfd() const { return sockfd_; }
 
     RecvPackage Recv(size_t max_read_sz = SOCK_READ_BUF_SZ) const;
     SockStatus Send(SendPackage&) const;
 
-    static std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > CreateUnixSocketPair(
-        bool set_nonblock = true);
+    typedef std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > SocketPair;
+    static utils::maybe<SocketPair> CreateLocalNonblockSocketPair();
 
   private:
     int sockfd_;

@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "logger.h"
+#include "rand.h"
 
 namespace utils {
 
@@ -49,20 +50,20 @@ bool HasChangedDirectory(const char *path)
     return chdir(path) != -1;
 }
 
-std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath)
+utils::maybe<std::string> ReadFileToString(const char *filePath)
 {
     if (!filePath[0]) {
         LOG(ERROR) << "Empty file path";
-        return std::make_pair(false, "");
+        return utils::maybe_not();
     }
     std::ifstream file(filePath);
     if (!file.is_open()) {
         LOG(ERROR) << "Could not open file: " << filePath;
-        return std::make_pair(false, "");
+        return utils::maybe_not();
     }
     std::stringstream buffer;
     buffer << file.rdbuf();
-    return std::make_pair(true, buffer.str());
+    return buffer.str();
 }
 
 bool CheckFileExtension(const std::string &file, const std::string &extention)
@@ -74,14 +75,13 @@ bool CheckFileExtension(const std::string &file, const std::string &extention)
                                                   file.substr(file.find_last_of('.')) == extention);
 }
 
-std::pair<bool /*success*/, std::vector<utils::DirEntry> /*dir_entries*/> GetDirEntries(
-    const char *directory)
+utils::maybe<std::vector<utils::DirEntry> > GetDirEntries(const char *directory)
 {
     std::vector<utils::DirEntry> entries;
     DIR *dir = opendir(directory);
     if (dir == NULL) {
         LOG(ERROR) << "Unable to read directory: " << directory;
-        return std::make_pair(false, entries);
+        return utils::maybe_not();
     }
 
     struct dirent *entry;
@@ -101,7 +101,20 @@ std::pair<bool /*success*/, std::vector<utils::DirEntry> /*dir_entries*/> GetDir
         }
     }
     closedir(dir);
-    return std::make_pair(true, entries);
+    return entries;
+}
+
+utils::maybe<std::string> CreateAndOpenTmpFileToStream(std::ofstream &fs)
+{
+    std::string tmp_name;
+    do {
+        tmp_name = TMP_DIR + GenerateRandomString(TMP_FILE_NAME_LEN);
+    } while (DoesPathExist(tmp_name.c_str()));
+    fs.open(tmp_name.c_str());
+    if (!fs.is_open()) {
+        return maybe_not();
+    }
+    return tmp_name;
 }
 
 std::string UpdatePath(const std::string &loc, const std::string &matched_prefix,
@@ -109,13 +122,16 @@ std::string UpdatePath(const std::string &loc, const std::string &matched_prefix
 {
     std::string updated_path = loc.substr(1);
     std::string remaining_path = uri_path.substr(matched_prefix.length());
+    LOG(DEBUG) << "updated_path: " << updated_path << " remaining_path: " << remaining_path;
+    LOG(DEBUG) << "*updated_path.rbegin(): " << *updated_path.rbegin()
+               << " *remaining_path.begin(): " << *remaining_path.begin();
     if (remaining_path.empty()) {
         return updated_path;
     }
     if (*updated_path.rbegin() != '/' && *remaining_path.begin() != '/') {
         updated_path += "/";
     }
-    updated_path += remaining_path;
+    updated_path += (remaining_path == "/" ? "" : remaining_path);
     return updated_path;
 }
 

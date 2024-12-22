@@ -21,7 +21,7 @@ struct ScriptDetails {
     std::string full_path;
 };
 
-std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<char>& buf);
+utils::maybe<utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<char>& buf);
 
 std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request& rq);
 

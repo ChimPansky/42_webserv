@@ -18,7 +18,6 @@ class IChildDiedCb {
     virtual ~IChildDiedCb() {};
 };
 
-
 struct ExecParams {
     ExecParams(const std::string& interpreter, const std::string& script_location,
                const std::string& script_name, std::vector<std::string> child_env,
@@ -34,6 +33,19 @@ struct ExecParams {
     std::string script_name;
     std::vector<std::string> child_env;
     std::string redirect_input_from_file;  // if empty - no redirect
+};
+
+// Move Only Class!
+class ChildProcessDescription {
+  public:
+    ChildProcessDescription() : pid_(-1) {}
+    ChildProcessDescription(pid_t pid, utils::unique_ptr<Socket> sock) : pid_(pid), sock_(sock) {}
+    pid_t pid() const { return pid_; }
+    Socket& sock() const { return *sock_; }
+
+  private:
+    pid_t pid_;
+    utils::unique_ptr<Socket> sock_;
 };
 
 class ChildProcessesManager {
@@ -64,8 +76,9 @@ class ChildProcessesManager {
     static ChildProcessesManager& get();
 
     void CheckOnce();
-    std::pair<bool, utils::unique_ptr<Socket> > TryRunChildProcess(const ExecParams&,
-                                                                   utils::unique_ptr<IChildDiedCb>);
+    utils::maybe<ChildProcessDescription> TryRunChildProcess(const ExecParams&,
+                                                             utils::unique_ptr<IChildDiedCb>);
+    void KillChildProcess(pid_t pid);
 
   private:
     static utils::unique_ptr<ChildProcessesManager> instance_;

@@ -61,30 +61,31 @@ class RqTarget {
     int validity_state() const { return validity_state_; };
     bool Good() const { return validity_state_ == RQ_TARGET_GOOD; };
 
-    bool HasScheme() const { return scheme_.first; };
-    bool HasUserInfo() const { return user_info_.first; };
-    bool HasHost() const { return host_.first; };
-    bool HasPort() const { return port_.first; };
-    bool HasPath() const { return path_.first; };
-    bool HasQuery() const { return query_.first; };
-    bool HasFragment() const { return fragment_.first; };
+    bool HasScheme() const { return scheme_.ok(); };
+    bool HasUserInfo() const { return user_info_.ok(); };
+    bool HasHost() const { return host_.ok(); };
+    bool HasPort() const { return port_.ok(); };
+    bool HasPath() const { return path_.ok(); };
+    bool HasQuery() const { return query_.ok(); };
+    bool HasFragment() const { return fragment_.ok(); };
     std::string ToStr() const;
     void AddTrailingSlashToPath();
     std::string GetDebugString() const;
 
-    const std::string& scheme() const { return scheme_.second; };
-    const std::string& user_info() const { return user_info_.second; };
-    const std::string& host() const { return host_.second; };
-    const std::string& port() const { return port_.second; };
-    const std::string& path() const { return path_.second; };
-    const std::string& query() const { return query_.second; };
-    const std::string& fragment() const { return fragment_.second; };
+    const std::string& scheme() const { return (scheme_ ? *scheme_ : empty_str_); };
+    const std::string& user_info() const { return (user_info_ ? *user_info_ : empty_str_); };
+    const std::string& host() const { return (host_ ? *host_ : empty_str_); };
+    const std::string& port() const { return (port_ ? *port_ : empty_str_); };
+    const std::string& path() const { return (path_ ? *path_ : empty_str_); };
+    const std::string& query() const { return (query_ ? *query_ : empty_str_); };
+    const std::string& fragment() const { return (fragment_ ? *fragment_ : empty_str_); };
 
 
   private:
     int validity_state_;
+    const std::string empty_str_;
 
-    typedef std::pair<bool /*component_defined*/, std::string /*value*/> Component;
+    typedef utils::maybe<std::string> Component;
     Component scheme_;
     Component user_info_;
     Component host_;
@@ -105,12 +106,11 @@ class RqTarget {
     // normalize components: decode safe-to-decode chars, convert encoded hex to upper, remove dot
     // segments and collapse slashes in path
     void Normalize_();
-    std::pair<bool /*valid_triplet*/, std::string> PercentDecode_(
-        const std::string& str, const char* dont_decode_set = NULL) const;
+    utils::maybe<std::string> PercentDecode_(const std::string& str,
+                                             const char* dont_decode_set = NULL) const;
     std::string PercentEncode_(const std::string& str, const char* dont_encode_set = NULL) const;
     void ConvertEncodedHexToUpper_(std::string& str);
-    std::pair<bool /*no_directory_traversal*/, std::string> RemoveDotSegments_(
-        const std::string& str) const;
+    utils::maybe<std::string> RemoveDotSegments_(const std::string& str) const;
     std::string CollapseSlashes_(const std::string& str) const;
 
     // helpers:
