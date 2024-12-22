@@ -178,7 +178,7 @@ static std::vector<LocationConfig> BuildLocationConfigs(
 bool ServerConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "listen" || key == "server_name" || key == "access_log" || key == "error_log" ||
-           key == "alias" || key == "index" || key == "autoindex" || "client_max_body_size";
+           key == "alias" || key == "index" || key == "autoindex" || key == "client_max_body_size";
 }
 
 bool ServerConfigBuilder::AreNestingsValid(const ParsedConfig& f) const

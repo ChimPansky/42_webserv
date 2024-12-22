@@ -64,7 +64,7 @@ static std::vector<ServerConfig> BuildServerConfigs(const std::vector<ParsedConf
 bool HttpConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "keepalive_timeout" || key == "client_max_body_size" || key == "error_page" ||
-           key == "alias" || key == "index" || key == "autoindex" || "client_max_body_size";
+           key == "alias" || key == "index" || key == "autoindex" || key == "client_max_body_size";
 }
 
 bool HttpConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
