@@ -322,28 +322,25 @@ ResponseCode RequestBuilder::InterpretHeaders_()
 RequestBuilder::BuildState RequestBuilder::PrepareBody_()
 {
     LOG(DEBUG) << "PrepareBody_";
+    if (body_builder_.chunked) {
+        return BS_BODY_CHUNK_SIZE;
+    }
     utils::maybe<std::string> content_length = rq_.GetHeaderVal("content-length");
+    if (!content_length) {
+        LOG(INFO) << "Content-Length missing";
+        return SetStatusAndExitBuilder_(HTTP_LENGTH_REQUIRED);
+    }
     utils::maybe<size_t> content_length_num = utils::StrToNumericNoThrow<size_t>(*content_length);
-    if (content_length_num) {
-        if (*content_length_num > body_builder_.max_body_size) {
-            LOG(INFO) << "Content-Length too large";
-            return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
-        }
-        body_builder_.remaining_length = *content_length_num;
-    } else {
+    if (!content_length_num) {
         LOG(INFO) << "Content-Length not a number";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    if (body_builder_.chunked) {
-        return BS_BODY_CHUNK_SIZE;
-    } else {
-        if (body_builder_.remaining_length > body_builder_.max_body_size) {
-            LOG(INFO) << "Content-Length too large";
-            return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
-        }
-        return BS_BODY_REGULAR;
+    if (*content_length_num > body_builder_.max_body_size) {
+        LOG(INFO) << "Content-Length too large";
+        return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
     }
-    return BS_END;
+    body_builder_.remaining_length = *content_length_num;
+    return BS_BODY_REGULAR;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()

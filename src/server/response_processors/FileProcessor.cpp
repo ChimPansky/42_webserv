@@ -41,6 +41,7 @@ void FileProcessor::ProcessPost_(const std::string& file_path)
         std::map<std::string, std::string> hdrs;
         response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
             new http::Response(http::HTTP_CREATED, http::HTTP_1_1, hdrs, std::vector<char>())));
+        return;
     }
     DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
 }

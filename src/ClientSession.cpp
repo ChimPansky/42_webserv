@@ -111,6 +111,7 @@ http::HeadersValidationResult ClientSession::ChooseServerCb::Call(const http::Re
         LOG(DEBUG) << "No location match -> 404";
         return http::HeadersValidationResult(http::HTTP_NOT_FOUND);
     }
+    rq_dest.loc = chosen_loc.first;
     LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
     if (std::find(chosen_loc.first->allowed_methods().begin(),
                   chosen_loc.first->allowed_methods().end(),
@@ -125,6 +126,7 @@ http::HeadersValidationResult ClientSession::ChooseServerCb::Call(const http::Re
     validation_result.max_body_size = chosen_loc.first->client_max_body_size();
     validation_result.upload_path = utils::UpdatePath(
         chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
+    rq_dest.updated_path = validation_result.upload_path.ok() ? *validation_result.upload_path : "";
     return validation_result;
 }
 

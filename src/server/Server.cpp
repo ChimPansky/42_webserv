@@ -119,6 +119,10 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         return utils::unique_ptr<AResponseProcessor>(
             new CGIProcessor(*this, rq_dest.updated_path, rq, rq_dest.loc->cgi_extensions(), cb));
     } else {
+        if (!rq_dest.loc) {
+            return utils::unique_ptr<AResponseProcessor>(
+                new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
+        }
         return utils::unique_ptr<AResponseProcessor>(
             new FileProcessor(*this, rq_dest.updated_path, cb, rq, *rq_dest.loc));
     }
