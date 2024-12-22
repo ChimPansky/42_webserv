@@ -29,11 +29,11 @@ struct ExecParams {
           child_env(child_env),
           redirect_input_from_file(redirect_input_from_file)
     {}
-    const std::string& interpreter;
-    const std::string& script_location;
-    const std::string& script_name;
+    std::string interpreter;
+    std::string script_location;
+    std::string script_name;
     std::vector<std::string> child_env;
-    const std::string& redirect_input_from_file;  // if empty - no redirect
+    std::string redirect_input_from_file;  // if empty - no redirect
 };
 
 class ChildProcessesManager {

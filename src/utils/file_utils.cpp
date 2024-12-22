@@ -104,4 +104,19 @@ std::pair<bool /*success*/, std::vector<utils::DirEntry> /*dir_entries*/> GetDir
     return std::make_pair(true, entries);
 }
 
+std::string UpdatePath(const std::string &loc, const std::string &matched_prefix,
+                       const std::string &uri_path)
+{
+    std::string updated_path = loc.substr(1);
+    std::string remaining_path = uri_path.substr(matched_prefix.length());
+    if (remaining_path.empty()) {
+        return updated_path;
+    }
+    if (*updated_path.rbegin() != '/' && *remaining_path.begin() != '/') {
+        updated_path += "/";
+    }
+    updated_path += remaining_path;
+    return updated_path;
+}
+
 }  // namespace utils

@@ -40,6 +40,8 @@ bool CreateAndOpenTmpFileToStream(FileStream &fs, char *tmp_file_path)
     return fs.is_open();
 }
 
+std::string UpdatePath(const std::string &loc, const std::string &matched_prefix,
+                       const std::string &uri_path);
 
 enum DirEntryType {
     DE_FILE,

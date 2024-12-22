@@ -159,7 +159,7 @@ std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request
 }
 
 std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
-    const std::string& path_from_url)
+    const std::string& path_from_url, const std::string& alias_dir)
 {
     std::pair<bool, utils::unique_ptr<ScriptDetails> > res(false,
                                                            utils::unique_ptr<ScriptDetails>(NULL));
@@ -175,12 +175,15 @@ std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
         LOG(ERROR) << "No script after /cgi-bin/ is specified";
         return res;
     }
+
     size_t extra_path_pos = path_from_url.find('/', script_pos);
+
     std::string script_location = path_from_url.substr(0, script_pos);
+    script_location = utils::UpdatePath(alias_dir, "/cgi-bin/", script_location);
     std::string script_name = (extra_path_pos == std::string::npos)
                                   ? path_from_url.substr(script_pos)
                                   : path_from_url.substr(script_pos, extra_path_pos - script_pos);
-    if (script_location.find('.') == std::string::npos) {
+    if (script_name.find('.') == std::string::npos) {
         LOG(ERROR) << "The path must include the name of the script after /cgi-bin/ "
                    << path_from_url;
         return res;
@@ -188,8 +191,9 @@ std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
     std::string extra_path = (extra_path_pos == std::string::npos)
                                  ? std::string()
                                  : path_from_url.substr(extra_path_pos);
+    std::string full_path = script_location + extra_path + "/";
     res.first = true;
-    res.second.reset(new ScriptDetails(script_location, script_name, extra_path));
+    res.second.reset(new ScriptDetails(script_location, script_name, extra_path, full_path));
     return res;
 }
 

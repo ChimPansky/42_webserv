@@ -11,12 +11,14 @@
 namespace cgi {
 
 struct ScriptDetails {
-    ScriptDetails(std::string location, std::string name, std::string extra_path)
-        : location(location), name(name), extra_path(extra_path)
+    ScriptDetails(const std::string& location, const std::string& name,
+                  const std::string& extra_path, const std::string& full_path)
+        : location(location), name(name), extra_path(extra_path), full_path(full_path)
     {}
     std::string location;
     std::string name;
     std::string extra_path;
+    std::string full_path;
 };
 
 std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<char>& buf);
@@ -24,7 +26,7 @@ std::pair<bool, utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector
 std::vector<std::string> GetEnv(const ScriptDetails& script, const http::Request& rq);
 
 std::pair<bool, utils::unique_ptr<ScriptDetails> > GetScriptDetails(
-    const std::string& path_from_url);
+    const std::string& path_from_url, const std::string& alias_dir);
 
 }  // namespace cgi
 
