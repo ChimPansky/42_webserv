@@ -10,7 +10,7 @@
 #include "response_processors/RedirectProcessor.h"
 
 
-const std::string DirectoryProcessor::kAutoIndexStyle()
+const char* DirectoryProcessor::kAutoIndexStyle()
 {
     return "body { font-family: 'Courier New', Courier, monospace; background-color: "
            "#121212;color: #e0e0e0;margin: 0; padding: 0; }"
