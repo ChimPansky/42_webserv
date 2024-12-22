@@ -42,25 +42,25 @@ RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, cons
                    const std::string& fragment)
 {
     if (!scheme.empty()) {
-        scheme_ = std::make_pair(true, scheme);
+        scheme_.reset(scheme);
     }
     if (!user_info.empty()) {
-        user_info_ = std::make_pair(true, user_info);
+        user_info_.reset(user_info);
     }
     if (!host.empty()) {
-        host_ = std::make_pair(true, host);
+        host_.reset(host);
     }
     if (!port.empty()) {
-        port_ = std::make_pair(true, port);
+        port_.reset(port);
     }
     if (!path.empty()) {
-        path_ = std::make_pair(true, path);
+        path_.reset(path);
     }
     if (!query.empty()) {
-        query_ = std::make_pair(true, query);
+        query_.reset(query);
     }
     if (!fragment.empty()) {
-        fragment_ = std::make_pair(true, fragment);
+        fragment_.reset(fragment);
     }
     Validate_();
     Normalize_();
@@ -101,32 +101,34 @@ bool RqTarget::operator!=(const RqTarget& rhs) const
 std::string RqTarget::ToStr() const
 {
     std::stringstream ss;
-    if (scheme_.first) {
-        ss << scheme_.second << "://";
+    if (scheme_) {
+        ss << *scheme_ << "://";
     }
-    if (user_info_.first) {
-        ss << user_info_.second << "@";
+    if (user_info_) {
+        ss << *user_info_ << "@";
     }
-    if (host_.first) {
-        ss << host_.second;
+    if (host_) {
+        ss << *host_;
     }
-    if (port_.first) {
-        ss << ":" << port_.second;
+    if (port_) {
+        ss << ":" << *port_;
     }
-    ss << http::PercentEncode(path_.second, "/");
-    if (query_.first) {
-        ss << "?" << http::PercentEncode(query_.second, "&=");
+    if (path_) {
+        ss << http::PercentEncode(*path_, "/");
     }
-    if (fragment_.first) {
-        ss << "#" << fragment_.second;
+    if (query_) {
+        ss << "?" << http::PercentEncode(*query_, "&=");
+    }
+    if (fragment_) {
+        ss << "#" << *fragment_;
     }
     return ss.str();
 }
 
 void RqTarget::AddTrailingSlashToPath()
 {
-    if (path_.first && path_.second[path_.second.size() - 1] != '/') {
-        path_.second += "/";
+    if (path_ && path_.value()[path_->size() - 1] != '/') {
+        *path_ += "/";
     }
 }
 
@@ -136,20 +138,20 @@ std::string RqTarget::GetDebugString() const
 
     oss << "DEBUG INFO FOR RequestTarget:\n";
     oss << "Good(): " << (Good() ? "YES" : "NO") << "\n";
-    oss << "scheme defined: " << (scheme_.first ? "YES" : "NO") << "\n";
+    oss << "scheme defined: " << (scheme_ ? "YES" : "NO") << "\n";
     oss << "scheme value: " << scheme() << "\n";
-    oss << "user_info defined: " << (user_info_.first ? "YES" : "NO") << "\n";
-    oss << "user_info value: " << user_info_.second << "\n";
-    oss << "host defined: " << (host_.first ? "YES" : "NO") << "\n";
-    oss << "host value: " << host_.second << "\n";
-    oss << "port defined: " << (port_.first ? "YES" : "NO") << "\n";
-    oss << "port value: " << port_.second << "\n";
-    oss << "path defined: " << (path_.first ? "YES" : "NO") << "\n";
-    oss << "path value: " << path_.second << "\n";
-    oss << "query defined: " << (query_.first ? "YES" : "NO") << "\n";
-    oss << "query value: " << query_.second << "\n";
-    oss << "fragment defined: " << (fragment_.first ? "YES" : "NO") << "\n";
-    oss << "fragment value: " << fragment_.second << "\n";
+    oss << "user_info defined: " << (user_info_ ? "YES" : "NO") << "\n";
+    oss << "user_info value: " << *user_info_ << "\n";
+    oss << "host defined: " << (host_ ? "YES" : "NO") << "\n";
+    oss << "host value: " << *host_ << "\n";
+    oss << "port defined: " << (port_ ? "YES" : "NO") << "\n";
+    oss << "port value: " << *port_ << "\n";
+    oss << "path defined: " << (path_ ? "YES" : "NO") << "\n";
+    oss << "path value: " << *path_ << "\n";
+    oss << "query defined: " << (query_ ? "YES" : "NO") << "\n";
+    oss << "query value: " << *query_ << "\n";
+    oss << "fragment defined: " << (fragment_ ? "YES" : "NO") << "\n";
+    oss << "fragment value: " << *fragment_ << "\n";
     oss << "FLAGS: "
         << "\n";
     oss << "RQ_TARGET_GOOD: " << (validity_state_ == RQ_TARGET_GOOD ? "YES" : "NO") << "\n";
@@ -174,60 +176,56 @@ void RqTarget::ParseScheme_(const std::string& raw_target, size_t& raw_target_po
 {
     size_t end_pos = raw_target.find("://");
     if (end_pos == std::string::npos) {
-        scheme_.first = false;
+        scheme_.reset();
         return;
     }
-    scheme_.first = true;
-    scheme_.second = utils::ToLowerCase(raw_target.substr(0, end_pos));
+    scheme_.reset(utils::ToLowerCase(raw_target.substr(0, end_pos)));
     raw_target_pos = end_pos + 3;
 }
 
 void RqTarget::ParseUserInfo_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!scheme_.first || raw_target_pos >= raw_target.size()) {
+    if (!scheme_ || raw_target_pos >= raw_target.size()) {
         return;
     }
     size_t start_pos = raw_target_pos;
     size_t end_pos = raw_target.find("@", start_pos);
     ;
     if (end_pos == std::string::npos) {
-        user_info_.first = false;
+        user_info_.reset();
         return;
     }
-    user_info_.first = true;
-    user_info_.second = raw_target.substr(start_pos, end_pos - start_pos);
+    user_info_.reset(raw_target.substr(start_pos, end_pos - start_pos));
     raw_target_pos = end_pos + 1;
 }
 
 void RqTarget::ParseHost_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!scheme_.first || raw_target_pos >= raw_target.size()) {
+    if (!scheme_ || raw_target_pos >= raw_target.size()) {
         return;
     }
-    host_.first = true;
     size_t start_pos = raw_target_pos;
     raw_target_pos = raw_target.find_first_of(":/", start_pos);
     if (raw_target_pos == std::string::npos) {
-        host_.second = utils::ToLowerCase(raw_target.substr(start_pos));
+        host_ = utils::ToLowerCase(raw_target.substr(start_pos));
         return;
     }
-    host_.second = utils::ToLowerCase(raw_target.substr(start_pos, raw_target_pos - start_pos));
+    host_.reset(utils::ToLowerCase(raw_target.substr(start_pos, raw_target_pos - start_pos)));
 }
 
 void RqTarget::ParsePort_(const std::string& raw_target, size_t& raw_target_pos)
 {
-    if (!host_.first || raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != ':') {
+    if (!host_ || raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != ':') {
         return;
     }
-    port_.first = true;
     raw_target_pos++;
     size_t start_pos = raw_target_pos;
     raw_target_pos = raw_target.find_first_of("/?#", raw_target_pos);
     if (raw_target_pos == std::string::npos) {
-        port_.second = raw_target.substr(start_pos);
+        port_ = raw_target.substr(start_pos);
         return;
     }
-    port_.second = raw_target.substr(start_pos, raw_target_pos - start_pos);
+    port_.reset(raw_target.substr(start_pos, raw_target_pos - start_pos));
 }
 
 void RqTarget::ParsePath_(const std::string& raw_target, size_t& raw_target_pos)
@@ -237,13 +235,12 @@ void RqTarget::ParsePath_(const std::string& raw_target, size_t& raw_target_pos)
         return;
     }
     size_t start_pos = raw_target_pos;
-    path_.first = true;
     raw_target_pos = raw_target.find_first_of("?#", start_pos);
     if (raw_target_pos == std::string::npos) {
-        path_.second = raw_target.substr(start_pos);
+        path_ = raw_target.substr(start_pos);
         return;
     }
-    path_.second = raw_target.substr(start_pos, raw_target_pos - start_pos);
+    path_.reset(raw_target.substr(start_pos, raw_target_pos - start_pos));
 }
 
 void RqTarget::ParseQuery_(const std::string& raw_target, size_t& raw_target_pos)
@@ -251,13 +248,12 @@ void RqTarget::ParseQuery_(const std::string& raw_target, size_t& raw_target_pos
     if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '?') {
         return;
     }
-    query_.first = true;
     size_t start_pos = raw_target_pos + 1;
     raw_target_pos = raw_target.find("#", start_pos);
     if (raw_target_pos == std::string::npos) {
-        query_.second = raw_target.substr(start_pos);
+        query_ = raw_target.substr(start_pos);
     }
-    query_.second = raw_target.substr(start_pos, raw_target_pos - start_pos);
+    query_.reset(raw_target.substr(start_pos, raw_target_pos - start_pos));
 }
 
 void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_pos)
@@ -265,54 +261,53 @@ void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_
     if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '#') {
         return;
     }
-    fragment_.first = true;
-    fragment_.second = raw_target.substr(raw_target_pos + 1);
+    fragment_.reset(raw_target.substr(raw_target_pos + 1));
 }
 
 void RqTarget::Normalize_()
 {
-    if (host_.first) {
-        std::pair<bool, std::string> decoded = http::PercentDecode(host_.second);
-        if (decoded.first) {
-            host_.second = decoded.second;
+    if (host_) {
+        utils::maybe<std::string> decoded = http::PercentDecode(*host_);
+        if (decoded) {
+            *host_ = *decoded;
         } else {  // invalid encoding detected -> BAD_REQUEST
             validity_state_ |= RQ_TARGET_BAD_HOST;
         }
-        ConvertEncodedHexToUpper_(host_.second);
+        ConvertEncodedHexToUpper_(*host_);
     }
-    if (port_.first && port_.second == "80" && scheme_.second == "http") {
-        port_ = std::pair<bool, std::string>(false, "");
+    if (port_ && *port_ == "80" && scheme_.value() == "http") {
+        port_.reset();
     }
-    if (path_.first) {
-        std::pair<bool, std::string> decoded = http::PercentDecode(path_.second, "/");
-        if (decoded.first) {
-            path_.second = decoded.second;
+    if (path_) {
+        utils::maybe<std::string> decoded = http::PercentDecode(*path_, "/");
+        if (decoded) {
+            *path_ = *decoded;
         } else {  // invalid encoding detected -> BAD_REQUEST
             validity_state_ |= RQ_TARGET_BAD_PATH;
         }
-        ConvertEncodedHexToUpper_(path_.second);
-        path_.second = CollapseSlashes_(path_.second);
-        std::pair<bool, std::string> dot_segment_free_path = RemoveDotSegments_(path_.second);
-        if (dot_segment_free_path.first) {
-            path_.second = dot_segment_free_path.second;
+        ConvertEncodedHexToUpper_(*path_);
+        *path_ = CollapseSlashes_(*path_);
+        utils::maybe<std::string> dot_segment_free_path = RemoveDotSegments_(*path_);
+        if (dot_segment_free_path) {
+            *path_ = *dot_segment_free_path;
         } else {  // directory traversal detected -> BAD_REQUEST (log it?)
             validity_state_ |= RQ_TARGET_BAD_PATH;
         }
     }
-    if (query_.first) {
-        std::pair<bool, std::string> decoded =
-            http::PercentDecode(query_.second, "&=");  // maybe change to "&=+,/,;?"
-        if (decoded.first) {
-            query_.second = decoded.second;
+    if (query_) {
+        utils::maybe<std::string> decoded =
+            http::PercentDecode(*query_, "&=");  // maybe change to "&=+,/,;?"
+        if (decoded) {
+            *query_ = *decoded;
         } else {  // invalid encoding detected -> BAD_REQUEST
             validity_state_ |= RQ_TARGET_BAD_QUERY;
         }
-        ConvertEncodedHexToUpper_(query_.second);
+        ConvertEncodedHexToUpper_(*query_);
     }
 }
 
 
-std::pair<bool /*valid*/, std::string> RqTarget::RemoveDotSegments_(const std::string& str) const
+utils::maybe<std::string> RqTarget::RemoveDotSegments_(const std::string& str) const
 {
     int dir_level = 0;
     std::string input = str;
@@ -342,10 +337,10 @@ std::pair<bool /*valid*/, std::string> RqTarget::RemoveDotSegments_(const std::s
             dir_level++;
         }
         if (dir_level < 0) {
-            return std::pair<bool, std::string>(false, "");
+            return utils::maybe_not();
         }
     }
-    return std::pair<bool, std::string>(true, output);
+    return output;
 }
 
 void RqTarget::RemoveLastSegment_(std::string& path) const
@@ -395,35 +390,35 @@ void RqTarget::ConvertEncodedHexToUpper_(std::string& str)
 
 void RqTarget::Validate_()
 {
-    if (scheme_.first) {
+    if (scheme_) {
         ValidateScheme_();
     }
-    if (user_info_.first) {
+    if (user_info_) {
         validity_state_ |= RQ_TARGET_HAS_USER_INFO;
     }
-    if (host_.first) {
+    if (host_) {
         ValidateHost_();
     }
-    if (port_.first) {
+    if (port_) {
         ValidatePort_();
     }
-    if (path_.first) {
+    if (path_) {
         ValidatePath_();
     }
-    if (query_.first) {
+    if (query_) {
         ValidateQuery_();
     }
-    if (fragment_.first) {
+    if (fragment_) {
         validity_state_ |= RQ_TARGET_HAS_FRAGMENT;
     }
 }
 
 void RqTarget::ValidateScheme_()
 {
-    if (!scheme_.first) {
+    if (!scheme_) {
         return;
     }
-    if (scheme_.second != "http") {
+    if (*scheme_ != "http") {
         validity_state_ |= RQ_TARGET_BAD_SCHEME;
     }
 }
@@ -431,18 +426,18 @@ void RqTarget::ValidateScheme_()
 void RqTarget::ValidateHost_()
 {
     // todo: decide if we check for valid ipv4 or ipv6 address,...
-    if (!host_.first) {
+    if (!host_) {
         return;
     }
-    if (!scheme_.first) {
+    if (!scheme_) {
         validity_state_ |= RQ_TARGET_BAD_SCHEME;
         return;
     }
-    if (host_.second.empty()) {
+    if (host_->empty()) {
         validity_state_ |= RQ_TARGET_BAD_HOST;
     }
-    for (size_t i = 0; i < host_.second.size(); ++i) {
-        const char* str = host_.second.c_str() + i;
+    for (size_t i = 0; i < host_->size(); ++i) {
+        const char* str = host_->c_str() + i;
         if (IsEncodedOctet_(str)) {
             i += 2;
             continue;
@@ -456,18 +451,18 @@ void RqTarget::ValidateHost_()
 
 void RqTarget::ValidatePort_()
 {
-    if (!port_.first) {
+    if (!port_) {
         return;
     }
-    if (!scheme_.first) {
+    if (!scheme_) {
         validity_state_ |= RQ_TARGET_BAD_SCHEME;
         return;
     }
-    if (!host_.first) {
+    if (!host_) {
         validity_state_ |= RQ_TARGET_BAD_HOST;
         return;
     }
-    if (port_.second.empty() || !utils::StrToNumericNoThrow<unsigned short>(port_.second).first) {
+    if (port_->empty() || !utils::StrToNumericNoThrow<unsigned short>(*port_)) {
         validity_state_ |= RQ_TARGET_BAD_PORT;
     }
 }
@@ -475,12 +470,12 @@ void RqTarget::ValidatePort_()
 // assume that path is already normalized and (unreserved)-decoded
 void RqTarget::ValidatePath_()
 {
-    if (!path_.first || path_.second.empty() || path_.second[0] != '/') {
+    if (!path_ || path_->empty() || (*path_)[0] != '/') {
         validity_state_ |= RQ_TARGET_BAD_PATH;
         return;
     }
-    for (size_t i = 0; i < path_.second.size(); ++i) {
-        const char* str = path_.second.c_str() + i;
+    for (size_t i = 0; i < path_->size(); ++i) {
+        const char* str = path_->c_str() + i;
         if (i == 1 && *str == '/') {
             validity_state_ |= RQ_TARGET_BAD_PATH;
             return;
@@ -499,11 +494,11 @@ void RqTarget::ValidatePath_()
 
 void RqTarget::ValidateQuery_()
 {
-    if (!query_.first) {
+    if (!query_) {
         return;
     }
-    for (size_t i = 0; i < query_.second.size(); ++i) {
-        const char* str = query_.second.c_str() + i;
+    for (size_t i = 0; i < query_->size(); ++i) {
+        const char* str = query_->c_str() + i;
         if (IsEncodedOctet_(str)) {
             i += 2;
             continue;

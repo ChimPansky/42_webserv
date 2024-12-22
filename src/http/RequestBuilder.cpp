@@ -146,12 +146,12 @@ ResponseCode RequestBuilder::TrySetMethod_(const std::string& raw_method)
         LOG(INFO) << "Invalid Method name: " << raw_method;
         return HTTP_BAD_REQUEST;
     };
-    std::pair<bool, Method> converted_method = HttpMethodFromStr(raw_method);
-    if (!converted_method.first) {
+    utils::maybe<Method> converted_method = HttpMethodFromStr(raw_method);
+    if (!converted_method) {
         LOG(INFO) << "Method not implemented: " << raw_method;
         return HTTP_NOT_IMPLEMENTED;
     }
-    rq_.method = converted_method.second;
+    rq_.method = *converted_method;
     return HTTP_OK;
 }
 
@@ -175,12 +175,12 @@ ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
         LOG(INFO) << "Invalid Version name: " << raw_version;
         return HTTP_BAD_REQUEST;
     };
-    std::pair<bool, Version> converted_version = HttpVersionFromStr(raw_version);
-    if (!converted_version.first) {
+    utils::maybe<Version> converted_version = HttpVersionFromStr(raw_version);
+    if (!converted_version) {
         LOG(INFO) << "Version not implemented: " << raw_version;
         return HTTP_BAD_REQUEST;
     }
-    rq_.version = converted_version.second;
+    rq_.version = *converted_version;
     return HTTP_OK;
 }
 
@@ -267,37 +267,37 @@ ResponseCode RequestBuilder::ValidateHeadersSyntax_()
 // todo: do we need to differentiate btw HTTP/1.0 and HTTP/1.1?
 ResponseCode RequestBuilder::InterpretHeaders_()
 {
-    std::pair<bool, std::string> host = rq_.GetHeaderVal("host");
-    if (!host.first) {
+    utils::maybe<std::string> host = rq_.GetHeaderVal("host");
+    if (!host.ok()) {
         LOG(INFO) << "Host header missing";
         return HTTP_BAD_REQUEST;
     }
-    std::pair<bool, std::string> content_length = rq_.GetHeaderVal("content-length");
-    std::pair<bool, std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
-    if (content_length.first && transfer_encoding.first) {
+    utils::maybe<std::string> content_length = rq_.GetHeaderVal("content-length");
+    utils::maybe<std::string> transfer_encoding = rq_.GetHeaderVal("transfer-encoding");
+    if (content_length && transfer_encoding) {
         LOG(INFO) << "Both Content-Length and Transfer-Encoding headers present";
         return HTTP_BAD_REQUEST;
     }
-    if (transfer_encoding.first && transfer_encoding.second == "chunked") {
+    if (transfer_encoding && *transfer_encoding == "chunked") {
         rq_has_body_ = true;
         body_builder_.chunked = true;
     }
-    if (content_length.first) {
+    if (content_length) {
         rq_has_body_ = true;
-        std::pair<bool, size_t> content_length_num =
-            utils::StrToNumericNoThrow<size_t>(content_length.second);
-        if (content_length_num.first) {
-            if (content_length_num.second > body_builder_.max_body_size) {
+        utils::maybe<size_t> content_length_num =
+            utils::StrToNumericNoThrow<size_t>(*content_length);
+        if (content_length_num) {
+            if (*content_length_num > body_builder_.max_body_size) {
                 LOG(INFO) << "Content-Length too large";
                 return HTTP_PAYLOAD_TOO_LARGE;
             }
-            body_builder_.remaining_length = content_length_num.second;
+            body_builder_.remaining_length = *content_length_num;
         } else {
             LOG(INFO) << "Content-Length not a number";
             return HTTP_BAD_REQUEST;
         }
     }
-    if (rq_.method == HTTP_POST && !content_length.first && !transfer_encoding.first) {
+    if (rq_.method == HTTP_POST && !content_length && !transfer_encoding) {
         LOG(INFO) << "POST request without Content-Length or Transfer-Encoding";
         return HTTP_LENGTH_REQUIRED;
     }
@@ -307,13 +307,13 @@ ResponseCode RequestBuilder::InterpretHeaders_()
 
 RequestBuilder::BuildState RequestBuilder::PrepareBody_()
 {
-    std::pair<bool, std::string> tmp_f =
+    utils::maybe<std::string> tmp_f =
         utils::CreateAndOpenTmpFileToStream(body_builder_.body_stream);
-    if (!tmp_f.first) {
+    if (!tmp_f) {
         LOG(ERROR) << "Failed to create temporary file.";
         return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
     }
-    rq_.body = tmp_f.second;
+    rq_.body = *tmp_f;
     if (body_builder_.chunked) {
         return BS_BODY_CHUNK_SIZE;
     } else {
@@ -350,17 +350,17 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
         case EXTRACTION_CRLF_NOT_FOUND: return BS_BODY_CHUNK_SIZE;
         default: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    std::pair<bool, size_t> chunk_size = utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
-    if (!chunk_size.first) {
+    utils::maybe<size_t> chunk_size = utils::HexToUnsignedNumericNoThrow<size_t>(extraction_);
+    if (!chunk_size) {
         LOG(INFO) << "Chunk Size Syntax Error";
         return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
     }
-    if (chunk_size.second == 0) {
+    if (*chunk_size == 0) {
         body_builder_.body_stream.close();
         return BS_END;
     }
-    body_builder_.body_idx += chunk_size.second;
-    body_builder_.remaining_length = chunk_size.second;
+    body_builder_.body_idx += *chunk_size;
+    body_builder_.remaining_length = *chunk_size;
     if (body_builder_.body_idx > body_builder_.max_body_size) {
         LOG(INFO) << "Chunked content too large";
         return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);

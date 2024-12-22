@@ -5,11 +5,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cstdio>
+#include <fstream>
 #include <string>
 #include <vector>
 
-#include "rand.h"
+#include "maybe.h"
 
 #define TMP_FILE_NAME_LEN 20
 // todo move to config?
@@ -29,10 +29,9 @@ bool IsDirectory(const char *path);
 
 bool IsRegularFile(const char *path);
 
-std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(const char *filePath);
+utils::maybe<std::string> ReadFileToString(const char *filePath);
 
-inline std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToString(
-    const std::string &filePath)
+inline utils::maybe<std::string> ReadFileToString(const std::string &filePath)
 {
     return ReadFileToString(filePath.c_str());
 }
@@ -40,17 +39,7 @@ inline std::pair<bool /*success*/, std::string /*file_content*/> ReadFileToStrin
 
 bool CheckFileExtension(const std::string &file, const std::string &extention);
 
-template <class FileStream>
-std::pair<bool, std::string> CreateAndOpenTmpFileToStream(FileStream &fs)
-{
-    std::string tmp_name;
-    do {
-        tmp_name = TMP_DIR + GenerateRandomString(TMP_FILE_NAME_LEN);
-    } while (access(tmp_name.c_str(), F_OK) == 0);
-    // Create and use the file
-    fs.open(tmp_name.c_str());
-    return std::make_pair(fs.is_open(), tmp_name);
-}
+maybe<std::string /*filename*/> CreateAndOpenTmpFileToStream(std::ofstream &fs);
 
 enum DirEntryType {
     DE_FILE,
@@ -77,8 +66,7 @@ class DirEntry {
     size_t size_;
 };
 
-std::pair<bool /*success*/, std::vector<DirEntry> /*dir_entries*/> GetDirEntries(
-    const char *directory);
+utils::maybe<std::vector<DirEntry> > GetDirEntries(const char *directory);
 
 }  // namespace utils
 

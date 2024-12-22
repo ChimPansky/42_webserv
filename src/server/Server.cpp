@@ -170,7 +170,7 @@ std::pair<MatchType, std::string> Server::MatchHostName(
 
 std::pair<MatchType, std::string> Server::MatchedServerName(const http::Request& rq) const
 {
-    return MatchHostName(rq.GetHeaderVal("host").second, server_names_);
+    return MatchHostName(rq.GetHeaderVal("host").value(), server_names_);
 }
 
 std::string Server::GetDebugString() const
