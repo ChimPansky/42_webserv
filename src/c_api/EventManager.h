@@ -46,7 +46,7 @@ class EventManager {
         }
         return false;
     }
-    static void DeleteCallback(int fd, CallbackType type = CT_READWRITE)
+    static void DeleteCallback(int fd, CallbackType type = CT_READWRITE) throw()
     {
         if (instance_) {
             instance_->DeleteCallback_(fd, type);

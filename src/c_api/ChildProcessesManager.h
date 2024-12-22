@@ -75,7 +75,7 @@ class ChildProcessesManager {
     void CheckOnce();
     utils::maybe<ChildProcessDescription> TryRunChildProcess(const ExecParams&,
                                                              utils::unique_ptr<IChildDiedCb>);
-    void KillChildProcess(pid_t pid);
+    void KillChildProcess(pid_t pid) throw();
 
   private:
     static utils::unique_ptr<ChildProcessesManager> instance_;

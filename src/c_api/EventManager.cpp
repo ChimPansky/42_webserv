@@ -55,6 +55,8 @@ bool EventManager::TryRegisterCallback_(int fd, CallbackType type,
     return true;
 }
 
+// TODO: this function is called from d-tor, but not exception safe, which would lead to terminate.
+//  consider change to commented code below
 void EventManager::DeleteCallback_(int fd, CallbackType type)
 {
     if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
@@ -64,6 +66,24 @@ void EventManager::DeleteCallback_(int fd, CallbackType type)
         fds_to_delete_.push_back(std::make_pair(fd, CT_WRITE));
     }
 }
+
+// void EventManager::DeleteCallback_(int fd, CallbackType type)
+// {
+//     if (type & CT_READ) {
+//         FdToCallbackMapIt it = rd_sockets_.find(fd);
+//         if (it != rd_sockets_.end()) {
+//             it->second.reset();
+//             multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_);
+//         }
+//     }
+//     if (type & CT_WRITE) {
+//         FdToCallbackMapIt it = rd_sockets_.find(fd);
+//         if (it != rd_sockets_.end()) {
+//             it->second.reset();
+//             multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_);
+//         }
+//     }
+// }
 
 void EventManager::ClearCallback_(int fd, CallbackType type)
 {
