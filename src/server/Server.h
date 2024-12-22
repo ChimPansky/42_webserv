@@ -24,12 +24,11 @@ enum LocationType {
 
 struct RequestDestination {
     RequestDestination(utils::shared_ptr<Server> server)
-        : server(server), loc(NULL), updated_path(""), is_cgi(false)
+        : server(server), loc(NULL), updated_path("")
     {}
     utils::shared_ptr<Server> server;
     utils::shared_ptr<Location> loc;
     std::string updated_path;
-    bool is_cgi;
 };
 
 class Server {

@@ -119,14 +119,14 @@ http::HeadersValidationResult ClientSession::ChooseServerCb::Call(const http::Re
         LOG(DEBUG) << "Method not allowed for specific location -> 405";
         return http::HeadersValidationResult(http::HTTP_NOT_FOUND);
     }
-    if (chosen_loc.second == CGI) {
-        rq_dest.is_cgi = true;
-    }
+    rq_dest.updated_path = utils::UpdatePath(chosen_loc.first->alias_dir(),
+                                             chosen_loc.first->route().first, rq.rqTarget.path());
+
     http::HeadersValidationResult validation_result(http::HTTP_OK);
-    validation_result.max_body_size = chosen_loc.first->client_max_body_size();
-    validation_result.upload_path = utils::UpdatePath(
-        chosen_loc.first->alias_dir(), chosen_loc.first->route().first, rq.rqTarget.path());
-    rq_dest.updated_path = validation_result.upload_path.ok() ? *validation_result.upload_path : "";
+    if (chosen_loc.second == STATIC_PATH && rq.method == http::HTTP_POST) {
+        validation_result.max_body_size = chosen_loc.first->client_max_body_size();
+        validation_result.upload_path = rq_dest.updated_path;
+    }
     return validation_result;
 }
 

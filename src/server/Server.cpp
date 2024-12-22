@@ -114,7 +114,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     utils::unique_ptr<http::IResponseCallback> cb) const
 {
     // TODO: add redirect processor
-    if (rq_dest.is_cgi) {
+    if (rq_dest.loc->is_cgi()) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI";
         return utils::unique_ptr<AResponseProcessor>(
             new CGIProcessor(*this, rq_dest.updated_path, rq, rq_dest.loc->cgi_extensions(), cb));

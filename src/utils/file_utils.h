@@ -29,8 +29,6 @@ bool IsDirectory(const char *path);
 
 bool IsRegularFile(const char *path);
 
-std::string GetHiddenFileName(const std::string &file);
-
 utils::maybe<std::string> ReadFileToString(const char *filePath);
 
 inline utils::maybe<std::string> ReadFileToString(const std::string &filePath)

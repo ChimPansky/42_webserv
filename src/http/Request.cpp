@@ -26,7 +26,7 @@ BodyStorage::~BodyStorage()
 
 bool Request::has_body() const
 {
-    return body.path[0] != '\0';
+    return !body.path.empty();
 }
 
 utils::maybe<std::string> Request::GetHeaderVal(const std::string& key) const
