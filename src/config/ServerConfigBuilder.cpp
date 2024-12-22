@@ -144,11 +144,7 @@ static std::vector<std::string> ParseServerNames(const std::vector<std::string>&
         std::vector<std::string> val_elements = utils::SplitLine(vals[i]);
         if (!val_elements.empty()) {
             for (size_t j = 0; j < val_elements.size(); j++) {
-                if (val_elements[j] == "\"\"") {
-                    j++;
-                } else {
-                    server_names.push_back(ParseServerName(val_elements[j]));
-                }
+                server_names.push_back(ParseServerName(val_elements[j]));
             }
         }
     }
