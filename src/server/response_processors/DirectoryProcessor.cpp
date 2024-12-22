@@ -95,10 +95,10 @@ void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body,
     for (size_t i = 0; i < entries.size(); i++) {
         const utils::DirEntry& entry = entries[i];
         std::string time_str = utils::GetFormatedTime(entry.last_modified());
-        if (entry.name() == "./") {
+        if (*entry.name().begin() == '.' && entry.name() != "../") {
             continue;
         }
-        body << "<tr><td><a href=\"" << entry.name() << "\"";
+        body << "<tr><td><a href=\"" << http::PercentEncode(entry.name(), "/") << "\"";
         if (entry.type() == utils::DE_FILE) {
             body << " target=\"_blank\"";
         }
