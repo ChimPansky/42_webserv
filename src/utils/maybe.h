@@ -12,7 +12,7 @@ class maybe {
   public:
     maybe() : ok_(false) {}
     maybe(maybe_not) : ok_(false) {}
-    maybe(T val) : ok_(true), val_(val) {}
+    maybe(const T& val) : ok_(true), val_(val) {}
 
     bool ok() const { return ok_; }
     operator bool() const { return ok_; }
@@ -68,6 +68,12 @@ class maybe {
     bool operator==(const maybe& rhs) const { return (ok_ == rhs.ok_ && val_ == rhs.val_); }
 
     void reset() { ok_ = false; }
+
+    void reset(const T& val)
+    {
+        ok_ = true;
+        val_ = val;
+    }
 
   private:
     bool ok_;

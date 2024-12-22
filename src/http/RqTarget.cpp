@@ -42,25 +42,25 @@ RqTarget::RqTarget(const std::string& scheme, const std::string& user_info, cons
                    const std::string& fragment)
 {
     if (!scheme.empty()) {
-        scheme_ = scheme;
+        scheme_.reset(scheme);
     }
     if (!user_info.empty()) {
-        user_info_ = user_info;
+        user_info_.reset(user_info);
     }
     if (!host.empty()) {
-        host_ = host;
+        host_.reset(host);
     }
     if (!port.empty()) {
-        port_ = port;
+        port_.reset(port);
     }
     if (!path.empty()) {
-        path_ = path;
+        path_.reset(path);
     }
     if (!query.empty()) {
-        query_ = query;
+        query_.reset(query);
     }
     if (!fragment.empty()) {
-        fragment_ = fragment;
+        fragment_.reset(fragment);
     }
     Validate_();
     Normalize_();
@@ -179,7 +179,7 @@ void RqTarget::ParseScheme_(const std::string& raw_target, size_t& raw_target_po
         scheme_.reset();
         return;
     }
-    scheme_ = utils::ToLowerCase(raw_target.substr(0, end_pos));
+    scheme_.reset(utils::ToLowerCase(raw_target.substr(0, end_pos)));
     raw_target_pos = end_pos + 3;
 }
 
@@ -195,7 +195,7 @@ void RqTarget::ParseUserInfo_(const std::string& raw_target, size_t& raw_target_
         user_info_.reset();
         return;
     }
-    user_info_ = raw_target.substr(start_pos, end_pos - start_pos);
+    user_info_.reset(raw_target.substr(start_pos, end_pos - start_pos));
     raw_target_pos = end_pos + 1;
 }
 
@@ -210,7 +210,7 @@ void RqTarget::ParseHost_(const std::string& raw_target, size_t& raw_target_pos)
         host_ = utils::ToLowerCase(raw_target.substr(start_pos));
         return;
     }
-    host_ = utils::ToLowerCase(raw_target.substr(start_pos, raw_target_pos - start_pos));
+    host_.reset(utils::ToLowerCase(raw_target.substr(start_pos, raw_target_pos - start_pos)));
 }
 
 void RqTarget::ParsePort_(const std::string& raw_target, size_t& raw_target_pos)
@@ -225,7 +225,7 @@ void RqTarget::ParsePort_(const std::string& raw_target, size_t& raw_target_pos)
         port_ = raw_target.substr(start_pos);
         return;
     }
-    port_ = raw_target.substr(start_pos, raw_target_pos - start_pos);
+    port_.reset(raw_target.substr(start_pos, raw_target_pos - start_pos));
 }
 
 void RqTarget::ParsePath_(const std::string& raw_target, size_t& raw_target_pos)
@@ -240,7 +240,7 @@ void RqTarget::ParsePath_(const std::string& raw_target, size_t& raw_target_pos)
         path_ = raw_target.substr(start_pos);
         return;
     }
-    path_ = raw_target.substr(start_pos, raw_target_pos - start_pos);
+    path_.reset(raw_target.substr(start_pos, raw_target_pos - start_pos));
 }
 
 void RqTarget::ParseQuery_(const std::string& raw_target, size_t& raw_target_pos)
@@ -253,7 +253,7 @@ void RqTarget::ParseQuery_(const std::string& raw_target, size_t& raw_target_pos
     if (raw_target_pos == std::string::npos) {
         query_ = raw_target.substr(start_pos);
     }
-    query_ = raw_target.substr(start_pos, raw_target_pos - start_pos);
+    query_.reset(raw_target.substr(start_pos, raw_target_pos - start_pos));
 }
 
 void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_pos)
@@ -261,7 +261,7 @@ void RqTarget::ParseFragment_(const std::string& raw_target, size_t& raw_target_
     if (raw_target_pos >= raw_target.size() || raw_target[raw_target_pos] != '#') {
         return;
     }
-    fragment_ = raw_target.substr(raw_target_pos + 1);
+    fragment_.reset(raw_target.substr(raw_target_pos + 1));
 }
 
 void RqTarget::Normalize_()
