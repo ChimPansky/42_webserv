@@ -163,11 +163,10 @@ std::vector<std::string> GetEnv(const ScriptLocDetails& script, const http::Requ
     return env;
 }
 
-std::pair<bool, utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
+utils::maybe<utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
     const std::string& path_from_url)
 {
-    std::pair<bool, utils::unique_ptr<ScriptLocDetails> > res(
-        false, utils::unique_ptr<ScriptLocDetails>(NULL));
+    utils::unique_ptr<ScriptLocDetails> res(utils::unique_ptr<ScriptLocDetails>(NULL));
 
     size_t cgi_pos = path_from_url.find("/cgi-bin/");
     if (cgi_pos == std::string::npos) {
@@ -195,8 +194,7 @@ std::pair<bool, utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
     std::string extra_path = (extra_path_pos == std::string::npos)
                                  ? std::string()
                                  : path_from_url.substr(extra_path_pos);
-    res.first = true;
-    res.second.reset(new ScriptLocDetails(script_location, script_name, extra_path));
+    res.reset(new ScriptLocDetails(script_location, script_name, extra_path));
     return res;
 }
 

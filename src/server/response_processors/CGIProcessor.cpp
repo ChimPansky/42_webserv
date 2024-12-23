@@ -32,31 +32,31 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
                            utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
     : AResponseProcessor(server, response_rdy_cb)
 {
-    std::pair<bool, utils::unique_ptr<cgi::ScriptLocDetails> > script =
+    utils::maybe<utils::unique_ptr<cgi::ScriptLocDetails> > script =
         cgi::GetScriptLocDetails(rq.rqTarget.path());
-    if (!script.first) {
+    if (!script) {
         LOG(ERROR) << "Invalid path to the CGI script";
         DelegateToErrProc(http::HTTP_BAD_REQUEST);
         return;
     }
-    if (!IsValidExtension(script.second->name, allowed_cgi_extensions)) {
-        LOG(ERROR) << "CGI script extension is not supported: " << script.second->name;
+    if (!IsValidExtension((*script)->name, allowed_cgi_extensions)) {
+        LOG(ERROR) << "CGI script extension is not supported: " << (*script)->name;
         DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
         return;
     }
-    script.second->location = utils::UpdatePath(alias_dir, "/cgi-bin/", script.second->location);
-    std::string full_script_loc = script.second->location + "/" + script.second->extra_path + "/";
+    (*script)->location = utils::UpdatePath(alias_dir, "/cgi-bin/", (*script)->location);
+    std::string full_script_loc = (*script)->location + "/" + (*script)->extra_path + "/";
 
-    std::string interpreter = utils::GetInterpreterByExt(script.second->name);
+    std::string interpreter = utils::GetInterpreterByExt((*script)->name);
 
-    if (!utils::IsReadable((full_script_loc + script.second->name).c_str())) {
-        LOG(ERROR) << "CGI script cannot be executed: " << (full_script_loc + script.second->name);
+    if (!utils::IsReadable((full_script_loc + (*script)->name).c_str())) {
+        LOG(ERROR) << "CGI script cannot be executed: " << (full_script_loc + (*script)->name);
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 
-    c_api::ExecParams exec_params(interpreter, full_script_loc, script.second->name,
-                                  cgi::GetEnv(*script.second, rq), rq.body.c_str());
+    c_api::ExecParams exec_params(interpreter, full_script_loc, (*script)->name,
+                                  cgi::GetEnv(**script, rq), rq.body.c_str());
     child_process_description_ = c_api::ChildProcessesManager::get().TryRunChildProcess(
         exec_params, utils::unique_ptr<c_api::IChildDiedCb>(new ChildProcessDoneCb(*this)));
     if (!child_process_description_.ok()) {
