@@ -235,43 +235,7 @@ RequestBuilder::BuildState RequestBuilder::ProcessHeaders_()
     if (rc != http::HTTP_OK) {
         return SetStatusAndExitBuilder_(rc);
     }
-    LOG(DEBUG) << "Request: " << rq_.GetDebugString();
-    HeadersValidationResult validation_result = headers_ready_cb_->Call(rq_);
-    if (validation_result.status != HTTP_OK) {
-        LOG(DEBUG) << "ChooseServerCb returned error: " << validation_result.status;
-        return SetStatusAndExitBuilder_(validation_result.status);
-    }
-    if (!rq_has_body_) {
-        LOG(DEBUG) << "Request has no body";
-        return BS_END;
-    }
-    LOG(DEBUG) << "Request has body, max_body_size: " << validation_result.max_body_size;
-    body_builder_.max_body_size = validation_result.max_body_size;
-    if (validation_result.upload_path.ok()) {
-        const std::string& upload_path = *validation_result.upload_path;
-        if (utils::DoesPathExist(upload_path.c_str())) {
-            return SetStatusAndExitBuilder_(HTTP_CONFLICT);
-        }
-        body_builder_.body_stream.open(upload_path.c_str());
-        if (!body_builder_.body_stream.is_open()) {
-            LOG(ERROR) << "Failed to open upload location: " << upload_path;
-            return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
-        }
-        rq_.body.path = upload_path;
-        rq_.body.storage_type = BST_ON_SERVER;
-    } else {
-        LOG(DEBUG) << "No upload path specified, using temporary file";
-        utils::maybe<std::string> tmp_f =
-            utils::CreateAndOpenTmpFileToStream(body_builder_.body_stream);
-        LOG(DEBUG) << "Created temporary file: " << *tmp_f;
-        if (!tmp_f) {
-            LOG(ERROR) << "Failed to create temporary file.";
-            return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
-        }
-        rq_.body.path = *tmp_f;
-        rq_.body.storage_type = BST_IN_TMP_FOLDER;
-    }
-    return BS_PREPARE_TO_READ_BODY;
+    return SetValidationResult_();
 }
 
 ResponseCode RequestBuilder::ValidateHeadersSyntax_()
@@ -319,6 +283,49 @@ ResponseCode RequestBuilder::InterpretHeaders_()
     return HTTP_OK;
 }
 
+RequestBuilder::BuildState RequestBuilder::SetValidationResult_()
+{
+    HeadersValidationResult validation_result = headers_ready_cb_->Call(rq_);
+    if (validation_result.status != HTTP_OK) {
+        LOG(DEBUG) << "ChooseServerCb returned error: " << validation_result.status;
+        rq_.status = validation_result.status;
+        return BS_BAD_REQUEST;
+    }
+    if (!rq_has_body_) {
+        LOG(DEBUG) << "Request has no body";
+        return BS_END;
+    }
+    LOG(DEBUG) << "Request has body, max_body_size: " << validation_result.max_body_size;
+    body_builder_.max_body_size = validation_result.max_body_size;
+    if (validation_result.upload_path.ok()) {
+        const std::string& upload_path = *validation_result.upload_path;
+        if (utils::DoesPathExist(upload_path.c_str())) {
+            rq_.status = HTTP_CONFLICT;
+            return BS_BAD_REQUEST;
+        }
+        body_builder_.body_stream.open(upload_path.c_str());
+        if (!body_builder_.body_stream.is_open()) {
+            LOG(ERROR) << "Failed to open upload location: " << upload_path;
+            rq_.status = HTTP_INTERNAL_SERVER_ERROR;
+            return BS_BAD_REQUEST;
+        }
+        rq_.body.path = upload_path;
+        rq_.body.storage_type = BST_ON_SERVER;
+    } else {
+        LOG(DEBUG) << "No upload path specified, using temporary file";
+        utils::maybe<std::string> tmp_f =
+            utils::CreateAndOpenTmpFileToStream(body_builder_.body_stream);
+        LOG(DEBUG) << "Created temporary file: " << *tmp_f;
+        if (!tmp_f) {
+            LOG(ERROR) << "Failed to create temporary file.";
+            rq_.status = HTTP_INTERNAL_SERVER_ERROR;
+            return BS_BAD_REQUEST;
+        }
+        rq_.body.path = *tmp_f;
+        rq_.body.storage_type = BST_IN_TMP_FOLDER;
+    }
+    return BS_PREPARE_TO_READ_BODY;
+}
 
 RequestBuilder::BuildState RequestBuilder::PrepareBody_()
 {
