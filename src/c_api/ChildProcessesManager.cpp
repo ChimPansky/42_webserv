@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <file_utils.h>
+#include <logger.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -31,10 +32,10 @@ void SetUpChild(const ExecParams& params,
         }
     }
 
-    if (!utils::CloseProcessFdsButStd()) {
-        LOG(ERROR) << "Cannot close fds, better death of 10000 children than a leak";
-        exit(EXIT_FAILURE);
-    }
+    // if (!utils::CloseProcessFdsButStd()) {
+    //     LOG(ERROR) << "Cannot close fds, better death of 10000 children than a leak";
+    //     exit(EXIT_FAILURE);
+    // }
 
     std::vector<char*> env;
     for (size_t i = 0; i < params.child_env.size(); i++) {
@@ -57,6 +58,7 @@ void SetUpChild(const ExecParams& params,
     // char cwd[1024];
     // getcwd(cwd, sizeof(cwd));
     // LOG(ERROR) << "Current dir: " << cwd;
+    LOG(WARNING) << "start of child ";
     execve(params.interpreter.c_str(), args.data(), env.data());
     LOG(ERROR) << "CGI failed with error " << std::strerror(errno);
     exit(EXIT_FAILURE);
@@ -99,7 +101,7 @@ void ChildProcessesManager::CheckOnce()
         int child_exit_status;
         if (waitpid(it->first, &child_exit_status, WNOHANG) > 0) {
             if (WIFEXITED(child_exit_status)) {
-                LOG(ERROR) << "Child process exited with status " << WEXITSTATUS(child_exit_status);
+                LOG(INFO) << "Child process exited with status " << WEXITSTATUS(child_exit_status);
             } else if (WIFSIGNALED(child_exit_status)) {
                 LOG(ERROR) << "Child process terminated by signal " << WTERMSIG(child_exit_status);
             }
@@ -126,8 +128,8 @@ void ChildProcessesManager::KillChildProcess(pid_t pid)
 void ChildProcessesManager::RegisterChildProcess_(pid_t child_pid, time_t timeout_ts,
                                                   utils::unique_ptr<IChildDiedCb> cb)
 {
-    LOG(ERROR) << child_pid;
-    child_processes_.insert(std::make_pair(child_pid, Child(timeout_ts + 20, cb)));
+    // LOG(ERROR) << child_pid;
+    child_processes_.insert(std::make_pair(child_pid, Child(timeout_ts, cb)));
 }
 
 utils::maybe<ChildProcessDescription> ChildProcessesManager::TryRunChildProcess(

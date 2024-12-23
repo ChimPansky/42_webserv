@@ -120,7 +120,7 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
         return utils::unique_ptr<AResponseProcessor>(
             new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
     }
-    LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
+    // LOG(DEBUG) << "chosen loc: " << chosen_loc.first->GetDebugString();
 
     if (std::find(chosen_loc.first->allowed_methods().begin(),
                   chosen_loc.first->allowed_methods().end(),

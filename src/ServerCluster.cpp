@@ -5,6 +5,8 @@
 #include <c_api_utils.h>
 #include <time_utils.h>
 
+#include <iostream>
+
 namespace {
 void SigIntHandler(int /*signum*/)
 {
@@ -46,10 +48,10 @@ void ServerCluster::Run()
     run_ = true;
     // instance_->PrintDebugInfo();
     while (run_) {
+        LOG(INFO) << utils::GetFormatedTime();
         c_api::EventManager::CheckOnce();
         c_api::ChildProcessesManager::get().CheckOnce();
         instance_->CheckClients_();
-        LOG(INFO) << utils::GetFormatedTime();
     }
 }
 

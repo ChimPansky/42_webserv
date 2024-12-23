@@ -8,6 +8,7 @@
 
 #include <cctype>
 #include <cstring>
+#include <iostream>
 
 #include "../utils/utils.h"
 #include "ErrorProcessor.h"
@@ -30,7 +31,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
                            const http::Request& rq,
                            const std::vector<std::string>& allowed_cgi_extensions,
                            utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-    : AResponseProcessor(server, response_rdy_cb)
+    : AResponseProcessor(server, response_rdy_cb), ready_to_rs_(false)
 {
     utils::maybe<utils::unique_ptr<cgi::ScriptLocDetails> > script =
         cgi::GetScriptLocDetails(rq.rqTarget.path());
@@ -68,6 +69,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
             child_process_description_->sock().sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
+        // TODO rm child
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
@@ -81,23 +83,34 @@ CGIProcessor::~CGIProcessor()
     }
 }
 
-void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
+void CGIProcessor::ReadChildOutputCallback::Call(int fd)
 {
-    // LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
+    LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
     std::vector<char>& buf = processor_.cgi_out_buffer_;
     c_api::RecvPackage pack = processor_.child_process_description_->sock().Recv();
     if (pack.status == c_api::RS_SOCK_ERR) {
         LOG(ERROR) << "error on recv" << std::strerror(errno);  // TODO: is errno check allowed?
         return;
-    } else if (pack.status == c_api::RS_SOCK_CLOSED) {
-        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes";
-        return;
     } else if (pack.status == c_api::RS_OK) {
         buf.reserve(buf.size() + pack.data_size);
         std::copy(pack.data, pack.data + pack.data_size, std::back_inserter(buf));
+    } else if (pack.status == c_api::RS_SOCK_CLOSED) {
+        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes\n" << buf.data();
+        if (processor_.ready_to_rs_) {
+            utils::maybe<utils::unique_ptr<http::Response> > rs = cgi::ParseCgiResponse(buf);
+            if (!rs) {
+                LOG(ERROR) << "Invalid cgi output";
+                processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
+                return;
+            }
+            processor_.response_rdy_cb_->Call(*rs);
+        } else {
+            processor_.ready_to_rs_ = true;
+        }
     }
 }
 
+// okay, so problem was the here, figure out what was it
 void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
 {
     if (child_exit_status != EXIT_SUCCESS) {
@@ -105,11 +118,24 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    utils::maybe<utils::unique_ptr<http::Response> > rs =
-        cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
-    if (!rs) {
-        processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
-        return;
+    if (processor_.ready_to_rs_) {
+        utils::maybe<utils::unique_ptr<http::Response> > rs =
+            cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
+        if (!rs) {
+            LOG(ERROR) << "Invalid cgi output";
+            processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
+            return;
+        }
+        processor_.response_rdy_cb_->Call(*rs);
+    } else {
+        processor_.ready_to_rs_ = true;
     }
-    processor_.response_rdy_cb_->Call(*rs);
+    // utils::maybe<utils::unique_ptr<http::Response> > rs =
+    //     cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
+    // if (!rs) {
+    //     LOG(ERROR) << "Invalid cgi output";
+    //     processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
+    //     return;
+    // }
+    // processor_.response_rdy_cb_->Call(*rs);
 }

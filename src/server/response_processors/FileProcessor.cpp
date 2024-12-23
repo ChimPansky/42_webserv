@@ -21,7 +21,7 @@ FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
     }
     std::ifstream file(file_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
-        LOG(DEBUG) << "Requested file cannot be opened: " << file_path;
+        LOG(ERROR) << "Requested file cannot be opened: " << file_path;
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }

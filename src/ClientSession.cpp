@@ -47,7 +47,7 @@ void ClientSession::ProcessNewData(c_api::RecvPackage& pack)
                    << ((rq_builder_.rq().status == http::HTTP_OK) ? "GOOD)" : "BAD)")
                    << " -> Accept on Server...";
         read_state_ = CS_IGNORE;
-        LOG(DEBUG) << rq_builder_.rq().GetDebugString();
+        // LOG(DEBUG) << rq_builder_.rq().GetDebugString();
         // server returns rs with basic headers and status complete/body generation in process +
         // generator func
         if (associated_server_) {  // just to make sure we never dereference NULL...

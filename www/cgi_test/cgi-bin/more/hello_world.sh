@@ -10,5 +10,3 @@ echo '<body>'
 echo 'Hello World'
 echo '</body>'
 echo '</html>'
-
-exit 0

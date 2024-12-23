@@ -20,19 +20,24 @@
 
 
 int main(int ac, char** av)
-try {
+// try
+{
     if (ac != 2) {
         LOG(ERROR) << "usage: webserv <path-to-config-file>";
         return 1;
     }
+    // LOG(ERROR) << &std::cerr << " " << (int*)&std::cerr + 10 << " " << sizeof(std::cerr);
+
+    // std::cerr.setstate(std::cerr.failbit);
 
     config::Config cfg = config::ConfigBuilder::GetConfigFromConfFile(av[1]);
     ServerCluster::Init(cfg);
     ServerCluster::Run();
 
     return 0;
-} catch (const std::exception& e) {
-    std::cerr
-        << "Something went wrong and instead of creating a useful dump we're just showing this: "
-        << e.what() << std::endl;
 }
+//  catch (const std::exception& e) {
+//     std::cerr
+//         << "Something went wrong and instead of creating a useful dump we're just showing this: "
+//         << e.what() << std::endl;
+// }
