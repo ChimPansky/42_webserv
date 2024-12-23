@@ -44,6 +44,7 @@ class CGIProcessor : public AResponseProcessor {
     utils::maybe<c_api::ChildProcessDescription> child_process_description_;
     std::vector<char> cgi_out_buffer_;
     bool ready_to_rs_;
+    bool rs_sent_;
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_CGI_PROCESSOR_H

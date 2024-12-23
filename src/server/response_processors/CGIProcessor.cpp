@@ -31,7 +31,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
                            const http::Request& rq,
                            const std::vector<std::string>& allowed_cgi_extensions,
                            utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-    : AResponseProcessor(server, response_rdy_cb), ready_to_rs_(false)
+    : AResponseProcessor(server, response_rdy_cb), ready_to_rs_(false), rs_sent_(false)
 {
     utils::maybe<utils::unique_ptr<cgi::ScriptLocDetails> > script =
         cgi::GetScriptLocDetails(rq.rqTarget.path());
@@ -95,14 +95,15 @@ void CGIProcessor::ReadChildOutputCallback::Call(int fd)
         buf.reserve(buf.size() + pack.data_size);
         std::copy(pack.data, pack.data + pack.data_size, std::back_inserter(buf));
     } else if (pack.status == c_api::RS_SOCK_CLOSED) {
-        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes\n" << buf.data();
-        if (processor_.ready_to_rs_) {
+        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes\n";
+        if (processor_.ready_to_rs_ && !processor_.rs_sent_) {
             utils::maybe<utils::unique_ptr<http::Response> > rs = cgi::ParseCgiResponse(buf);
             if (!rs) {
                 LOG(ERROR) << "Invalid cgi output";
                 processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
                 return;
             }
+            processor_.rs_sent_ = true;
             processor_.response_rdy_cb_->Call(*rs);
         } else {
             processor_.ready_to_rs_ = true;
@@ -118,7 +119,7 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    if (processor_.ready_to_rs_) {
+    if (processor_.ready_to_rs_ && !processor_.rs_sent_) {
         utils::maybe<utils::unique_ptr<http::Response> > rs =
             cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
         if (!rs) {
@@ -126,6 +127,7 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
             processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
             return;
         }
+        processor_.rs_sent_ = true;
         processor_.response_rdy_cb_->Call(*rs);
     } else {
         processor_.ready_to_rs_ = true;
