@@ -144,11 +144,7 @@ static std::vector<std::string> ParseServerNames(const std::vector<std::string>&
         std::vector<std::string> val_elements = utils::SplitLine(vals[i]);
         if (!val_elements.empty()) {
             for (size_t j = 0; j < val_elements.size(); j++) {
-                if (val_elements[j] == "\"\"") {
-                    j++;
-                } else {
-                    server_names.push_back(ParseServerName(val_elements[j]));
-                }
+                server_names.push_back(ParseServerName(val_elements[j]));
             }
         }
     }
@@ -178,7 +174,7 @@ static std::vector<LocationConfig> BuildLocationConfigs(
 bool ServerConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "listen" || key == "server_name" || key == "access_log" || key == "error_log" ||
-           key == "alias" || key == "index" || key == "autoindex" || "client_max_body_size";
+           key == "alias" || key == "index" || key == "autoindex" || key == "client_max_body_size";
 }
 
 bool ServerConfigBuilder::AreNestingsValid(const ParsedConfig& f) const
