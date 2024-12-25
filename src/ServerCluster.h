@@ -28,14 +28,15 @@ class ServerCluster {
     void MapListenersToServer_(const std::vector<std::pair<in_addr_t, in_port_t> >& listeners,
                                utils::shared_ptr<Server>& serv);
     int GetListenerFdForServer_(const std::pair<unsigned int, unsigned short>& address);
-    void CheckClients_();
+    void CheckClients_() throw();
+    void KillAllClients_() throw();  // easy strat for bad_alloc
 
     static int kKeepAliveTimeoutS() { return 10; };
 
   private:
     class MasterSocketCallback : public c_api::ICallback {
       public:
-        MasterSocketCallback(ServerCluster& cluster);
+        MasterSocketCallback(ServerCluster& cluster) : cluster_(cluster) {}
         // accept, create new client, register read callback for client,
         virtual void Call(int fd);
 

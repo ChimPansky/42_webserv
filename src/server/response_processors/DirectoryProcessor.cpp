@@ -60,7 +60,7 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path)
     std::map<std::string, std::string> hdrs;
     std::sort(dir_entries->begin(), dir_entries->end());
     std::ostringstream body_stream;
-    GenerateAutoIndexPage_(body_stream, path, *dir_entries);
+    GenerateAutoIndexPage_(body_stream, *dir_entries);
     std::string body_string = body_stream.str();
     std::vector<char> body(body_string.begin(), body_string.end());
     hdrs["Content-Type"] = "text/html";
@@ -70,10 +70,12 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path)
     return true;
 }
 
-void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body, const std::string& path,
+void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body,
                                                 const std::vector<utils::DirEntry>& entries)
 {
-    body << "<html>\n<head>\n<title>Index of " << path << "</title>\n</head>\n"
+    body << "<html>\n<head>\n"
+            "<meta charset=\"UTF-8\">\n"
+            "<title>Webserv Directory Listing</title>\n</head>\n"
          << "<style>\n"
          << kAutoIndexStyle()
          << "\n</style>\n"
@@ -93,10 +95,10 @@ void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body, const 
     for (size_t i = 0; i < entries.size(); i++) {
         const utils::DirEntry& entry = entries[i];
         std::string time_str = utils::GetFormatedTime(entry.last_modified());
-        if (entry.name() == "./") {
+        if (*entry.name().begin() == '.' && entry.name() != "../") {
             continue;
         }
-        body << "<tr><td><a href=\"" << entry.name() << "\"";
+        body << "<tr><td><a href=\"" << http::PercentEncode(entry.name(), "/") << "\"";
         if (entry.type() == utils::DE_FILE) {
             body << " target=\"_blank\"";
         }

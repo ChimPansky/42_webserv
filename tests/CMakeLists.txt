@@ -14,7 +14,7 @@ target_link_libraries(rq_builder_test PRIVATE Http gtest gtest_main)
 add_test(
     NAME rq_builder_test
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/rq_builder_test
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test_data/requests
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 # ConfigParser
@@ -63,12 +63,12 @@ add_test(
     NAME valgrind_idle_test
     COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/valgrind_1_idle_test.sh
               "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/test_data/valgrind_test.conf"
-              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
+              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test1.out
 )
 
 add_test(
     NAME valgrind_single_connection_test
     COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/valgrind_2_single_connection_test.sh
               "${CMAKE_BINARY_DIR}/webserv ${CMAKE_SOURCE_DIR}/test_data/valgrind_test.conf"
-              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test.out
+              ${CMAKE_BINARY_DIR}/Testing/simple_valgrind_test2.out
 )

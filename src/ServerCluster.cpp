@@ -3,6 +3,7 @@
 #include <ChildProcessesManager.h>
 #include <EventManager.h>
 #include <c_api_utils.h>
+#include <errors.h>
 #include <time_utils.h>
 
 namespace {
@@ -41,66 +42,6 @@ ServerCluster::ServerCluster(const config::Config& config)
     }
 }
 
-void ServerCluster::Run()
-{
-    run_ = true;
-    // instance_->PrintDebugInfo();
-    while (run_) {
-        c_api::EventManager::CheckOnce();
-        c_api::ChildProcessesManager::get().CheckOnce();
-        instance_->CheckClients_();
-        LOG(INFO) << utils::GetFormatedTime();
-    }
-}
-
-utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http::Request& rq)
-{
-    std::pair<MatchType, std::string> best_match(NO_MATCH, std::string());
-    utils::shared_ptr<Server> matched_server;
-
-    for (ServersConstIt it = instance_->sockets_to_servers_[master_fd].begin();
-         it != instance_->sockets_to_servers_[master_fd].end(); ++it) {
-        std::pair<MatchType, std::string> match_result = (*it)->MatchedServerName(rq);
-
-        if ((match_result.second.length() > best_match.second.length() &&
-             match_result.first == best_match.first) ||
-            match_result.first > best_match.first) {
-            best_match = match_result;
-            matched_server = *it;
-        }
-    }
-    return (best_match.first == NO_MATCH ? instance_->sockets_to_servers_[master_fd][0]
-                                         : matched_server);
-}
-
-void ServerCluster::PrintDebugInfo() const
-{
-    for (ServersConstIt cit = servers_.begin(); cit != servers_.end(); ++cit) {
-        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name()
-                   << ". My config is: " << (*cit)->GetDebugString();
-        LOG(DEBUG);
-    }
-}
-
-void ServerCluster::CheckClients_()
-{
-    time_t now = time(NULL);
-    client_iterator it = clients_.begin();
-    while (it != clients_.end()) {
-        ClientSession& client = *it->second;
-        if (client.connection_closed()) {
-            client_iterator tmp = it;
-            ++it;
-            clients_.erase(tmp);
-            continue;
-        }
-        if (now - client.last_activity_time() > kKeepAliveTimeoutS()) {
-            client.CloseConnection();
-        }
-        ++it;
-    }
-}
-
 void ServerCluster::CreateServers_(const config::Config& config)
 {
     for (config::ServerConfConstIt serv_conf_it = config.http_config().server_configs().begin();
@@ -136,9 +77,77 @@ int ServerCluster::GetListenerFdForServer_(const std::pair<unsigned int, unsigne
     return sockfd;
 }
 
-ServerCluster::MasterSocketCallback::MasterSocketCallback(ServerCluster& cluster)
-    : cluster_(cluster)
-{}
+utils::shared_ptr<Server> ServerCluster::ChooseServer(int master_fd, const http::Request& rq)
+{
+    std::pair<MatchType, std::string> best_match(NO_MATCH, std::string());
+    utils::shared_ptr<Server> matched_server;
+
+    for (ServersConstIt it = instance_->sockets_to_servers_[master_fd].begin();
+         it != instance_->sockets_to_servers_[master_fd].end(); ++it) {
+        std::pair<MatchType, std::string> match_result = (*it)->MatchedServerName(rq);
+
+        if ((match_result.second.length() > best_match.second.length() &&
+             match_result.first == best_match.first) ||
+            match_result.first > best_match.first) {
+            best_match = match_result;
+            matched_server = *it;
+        }
+    }
+    return (best_match.first == NO_MATCH ? instance_->sockets_to_servers_[master_fd][0]
+                                         : matched_server);
+}
+
+void ServerCluster::PrintDebugInfo() const
+{
+    for (ServersConstIt cit = servers_.begin(); cit != servers_.end(); ++cit) {
+        LOG(DEBUG) << "Hi, i am Server " << (*cit)->name()
+                   << ". My config is: " << (*cit)->GetDebugString();
+        LOG(DEBUG);
+    }
+}
+
+void ServerCluster::Run()
+{
+    run_ = true;
+    // instance_->PrintDebugInfo();
+    while (run_) {
+        try {
+            c_api::EventManager::CheckOnce();
+            c_api::ChildProcessesManager::get().CheckOnce();
+        } catch (const std::bad_alloc& e) {
+            instance_->KillAllClients_();
+        }
+        instance_->CheckClients_();
+        LOG(INFO) << utils::GetFormatedTime();
+    }
+}
+
+
+void ServerCluster::CheckClients_() throw()
+{
+    UnixTimestampS now = utils::Now();
+    client_iterator it = clients_.begin();
+    while (it != clients_.end()) {
+        ClientSession& client = *it->second;
+        if (client.connection_closed()) {
+            client_iterator tmp = it;
+            ++it;
+            clients_.erase(tmp);
+            continue;
+        }
+        if (now - client.last_activity_time() > kKeepAliveTimeoutS()) {
+            client.CloseConnection();
+        }
+        ++it;
+    }
+}
+
+void ServerCluster::KillAllClients_() throw()
+{
+    for (client_iterator it = clients_.begin(); it != clients_.end(); ++it) {
+        it->second->CloseConnection();
+    }
+}
 
 // accept, create new client, register read callback for client,
 void ServerCluster::MasterSocketCallback::Call(int fd)
@@ -151,9 +160,9 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     c_api::MasterSocket& acceptor = *acceptor_it->second;
     utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor.Accept();
     if (!client_sock) {
-        LOG(ERROR) << "error accepting connection on: "
-                   << c_api::PrintIPv4SockAddr(acceptor.addr_in());
-        perror("MasterSocket::Accept");
+        LOG(ERROR) << "error accepting connection on "
+                   << c_api::PrintIPv4SockAddr(acceptor.addr_in()) << ": "
+                   << utils::GetSystemErrorDescr();
         return;
     }
     const int client_fd = client_sock->sockfd();

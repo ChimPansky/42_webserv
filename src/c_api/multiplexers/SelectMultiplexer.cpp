@@ -1,9 +1,8 @@
 #include "SelectMultiplexer.h"
 
+#include <errors.h>
 #include <logger.h>
 #include <sys/select.h>
-
-#include <cstring>
 
 namespace c_api {
 
@@ -45,7 +44,7 @@ void SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
     int num_of_fds =
         select(max_fd + 1, &select_rd_set, &select_wr_set, /*err_fds*/ NULL, GetTimeout_());
     if (num_of_fds < 0) {
-        LOG_IF(ERROR, errno != EINTR) << "select failed: " << strerror(errno);
+        LOG_IF(ERROR, errno != EINTR) << "select failed: " << utils::GetSystemErrorDescr();
         return;
     }
 

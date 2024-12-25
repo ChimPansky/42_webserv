@@ -55,6 +55,8 @@ bool EventManager::TryRegisterCallback_(int fd, CallbackType type,
     return true;
 }
 
+// TODO: this function is called from d-tor, but not exception safe (may lead to terminate)
+//  consider change to commented code below with callback change, or figure out smth else
 void EventManager::DeleteCallback_(int fd, CallbackType type)
 {
     if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
@@ -65,15 +67,37 @@ void EventManager::DeleteCallback_(int fd, CallbackType type)
     }
 }
 
+// void EventManager::DeleteCallback_(int fd, CallbackType type)
+// {
+//     if (type & CT_READ) {
+//         FdToCallbackMapIt it = rd_sockets_.find(fd);
+//         if (it != rd_sockets_.end()) {
+//             it->second.reset();
+//             multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_);
+//         }
+//     }
+//     if (type & CT_WRITE) {
+//         FdToCallbackMapIt it = rd_sockets_.find(fd);
+//         if (it != rd_sockets_.end()) {
+//             it->second.reset();
+//             multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_);
+//         }
+//     }
+// }
+
 void EventManager::ClearCallback_(int fd, CallbackType type)
 {
-    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
-        multiplexer_->UnregisterFd(fd, CT_READ, rd_sockets_, wr_sockets_);
+    int found_type = 0;
+    if (type & CT_READ && rd_sockets_.count(fd)) {
+        found_type |= CT_READ;
         rd_sockets_.erase(fd);
     }
-    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
-        multiplexer_->UnregisterFd(fd, CT_WRITE, rd_sockets_, wr_sockets_);
+    if (type & CT_WRITE && wr_sockets_.count(fd)) {
+        found_type |= CT_WRITE;
         wr_sockets_.erase(fd);
+    }
+    if (found_type) {
+        multiplexer_->UnregisterFd(fd, type, rd_sockets_, wr_sockets_);
     }
 }
 
