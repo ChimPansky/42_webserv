@@ -78,6 +78,7 @@ class ChildProcessesManager {
     void CheckOnce();
     utils::maybe<ChildProcessDescription> TryRunChildProcess(const ExecParams&,
                                                              utils::unique_ptr<IChildDiedCb>);
+    // no callback will be invoked
     void KillChildProcess(pid_t pid) throw();
 
   private:
