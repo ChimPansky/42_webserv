@@ -5,8 +5,8 @@
 
 #include <vector>
 
+#include "multiplexers/AMultiplexer.h"
 #include "multiplexers/ICallback.h"
-#include "multiplexers/IMultiplexer.h"
 
 namespace c_api {
 
@@ -24,8 +24,6 @@ class EventManager {
     void DeleteCallback_(int fd, CallbackType type);
     void CheckOnce_();
 
-    void ClearCallback_(int fd, CallbackType type);
-
   public:
     static void init(MultiplexType mx_type_);
     static EventManager& get();
@@ -39,14 +37,19 @@ class EventManager {
             instance_->CheckOnce_();
         }
     }
-    static bool TryRegisterCallback(int fd, CallbackType type, utils::unique_ptr<ICallback> cb)
+
+    // Cannot replace existing cb!
+    static inline bool TryRegisterCallback(int fd, CallbackType type,
+                                           utils::unique_ptr<ICallback> cb)
     {
         if (instance_) {
             return instance_->TryRegisterCallback_(fd, type, cb);
         }
         return false;
     }
-    static void DeleteCallback(int fd, CallbackType type = CT_READWRITE) throw()
+
+    // Deletes with delay, after before next CheckOnce
+    static inline void DeleteCallback(int fd, CallbackType type = CT_READWRITE) throw()
     {
         if (instance_) {
             instance_->DeleteCallback_(fd, type);
@@ -55,9 +58,7 @@ class EventManager {
 
   private:
     static utils::unique_ptr<EventManager> instance_;
-    utils::unique_ptr<IMultiplexer> multiplexer_;
-    FdToCallbackMap rd_sockets_;  // this contains callbacks for both: listeners & clients
-    FdToCallbackMap wr_sockets_;  // this contains callbacks for (write) clients only
+    utils::unique_ptr<AMultiplexer> multiplexer_;
     std::vector<std::pair<int, CallbackType> > fds_to_delete_;  // to delete after CheckOnce
 };
 

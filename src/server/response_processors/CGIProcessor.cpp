@@ -54,7 +54,7 @@ CGIProcessor::CGIProcessor(RequestDestination dest,
 
     c_api::ExecParams exec_params(interpreter, full_script_loc, (*script)->name,
                                   cgi::GetEnv(**script, rq), rq.body.path.c_str());
-    child_process_description_ = c_api::ChildProcessesManager::get().TryRunChildProcess(
+    child_process_description_ = c_api::ChildProcessesManager::TryRunChildProcess(
         exec_params, utils::unique_ptr<c_api::IChildDiedCb>(new ChildProcessDoneCb(*this)));
     if (!child_process_description_.ok()) {
         LOG(ERROR) << "Cannot run child process";
@@ -65,7 +65,7 @@ CGIProcessor::CGIProcessor(RequestDestination dest,
             child_process_description_->sock().sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
-        c_api::ChildProcessesManager::get().KillChildProcess(child_process_description_->pid());
+        c_api::ChildProcessesManager::KillChildProcess(child_process_description_->pid());
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
@@ -75,7 +75,7 @@ CGIProcessor::~CGIProcessor()
 {
     if (child_process_description_) {
         c_api::EventManager::DeleteCallback(child_process_description_->sock().sockfd());
-        c_api::ChildProcessesManager::get().KillChildProcess(child_process_description_->pid());
+        c_api::ChildProcessesManager::KillChildProcess(child_process_description_->pid());
     }
 }
 

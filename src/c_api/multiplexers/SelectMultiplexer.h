@@ -3,14 +3,14 @@
 
 #include <sys/time.h>
 
-#include "IMultiplexer.h"
+#include "AMultiplexer.h"
 
 namespace c_api {
 
-class SelectMultiplexer : public IMultiplexer {
+class SelectMultiplexer : public AMultiplexer {
   public:
     SelectMultiplexer(int timeout_ms);
-    void CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
+    void CheckOnce();
 
   private:
     struct timeval* GetTimeout_();

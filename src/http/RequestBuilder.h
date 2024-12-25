@@ -39,9 +39,11 @@ class RequestBuilder {
     struct BodyBuilder {
         BodyBuilder();
 
+        void Reset();
+
         std::ofstream body_stream;
         bool chunked;
-        size_t body_idx;
+        size_t body_len;
         size_t remaining_length;
         size_t max_body_size;
     };
@@ -71,6 +73,8 @@ class RequestBuilder {
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
     std::vector<char>& buf();
+    void Reset();
+
 
   private:
     Request rq_;

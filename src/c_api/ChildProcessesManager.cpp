@@ -83,7 +83,7 @@ ChildProcessesManager& ChildProcessesManager::get()
     return *instance_;
 }
 
-void ChildProcessesManager::CheckOnce()
+void ChildProcessesManager::CheckOnce_()
 {
     for (PidtToCallbackMapIt it = child_processes_.begin(); it != child_processes_.end(); ++it) {
         if (utils::Now() >= it->second.time_to_kill) {
@@ -111,7 +111,7 @@ void ChildProcessesManager::CheckOnce()
     }
 }
 
-void ChildProcessesManager::KillChildProcess(pid_t pid) throw()
+void ChildProcessesManager::KillChildProcess_(pid_t pid) throw()
 {
     PidtToCallbackMapIt it = child_processes_.find(pid);
     if (it != child_processes_.end()) {
@@ -124,11 +124,10 @@ void ChildProcessesManager::KillChildProcess(pid_t pid) throw()
 void ChildProcessesManager::RegisterChildProcess_(pid_t child_pid, UnixTimestampS timeout_ts,
                                                   utils::unique_ptr<IChildDiedCb> cb)
 {
-    LOG(ERROR) << child_pid;
-    child_processes_.insert(std::make_pair(child_pid, Child(timeout_ts + 20, cb)));
+    child_processes_.insert(std::make_pair(child_pid, Child(timeout_ts, cb)));
 }
 
-utils::maybe<ChildProcessDescription> ChildProcessesManager::TryRunChildProcess(
+utils::maybe<ChildProcessDescription> ChildProcessesManager::TryRunChildProcess_(
     const ExecParams& params, utils::unique_ptr<IChildDiedCb> cb)
 {
     utils::maybe<c_api::Socket::SocketPair> socket_pair =

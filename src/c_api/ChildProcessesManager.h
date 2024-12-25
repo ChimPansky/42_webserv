@@ -64,25 +64,51 @@ class ChildProcessesManager {
     };
 
   private:
-    typedef std::map<pid_t, Child> PidtToCallbackMap;
-    typedef std::map<pid_t, Child>::iterator PidtToCallbackMapIt;
-
     static inline int kDefaultTimeoutSeconds_() { return 5; }
+
+    void CheckOnce_();
+    utils::maybe<ChildProcessDescription> TryRunChildProcess_(const ExecParams&,
+                                                              utils::unique_ptr<IChildDiedCb>);
     void RegisterChildProcess_(pid_t child_pid, UnixTimestampS timeout_ts,
                                utils::unique_ptr<IChildDiedCb> cb);
+    void KillChildProcess_(pid_t pid) throw();
 
   public:
     static void init();
     static ChildProcessesManager& get();
 
-    void CheckOnce();
-    utils::maybe<ChildProcessDescription> TryRunChildProcess(const ExecParams&,
-                                                             utils::unique_ptr<IChildDiedCb>);
-    void KillChildProcess(pid_t pid) throw();
+    static inline void CheckOnce()
+    {
+        if (!instance_) {
+            return;
+        }
+        return instance_->CheckOnce_();
+    }
+
+    static inline utils::maybe<ChildProcessDescription> TryRunChildProcess(
+        const ExecParams& exec_params, utils::unique_ptr<IChildDiedCb> cb)
+    {
+        if (!instance_) {
+            return utils::maybe_not();
+        }
+        return instance_->TryRunChildProcess_(exec_params, cb);
+    }
+
+    // no callback will be invoked
+    static inline void KillChildProcess(pid_t pid) throw()
+    {
+        if (!instance_) {
+            return;
+        }
+        instance_->KillChildProcess_(pid);
+    };
 
   private:
-    static utils::unique_ptr<ChildProcessesManager> instance_;
+    typedef std::map<pid_t, Child> PidtToCallbackMap;
+    typedef std::map<pid_t, Child>::iterator PidtToCallbackMapIt;
     PidtToCallbackMap child_processes_;
+
+    static utils::unique_ptr<ChildProcessesManager> instance_;
 };
 
 }  // namespace c_api
