@@ -41,7 +41,7 @@ bool RequestBuilder::CanBuild_()
     if (build_state_ == BS_BAD_REQUEST || build_state_ == BS_END) {
         return false;
     }
-    if (IsParsingState_(build_state_) && parser_.EndOfBuffer()) {
+    if (build_state_ != BS_AFTER_HEADERS && parser_.EndOfBuffer()) {
         builder_status_ = http::RB_NEED_DATA_FROM_CLIENT;
         return false;
     }
@@ -63,7 +63,6 @@ void RequestBuilder::Build(const char* data, size_t data_size)
             case BS_RQ_LINE: build_state_ = BuildFirstLine_(); break;
             case BS_HEADER_FIELDS: build_state_ = BuildHeaderField_(); break;
             case BS_AFTER_HEADERS: build_state_ = ProcessHeaders_(); break;
-            case BS_PREPARE_TO_READ_BODY: build_state_ = PrepareBody_(); break;
             case BS_BODY_REGULAR: build_state_ = BuildBodyRegular_(); break;
             case BS_BODY_CHUNK_SIZE: build_state_ = BuildBodyChunkSize_(); break;
             case BS_BODY_CHUNK_CONTENT: build_state_ = BuildBodyChunkContent_(); break;
@@ -184,7 +183,6 @@ ResponseCode RequestBuilder::TrySetVersion_(const std::string& raw_version)
 
 RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
 {
-    // LOG(DEBUG) << "BuildHeaderField_";
     switch (TryToExtractLine_()) {
         case EXTRACTION_SUCCESS: break;
         case EXTRACTION_CRLF_NOT_FOUND: return BS_HEADER_FIELDS;
@@ -223,18 +221,6 @@ RequestBuilder::BuildState RequestBuilder::BuildHeaderField_()
     return BS_HEADER_FIELDS;
 }
 
-RequestBuilder::BuildState RequestBuilder::ProcessHeaders_()
-{
-    ResponseCode rc = ValidateHeadersSyntax_();
-    if (rc != http::HTTP_OK) {
-        return SetStatusAndExitBuilder_(rc);
-    }
-    rc = InterpretHeaders_();
-    if (rc != http::HTTP_OK) {
-        return SetStatusAndExitBuilder_(rc);
-    }
-    return SetValidationResult_();
-}
 
 ResponseCode RequestBuilder::ValidateHeadersSyntax_()
 {
@@ -251,6 +237,7 @@ ResponseCode RequestBuilder::ValidateHeadersSyntax_()
     }
     return HTTP_OK;
 }
+
 
 // todo: do we need to differentiate btw HTTP/1.0 and HTTP/1.1?
 ResponseCode RequestBuilder::InterpretHeaders_()
@@ -271,6 +258,13 @@ ResponseCode RequestBuilder::InterpretHeaders_()
         body_builder_.chunked = true;
     }
     if (content_length) {
+        utils::maybe<size_t> content_length_num =
+            utils::StrToNumericNoThrow<size_t>(*content_length);
+        if (!content_length_num) {
+            LOG(INFO) << "Content-Length not a number";
+            return HTTP_BAD_REQUEST;
+        }
+        body_builder_.remaining_length = *content_length_num;
         rq_has_body_ = true;
     }
     if (rq_.method == HTTP_POST && !content_length && !transfer_encoding) {
@@ -281,8 +275,16 @@ ResponseCode RequestBuilder::InterpretHeaders_()
     return HTTP_OK;
 }
 
-RequestBuilder::BuildState RequestBuilder::SetValidationResult_()
+RequestBuilder::BuildState RequestBuilder::ProcessHeaders_()
 {
+    ResponseCode rc = ValidateHeadersSyntax_();
+    if (rc != http::HTTP_OK) {
+        return SetStatusAndExitBuilder_(rc);
+    }
+    rc = InterpretHeaders_();
+    if (rc != http::HTTP_OK) {
+        return SetStatusAndExitBuilder_(rc);
+    }
     HeadersValidationResult validation_result = headers_ready_cb_->Call(rq_);
     if (validation_result.status != HTTP_OK) {
         LOG(DEBUG) << "ChooseServerCb returned error: " << validation_result.status;
@@ -293,19 +295,23 @@ RequestBuilder::BuildState RequestBuilder::SetValidationResult_()
         LOG(DEBUG) << "Request has no body";
         return BS_END;
     }
+    return PrepareBody_(validation_result);
+}
+
+RequestBuilder::BuildState RequestBuilder::PrepareBody_(
+    const HeadersValidationResult& validation_result)
+{
     LOG(DEBUG) << "Request has body, max_body_size: " << validation_result.max_body_size;
     body_builder_.max_body_size = validation_result.max_body_size;
     if (validation_result.upload_path.ok()) {
         const std::string& upload_path = *validation_result.upload_path;
         if (utils::DoesPathExist(upload_path.c_str())) {
-            rq_.status = HTTP_CONFLICT;
-            return BS_BAD_REQUEST;
+            return SetStatusAndExitBuilder_(HTTP_CONFLICT);
         }
         body_builder_.body_stream.open(upload_path.c_str());
         if (!body_builder_.body_stream.is_open()) {
             LOG(ERROR) << "Failed to open upload location: " << upload_path;
-            rq_.status = HTTP_INTERNAL_SERVER_ERROR;
-            return BS_BAD_REQUEST;
+            return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
         }
         rq_.body.path = upload_path;
         rq_.body.storage_type = BST_ON_SERVER;
@@ -316,42 +322,21 @@ RequestBuilder::BuildState RequestBuilder::SetValidationResult_()
         LOG(DEBUG) << "Created temporary file: " << *tmp_f;
         if (!tmp_f) {
             LOG(ERROR) << "Failed to create temporary file.";
-            rq_.status = HTTP_INTERNAL_SERVER_ERROR;
-            return BS_BAD_REQUEST;
+            return SetStatusAndExitBuilder_(HTTP_INTERNAL_SERVER_ERROR);
         }
         rq_.body.path = *tmp_f;
         rq_.body.storage_type = BST_IN_TMP_FOLDER;
     }
-    return BS_PREPARE_TO_READ_BODY;
-}
-
-RequestBuilder::BuildState RequestBuilder::PrepareBody_()
-{
-    LOG(DEBUG) << "PrepareBody_";
-    if (body_builder_.chunked) {
-        return BS_BODY_CHUNK_SIZE;
-    }
-    utils::maybe<std::string> content_length = rq_.GetHeaderVal("content-length");
-    if (!content_length) {
-        LOG(INFO) << "Content-Length missing";
-        return SetStatusAndExitBuilder_(HTTP_LENGTH_REQUIRED);
-    }
-    utils::maybe<size_t> content_length_num = utils::StrToNumericNoThrow<size_t>(*content_length);
-    if (!content_length_num) {
-        LOG(INFO) << "Content-Length not a number";
-        return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
-    }
-    if (*content_length_num > body_builder_.max_body_size) {
-        LOG(INFO) << "Content-Length too large";
-        return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
-    }
-    body_builder_.remaining_length = *content_length_num;
-    return BS_BODY_REGULAR;
+    return (body_builder_.chunked) ? BS_BODY_CHUNK_SIZE : BS_BODY_REGULAR;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
     LOG(DEBUG) << "BuildBodyRegular_";
+    if (body_builder_.remaining_length > body_builder_.max_body_size) {
+        LOG(INFO) << "Content-Length too large";
+        return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
+    }
     size_t copy_size = std::min(body_builder_.remaining_length, parser_.RemainingLength());
     const char* begin = parser_.buf().data() + body_builder_.body_idx;
     const char* end = begin + copy_size;
@@ -445,11 +430,6 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_()
         parser_.Advance();
     }
     return EXTRACTION_CRLF_NOT_FOUND;
-}
-
-bool RequestBuilder::IsParsingState_(BuildState state) const
-{
-    return (state != BS_AFTER_HEADERS && state != BS_PREPARE_TO_READ_BODY);
 }
 
 ResponseCode RequestBuilder::InsertHeaderField_(std::string& key, std::string& value)
