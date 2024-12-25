@@ -6,10 +6,6 @@
 #include <errors.h>
 #include <file_utils.h>
 #include <http.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-
-#include <cctype>
 
 #include "../utils/utils.h"
 

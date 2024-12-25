@@ -3,10 +3,11 @@
 #include <errors.h>
 #include <fcntl.h>
 #include <file_utils.h>
-#include <stdlib.h>
-#include <sys/wait.h>
+#include <sys/wait.h>  // waitpid
+#include <unistd.h>    // STDOUT_FILENO
 
-#include <cstring>
+#include <csignal>  // SIGKILL
+#include <cstdlib>  // dup2
 
 #define CHILD_ERROR_EXIT_CODE 7
 
@@ -18,7 +19,7 @@ namespace {
 void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket)
 {
     if (dup2(child_socket->sockfd(), STDOUT_FILENO) < 0) {
-        LOG(ERROR) << "Dup2 failed: " << std::strerror(errno);
+        LOG(ERROR) << "CGI: cannot run script: dup2: " << utils::GetSystemErrorDescr();
         exit(EXIT_FAILURE);
     }
 
@@ -36,7 +37,7 @@ void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket
 
     if (!utils::CloseProcessFdsButStd()) {
         LOG(ERROR) << "Cannot close fds, better death of 10000 children than a leak";
-        exit(EXIT_FAILURE);
+        exit(CHILD_ERROR_EXIT_CODE);
     }
 
     std::vector<char*> env;
@@ -51,15 +52,9 @@ void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket
     args.push_back(NULL);
 
     if (!utils::TryChangeDir(params.script_location.c_str())) {
-        LOG(ERROR) << "chdir failed: " << std::strerror(errno);
-        exit(EXIT_FAILURE);
+        LOG(ERROR) << "CGI: cannot run script: chdir: " << utils::GetSystemErrorDescr();
+        exit(CHILD_ERROR_EXIT_CODE);
     }
-    // LOG(ERROR) << "\nInterpreter: " << params.interpreter
-    //         << "\nScript path: " << args[1]
-    //         << "\nenv: " << env[0];
-    // char cwd[1024];
-    // getcwd(cwd, sizeof(cwd));
-    // LOG(ERROR) << "Current dir: " << cwd;
     execve(params.interpreter.c_str(), args.data(), env.data());
     LOG(ERROR) << "CGI: cannot run script: execve: " << utils::GetSystemErrorDescr();
     utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
