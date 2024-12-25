@@ -8,16 +8,18 @@ The Common Gateway Interface (CGI) is a standard protocol that defines how web s
 
 ### Identifying CGI Requests
 
-- **CGI Request Recognition**: A request is considered a CGI request if the URI contains a path starting with `/cgi-bin/`.
-- **Script Validation**: After the `/cgi-bin/` segment, the path must include the name of the script to be executed. If no script is specified, the server returns a **400 Bad Request** error.
-- **PATH\_INFO Compliance**: The handling of `PATH_INFO` follows the CGI 1.1 specification. Any additional path information provided after the script name is passed to the script as `PATH_INFO`.
+- **CGI Request Recognition**: A request is identified as a CGI request if the URI ends with `/cgi-bin/` followed by the script name, which may optionally include an additional path.
+- **Script Validation**: The script name must immediately follow the `/cgi-bin/` segment. Requests that do not specify a script directly after `/cgi-bin/` are considered invalid, and the server returns a **400 Bad Request** error.
+- **PATH\_INFO Compliance**: Any extra path information provided after the script name is passed to the script as `PATH_INFO`, in accordance with the CGI 1.1 specification.
 
-#### Example:
+#### Examples:
 
-- Request URI: `/cgi-bin/script.py/additional/path`
-  - **Script Location**: `/cgi-bin/`
-  - **Script Name**: `script.py`
-  - **PATH\_INFO**: `/additional/path`
+- Valid Paths:
+  - `/test/cgi-bin/script.py`
+  - `/test/cgi-bin/script.py/additional/path`
+  - `/cgi-bin/script.py`
+- Invalid Path:
+  - `/cgi-bin/test/script.py`
 
 ### Configuration of CGI Directories
 

@@ -6,8 +6,6 @@
 #include <shared_ptr.h>
 
 #include "Location.h"
-#include "response_processors/AResponseProcessor.h"
-
 
 enum MatchType {
     NO_MATCH = 0,
@@ -21,6 +19,19 @@ enum LocationType {
     STATIC_PATH,
     NO_LOCATION
 };
+
+class Server;
+
+struct RequestDestination {
+    RequestDestination(utils::shared_ptr<Server> server)
+        : server(server), loc(NULL), updated_path("")
+    {}
+    utils::shared_ptr<Server> server;
+    utils::shared_ptr<Location> loc;
+    std::string updated_path;
+};
+
+class AResponseProcessor;
 
 class Server {
   private:
@@ -39,9 +50,11 @@ class Server {
     std::pair<MatchType, std::string> MatchedServerName(const http::Request& rq) const;
     // has to call IResponseCallback with rs when the last is rdy
     utils::unique_ptr<AResponseProcessor> ProcessRequest(
-        const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+        const http::Request& rq, const RequestDestination& rq_dest,
+        utils::unique_ptr<http::IResponseCallback> cb) const;
     utils::unique_ptr<AResponseProcessor> GetResponseProcessor(
-        const http::Request& rq, utils::unique_ptr<http::IResponseCallback> cb) const;
+        const http::Request& rq, const RequestDestination& rq_dest,
+        utils::unique_ptr<http::IResponseCallback> cb) const;
 
     std::string name() const;
     const std::vector<std::string>& server_names() const;
@@ -66,6 +79,7 @@ class Server {
 
   private:
 };
+
 
 #endif  // WS_SERVER_SERVER_H
 

@@ -7,13 +7,13 @@
 #include <time_utils.h>
 #include <unique_ptr.h>
 
-class Server;
+#include "../Server.h"
 
 class AResponseProcessor {
   protected:
-    AResponseProcessor(const Server& server,
+    AResponseProcessor(RequestDestination dest,
                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-        : server_(server), response_rdy_cb_(response_rdy_cb) {};
+        : dest_(dest), response_rdy_cb_(response_rdy_cb) {};
 
     void DelegateToErrProc(http::ResponseCode err_code);
 
@@ -21,7 +21,7 @@ class AResponseProcessor {
     virtual ~AResponseProcessor() {};
 
   protected:
-    const Server& server_;
+    RequestDestination dest_;
     utils::unique_ptr<http::IResponseCallback> response_rdy_cb_;
     utils::unique_ptr<AResponseProcessor> delegated_processor_;
 };

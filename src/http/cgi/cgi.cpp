@@ -139,8 +139,7 @@ std::vector<std::string> GetEnv(const ScriptLocDetails& script, const http::Requ
     env.push_back("REMOTE_HOST=" + rq.GetHeaderVal("Host").value());
     env.push_back("SERVER_NAME=" +
                   rq.GetHeaderVal("Host").value());  // TODO: REMOTE_HOST == SERVER_NAME?
-
-    if (rq.has_body) {
+    if (rq.has_body()) {
         // todo: chanked?
         utils::maybe<std::string> cont_len = rq.GetHeaderVal("Content-Length");
         utils::maybe<std::string> cont_type = rq.GetHeaderVal("Content-Type");
@@ -166,18 +165,16 @@ std::vector<std::string> GetEnv(const ScriptLocDetails& script, const http::Requ
 utils::maybe<utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
     const std::string& path_from_url)
 {
-    utils::unique_ptr<ScriptLocDetails> res(utils::unique_ptr<ScriptLocDetails>(NULL));
-
     size_t cgi_pos = path_from_url.find("/cgi-bin/");
     if (cgi_pos == std::string::npos) {
         LOG(ERROR) << "Path in the url does not contain /cgi-bin/";
-        return res;
+        return utils::maybe_not();
     }
 
     size_t script_pos = cgi_pos + std::string("/cgi-bin/").length();
     if (script_pos == path_from_url.length()) {
         LOG(ERROR) << "No script after /cgi-bin/ is specified";
-        return res;
+        return utils::maybe_not();
     }
 
     size_t extra_path_pos = path_from_url.find('/', script_pos);
@@ -189,13 +186,13 @@ utils::maybe<utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
     if (script_name.find('.') == std::string::npos) {
         LOG(ERROR) << "The path must include the name of the script after /cgi-bin/ "
                    << path_from_url;
-        return res;
+        return utils::maybe_not();
     }
     std::string extra_path = (extra_path_pos == std::string::npos)
                                  ? std::string()
                                  : path_from_url.substr(extra_path_pos);
-    res.reset(new ScriptLocDetails(script_location, script_name, extra_path));
-    return res;
+    return utils::unique_ptr<ScriptLocDetails>(utils::unique_ptr<ScriptLocDetails>(
+        new ScriptLocDetails(script_location, script_name, extra_path)));
 }
 
 }  // namespace cgi

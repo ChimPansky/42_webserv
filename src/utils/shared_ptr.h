@@ -4,7 +4,6 @@
 #define WS_UTILS_SHARED_PTR_H
 
 #include <algorithm>  // std::swap
-#include <cstddef>    // NULL
 #include <stdexcept>
 
 namespace utils {

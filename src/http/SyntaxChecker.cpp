@@ -2,10 +2,6 @@
 
 #include <logger.h>
 
-#include <algorithm>
-#include <cctype>
-#include <cstring>
-
 namespace http {
 
 // token = 1*tchar

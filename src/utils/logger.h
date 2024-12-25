@@ -53,9 +53,9 @@ class Logger {
     };
 
   public:
-    static Logger& get();
+    static Logger& get() throw();
+    LogWrapper log(enum Severity sev) throw();
     static char* dump_time();
-    LogWrapper log(enum Severity sev);
     void set_severity_threshold(Severity);
 
   private:

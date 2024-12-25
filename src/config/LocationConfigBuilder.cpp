@@ -202,7 +202,8 @@ unsigned int BuildClientMaxBodySize(const std::vector<std::string>& vals,
 bool LocationConfigBuilder::IsKeyAllowed(const std::string& key) const
 {
     return key == "limit_except" || key == "return" || key == "cgi_extension" || key == "alias" ||
-           key == "index" || key == "autoindex" || "client_max_body_size" || key == "upload_store";
+           key == "index" || key == "autoindex" || key == "client_max_body_size" ||
+           key == "upload_store";
 }
 
 bool LocationConfigBuilder::AreNestingsValid(const ParsedConfig& f) const

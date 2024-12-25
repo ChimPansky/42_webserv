@@ -4,8 +4,6 @@
 #include <ResponseCodes.h>
 #include <http.h>
 #include <logger.h>
-#include <netinet/in.h>
-#include <unistd.h>
 
 #include <string>
 #include <utility>

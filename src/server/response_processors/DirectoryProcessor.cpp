@@ -26,27 +26,26 @@ const char* DirectoryProcessor::kAutoIndexStyle()
            "a:hover { text-decoration: underline; }";
 }
 
-DirectoryProcessor::DirectoryProcessor(const Server& server,
+DirectoryProcessor::DirectoryProcessor(RequestDestination dest,
                                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                                       const http::Request& rq, const std::string& file_path)
-    : AResponseProcessor(server, response_rdy_cb)
+                                       const http::Request& rq)
+    : AResponseProcessor(dest, response_rdy_cb)
 {
-    if (*file_path.rbegin() != '/') {
+    const std::string& path = dest_.updated_path;
+    if (*path.rbegin() != '/') {
         LOG(DEBUG) << "Path is a directory but does not end with / -> Redirect";
         http::RqTarget redirected_target = rq.rqTarget;
         redirected_target.AddTrailingSlashToPath();
         delegated_processor_.reset(new RedirectProcessor(
-            server_, response_rdy_cb_, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
+            dest, response_rdy_cb_, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
         return;
     }
     if (rq.method != http::HTTP_GET) {
-        delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
-            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_METHOD_NOT_ALLOWED));
+        DelegateToErrProc(http::HTTP_METHOD_NOT_ALLOWED);
         return;
     }
-    if (!ListDirectory_(file_path)) {
-        delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
-            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+    if (!ListDirectory_(path)) {
+        DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 }
@@ -60,7 +59,7 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path)
     std::map<std::string, std::string> hdrs;
     std::sort(dir_entries->begin(), dir_entries->end());
     std::ostringstream body_stream;
-    GenerateAutoIndexPage_(body_stream, path, *dir_entries);
+    GenerateAutoIndexPage_(body_stream, *dir_entries);
     std::string body_string = body_stream.str();
     std::vector<char> body(body_string.begin(), body_string.end());
     hdrs["Content-Type"] = "text/html";
@@ -70,10 +69,12 @@ bool DirectoryProcessor::ListDirectory_(const std::string& path)
     return true;
 }
 
-void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body, const std::string& path,
+void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body,
                                                 const std::vector<utils::DirEntry>& entries)
 {
-    body << "<html>\n<head>\n<title>Index of " << path << "</title>\n</head>\n"
+    body << "<html>\n<head>\n"
+            "<meta charset=\"UTF-8\">\n"
+            "<title>Webserv Directory Listing</title>\n</head>\n"
          << "<style>\n"
          << kAutoIndexStyle()
          << "\n</style>\n"
@@ -93,10 +94,10 @@ void DirectoryProcessor::GenerateAutoIndexPage_(std::ostringstream& body, const 
     for (size_t i = 0; i < entries.size(); i++) {
         const utils::DirEntry& entry = entries[i];
         std::string time_str = utils::GetFormatedTime(entry.last_modified());
-        if (entry.name() == "./") {
+        if (*entry.name().begin() == '.' && entry.name() != "../") {
             continue;
         }
-        body << "<tr><td><a href=\"" << entry.name() << "\"";
+        body << "<tr><td><a href=\"" << http::PercentEncode(entry.name(), "/") << "\"";
         if (entry.type() == utils::DE_FILE) {
             body << " target=\"_blank\"";
         }

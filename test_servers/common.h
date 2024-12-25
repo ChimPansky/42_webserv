@@ -2,10 +2,10 @@
 #include <sys/socket.h>  // socket, bind
 #include <unistd.h>      // close
 
-#include <cstring>
-#include <sstream>    // close
-#include <stdexcept>  // close
-#include <string>     // close
+#include <cstring>  // memcpy
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 inline in_addr_t IPv4FromString(const std::string& ip_str)
 {

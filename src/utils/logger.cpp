@@ -41,7 +41,7 @@ char* Logger::dump_time()
     return format_buf_;
 }
 
-Logger::LogWrapper Logger::log(enum Severity sev)
+Logger::LogWrapper Logger::log(enum Severity sev) throw()
 {
     if (!std::cerr) {
         std::cout << std::cerr.bad() << std::cerr.fail() << std::cerr.eof() << std::endl;
@@ -63,7 +63,7 @@ Logger::LogWrapper Logger::log(enum Severity sev)
     return LogWrapper(os, sev);
 }
 
-Logger& Logger::get()
+Logger& Logger::get() throw()
 {
     static Logger logger;
     return logger;
