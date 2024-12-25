@@ -2,10 +2,10 @@
 
 #include "../Server.h"
 
-RedirectProcessor::RedirectProcessor(const Server& server,
+RedirectProcessor::RedirectProcessor(RequestDestination dest,
                                      utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                                      http::ResponseCode code, const std::string& redirect_uri)
-    : AResponseProcessor(server, response_rdy_cb)
+    : AResponseProcessor(dest, response_rdy_cb)
 {
     std::map<std::string, std::string> hdrs;
     hdrs["Connection"] = "Close";

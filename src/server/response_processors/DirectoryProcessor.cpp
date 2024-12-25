@@ -26,27 +26,26 @@ const char* DirectoryProcessor::kAutoIndexStyle()
            "a:hover { text-decoration: underline; }";
 }
 
-DirectoryProcessor::DirectoryProcessor(const Server& server,
+DirectoryProcessor::DirectoryProcessor(RequestDestination dest,
                                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                                       const http::Request& rq, const std::string& file_path)
-    : AResponseProcessor(server, response_rdy_cb)
+                                       const http::Request& rq)
+    : AResponseProcessor(dest, response_rdy_cb)
 {
-    if (*file_path.rbegin() != '/') {
+    const std::string& path = dest_.updated_path;
+    if (*path.rbegin() != '/') {
         LOG(DEBUG) << "Path is a directory but does not end with / -> Redirect";
         http::RqTarget redirected_target = rq.rqTarget;
         redirected_target.AddTrailingSlashToPath();
         delegated_processor_.reset(new RedirectProcessor(
-            server_, response_rdy_cb_, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
+            dest, response_rdy_cb_, http::HTTP_MOVED_PERMANENTLY, redirected_target.ToStr()));
         return;
     }
     if (rq.method != http::HTTP_GET) {
-        delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
-            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_METHOD_NOT_ALLOWED));
+        DelegateToErrProc(http::HTTP_METHOD_NOT_ALLOWED);
         return;
     }
-    if (!ListDirectory_(file_path)) {
-        delegated_processor_ = utils::unique_ptr<AResponseProcessor>(
-            new ErrorProcessor(server, response_rdy_cb_, http::HTTP_INTERNAL_SERVER_ERROR));
+    if (!ListDirectory_(path)) {
+        DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 }
