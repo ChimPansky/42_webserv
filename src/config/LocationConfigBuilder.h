@@ -1,8 +1,6 @@
 #ifndef WS_CONFIG_LOCATION_CONFIG_BUILDER_H
 #define WS_CONFIG_LOCATION_CONFIG_BUILDER_H
 
-#include <unistd.h>
-
 #include <string>
 
 #include "IConfigBuilder.h"

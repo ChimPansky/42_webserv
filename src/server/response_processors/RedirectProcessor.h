@@ -7,7 +7,7 @@
 
 class RedirectProcessor : public AResponseProcessor {
   public:
-    RedirectProcessor(const Server& server,
+    RedirectProcessor(RequestDestination dest,
                       utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                       http::ResponseCode code, const std::string& redirect_uri);
 };

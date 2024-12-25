@@ -2,7 +2,6 @@
 #define WS_C_API_SOCKET_WRAPPER_H
 
 #include <maybe.h>
-#include <sys/types.h>
 #include <unique_ptr.h>
 
 #include <vector>
@@ -20,7 +19,7 @@ enum SockStatus {
 struct RecvPackage {
     SockStatus status;
     const char* data;
-    ssize_t data_size;
+    size_t data_size;
 };
 
 // TODO: imagine copying rs body 3 times till it reaches this point

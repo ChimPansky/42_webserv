@@ -1,29 +1,30 @@
 #include "ErrorProcessor.h"
 
-#include "../Server.h"
-#include "logger.h"
+#include <logger.h>
 
-ErrorProcessor::ErrorProcessor(const Server& server,
+#include "../Server.h"
+
+ErrorProcessor::ErrorProcessor(RequestDestination dest,
                                utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                                http::ResponseCode code)
-    : AResponseProcessor(server, response_rdy_cb)
+    : AResponseProcessor(dest, response_rdy_cb)
 {
     typedef std::map<int, std::string>::const_iterator ErrPageIt;
-    ErrPageIt err_page_it = server.error_pages().find(static_cast<int>(code));
-    if (err_page_it == server.error_pages().end()) {
-        delegated_processor_.reset(new GeneratedErrorProcessor(server_, response_rdy_cb_, code));
+    ErrPageIt err_page_it = dest.server->error_pages().find(static_cast<int>(code));
+    if (err_page_it == dest.server->error_pages().end()) {
+        delegated_processor_.reset(new GeneratedErrorProcessor(dest, response_rdy_cb_, code));
         return;
     }
     const std::string& file_path = err_page_it->second;
     if (!utils::DoesPathExist(file_path.c_str()) || utils::IsDirectory(file_path.c_str())) {
         LOG(ERROR) << "Error (" << code << ") page file not found by path: " << file_path;
-        delegated_processor_.reset(new GeneratedErrorProcessor(server_, response_rdy_cb_, code));
+        delegated_processor_.reset(new GeneratedErrorProcessor(dest, response_rdy_cb_, code));
         return;
     }
     std::ifstream file(file_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
         LOG(DEBUG) << "Error (" << code << ") page file cannot be opened: " << file_path;
-        delegated_processor_.reset(new GeneratedErrorProcessor(server_, response_rdy_cb_, code));
+        delegated_processor_.reset(new GeneratedErrorProcessor(dest, response_rdy_cb_, code));
         return;
     }
     std::vector<char> body =
@@ -37,9 +38,9 @@ ErrorProcessor::ErrorProcessor(const Server& server,
 }
 
 ErrorProcessor::GeneratedErrorProcessor::GeneratedErrorProcessor(
-    const Server& server, utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
+    RequestDestination dest, utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
     http::ResponseCode code)
-    : AResponseProcessor(server, response_rdy_cb)
+    : AResponseProcessor(dest, response_rdy_cb)
 {
     std::string body_str = GenerateErrorPage_(code);
     std::vector<char> body;

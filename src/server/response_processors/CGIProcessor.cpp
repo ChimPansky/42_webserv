@@ -3,16 +3,11 @@
 #include <ChildProcessesManager.h>
 #include <EventManager.h>
 #include <cgi/cgi.h>
+#include <errors.h>
 #include <file_utils.h>
 #include <http.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-
-#include <cctype>
-#include <cstring>
 
 #include "../utils/utils.h"
-#include "ErrorProcessor.h"
 
 namespace {
 
@@ -28,27 +23,26 @@ bool IsValidExtension(const std::string& filename, const std::vector<std::string
 
 }  // namespace
 
-CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
-                           const http::Request& rq,
-                           const std::vector<std::string>& allowed_cgi_extensions,
-                           utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-    : AResponseProcessor(server, response_rdy_cb)
+CGIProcessor::CGIProcessor(RequestDestination dest,
+                           utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
+                           const http::Request& rq)
+    : AResponseProcessor(dest, response_rdy_cb)
 {
-    if (!IsValidExtension(script_path, allowed_cgi_extensions)) {
-        LOG(ERROR) << "CGI extension not supported: " << script_path;
+    if (!IsValidExtension(dest.updated_path, dest.loc->cgi_extensions())) {
+        LOG(ERROR) << "CGI extension not supported: " << dest.updated_path;
         DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
         return;
     }
 
-    std::string interpreter = utils::GetInterpreterByExt(script_path);
-    if (!utils::IsReadable(script_path.c_str())) {
-        LOG(ERROR) << "CGI script cannot be executed: " << script_path;
+    std::string interpreter = utils::GetInterpreterByExt(dest.updated_path);
+    if (!utils::IsReadable(dest.updated_path.c_str())) {
+        LOG(ERROR) << "CGI script cannot be executed: " << dest.updated_path;
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 
-    c_api::ExecParams exec_params(interpreter, script_path, cgi::GetEnv(script_path, rq),
-                                  rq.body.path.c_str());
+    c_api::ExecParams exec_params(interpreter, dest.updated_path,
+                                  cgi::GetEnv(dest.updated_path, rq), rq.body.path.c_str());
     child_process_description_ = c_api::ChildProcessesManager::get().TryRunChildProcess(
         exec_params, utils::unique_ptr<c_api::IChildDiedCb>(new ChildProcessDoneCb(*this)));
     if (!child_process_description_.ok()) {
@@ -79,7 +73,7 @@ void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
     std::vector<char>& buf = processor_.cgi_out_buffer_;
     c_api::RecvPackage pack = processor_.child_process_description_->sock().Recv();
     if (pack.status == c_api::RS_SOCK_ERR) {
-        LOG(ERROR) << "error on recv" << std::strerror(errno);  // TODO: is errno check allowed?
+        LOG(ERROR) << "Error on recv from child proc: " << utils::GetSystemErrorDescr();
         return;
     } else if (pack.status == c_api::RS_SOCK_CLOSED) {
         LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes";

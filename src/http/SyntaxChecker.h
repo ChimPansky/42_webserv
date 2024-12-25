@@ -1,8 +1,8 @@
 #ifndef WS_HTTP_SYNTAX_CHECKER_H
 #define WS_HTTP_SYNTAX_CHECKER_H
 
-
 #include <string>
+
 namespace http {
 
 class SyntaxChecker {

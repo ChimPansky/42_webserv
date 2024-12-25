@@ -3,7 +3,7 @@
 #include <http.h>
 #include <str_utils.h>
 
-#include <cstring>
+#include <cstring>  // strchr
 #include <sstream>
 
 

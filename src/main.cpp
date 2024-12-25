@@ -13,7 +13,6 @@
 
 #include <ConfigBuilder.h>
 
-#include <csignal>
 #include <iostream>
 
 #include "ServerCluster.h"

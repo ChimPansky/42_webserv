@@ -1,22 +1,18 @@
 
 #include "Server.h"
 
+#include <Request.h>
+#include <ResponseCodes.h>
 #include <file_utils.h>
+#include <logger.h>
 #include <shared_ptr.h>
-
-#include <cstdlib>
+#include <unique_ptr.h>
 
 #include "Location.h"
-#include "Request.h"
-#include "ResponseCodes.h"
-#include "RqTarget.h"
-#include "logger.h"
 #include "response_processors/AResponseProcessor.h"
 #include "response_processors/CGIProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
-#include "unique_ptr.h"
-#include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
     : access_log_path_(cfg.access_log_path()),
@@ -105,7 +101,7 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
         return GetResponseProcessor(rq, rq_dest, cb);
     } else {
         LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-        return utils::unique_ptr<AResponseProcessor>(new ErrorProcessor(*this, cb, rq.status));
+        return utils::unique_ptr<AResponseProcessor>(new ErrorProcessor(rq_dest, cb, rq.status));
     }
 }
 
@@ -116,15 +112,13 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     // TODO: add redirect processor
     if (rq_dest.loc->is_cgi()) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI";
-        return utils::unique_ptr<AResponseProcessor>(
-            new CGIProcessor(*this, rq_dest.updated_path, rq, rq_dest.loc->cgi_extensions(), cb));
+        return utils::unique_ptr<AResponseProcessor>(new CGIProcessor(rq_dest, cb, rq));
     } else {
         if (!rq_dest.loc) {
             return utils::unique_ptr<AResponseProcessor>(
-                new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
+                new ErrorProcessor(rq_dest, cb, http::HTTP_NOT_FOUND));
         }
-        return utils::unique_ptr<AResponseProcessor>(
-            new FileProcessor(*this, rq_dest.updated_path, cb, rq, *rq_dest.loc));
+        return utils::unique_ptr<AResponseProcessor>(new FileProcessor(rq_dest, cb, rq));
     }
 }
 

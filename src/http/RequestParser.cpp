@@ -1,8 +1,6 @@
 #include "RequestParser.h"
 
 #include <logger.h>
-
-#include <cstring>
 #include <iterator>
 
 #include "http.h"

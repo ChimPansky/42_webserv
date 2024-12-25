@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <sstream>
 
-std::string utils::GetFormatedTime(std::time_t raw_time)
+std::string utils::GetFormatedTime(UnixTimestampS raw_time)
 {
     if (0 == raw_time) {
         std::time(&raw_time);  // get currnet time
@@ -26,4 +26,9 @@ std::string utils::GetFormatedTime(std::time_t raw_time)
         << ":" << std::setw(2) << std::setfill('0') << time_info->tm_sec << " GMT";
 
     return oss.str();
+}
+
+UnixTimestampS utils::Now()
+{
+    return std::time(NULL);
 }
