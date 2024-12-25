@@ -1,6 +1,9 @@
 #include "file_utils.h"
 
 #include <dirent.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <fstream>
 #include <sstream>

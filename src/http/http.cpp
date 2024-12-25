@@ -4,7 +4,7 @@
 #include <maybe.h>
 #include <numeric_utils.h>
 
-#include <cstring>
+#include <cstring>  // strchr
 
 namespace http {
 

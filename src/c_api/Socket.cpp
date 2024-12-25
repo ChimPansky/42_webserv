@@ -4,7 +4,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include <cstring>
 #include <stdexcept>
 
 namespace c_api {
@@ -46,15 +45,16 @@ Socket::~Socket()
 RecvPackage Socket::Recv(size_t read_size) const
 {
     RecvPackage pack = {};
-    pack.data_size =
+    ssize_t bytes_recvd =
         ::recv(sockfd_, (void*)buf_, std::min(read_size, SOCK_READ_BUF_SZ), MSG_NOSIGNAL);
-    if (pack.data_size < 0) {
+    if (bytes_recvd < 0) {
         pack.status = RS_SOCK_ERR;
-    } else if (pack.data_size == 0) {
+    } else if (bytes_recvd == 0) {
         pack.status = RS_SOCK_CLOSED;
     } else {
         pack.status = RS_OK;
         pack.data = buf_;
+        pack.data_size = bytes_recvd;
     }
     return pack;
 }
@@ -67,7 +67,7 @@ SockStatus Socket::Send(SendPackage& pack) const
         pack.bytes_sent += bytes_sent;
         return RS_OK;
     }
-    return RS_SOCK_ERR;
+    return (bytes_sent == 0 ? RS_SOCK_CLOSED : RS_SOCK_ERR);
 }
 
 utils::maybe<Socket::SocketPair> Socket::CreateLocalNonblockSocketPair()

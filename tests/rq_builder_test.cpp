@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 #include <logger.h>
 
-#include <cstring>
 #include <fstream>
 #include <iostream>
 
@@ -420,7 +419,7 @@ TEST(InValidWithoutBody, 24_No_CRLF_After_Header_Value)
 }
 
 // TEST(InValidWithoutBody, 25_Bad_Header_Value_10) {
-//  TODO: Tests 25-30 check headervalues with invalid characters
+// TODO: Tests 25-30 check headervalues with invalid characters
 
 
 // TODO: Tests 31+ check for conflicting headers? multiple headers with same key?

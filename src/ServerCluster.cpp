@@ -3,8 +3,8 @@
 #include <ChildProcessesManager.h>
 #include <EventManager.h>
 #include <c_api_utils.h>
+#include <errors.h>
 #include <time_utils.h>
-#include <stdexcept>
 
 namespace {
 void SigIntHandler(int /*signum*/)
@@ -125,7 +125,7 @@ void ServerCluster::Run()
 
 void ServerCluster::CheckClients_() throw()
 {
-    time_t now = time(NULL);
+    UnixTimestampS now = utils::Now();
     client_iterator it = clients_.begin();
     while (it != clients_.end()) {
         ClientSession& client = *it->second;
@@ -142,7 +142,8 @@ void ServerCluster::CheckClients_() throw()
     }
 }
 
-void ServerCluster::KillAllClients_() throw() {
+void ServerCluster::KillAllClients_() throw()
+{
     for (client_iterator it = clients_.begin(); it != clients_.end(); ++it) {
         it->second->CloseConnection();
     }
@@ -159,9 +160,9 @@ void ServerCluster::MasterSocketCallback::Call(int fd)
     c_api::MasterSocket& acceptor = *acceptor_it->second;
     utils::unique_ptr<c_api::ClientSocket> client_sock = acceptor.Accept();
     if (!client_sock) {
-        LOG(ERROR) << "error accepting connection on: "
-                   << c_api::PrintIPv4SockAddr(acceptor.addr_in());
-        perror("MasterSocket::Accept");
+        LOG(ERROR) << "error accepting connection on "
+                   << c_api::PrintIPv4SockAddr(acceptor.addr_in()) << ": "
+                   << utils::GetSystemErrorDescr();
         return;
     }
     const int client_fd = client_sock->sockfd();
