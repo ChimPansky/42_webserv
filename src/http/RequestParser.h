@@ -3,6 +3,8 @@
 
 #include <sys/types.h>
 
+#include <cstddef>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -17,21 +19,22 @@ class RequestParser {
 
     char Peek(ssize_t offset = 0) const;
     bool Advance(ssize_t n = 1);
-    bool FoundCRLF() const;
+    bool EndsWithCRLF() const;
+    bool BeginsWithCRLF() const;
     bool FoundSingleCR() const;
-    void StartNewElement();
     bool EndOfBuffer() const;
-    bool ExceededLineLimit() const;
     size_t ElementLen() const;
     size_t RemainingLength() const;
     std::string ExtractElement();
     std::string ExtractLine();
 
+    void Ignore(size_t n);
+    size_t MoveToStream(size_t n, std::ostream& dest);
+
     char& operator[](ssize_t index);
 
   private:
     std::vector<char> buf_;
-    size_t old_buf_size_;
     ssize_t element_end_idx_;
 
   public:

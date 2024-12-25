@@ -35,8 +35,16 @@ RequestBuilder::RequestBuilder(utils::unique_ptr<IOnHeadersReadyCb> choose_serve
 }
 
 RequestBuilder::BodyBuilder::BodyBuilder()
-    : chunked(false), body_idx(0), remaining_length(0), max_body_size(0)
+    : chunked(false), body_len(0), remaining_length(0), max_body_size(0)
 {}
+
+void RequestBuilder::BodyBuilder::Reset()
+{
+    chunked = false;
+    body_len = 0;
+    remaining_length = 0;
+    max_body_size = 0;
+}
 
 bool RequestBuilder::CanBuild_()
 {
@@ -91,6 +99,18 @@ const Request& RequestBuilder::rq() const
 std::vector<char>& RequestBuilder::buf()
 {
     return parser_.buf();
+}
+
+void RequestBuilder::Reset()
+{
+    rq_ = Request();
+    builder_status_ = RB_BUILDING;
+    extraction_.clear();
+    build_state_ = BS_RQ_LINE;
+    body_builder_.Reset();
+    header_count_ = 0;
+    header_section_size_ = 0;
+    rq_has_body_ = false;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildFirstLine_()
@@ -354,13 +374,9 @@ RequestBuilder::BuildState RequestBuilder::PrepareBody_()
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
 {
     LOG(DEBUG) << "BuildBodyRegular_";
-    size_t copy_size = std::min(body_builder_.remaining_length, parser_.RemainingLength());
-    const char* begin = parser_.buf().data() + body_builder_.body_idx;
-    const char* end = begin + copy_size;
-    std::copy(begin, end, std::ostream_iterator<char>(body_builder_.body_stream));
-    body_builder_.body_idx += copy_size;
-    body_builder_.remaining_length -= copy_size;
-    parser_.Advance(copy_size);
+    size_t bytes_copied =
+        parser_.MoveToStream(body_builder_.remaining_length, body_builder_.body_stream);
+    body_builder_.remaining_length -= bytes_copied;
     if (body_builder_.remaining_length > 0) {
         return BS_BODY_REGULAR;
     }
@@ -387,9 +403,9 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
         rq_.body.transfer_complete = true;
         return BS_END;
     }
-    body_builder_.body_idx += *chunk_size;
+    body_builder_.body_len += *chunk_size;
     body_builder_.remaining_length = *chunk_size;
-    if (body_builder_.body_idx > body_builder_.max_body_size) {
+    if (body_builder_.body_len > body_builder_.max_body_size) {
         LOG(INFO) << "Chunked content too large";
         return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
     }
@@ -399,14 +415,24 @@ RequestBuilder::BuildState RequestBuilder::BuildBodyChunkSize_()
 RequestBuilder::BuildState RequestBuilder::BuildBodyChunkContent_()
 {
     LOG(DEBUG) << "BuildBodyChunkContent_";
-    switch (TryToExtractBodyContent_()) {
-        case EXTRACTION_SUCCESS: break;
-        case EXTRACTION_TOO_LONG: return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
-        default: return BS_BODY_CHUNK_CONTENT;
+
+    if (body_builder_.remaining_length > 0) {
+        size_t bytes_copied =
+            parser_.MoveToStream(body_builder_.remaining_length, body_builder_.body_stream);
+        body_builder_.remaining_length -= bytes_copied;
     }
-    std::copy(extraction_.begin(), extraction_.end(),
-              std::ostream_iterator<char>(body_builder_.body_stream));
-    return BS_BODY_CHUNK_SIZE;
+    if (body_builder_.remaining_length <= 0) {
+        if (parser_.RemainingLength() < 2) {
+            return BS_BODY_CHUNK_CONTENT;
+        }
+        if (!parser_.BeginsWithCRLF()) {
+            LOG(INFO) << "No CRLF after Chunk Content";
+            return SetStatusAndExitBuilder_(HTTP_BAD_REQUEST);
+        }
+        parser_.Ignore(2);
+        return BS_BODY_CHUNK_SIZE;
+    }
+    return BS_BODY_CHUNK_CONTENT;
 }
 
 RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_()
@@ -416,7 +442,7 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractLine_()
             LOG(INFO) << "Line too long";
             return EXTRACTION_TOO_LONG;
         }
-        if (parser_.FoundCRLF()) {
+        if (parser_.EndsWithCRLF()) {
             extraction_ = parser_.ExtractLine();
             return EXTRACTION_SUCCESS;
         }
@@ -440,7 +466,7 @@ RequestBuilder::ExtractionResult RequestBuilder::TryToExtractBodyContent_()
             LOG(INFO) << "Body content too long";
             return EXTRACTION_TOO_LONG;
         }
-        if (parser_.FoundCRLF()) {
+        if (parser_.EndsWithCRLF()) {
             extraction_ = parser_.ExtractLine();
             return EXTRACTION_SUCCESS;
         }

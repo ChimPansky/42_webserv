@@ -3,13 +3,14 @@
 #include <logger.h>
 
 #include <cstring>
+#include <iterator>
 
 #include "http.h"
 
 
 namespace http {
 
-RequestParser::RequestParser() : old_buf_size_(0), element_end_idx_(0)
+RequestParser::RequestParser() : element_end_idx_(0)
 {}
 
 std::vector<char>& RequestParser::buf()
@@ -48,10 +49,6 @@ size_t RequestParser::RemainingLength() const
     return buf_.size() - element_end_idx_;
 }
 
-bool RequestParser::ExceededLineLimit() const
-{
-    return element_end_idx_ > RQ_LINE_LEN_LIMIT;
-}
 
 bool RequestParser::EndOfBuffer() const
 {
@@ -78,6 +75,18 @@ std::string RequestParser::ExtractLine()
     return line;
 }
 
+// move n bytes from RequestParser-buffer to destiation stream (deleting n bytes from buffer)
+size_t RequestParser::MoveToStream(size_t n, std::ostream& dest)
+{
+    if (n > buf_.size()) {
+        n = buf_.size();
+    }
+    std::copy(buf_.begin(), buf_.begin() + n, std::ostream_iterator<char>(dest));
+    buf_.erase(buf_.begin(), buf_.begin() + n);
+    element_end_idx_ = 0;
+    return n;
+}
+
 char& RequestParser::operator[](ssize_t index)
 {
     if (index < 0) {
@@ -94,12 +103,32 @@ size_t RequestParser::element_end_idx() const
     return element_end_idx_;
 }
 
-bool RequestParser::FoundCRLF() const
+bool RequestParser::EndsWithCRLF() const
 {
     if (element_end_idx_ < 1) {
         return false;
     }
     return buf_[element_end_idx_ - 1] == '\r' && buf_[element_end_idx_] == '\n';
+}
+
+bool RequestParser::BeginsWithCRLF() const
+{
+    if (buf_.size() < 2) {
+        return false;
+    }
+    return buf_[0] == '\r' && buf_[1] == '\n';
+}
+
+void RequestParser::Ignore(size_t n)
+{
+    if (n > buf_.size()) {
+        n = buf_.size();
+    }
+    if (n <= 0) {
+        return;
+    }
+    buf_.erase(buf_.begin(), buf_.begin() + n);
+    element_end_idx_ = 0;
 }
 
 bool RequestParser::FoundSingleCR() const
