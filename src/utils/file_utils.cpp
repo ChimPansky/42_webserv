@@ -107,6 +107,7 @@ utils::maybe<std::string> CreateAndOpenTmpFileToStream(std::ofstream &fs)
     } while (DoesPathExist(tmp_name.c_str()));
     fs.open(tmp_name.c_str());
     if (!fs.is_open()) {
+        LOG(DEBUG) << "Failed to open temporary file: " << tmp_name;
         return maybe_not();
     }
     return tmp_name;

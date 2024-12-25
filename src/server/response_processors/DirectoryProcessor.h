@@ -17,7 +17,7 @@ class DirectoryProcessor : public AResponseProcessor {
 
   private:
     bool ListDirectory_(const std::string& path);
-    void GenerateAutoIndexPage_(std::ostringstream& body, const std::string& path,
+    void GenerateAutoIndexPage_(std::ostringstream& body,
                                 const std::vector<utils::DirEntry>& entries);
 
   private:
