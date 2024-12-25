@@ -5,7 +5,6 @@
 #include <unique_ptr.h>
 #include <unistd.h>
 
-#include <cerrno>
 #include <fstream>
 #include <stdexcept>
 
@@ -23,34 +22,28 @@ FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
 {
     switch (rq.method) {
         case http::HTTP_GET: ProcessGet_(file_path, rq, loc); break;
-        case http::HTTP_POST: ProcessPost_(file_path, rq, loc); break;
+        case http::HTTP_POST: ProcessPost_(file_path); break;
         case http::HTTP_DELETE: ProcessDelete_(file_path); break;
         default: throw std::logic_error("FileProcessor: Unsupported HTTP method"); break;
     }
 }
 
-void FileProcessor::ProcessPost_(const std::string& file_path, const http::Request& rq,
-                                 const Location& loc)
+void FileProcessor::ProcessPost_(const std::string& file_path)
 {
     LOG(INFO) << "Processing POST request for file: " << file_path;
-    if (!rq.has_body()) {
-        DelegateToErrProc(http::HTTP_BAD_REQUEST);
-        return;
-    }
-    LOG(DEBUG) << "file_path: " << file_path;
-    LOG(DEBUG) << "loc.upload_dir(): " << loc.upload_dir();
+    // todo: rename from /uploadfolder/.file.txt to /uploadfolder/file.txt
+    // if (std::rename(rq.body.c_str(), file_path.c_str()) != 0) {
+    //     LOG(DEBUG) << "Upload of file " << file_path << " failed: " << strerror(errno);
+    //     DelegateToErrProc(http::HTTP_CONFLICT);
+    //     return;
+    // }
     if (utils::DoesPathExist(file_path.c_str())) {
-        DelegateToErrProc(http::HTTP_CONFLICT);
+        std::map<std::string, std::string> hdrs;
+        response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
+            new http::Response(http::HTTP_CREATED, http::HTTP_1_1, hdrs, std::vector<char>())));
         return;
     }
-    if (std::rename(rq.body.c_str(), file_path.c_str()) != 0) {
-        LOG(DEBUG) << "Upload of file " << file_path << " failed: " << strerror(errno);
-        DelegateToErrProc(http::HTTP_CONFLICT);
-        return;
-    }
-    std::map<std::string, std::string> hdrs;
-    response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
-        new http::Response(http::HTTP_CREATED, http::HTTP_1_1, hdrs, std::vector<char>())));
+    DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
 }
 
 void FileProcessor::ProcessDelete_(const std::string& file_path)

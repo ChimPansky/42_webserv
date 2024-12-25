@@ -11,7 +11,9 @@
 
 #include "Request.h"
 #include "RequestParser.h"
+#include "Response.h"
 #include "ResponseCodes.h"
+
 
 namespace http {
 
@@ -21,14 +23,17 @@ enum RqBuilderStatus {
     RB_DONE
 };
 
-struct ChosenServerParams {
+struct HeadersValidationResult {
+    HeadersValidationResult(ResponseCode status) : status(status) {};
     int max_body_size;
+    utils::maybe<std::string> upload_path;
+    ResponseCode status;
 };
 
-class IChooseServerCb {
+class IOnHeadersReadyCb {
   public:
-    virtual ChosenServerParams Call(const http::Request& rq) = 0;
-    virtual ~IChooseServerCb() {};
+    virtual HeadersValidationResult Call(const http::Request& rq) = 0;
+    virtual ~IOnHeadersReadyCb() {};
 };
 
 
@@ -48,8 +53,7 @@ class RequestBuilder {
     enum BuildState {
         BS_RQ_LINE,
         BS_HEADER_FIELDS,
-        BS_MATCH_SERVER,
-        BS_CHECK_HEADERS,
+        BS_AFTER_HEADERS,
         BS_PREPARE_TO_READ_BODY,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,
@@ -66,7 +70,7 @@ class RequestBuilder {
     };
 
   public:
-    RequestBuilder(utils::unique_ptr<IChooseServerCb> choose_server_cb);
+    RequestBuilder(utils::unique_ptr<IOnHeadersReadyCb> choose_server_cb);
     void Build(const char* data, size_t data_sz);
     RqBuilderStatus builder_status() const;
     const Request& rq() const;
@@ -79,7 +83,7 @@ class RequestBuilder {
     std::string extraction_;
     BuildState build_state_;
     BodyBuilder body_builder_;
-    utils::unique_ptr<IChooseServerCb> choose_server_cb_;
+    utils::unique_ptr<IOnHeadersReadyCb> headers_ready_cb_;
     size_t header_count_;
     size_t header_section_size_;
     bool rq_has_body_;
@@ -89,11 +93,11 @@ class RequestBuilder {
     http::ResponseCode TrySetRqTarget_(const std::string& raw_rq_target);
     http::ResponseCode TrySetVersion_(const std::string& raw_version);
     BuildState BuildHeaderField_();
+    BuildState ProcessHeaders_();
     http::ResponseCode ValidateHeadersSyntax_();
     http::ResponseCode InterpretHeaders_();
+    BuildState SetValidationResult_();
     ResponseCode InsertHeaderField_(std::string& key, std::string& value);
-    BuildState MatchServer_();
-    BuildState CheckHeaders_();
     BuildState PrepareBody_();
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();

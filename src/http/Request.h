@@ -12,9 +12,22 @@
 namespace http {
 
 class RequestBuilder;
+
+enum BodyStorageType {
+    BST_IN_TMP_FOLDER,
+    BST_ON_SERVER
+};
+
+struct BodyStorage {
+    BodyStorage();
+    ~BodyStorage();
+    std::string path;
+    BodyStorageType storage_type;
+    bool transfer_complete;
+};
+
 struct Request {
     Request();
-    ~Request();
 
     bool has_body() const;
 
@@ -23,7 +36,7 @@ struct Request {
     http::RqTarget rqTarget;
     Version version;
     std::map<std::string, std::string> headers;
-    std::string body;
+    BodyStorage body;
 
     utils::maybe<std::string> GetHeaderVal(const std::string& key) const;
     std::string GetDebugString() const;

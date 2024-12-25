@@ -48,7 +48,7 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& script_path,
     }
 
     c_api::ExecParams exec_params(interpreter, script_path, cgi::GetEnv(script_path, rq),
-                                  rq.body.c_str());
+                                  rq.body.path.c_str());
     child_process_description_ = c_api::ChildProcessesManager::get().TryRunChildProcess(
         exec_params, utils::unique_ptr<c_api::IChildDiedCb>(new ChildProcessDoneCb(*this)));
     if (!child_process_description_.ok()) {

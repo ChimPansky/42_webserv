@@ -13,16 +13,20 @@ namespace http {
 Request::Request() : status(HTTP_OK), method(HTTP_NO_METHOD), version(HTTP_NO_VERSION)
 {}
 
-Request::~Request()
+BodyStorage::BodyStorage() : storage_type(BST_IN_TMP_FOLDER), transfer_complete(false)
+{}
+
+BodyStorage::~BodyStorage()
 {
-    if (has_body()) {
-        std::remove(body.c_str());
+    if ((storage_type == BST_IN_TMP_FOLDER || !transfer_complete) &&
+        utils::DoesPathExist(path.c_str())) {
+        remove(path.c_str());
     }
 }
 
 bool Request::has_body() const
 {
-    return body[0] != '\0';
+    return !body.path.empty();
 }
 
 utils::maybe<std::string> Request::GetHeaderVal(const std::string& key) const
@@ -49,7 +53,9 @@ std::string Request::GetDebugString() const
     }
 
     ret << "\n\tHas body: " << (has_body() ? "Yes" : "No");
-    ret << "\n\tBodypath: " << body;
+    ret << "\n\tBody storage type: "
+        << (body.storage_type == BST_IN_TMP_FOLDER ? "In tmp folder" : "On server");
+    ret << "\n\tBodypath: " << body.path;
 
     return ret.str();
 }
