@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 
-#include "multiplexers/IMultiplexer.h"
+#include "multiplexers/AMultiplexer.h"
 
 namespace c_api {
 
@@ -34,37 +34,23 @@ EventManager& EventManager::get()
 void EventManager::CheckOnce_()
 {
     for (size_t i = 0; i < fds_to_delete_.size(); ++i) {
-        ClearCallback_(fds_to_delete_[i].first, fds_to_delete_[i].second);
+        multiplexer_->UnregisterFd(fds_to_delete_[i].first, fds_to_delete_[i].second);
     }
     fds_to_delete_.clear();
-    multiplexer_->CheckOnce(rd_sockets_, wr_sockets_);
+    multiplexer_->CheckOnce();
 }
 
 bool EventManager::TryRegisterCallback_(int fd, CallbackType type,
                                         utils::unique_ptr<c_api::ICallback> callback)
 {
-    if (!multiplexer_->TryRegisterFd(fd, type, rd_sockets_, wr_sockets_)) {
-        return false;
-    }
-    if (type & CT_READ) {
-        rd_sockets_[fd] = callback;
-    }
-    if (type & CT_WRITE) {
-        wr_sockets_[fd] = callback;
-    }
-    return true;
+    return multiplexer_->TryRegisterFd(fd, type, callback);
 }
 
 // TODO: this function is called from d-tor, but not exception safe (may lead to terminate)
 //  consider change to commented code below with callback change, or figure out smth else
 void EventManager::DeleteCallback_(int fd, CallbackType type)
 {
-    if (type & CT_READ && rd_sockets_.find(fd) != rd_sockets_.end()) {
-        fds_to_delete_.push_back(std::make_pair(fd, CT_READ));
-    }
-    if (type & CT_WRITE && wr_sockets_.find(fd) != wr_sockets_.end()) {
-        fds_to_delete_.push_back(std::make_pair(fd, CT_WRITE));
-    }
+    fds_to_delete_.push_back(std::make_pair(fd, type));
 }
 
 // void EventManager::DeleteCallback_(int fd, CallbackType type)
@@ -84,21 +70,5 @@ void EventManager::DeleteCallback_(int fd, CallbackType type)
 //         }
 //     }
 // }
-
-void EventManager::ClearCallback_(int fd, CallbackType type)
-{
-    int found_type = 0;
-    if (type & CT_READ && rd_sockets_.count(fd)) {
-        found_type |= CT_READ;
-        rd_sockets_.erase(fd);
-    }
-    if (type & CT_WRITE && wr_sockets_.count(fd)) {
-        found_type |= CT_WRITE;
-        wr_sockets_.erase(fd);
-    }
-    if (found_type) {
-        multiplexer_->UnregisterFd(fd, type, rd_sockets_, wr_sockets_);
-    }
-}
 
 }  // namespace c_api

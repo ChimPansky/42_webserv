@@ -1,6 +1,6 @@
 add_library(CApi
     multiplexers/EpollMultiplexer.cpp
-    multiplexers/IMultiplexer.cpp
+    multiplexers/AMultiplexer.cpp
     multiplexers/PollMultiplexer.cpp
     multiplexers/SelectMultiplexer.cpp
     c_api_utils.cpp

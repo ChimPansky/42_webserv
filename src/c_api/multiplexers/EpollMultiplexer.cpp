@@ -10,14 +10,14 @@ namespace c_api {
 
 namespace {
 
-int GetRegisteredEventType(int fd, const FdToCallbackMap& rd_sockets,
-                           const FdToCallbackMap& wr_sockets)
+int GetRegisteredEventType(int fd, const FdToCallbackMap& rd_sockets_,
+                           const FdToCallbackMap& wr_sockets_)
 {
     int reg_events = 0;
-    if (rd_sockets.count(fd)) {
+    if (rd_sockets_.count(fd)) {
         reg_events |= EPOLLIN;
     }
-    if (wr_sockets.count(fd)) {
+    if (wr_sockets_.count(fd)) {
         reg_events |= EPOLLOUT;
     }
     return reg_events;
@@ -43,15 +43,14 @@ EpollMultiplexer::~EpollMultiplexer()
     close(epoll_fd_);
 }
 
-bool EpollMultiplexer::TryRegisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                                     const FdToCallbackMap& wr_sockets)
+bool EpollMultiplexer::TryRegisterFdImpl(int fd, CallbackType type)
 {
     struct epoll_event ev = {};
     ev.data.fd = fd;
     ev.events = CbTypeToEpollEvents(type);
 
     int res = 0;
-    if (GetRegisteredEventType(fd, rd_sockets, wr_sockets) != 0) {
+    if (GetRegisteredEventType(fd, rd_sockets_, wr_sockets_) != 0) {
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
     } else {
         res = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
@@ -62,11 +61,10 @@ bool EpollMultiplexer::TryRegisterFd(int fd, CallbackType type, const FdToCallba
     return (res == 0);
 }
 
-void EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallbackMap& rd_sockets,
-                                    const FdToCallbackMap& wr_sockets)
+void EpollMultiplexer::UnregisterFdImpl(int fd, CallbackType type)
 {
     uint32_t mod_events =
-        GetRegisteredEventType(fd, rd_sockets, wr_sockets) & ~CbTypeToEpollEvents(type);
+        GetRegisteredEventType(fd, rd_sockets_, wr_sockets_) & ~CbTypeToEpollEvents(type);
     if (mod_events == 0) {
         epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL);
     } else {
@@ -77,8 +75,7 @@ void EpollMultiplexer::UnregisterFd(int fd, CallbackType type, const FdToCallbac
     }
 }
 
-void EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
-                                 const FdToCallbackMap& wr_sockets)
+void EpollMultiplexer::CheckOnce()
 {
     struct epoll_event events[EPOLL_MAX_EVENTS];
     int ready_fds = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, timeout_ms_);
@@ -90,14 +87,14 @@ void EpollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
     for (int rdy_fd = 0; rdy_fd < ready_fds; rdy_fd++) {
         struct epoll_event& ev = events[rdy_fd];
         if (ev.events & EPOLLIN) {
-            FdToCallbackMapIt it = rd_sockets.find(ev.data.fd);
-            if (it != rd_sockets.end()) {
+            FdToCallbackMapIt it = rd_sockets_.find(ev.data.fd);
+            if (it != rd_sockets_.end()) {
                 it->second->Call(it->first);  // receive
             }
         }
         if (ev.events & EPOLLOUT) {
-            FdToCallbackMapIt it = wr_sockets.find(ev.data.fd);
-            if (it != wr_sockets.end()) {
+            FdToCallbackMapIt it = wr_sockets_.find(ev.data.fd);
+            if (it != wr_sockets_.end()) {
                 it->second->Call(it->first);  // send
             }
         }
