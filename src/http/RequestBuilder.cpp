@@ -347,7 +347,14 @@ RequestBuilder::BuildState RequestBuilder::PrepareBody_(
         rq_.body.path = *tmp_f;
         rq_.body.storage_type = BST_IN_TMP_FOLDER;
     }
-    return (body_builder_.chunked) ? BS_BODY_CHUNK_SIZE : BS_BODY_REGULAR;
+    if (body_builder_.chunked) {
+        return BS_BODY_CHUNK_SIZE;
+    }
+    if (body_builder_.remaining_length > body_builder_.max_body_size) {
+        LOG(INFO) << "Body too large";
+        return SetStatusAndExitBuilder_(HTTP_PAYLOAD_TOO_LARGE);
+    }
+    return BS_BODY_REGULAR;
 }
 
 RequestBuilder::BuildState RequestBuilder::BuildBodyRegular_()
