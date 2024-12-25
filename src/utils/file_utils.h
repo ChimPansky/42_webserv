@@ -26,9 +26,7 @@ bool IsDirectory(const char *path);
 
 bool IsRegularFile(const char *path);
 
-bool HasChangedDirectory(const char *path);
-
-bool HasChangedDirectory(const char *path);
+bool TryChangeDir(const char *path);
 
 utils::maybe<std::string> ReadFileToString(const char *filePath);
 
@@ -67,6 +65,8 @@ class DirEntry {
 };
 
 utils::maybe<std::vector<DirEntry> > GetDirEntries(const char *directory);
+
+bool CloseProcessFdsButStd();
 
 }  // namespace utils
 

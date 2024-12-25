@@ -24,7 +24,7 @@ utils::maybe<utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<ch
 
 std::vector<std::string> GetEnv(const ScriptLocDetails& script, const http::Request& rq);
 
-std::pair<bool, utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
+utils::maybe<utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
     const std::string& path_from_url);
 
 }  // namespace cgi

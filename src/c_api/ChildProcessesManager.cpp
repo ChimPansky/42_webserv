@@ -14,8 +14,14 @@ namespace c_api {
 
 namespace {
 
+// TODO: change exit to smth better mb
 void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket)
 {
+    if (dup2(child_socket->sockfd(), STDOUT_FILENO) < 0) {
+        LOG(ERROR) << "Dup2 failed: " << std::strerror(errno);
+        exit(EXIT_FAILURE);
+    }
+
     if (!params.redirect_input_from_file.empty()) {
         int rq_body_fd = open(params.redirect_input_from_file.c_str(), O_RDONLY);
         if (rq_body_fd < 0) {
@@ -27,9 +33,10 @@ void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket
             utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
         }
     }
-    if (dup2(child_socket->sockfd(), STDOUT_FILENO) < 0) {
-        LOG(ERROR) << "CGI: cannot run script: dup2: " << utils::GetSystemErrorDescr();
-        utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
+
+    if (!utils::CloseProcessFdsButStd()) {
+        LOG(ERROR) << "Cannot close fds, better death of 10000 children than a leak";
+        exit(EXIT_FAILURE);
     }
 
     std::vector<char*> env;
@@ -43,10 +50,16 @@ void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket
     args.push_back(const_cast<char*>(params.script_name.c_str()));
     args.push_back(NULL);
 
-    if (!utils::HasChangedDirectory(params.script_location.c_str())) {
-        LOG(ERROR) << "Chdir failed: " << std::strerror(errno);
+    if (!utils::TryChangeDir(params.script_location.c_str())) {
+        LOG(ERROR) << "chdir failed: " << std::strerror(errno);
         exit(EXIT_FAILURE);
     }
+    // LOG(ERROR) << "\nInterpreter: " << params.interpreter
+    //         << "\nScript path: " << args[1]
+    //         << "\nenv: " << env[0];
+    // char cwd[1024];
+    // getcwd(cwd, sizeof(cwd));
+    // LOG(ERROR) << "Current dir: " << cwd;
     execve(params.interpreter.c_str(), args.data(), env.data());
     LOG(ERROR) << "CGI: cannot run script: execve: " << utils::GetSystemErrorDescr();
     utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
@@ -116,7 +129,8 @@ void ChildProcessesManager::KillChildProcess(pid_t pid) throw()
 void ChildProcessesManager::RegisterChildProcess_(pid_t child_pid, UnixTimestampS timeout_ts,
                                                   utils::unique_ptr<IChildDiedCb> cb)
 {
-    child_processes_.insert(std::make_pair(child_pid, Child(timeout_ts, cb)));
+    LOG(ERROR) << child_pid;
+    child_processes_.insert(std::make_pair(child_pid, Child(timeout_ts + 20, cb)));
 }
 
 utils::maybe<ChildProcessDescription> ChildProcessesManager::TryRunChildProcess(
