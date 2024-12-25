@@ -89,7 +89,7 @@ void FileProcessor::ProcessGet_(const http::Request& rq)
     }
     std::ifstream file(dest_.updated_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
-        LOG(DEBUG) << "Requested file cannot be opened: " << dest_.updated_path;
+        LOG(ERROR) << "Requested file cannot be opened: " << dest_.updated_path;
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
