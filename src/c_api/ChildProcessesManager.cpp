@@ -2,7 +2,11 @@
 
 #include <errors.h>
 #include <fcntl.h>
+#include <file_utils.h>
+#include <stdlib.h>
 #include <sys/wait.h>
+
+#include <cstring>
 
 #define CHILD_ERROR_EXIT_CODE 7
 
