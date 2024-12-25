@@ -13,19 +13,20 @@ bool AMultiplexer::TryRegisterFd(int fd, CallbackType type, utils::unique_ptr<IC
     } else if (!(type & (CT_READ | CT_WRITE))) {
         throw std::logic_error("Cb can only be registered for read or write");
     }
-    if (type & CT_READ) {
-        if (rd_sockets_.count(fd)) {
-            return false;
-        }
-        rd_sockets_[fd] = cb;
+    if (((type & CT_READ) && rd_sockets_.count(fd)) ||
+        ((type & CT_WRITE) && wr_sockets_.count(fd))) {
+        LOG(ERROR) << "fd " << fd << " was already registered with mode: " << type;
+        return false;
     }
-    if (type & CT_WRITE) {
-        if (wr_sockets_.count(fd)) {
-            return false;
-        }
+    if (!TryRegisterFdImpl(fd, type)) {
+        return false;
+    }
+    if (type & CT_READ) {
+        rd_sockets_[fd] = cb;
+    } else if (type & CT_WRITE) {
         wr_sockets_[fd] = cb;
     }
-    return TryRegisterFdImpl(fd, type);
+    return true;
 }
 
 void AMultiplexer::UnregisterFd(int fd, CallbackType type)
@@ -33,14 +34,18 @@ void AMultiplexer::UnregisterFd(int fd, CallbackType type)
     int found_type = 0;
     if (type & CT_READ && rd_sockets_.count(fd)) {
         found_type |= CT_READ;
-        rd_sockets_.erase(fd);
     }
     if (type & CT_WRITE && wr_sockets_.count(fd)) {
         found_type |= CT_WRITE;
-        wr_sockets_.erase(fd);
     }
     if (found_type) {
         UnregisterFdImpl(fd, type);
+    }
+    if (found_type & CT_READ) {
+        rd_sockets_.erase(fd);
+    }
+    if (found_type & CT_WRITE) {
+        wr_sockets_.erase(fd);
     }
 }
 
