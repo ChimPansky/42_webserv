@@ -23,11 +23,10 @@ bool IsValidExtension(const std::string& filename, const std::vector<std::string
 
 }  // namespace
 
-CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
-                           const http::Request& rq,
-                           const std::vector<std::string>& allowed_cgi_extensions,
-                           utils::unique_ptr<http::IResponseCallback> response_rdy_cb)
-    : AResponseProcessor(server, response_rdy_cb)
+CGIProcessor::CGIProcessor(RequestDestination dest,
+                           utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
+                           const http::Request& rq)
+    : AResponseProcessor(dest, response_rdy_cb)
 {
     utils::maybe<utils::unique_ptr<cgi::ScriptLocDetails> > script =
         cgi::GetScriptLocDetails(rq.rqTarget.path());
@@ -36,12 +35,13 @@ CGIProcessor::CGIProcessor(const Server& server, const std::string& alias_dir,
         DelegateToErrProc(http::HTTP_BAD_REQUEST);
         return;
     }
-    if (!IsValidExtension((*script)->name, allowed_cgi_extensions)) {
+    if (!IsValidExtension((*script)->name, dest.loc->cgi_extensions())) {
         LOG(ERROR) << "CGI script extension is not supported: " << (*script)->name;
         DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
         return;
     }
-    (*script)->location = utils::UpdatePath(alias_dir, "/cgi-bin/", (*script)->location);
+    (*script)->location =
+        utils::UpdatePath(dest.loc->alias_dir(), dest.loc->route().first, (*script)->location);
     std::string full_script_loc = (*script)->location + "/" + (*script)->extra_path + "/";
 
     std::string interpreter = utils::GetInterpreterByExt((*script)->name);

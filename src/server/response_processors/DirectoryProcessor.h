@@ -10,9 +10,9 @@
 
 class DirectoryProcessor : public AResponseProcessor {
   public:
-    DirectoryProcessor(const Server& server,
+    DirectoryProcessor(RequestDestination dest,
                        utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                       const http::Request& rq, const std::string& file_path);
+                       const http::Request& rq);
     ~DirectoryProcessor() {};
 
   private:

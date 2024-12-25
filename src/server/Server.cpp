@@ -101,7 +101,7 @@ utils::unique_ptr<AResponseProcessor> Server::ProcessRequest(
         return GetResponseProcessor(rq, rq_dest, cb);
     } else {
         LOG(DEBUG) << "RQ_BAD -> Send Error Response with " << rq.status;
-        return utils::unique_ptr<AResponseProcessor>(new ErrorProcessor(*this, cb, rq.status));
+        return utils::unique_ptr<AResponseProcessor>(new ErrorProcessor(rq_dest, cb, rq.status));
     }
 }
 
@@ -112,15 +112,13 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     // TODO: add redirect processor
     if (rq_dest.loc->is_cgi()) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI";
-        return utils::unique_ptr<AResponseProcessor>(
-            new CGIProcessor(*this, rq_dest.updated_path, rq, rq_dest.loc->cgi_extensions(), cb));
+        return utils::unique_ptr<AResponseProcessor>(new CGIProcessor(rq_dest, cb, rq));
     } else {
         if (!rq_dest.loc) {
             return utils::unique_ptr<AResponseProcessor>(
-                new ErrorProcessor(*this, cb, http::HTTP_NOT_FOUND));
+                new ErrorProcessor(rq_dest, cb, http::HTTP_NOT_FOUND));
         }
-        return utils::unique_ptr<AResponseProcessor>(
-            new FileProcessor(*this, rq_dest.updated_path, cb, rq, *rq_dest.loc));
+        return utils::unique_ptr<AResponseProcessor>(new FileProcessor(rq_dest, cb, rq));
     }
 }
 

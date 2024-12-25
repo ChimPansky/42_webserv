@@ -6,8 +6,6 @@
 #include <shared_ptr.h>
 
 #include "Location.h"
-#include "response_processors/AResponseProcessor.h"
-
 
 enum MatchType {
     NO_MATCH = 0,
@@ -22,6 +20,8 @@ enum LocationType {
     NO_LOCATION
 };
 
+class Server;
+
 struct RequestDestination {
     RequestDestination(utils::shared_ptr<Server> server)
         : server(server), loc(NULL), updated_path("")
@@ -30,6 +30,8 @@ struct RequestDestination {
     utils::shared_ptr<Location> loc;
     std::string updated_path;
 };
+
+class AResponseProcessor;
 
 class Server {
   private:
@@ -77,6 +79,7 @@ class Server {
 
   private:
 };
+
 
 #endif  // WS_SERVER_SERVER_H
 

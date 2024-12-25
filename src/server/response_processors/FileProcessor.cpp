@@ -13,29 +13,29 @@
 #include "Location.h"
 #include "RedirectProcessor.h"
 
-FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
+FileProcessor::FileProcessor(RequestDestination dest,
                              utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
-                             const http::Request& rq, const Location& loc)
-    : AResponseProcessor(server, response_rdy_cb)
+                             const http::Request& rq)
+    : AResponseProcessor(dest, response_rdy_cb)
 {
     switch (rq.method) {
-        case http::HTTP_GET: ProcessGet_(file_path, rq, loc); break;
-        case http::HTTP_POST: ProcessPost_(file_path); break;
-        case http::HTTP_DELETE: ProcessDelete_(file_path); break;
+        case http::HTTP_GET: ProcessGet_(rq); break;
+        case http::HTTP_POST: ProcessPost_(); break;
+        case http::HTTP_DELETE: ProcessDelete_(); break;
         default: throw std::logic_error("FileProcessor: Unsupported HTTP method"); break;
     }
 }
 
-void FileProcessor::ProcessPost_(const std::string& file_path)
+void FileProcessor::ProcessPost_()
 {
-    LOG(INFO) << "Processing POST request for file: " << file_path;
+    LOG(INFO) << "Processing POST request for file: " << dest_.updated_path;
     // todo: rename from /uploadfolder/.file.txt to /uploadfolder/file.txt
     // if (std::rename(rq.body.c_str(), file_path.c_str()) != 0) {
     //     LOG(DEBUG) << "Upload of file " << file_path << " failed:";
     //     DelegateToErrProc(http::HTTP_CONFLICT);
     //     return;
     // }
-    if (utils::DoesPathExist(file_path.c_str())) {
+    if (utils::DoesPathExist(dest_.updated_path.c_str())) {
         std::map<std::string, std::string> hdrs;
         response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
             new http::Response(http::HTTP_CREATED, http::HTTP_1_1, hdrs, std::vector<char>())));
@@ -44,10 +44,10 @@ void FileProcessor::ProcessPost_(const std::string& file_path)
     DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
 }
 
-void FileProcessor::ProcessDelete_(const std::string& file_path)
+void FileProcessor::ProcessDelete_()
 {
-    LOG(INFO) << "Processing DELETE request for file: " << file_path;
-    if (std::remove(file_path.c_str()) != 0) {
+    LOG(INFO) << "Processing DELETE request for file: " << dest_.updated_path;
+    if (std::remove(dest_.updated_path.c_str()) != 0) {
         DelegateToErrProc(http::HTTP_NOT_FOUND);
         return;
     }
@@ -56,46 +56,47 @@ void FileProcessor::ProcessDelete_(const std::string& file_path)
         new http::Response(http::HTTP_NO_CONTENT, http::HTTP_1_1, hdrs, std::vector<char>())));
 }
 
-void FileProcessor::ProcessGet_(const std::string& file_path, const http::Request& rq,
-                                const Location& loc)
+void FileProcessor::ProcessGet_(const http::Request& rq)
 {
-    LOG(INFO) << "Processing GET request for file: " << file_path;
-    if (utils::IsDirectory(file_path.c_str())) {
+    LOG(INFO) << "Processing GET request for file: " << dest_.updated_path;
+    const Location& loc = *dest_.loc;
+    if (utils::IsDirectory(dest_.updated_path.c_str())) {
         if (loc.default_files().size() > 0) {
             for (size_t i = 0; i < loc.default_files().size(); i++) {
-                std::string default_file = file_path + loc.default_files()[i];
-                if (utils::DoesPathExist(default_file.c_str())) {
-                    delegated_processor_.reset(
-                        new RedirectProcessor(server_, response_rdy_cb_, http::HTTP_FOUND,
-                                              rq.rqTarget.path() + loc.default_files()[i]));
-                    ProcessGet_(default_file, rq, loc);
+                std::string default_file = dest_.updated_path + loc.default_files()[i];
+                if (utils::DoesPathExist(default_file.c_str()) &&
+                    utils::IsRegularFile(default_file.c_str())) {
+                    // delegated_processor_.reset(
+                    //     new RedirectProcessor(dest, response_rdy_cb_, http::HTTP_FOUND,
+                    //                           rq.rqTarget.path() + loc.default_files()[i]));
+                    dest_.updated_path = default_file;
+                    ProcessGet_(rq);
                     return;
                 }
             }
         }
         if (loc.dir_listing()) {
-            delegated_processor_.reset(
-                new DirectoryProcessor(server_, response_rdy_cb_, rq, file_path));
+            delegated_processor_.reset(new DirectoryProcessor(dest_, response_rdy_cb_, rq));
             return;
         }
         DelegateToErrProc(http::HTTP_FORBIDDEN);
         return;
     }
-    if (!utils::DoesPathExist(file_path.c_str())) {
-        LOG(DEBUG) << "Requested file not found: " << file_path;
+    if (!utils::DoesPathExist(dest_.updated_path.c_str())) {
+        LOG(DEBUG) << "Requested file not found: " << dest_.updated_path;
         DelegateToErrProc(http::HTTP_NOT_FOUND);
         return;
     }
-    std::ifstream file(file_path.c_str(), std::ios::binary);
+    std::ifstream file(dest_.updated_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
-        LOG(DEBUG) << "Requested file cannot be opened: " << file_path;
+        LOG(DEBUG) << "Requested file cannot be opened: " << dest_.updated_path;
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
     std::vector<char> body =
         std::vector<char>(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     std::map<std::string, std::string> hdrs;
-    hdrs["Content-Type"] = GetContentType_(file_path);
+    hdrs["Content-Type"] = GetContentType_(dest_.updated_path);
     // hdrs["Connection"] = "Close";
     hdrs["Content-Length"] = utils::NumericToString(body.size());
     response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
