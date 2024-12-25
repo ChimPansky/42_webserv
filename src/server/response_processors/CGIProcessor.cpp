@@ -10,7 +10,6 @@
 #include <sys/wait.h>
 
 #include <cctype>
-#include <cstring>
 
 #include "../utils/utils.h"
 
@@ -31,7 +30,7 @@ bool IsValidExtension(const std::string& filename, const std::vector<std::string
 CGIProcessor::CGIProcessor(RequestDestination dest,
                            utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                            const http::Request& rq)
-    : AResponseProcessor(dest, response_rdy_cb)
+    : AResponseProcessor(dest, response_rdy_cb), state_(0)
 {
     utils::maybe<utils::unique_ptr<cgi::ScriptLocDetails> > script =
         cgi::GetScriptLocDetails(rq.rqTarget.path());
@@ -70,7 +69,7 @@ CGIProcessor::CGIProcessor(RequestDestination dest,
             child_process_description_->sock().sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
-        // TODO rm child
+        c_api::ChildProcessesManager::get().KillChildProcess(child_process_description_->pid());
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
@@ -84,38 +83,39 @@ CGIProcessor::~CGIProcessor()
     }
 }
 
+void CGIProcessor::ProceedWithResponse()
+{
+    if (state_ != CS_READY_TO_PROCEED) {
+        return;
+    }
+    state_ = CS_DONE;
+    utils::maybe<utils::unique_ptr<http::Response> > rs = cgi::ParseCgiResponse(cgi_out_buffer_);
+    if (!rs) {
+        LOG(ERROR) << "Invalid cgi output";
+        DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
+        return;
+    }
+    response_rdy_cb_->Call(*rs);
+}
+
 void CGIProcessor::ReadChildOutputCallback::Call(int fd)
 {
     LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
     std::vector<char>& buf = processor_.cgi_out_buffer_;
     c_api::RecvPackage pack = processor_.child_process_description_->sock().Recv();
     if (pack.status == c_api::RS_SOCK_ERR) {
-        LOG(ERROR) << "error on recv" << std::strerror(errno);  // TODO: is errno check allowed?
-        return;
-    } else if (pack.status == c_api::RS_SOCK_CLOSED) {
-        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes";
+        LOG(ERROR) << "error on recv" << utils::GetSystemErrorDescr();
         return;
     } else if (pack.status == c_api::RS_OK) {
         buf.reserve(buf.size() + pack.data_size);
         std::copy(pack.data, pack.data + pack.data_size, std::back_inserter(buf));
     } else if (pack.status == c_api::RS_SOCK_CLOSED) {
         LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes\n";
-        if (processor_.ready_to_rs_ && !processor_.rs_sent_) {
-            utils::maybe<utils::unique_ptr<http::Response> > rs = cgi::ParseCgiResponse(buf);
-            if (!rs) {
-                LOG(ERROR) << "Invalid cgi output";
-                processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
-                return;
-            }
-            processor_.rs_sent_ = true;
-            processor_.response_rdy_cb_->Call(*rs);
-        } else {
-            processor_.ready_to_rs_ = true;
-        }
+        processor_.state_ |= CS_CHILD_OUTPUT_READ;
+        processor_.ProceedWithResponse();
     }
 }
 
-// okay, so problem was the here, figure out what was it
 void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
 {
     if (child_exit_status != EXIT_SUCCESS) {
@@ -123,25 +123,6 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    if (processor_.ready_to_rs_ && !processor_.rs_sent_) {
-        utils::maybe<utils::unique_ptr<http::Response> > rs =
-            cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
-        if (!rs) {
-            LOG(ERROR) << "Invalid cgi output";
-            processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
-            return;
-        }
-        processor_.rs_sent_ = true;
-        processor_.response_rdy_cb_->Call(*rs);
-    } else {
-        processor_.ready_to_rs_ = true;
-    }
-    // utils::maybe<utils::unique_ptr<http::Response> > rs =
-    //     cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
-    // if (!rs) {
-    //     LOG(ERROR) << "Invalid cgi output";
-    //     processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
-    //     return;
-    // }
-    // processor_.response_rdy_cb_->Call(*rs);
+    processor_.state_ |= CS_CHILD_EXITED;
+    processor_.ProceedWithResponse();
 }

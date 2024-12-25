@@ -1,7 +1,5 @@
 #include "logger.h"
 
-#include <unistd.h>
-
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -43,15 +41,6 @@ char* Logger::dump_time()
 
 Logger::LogWrapper Logger::log(enum Severity sev) throw()
 {
-    if (!std::cerr) {
-        std::cout << std::cerr.bad() << std::cerr.fail() << std::cerr.eof() << std::endl;
-        while (1) {
-            // std::cout << " AAAAAAAAAA " << std::cerr.bad() << std::cerr.fail() << std::cerr.eof()
-            // << std::endl;
-        };
-        std::cout << "FUCK" << std::endl;
-        throw 1;
-    }
     if (sev < severity_threshold_) {
         return LogWrapper(null_stream_, sev);
     }
