@@ -36,8 +36,6 @@ class LocationConfig {
     bool dir_listing() const;
     unsigned int client_max_body_size() const;
     const std::string& upload_dir() const;
-    static inline int kDefaultRedirectCode() { return http::HTTP_MOVED_PERMANENTLY; }
-    static inline const char* kDefaultRedirectPath() { return "/new_location"; }
     static inline const char* kDefaultAliasDir() { return "/docs"; }
     static inline unsigned int kDefaultClientMaxBodySize() { return 2ul << 20; }
     static inline std::vector<std::string> kDefaultIndexFile()
