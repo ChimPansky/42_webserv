@@ -1,7 +1,7 @@
 #ifndef WS_CONFIG_CONFIG_H
 #define WS_CONFIG_CONFIG_H
 
-#include <multiplexers/IMultiplexer.h>
+#include <multiplexers/AMultiplexer.h>
 
 #include "HttpConfig.h"
 #include "ServerConfig.h"

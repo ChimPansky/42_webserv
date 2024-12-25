@@ -19,23 +19,22 @@ timeval* SelectMultiplexer::GetTimeout_()
     return &timeout_storage_;
 }
 
-void SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
-                                  const FdToCallbackMap& wr_sockets)
+void SelectMultiplexer::CheckOnce()
 {
     fd_set select_rd_set;
     fd_set select_wr_set;
     FD_ZERO(&select_rd_set);
     FD_ZERO(&select_wr_set);
-    for (FdToCallbackMapIt it = rd_sockets.begin(); it != rd_sockets.end(); ++it) {
+    for (FdToCallbackMapIt it = rd_sockets_.begin(); it != rd_sockets_.end(); ++it) {
         FD_SET(it->first, &select_rd_set);
     }
-    for (FdToCallbackMapIt it = wr_sockets.begin(); it != wr_sockets.end(); ++it) {
+    for (FdToCallbackMapIt it = wr_sockets_.begin(); it != wr_sockets_.end(); ++it) {
         FD_SET(it->first, &select_wr_set);
     }
 
-    int max_fd = (!rd_sockets.empty() ? rd_sockets.rbegin()->first : 0);
-    if (!wr_sockets.empty()) {
-        max_fd = std::max(wr_sockets.rbegin()->first, max_fd);
+    int max_fd = (!rd_sockets_.empty() ? rd_sockets_.rbegin()->first : 0);
+    if (!wr_sockets_.empty()) {
+        max_fd = std::max(wr_sockets_.rbegin()->first, max_fd);
     }
     if (max_fd > kMaxSelectFds_()) {
         max_fd = kMaxSelectFds_();
@@ -51,14 +50,14 @@ void SelectMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
     // iterate over fds here cuz call can change callbacks map
     for (int ready_fd = 0; ready_fd <= max_fd; ++ready_fd) {
         if (FD_ISSET(ready_fd, &select_rd_set)) {
-            FdToCallbackMapIt it = rd_sockets.find(ready_fd);
-            if (it != rd_sockets.end()) {
+            FdToCallbackMapIt it = rd_sockets_.find(ready_fd);
+            if (it != rd_sockets_.end()) {
                 it->second->Call(it->first);
             }
         }
         if (FD_ISSET(ready_fd, &select_wr_set)) {
-            FdToCallbackMapIt it = wr_sockets.find(ready_fd);
-            if (it != wr_sockets.end()) {
+            FdToCallbackMapIt it = wr_sockets_.find(ready_fd);
+            if (it != wr_sockets_.end()) {
                 it->second->Call(it->first);
             }
         }
