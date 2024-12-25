@@ -64,9 +64,9 @@ std::string Response::GetDebugString() const
         str_dump += utils::NumericToString(body_.size());
         str_dump += http::kCRLF();
     }
-    if (!body_file_path_.empty()) {
+    if (body_file_path_) {
         str_dump += "body is in a file: ";
-        str_dump += body_file_path_;
+        str_dump += *body_file_path_;
         str_dump += http::kCRLF();
     }
     return str_dump;

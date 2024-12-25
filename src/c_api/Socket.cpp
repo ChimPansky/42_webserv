@@ -128,7 +128,7 @@ bool SendFilePackage::PrepareNextChunk()
     chunk_.buf.resize(SOCK_SEND_FILE_BUF_SZ);
     ifs_.read(chunk_.buf.data(), SOCK_SEND_FILE_BUF_SZ);
     ssize_t read_size = ifs_.gcount();
-    if (ifs_.fail() || ifs_.bad() || read_size < 0) {
+    if (read_size < 0) {
         LOG(ERROR) << "Error reading file";
         return false;
     }

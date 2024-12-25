@@ -39,7 +39,7 @@ class ClientSession {
     class OnReadyToSendToClientCb : public c_api::ICallback {
       public:
         OnReadyToSendToClientCb(ClientSession& client, std::vector<char> buf,
-                                utils::maybe<const char*> file_to_send,
+                                const utils::maybe<std::string>& file_to_send,
                                 bool close_after_sending_rs_);
         virtual void Call(int);
 

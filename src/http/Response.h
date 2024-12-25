@@ -26,14 +26,14 @@ class Response {
     std::string GetDebugString() const;
     const std::map<std::string, std::string>& headers() const;
     bool AddHeader(const std::pair<std::string, std::string>& header);
-    const std::string& body_file_path() { return body_file_path_; }
+    const utils::maybe<std::string>& body_file_path() { return body_file_path_; }
 
   private:
     ResponseCode code_;
     http::Version version_;
     std::map<std::string, std::string> headers_;
     std::vector<char> body_;
-    std::string body_file_path_;
+    utils::maybe<std::string> body_file_path_;
 };
 
 class IResponseCallback {
