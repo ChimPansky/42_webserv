@@ -1,9 +1,9 @@
 #include "PollMultiplexer.h"
 
+#include <errors.h>
 #include <logger.h>
 #include <poll.h>
 
-#include <cstring>
 #include <vector>
 
 namespace c_api {
@@ -26,7 +26,7 @@ void PollMultiplexer::CheckOnce(const FdToCallbackMap& rd_sockets,
 
     int num_of_fds = poll(fds.data(), (nfds_t)fds.size(), timeout_ms_);
     if (num_of_fds < 0) {
-        LOG_IF(ERROR, errno != EINTR) << "poll failed: " << strerror(errno);
+        LOG_IF(ERROR, errno != EINTR) << "poll failed: " << utils::GetSystemErrorDescr();
         return;
     }
 

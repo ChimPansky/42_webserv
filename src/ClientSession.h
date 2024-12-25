@@ -74,7 +74,7 @@ class ClientSession {
 
   public:
     bool connection_closed() const { return connection_closed_; }
-    time_t last_activity_time() const { return last_activity_time_; }
+    UnixTimestampS last_activity_time() const { return last_activity_time_; }
     void ProcessNewData(c_api::RecvPackage& data_pack);
     void CloseConnection();
     void PrepareResponse(utils::unique_ptr<http::Response> rs);
@@ -91,7 +91,7 @@ class ClientSession {
     http::RequestBuilder rq_builder_;
     bool connection_closed_;
     CsState read_state_;
-    time_t last_activity_time_;
+    UnixTimestampS last_activity_time_;
 };
 
 #endif  // WS_CLIENT_SESSION_H

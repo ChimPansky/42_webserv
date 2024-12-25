@@ -2,8 +2,6 @@
 
 #include <logger.h>
 
-#include <cstring>
-
 #include "http.h"
 
 

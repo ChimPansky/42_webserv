@@ -2,15 +2,16 @@
 
 #include <EventManager.h>
 #include <RequestBuilder.h>
+#include <ResponseCodes.h>
+#include <Server.h>
+#include <errors.h>
 #include <logger.h>
+#include <maybe.h>
 #include <multiplexers/ICallback.h>
+#include <shared_ptr.h>
 #include <unique_ptr.h>
 
-#include "ResponseCodes.h"
-#include "Server.h"
 #include "ServerCluster.h"
-#include "maybe.h"
-#include "shared_ptr.h"
 #include "utils/utils.h"
 
 ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int master_sock_fd,
@@ -94,7 +95,7 @@ void ClientSession::ResponseSentCleanup(bool close_connection)
 
 void ClientSession::UpdateLastActivityTime_()
 {
-    last_activity_time_ = time(NULL);
+    last_activity_time_ = utils::Now();
 }
 
 ///////////////////////////////////
@@ -161,7 +162,8 @@ void ClientSession::OnReadyToSendToClientCb::Call(int /*fd*/)
     LOG(DEBUG) << "OnReadyToSendToClientCb::Call";
     c_api::SockStatus status = client_.client_sock_->Send(pack_);
     if (status != c_api::RS_OK) {
-        LOG(ERROR) << "error on send";  // TODO: add perror?
+        LOG_IF(ERROR, status == c_api::RS_SOCK_ERR)
+            << "Error on send: " << utils::GetSystemErrorDescr();
         client_.CloseConnection();
         return;
     }

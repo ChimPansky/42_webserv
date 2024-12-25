@@ -3,16 +3,11 @@
 #include <ChildProcessesManager.h>
 #include <EventManager.h>
 #include <cgi/cgi.h>
+#include <errors.h>
 #include <file_utils.h>
 #include <http.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-
-#include <cctype>
-#include <cstring>
 
 #include "../utils/utils.h"
-#include "ErrorProcessor.h"
 
 namespace {
 
@@ -79,7 +74,7 @@ void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
     std::vector<char>& buf = processor_.cgi_out_buffer_;
     c_api::RecvPackage pack = processor_.child_process_description_->sock().Recv();
     if (pack.status == c_api::RS_SOCK_ERR) {
-        LOG(ERROR) << "error on recv" << std::strerror(errno);  // TODO: is errno check allowed?
+        LOG(ERROR) << "Error on recv from child proc: " << utils::GetSystemErrorDescr();
         return;
     } else if (pack.status == c_api::RS_SOCK_CLOSED) {
         LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes";
