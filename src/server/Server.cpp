@@ -1,22 +1,18 @@
 
 #include "Server.h"
 
+#include <Request.h>
+#include <ResponseCodes.h>
 #include <file_utils.h>
+#include <logger.h>
 #include <shared_ptr.h>
-
-#include <cstdlib>
+#include <unique_ptr.h>
 
 #include "Location.h"
-#include "Request.h"
-#include "ResponseCodes.h"
-#include "RqTarget.h"
-#include "logger.h"
 #include "response_processors/AResponseProcessor.h"
 #include "response_processors/CGIProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
-#include "unique_ptr.h"
-#include "utils/utils.h"
 
 Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
     : access_log_path_(cfg.access_log_path()),

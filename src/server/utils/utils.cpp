@@ -1,6 +1,7 @@
 #include "utils.h"
 
-#include "logger.h"
+#include <logger.h>
+
 namespace utils {
 
 const char* GetTypeByExt(const std::string& ext)

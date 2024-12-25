@@ -2,9 +2,6 @@
 #define WS_C_API_CLIENT_SOCKET_H
 
 #include <netinet/in.h>
-#include <sys/types.h>
-
-#include <cstddef>
 
 #include "Socket.h"
 

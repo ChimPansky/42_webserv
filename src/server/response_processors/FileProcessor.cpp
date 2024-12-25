@@ -1,19 +1,17 @@
 #include "FileProcessor.h"
 
+#include <Request.h>
 #include <ResponseCodes.h>
 #include <file_utils.h>
 #include <unique_ptr.h>
-#include <unistd.h>
 
 #include <fstream>
 #include <stdexcept>
 
+#include "../utils/utils.h"
 #include "DirectoryProcessor.h"
 #include "Location.h"
 #include "RedirectProcessor.h"
-#include "Request.h"
-#include "cstring"
-#include "utils/utils.h"
 
 FileProcessor::FileProcessor(const Server& server, const std::string& file_path,
                              utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
@@ -33,7 +31,7 @@ void FileProcessor::ProcessPost_(const std::string& file_path)
     LOG(INFO) << "Processing POST request for file: " << file_path;
     // todo: rename from /uploadfolder/.file.txt to /uploadfolder/file.txt
     // if (std::rename(rq.body.c_str(), file_path.c_str()) != 0) {
-    //     LOG(DEBUG) << "Upload of file " << file_path << " failed: " << strerror(errno);
+    //     LOG(DEBUG) << "Upload of file " << file_path << " failed:";
     //     DelegateToErrProc(http::HTTP_CONFLICT);
     //     return;
     // }

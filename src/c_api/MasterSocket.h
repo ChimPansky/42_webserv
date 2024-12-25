@@ -4,7 +4,6 @@
 #include <netinet/in.h>  // sockaddr_in
 #include <sys/socket.h>  // socket, bind
 #include <unique_ptr.h>
-#include <unistd.h>  // close
 
 #include "ClientSocket.h"
 #include "Socket.h"
