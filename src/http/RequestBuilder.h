@@ -96,7 +96,7 @@ class RequestBuilder {
     http::ResponseCode ValidateHeadersSyntax_();
     http::ResponseCode InterpretHeaders_();
     ResponseCode InsertHeaderField_(std::string& key, std::string& value);
-    RequestBuilder::BuildState PrepareBody_(HeadersValidationResult& validation_result);
+    RequestBuilder::BuildState PrepareBody_(const HeadersValidationResult& validation_result);
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();

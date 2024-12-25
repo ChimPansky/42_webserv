@@ -300,7 +300,8 @@ RequestBuilder::BuildState RequestBuilder::ProcessHeaders_()
     return PrepareBody_(validation_result);
 }
 
-RequestBuilder::BuildState RequestBuilder::PrepareBody_(HeadersValidationResult& validation_result)
+RequestBuilder::BuildState RequestBuilder::PrepareBody_(
+    const HeadersValidationResult& validation_result)
 {
     LOG(DEBUG) << "Request has body, max_body_size: " << validation_result.max_body_size;
     body_builder_.max_body_size = validation_result.max_body_size;
