@@ -2,18 +2,33 @@
 
 namespace config {
 
+bool IsCgiLocation(const std::string& route)
+{
+    const std::string cgi_prefix = "/cgi-bin/";
+
+    size_t cgi_bin_pos = route.find(cgi_prefix);
+    if (cgi_bin_pos == std::string::npos) {
+        return false;
+    }
+
+    size_t next_char_pos = cgi_bin_pos + cgi_prefix.length();
+    if (route[next_char_pos] == '\0') {
+        return true;
+    }
+    return false;
+}
+
 LocationConfig::LocationConfig(
     const std::pair<std::string /*path*/, bool /*is_exact_match*/>& route,
     const std::vector<http::Method>& allowed_methods,
     const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect,
-    const std::vector<std::string>& cgi_paths, const std::vector<std::string>& cgi_extensions,
-    const std::string& alias_dir, const std::vector<std::string>& default_files, bool dir_listing,
+    const std::vector<std::string>& cgi_extensions, const std::string& alias_dir,
+    const std::vector<std::string>& default_files, bool dir_listing,
     unsigned int client_max_body_size, const std::string& upload_dir)
     : route_(route),
       allowed_methods_(allowed_methods),
       redirect_(InitRedirect(redirect)),
-      is_cgi_(route.first == "/cgi-bin/" || route.first == "/cgi-bin"),
-      cgi_paths_(cgi_paths),
+      is_cgi_(IsCgiLocation(route.first)),
       cgi_extensions_(cgi_extensions),
       alias_dir_(alias_dir),
       default_files_(default_files),
@@ -40,11 +55,6 @@ const std::pair<int /*status_code*/, std::string /*new_route*/>& LocationConfig:
 bool LocationConfig::is_cgi() const
 {
     return is_cgi_;
-}
-
-const std::vector<std::string>& LocationConfig::cgi_paths() const
-{
-    return cgi_paths_;
 }
 
 const std::vector<std::string>& LocationConfig::cgi_extensions() const
@@ -97,10 +107,6 @@ void LocationConfig::Print() const
     }
     LOG(DEBUG) << "Redirect: " << redirect_.first << " " << redirect_.second;
     LOG(DEBUG) << "CGI: " << (is_cgi_ ? "enabled" : "disabled");
-    LOG(DEBUG) << "CGI paths: ";
-    for (size_t i = 0; i < cgi_paths_.size(); i++) {
-        LOG(DEBUG) << "  " << cgi_paths_[i];
-    }
     LOG(DEBUG) << "CGI extensions: ";
     for (size_t i = 0; i < cgi_extensions_.size(); i++) {
         LOG(DEBUG) << "  " << cgi_extensions_[i];

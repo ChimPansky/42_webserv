@@ -2,7 +2,12 @@
 
 #include <errors.h>
 #include <fcntl.h>
-#include <sys/wait.h>
+#include <file_utils.h>
+#include <sys/wait.h>  // waitpid
+#include <unistd.h>    // STDOUT_FILENO
+
+#include <csignal>  // SIGKILL
+#include <cstdlib>  // dup2
 
 #define CHILD_ERROR_EXIT_CODE 7
 
@@ -10,8 +15,14 @@ namespace c_api {
 
 namespace {
 
+// TODO: change exit to smth better mb
 void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket)
 {
+    if (dup2(child_socket->sockfd(), STDOUT_FILENO) < 0) {
+        LOG(ERROR) << "CGI: cannot run script: dup2: " << utils::GetSystemErrorDescr();
+        exit(EXIT_FAILURE);
+    }
+
     if (!params.redirect_input_from_file.empty()) {
         int rq_body_fd = open(params.redirect_input_from_file.c_str(), O_RDONLY);
         if (rq_body_fd < 0) {
@@ -23,9 +34,10 @@ void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket
             utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
         }
     }
-    if (dup2(child_socket->sockfd(), STDOUT_FILENO) < 0) {
-        LOG(ERROR) << "CGI: cannot run script: dup2: " << utils::GetSystemErrorDescr();
-        utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
+
+    if (!utils::CloseProcessFdsButStd()) {
+        LOG(ERROR) << "Cannot close fds, better death of 10000 children than a leak";
+        exit(CHILD_ERROR_EXIT_CODE);
     }
 
     std::vector<char*> env;
@@ -36,9 +48,13 @@ void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket
 
     std::vector<char*> args;
     args.push_back(const_cast<char*>(params.interpreter.c_str()));
-    args.push_back(const_cast<char*>(params.script_path.c_str()));
+    args.push_back(const_cast<char*>(params.script_name.c_str()));
     args.push_back(NULL);
 
+    if (!utils::TryChangeDir(params.script_location.c_str())) {
+        LOG(ERROR) << "CGI: cannot run script: chdir: " << utils::GetSystemErrorDescr();
+        exit(CHILD_ERROR_EXIT_CODE);
+    }
     execve(params.interpreter.c_str(), args.data(), env.data());
     LOG(ERROR) << "CGI: cannot run script: execve: " << utils::GetSystemErrorDescr();
     utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);

@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "logger.h"
+#include "numeric_utils.h"
 #include "rand.h"
 
 namespace utils {
@@ -46,6 +47,11 @@ bool IsRegularFile(const char *path)
         return false;
     }
     return (info.st_mode & S_IFREG) != 0;
+}
+
+bool TryChangeDir(const char *path)
+{
+    return chdir(path) != -1;
 }
 
 utils::maybe<std::string> ReadFileToString(const char *filePath)
@@ -100,6 +106,32 @@ utils::maybe<std::vector<utils::DirEntry> > GetDirEntries(const char *directory)
     }
     closedir(dir);
     return entries;
+}
+
+// this shit is evil but works (but not with valgrind)
+bool CloseProcessFdsButStd()
+{
+    // cannot close right away cuz fd_dir is also there
+    std::vector<int> fds_to_close;
+
+    DIR *fd_dir = opendir("/proc/self/fd");
+    if (!fd_dir) {
+        LOG(ERROR) << "Unable to read directory: /proc/self/fd";
+        return false;
+    }
+    struct dirent *entry;
+    while ((entry = readdir(fd_dir)) != NULL) {
+        maybe<int> fd = StrToNumericNoThrow<int>(entry->d_name);
+        if (!fd || *fd == STDIN_FILENO || *fd == STDOUT_FILENO || *fd == STDERR_FILENO) {
+            continue;
+        }
+        fds_to_close.push_back(*fd);
+    }
+    closedir(fd_dir);
+    for (std::vector<int>::iterator it = fds_to_close.begin(); it != fds_to_close.end(); ++it) {
+        close(*it);
+    }
+    return true;
 }
 
 utils::maybe<std::string> CreateAndOpenTmpFileToStream(std::ofstream &fs)

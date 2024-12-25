@@ -11,9 +11,3 @@ def eprint(*args, **kwargs):
 # Correct CGI header
 print("Content-Type: text/html"
 print()
-
-i = 0
-while True:
-    sleep(1)
-    eprint("cgi count: ", i)
-    i += 1
