@@ -124,7 +124,6 @@ void ChildProcessesManager::KillChildProcess(pid_t pid) throw()
 void ChildProcessesManager::RegisterChildProcess_(pid_t child_pid, UnixTimestampS timeout_ts,
                                                   utils::unique_ptr<IChildDiedCb> cb)
 {
-    // LOG(ERROR) << child_pid;
     child_processes_.insert(std::make_pair(child_pid, Child(timeout_ts, cb)));
 }
 
