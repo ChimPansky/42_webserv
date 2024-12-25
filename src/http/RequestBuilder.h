@@ -54,7 +54,6 @@ class RequestBuilder {
         BS_RQ_LINE,
         BS_HEADER_FIELDS,
         BS_AFTER_HEADERS,
-        BS_PREPARE_TO_READ_BODY,
         BS_BODY_REGULAR,
         BS_BODY_CHUNK_SIZE,
         BS_BODY_CHUNK_CONTENT,
@@ -96,9 +95,8 @@ class RequestBuilder {
     BuildState ProcessHeaders_();
     http::ResponseCode ValidateHeadersSyntax_();
     http::ResponseCode InterpretHeaders_();
-    BuildState SetValidationResult_();
     ResponseCode InsertHeaderField_(std::string& key, std::string& value);
-    BuildState PrepareBody_();
+    RequestBuilder::BuildState PrepareBody_(HeadersValidationResult& validation_result);
     BuildState BuildBodyRegular_();
     BuildState BuildBodyChunkSize_();
     BuildState BuildBodyChunkContent_();
@@ -108,7 +106,6 @@ class RequestBuilder {
     void NullTerminatorCheck_(char c);
     ExtractionResult TryToExtractLine_();
     ExtractionResult TryToExtractBodyContent_();
-    bool IsParsingState_(BuildState state) const;
     BuildState SetStatusAndExitBuilder_(ResponseCode status);
 };
 
