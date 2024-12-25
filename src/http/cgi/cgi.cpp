@@ -121,7 +121,7 @@ utils::maybe<utils::unique_ptr<http::Response> > ParseCgiResponse(std::vector<ch
         new http::Response(rs_code, http::HTTP_1_1, headers, buf));
 }
 
-std::vector<std::string> GetEnv(const std::string& script_path, const http::Request& rq)
+std::vector<std::string> GetEnv(const ScriptLocDetails& script, const http::Request& rq)
 {
     std::vector<std::string> env;
 
@@ -129,16 +129,13 @@ std::vector<std::string> GetEnv(const std::string& script_path, const http::Requ
     env.push_back("SERVER_SOFTWARE=webserv/1.0");
 
     env.push_back("SERVER_PROTOCOL=" + HttpVerToStr(rq.version));
-    env.push_back("SCRIPT_NAME=" + rq.rqTarget.path());
+    env.push_back("SCRIPT_NAME=" + script.name);
     env.push_back("REQUEST_METHOD=" + HttpMethodToStr(rq.method));
 
-    env.push_back("PATH_INFO=" + script_path);
-    env.push_back("PATH_TRANSLATED=" + script_path);
+    env.push_back("PATH_INFO=" + script.extra_path);
     // env.push_back("HTTP_COOKIE=" + rq.GetHeaderVal("Cookie").second); bonuses
 
     env.push_back("QUERY_STRING=" + rq.rqTarget.query());
-    // env.push_back("REMOTE_ADDR=" + utils::IPaddr);  TODO: pass Client Socket IP address here
-    // env.push_back("SERVER_PORT=" + utils::port);  TODO: pass Master Socket port here
     env.push_back("REMOTE_HOST=" + rq.GetHeaderVal("Host").value());
     env.push_back("SERVER_NAME=" +
                   rq.GetHeaderVal("Host").value());  // TODO: REMOTE_HOST == SERVER_NAME?
@@ -163,6 +160,39 @@ std::vector<std::string> GetEnv(const std::string& script_path, const http::Requ
         env.push_back("ACCEPT=" + *accept);
     }
     return env;
+}
+
+utils::maybe<utils::unique_ptr<ScriptLocDetails> > GetScriptLocDetails(
+    const std::string& path_from_url)
+{
+    size_t cgi_pos = path_from_url.find("/cgi-bin/");
+    if (cgi_pos == std::string::npos) {
+        LOG(ERROR) << "Path in the url does not contain /cgi-bin/";
+        return utils::maybe_not();
+    }
+
+    size_t script_pos = cgi_pos + std::string("/cgi-bin/").length();
+    if (script_pos == path_from_url.length()) {
+        LOG(ERROR) << "No script after /cgi-bin/ is specified";
+        return utils::maybe_not();
+    }
+
+    size_t extra_path_pos = path_from_url.find('/', script_pos);
+
+    std::string script_location = path_from_url.substr(0, script_pos);
+    std::string script_name = (extra_path_pos == std::string::npos)
+                                  ? path_from_url.substr(script_pos)
+                                  : path_from_url.substr(script_pos, extra_path_pos - script_pos);
+    if (script_name.find('.') == std::string::npos) {
+        LOG(ERROR) << "The path must include the name of the script after /cgi-bin/ "
+                   << path_from_url;
+        return utils::maybe_not();
+    }
+    std::string extra_path = (extra_path_pos == std::string::npos)
+                                 ? std::string()
+                                 : path_from_url.substr(extra_path_pos);
+    return utils::unique_ptr<ScriptLocDetails>(utils::unique_ptr<ScriptLocDetails>(
+        new ScriptLocDetails(script_location, script_name, extra_path)));
 }
 
 }  // namespace cgi

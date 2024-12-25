@@ -113,7 +113,7 @@ void ServerCluster::Run()
     while (run_) {
         try {
             c_api::EventManager::CheckOnce();
-            c_api::ChildProcessesManager::get().CheckOnce();
+            c_api::ChildProcessesManager::CheckOnce();
         } catch (const std::bad_alloc& e) {
             instance_->KillAllClients_();
         }

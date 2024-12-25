@@ -4,11 +4,19 @@
 #include <ChildProcessesManager.h>
 #include <Location.h>
 #include <Socket.h>
+#include <cgi/cgi.h>
 #include <multiplexers/ICallback.h>
 #include <shared_ptr.h>
 #include <unique_ptr.h>
 
 #include "AResponseProcessor.h"
+
+enum CgiState {
+    CS_CHILD_OUTPUT_READ = 1,
+    CS_CHILD_EXITED = 2,
+    CS_READY_TO_PROCEED = CS_CHILD_EXITED | CS_CHILD_OUTPUT_READ,
+    CS_DONE = 4 | CS_READY_TO_PROCEED
+};
 
 class CGIProcessor : public AResponseProcessor {
   public:
@@ -40,8 +48,13 @@ class CGIProcessor : public AResponseProcessor {
     };
 
   private:
+    void ProceedWithResponse();
+
+
+  private:
     utils::maybe<c_api::ChildProcessDescription> child_process_description_;
     std::vector<char> cgi_out_buffer_;
+    int state_;
 };
 
 #endif  // WS_SERVER_RESPONSE_PROCESSORS_CGI_PROCESSOR_H

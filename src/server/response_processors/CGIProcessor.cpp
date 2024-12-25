@@ -26,24 +26,35 @@ bool IsValidExtension(const std::string& filename, const std::vector<std::string
 CGIProcessor::CGIProcessor(RequestDestination dest,
                            utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                            const http::Request& rq)
-    : AResponseProcessor(dest, response_rdy_cb)
+    : AResponseProcessor(dest, response_rdy_cb), state_(0)
 {
-    if (!IsValidExtension(dest.updated_path, dest.loc->cgi_extensions())) {
-        LOG(ERROR) << "CGI extension not supported: " << dest.updated_path;
+    utils::maybe<utils::unique_ptr<cgi::ScriptLocDetails> > script =
+        cgi::GetScriptLocDetails(rq.rqTarget.path());
+    if (!script) {
+        LOG(ERROR) << "Invalid path to the CGI script";
+        DelegateToErrProc(http::HTTP_BAD_REQUEST);
+        return;
+    }
+    if (!IsValidExtension((*script)->name, dest.loc->cgi_extensions())) {
+        LOG(ERROR) << "CGI script extension is not supported: " << (*script)->name;
         DelegateToErrProc(http::HTTP_NOT_IMPLEMENTED);
         return;
     }
+    (*script)->location =
+        utils::UpdatePath(dest.loc->alias_dir(), dest.loc->route().first, (*script)->location);
+    std::string full_script_loc = (*script)->location + "/" + (*script)->extra_path + "/";
 
-    std::string interpreter = utils::GetInterpreterByExt(dest.updated_path);
-    if (!utils::IsReadable(dest.updated_path.c_str())) {
-        LOG(ERROR) << "CGI script cannot be executed: " << dest.updated_path;
+    std::string interpreter = utils::GetInterpreterByExt((*script)->name);
+
+    if (!utils::IsReadable((full_script_loc + (*script)->name).c_str())) {
+        LOG(ERROR) << "CGI script cannot be executed: " << (full_script_loc + (*script)->name);
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 
-    c_api::ExecParams exec_params(interpreter, dest.updated_path,
-                                  cgi::GetEnv(dest.updated_path, rq), rq.body.path.c_str());
-    child_process_description_ = c_api::ChildProcessesManager::get().TryRunChildProcess(
+    c_api::ExecParams exec_params(interpreter, full_script_loc, (*script)->name,
+                                  cgi::GetEnv(**script, rq), rq.body.path.c_str());
+    child_process_description_ = c_api::ChildProcessesManager::TryRunChildProcess(
         exec_params, utils::unique_ptr<c_api::IChildDiedCb>(new ChildProcessDoneCb(*this)));
     if (!child_process_description_.ok()) {
         LOG(ERROR) << "Cannot run child process";
@@ -54,6 +65,7 @@ CGIProcessor::CGIProcessor(RequestDestination dest,
             child_process_description_->sock().sockfd(), c_api::CT_READ,
             utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
+        c_api::ChildProcessesManager::KillChildProcess(child_process_description_->pid());
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
@@ -63,24 +75,40 @@ CGIProcessor::~CGIProcessor()
 {
     if (child_process_description_) {
         c_api::EventManager::DeleteCallback(child_process_description_->sock().sockfd());
-        c_api::ChildProcessesManager::get().KillChildProcess(child_process_description_->pid());
+        c_api::ChildProcessesManager::KillChildProcess(child_process_description_->pid());
     }
 }
 
-void CGIProcessor::ReadChildOutputCallback::Call(int /* fd */)
+void CGIProcessor::ProceedWithResponse()
 {
-    // LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
+    if (state_ != CS_READY_TO_PROCEED) {
+        return;
+    }
+    state_ = CS_DONE;
+    utils::maybe<utils::unique_ptr<http::Response> > rs = cgi::ParseCgiResponse(cgi_out_buffer_);
+    if (!rs) {
+        LOG(ERROR) << "Invalid cgi output";
+        DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
+        return;
+    }
+    response_rdy_cb_->Call(*rs);
+}
+
+void CGIProcessor::ReadChildOutputCallback::Call(int fd)
+{
+    LOG(DEBUG) << "ReadChildOutputCallback::Call with " << fd;
     std::vector<char>& buf = processor_.cgi_out_buffer_;
     c_api::RecvPackage pack = processor_.child_process_description_->sock().Recv();
     if (pack.status == c_api::RS_SOCK_ERR) {
-        LOG(ERROR) << "Error on recv from child proc: " << utils::GetSystemErrorDescr();
-        return;
-    } else if (pack.status == c_api::RS_SOCK_CLOSED) {
-        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes";
+        LOG(ERROR) << "error on recv" << utils::GetSystemErrorDescr();
         return;
     } else if (pack.status == c_api::RS_OK) {
         buf.reserve(buf.size() + pack.data_size);
         std::copy(pack.data, pack.data + pack.data_size, std::back_inserter(buf));
+    } else if (pack.status == c_api::RS_SOCK_CLOSED) {
+        LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes\n";
+        processor_.state_ |= CS_CHILD_OUTPUT_READ;
+        processor_.ProceedWithResponse();
     }
 }
 
@@ -91,11 +119,6 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    utils::maybe<utils::unique_ptr<http::Response> > rs =
-        cgi::ParseCgiResponse(processor_.cgi_out_buffer_);
-    if (!rs) {
-        processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
-        return;
-    }
-    processor_.response_rdy_cb_->Call(*rs);
+    processor_.state_ |= CS_CHILD_EXITED;
+    processor_.ProceedWithResponse();
 }
