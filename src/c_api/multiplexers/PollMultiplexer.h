@@ -1,14 +1,14 @@
 #ifndef WS_C_API_MULTIPLEXERS_POLL_MULTIPLEXER_H
 #define WS_C_API_MULTIPLEXERS_POLL_MULTIPLEXER_H
 
-#include "IMultiplexer.h"
+#include "AMultiplexer.h"
 
 namespace c_api {
 
-class PollMultiplexer : public IMultiplexer {
+class PollMultiplexer : public AMultiplexer {
   public:
     PollMultiplexer(int timeout_ms);
-    void CheckOnce(const FdToCallbackMap& rd_sockets, const FdToCallbackMap& wr_sockets);
+    void CheckOnce();
 
   private:
     unsigned short timeout_ms_;
