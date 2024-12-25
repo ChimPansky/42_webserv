@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#define SOCK_READ_BUF_SZ 512ul
+#define SOCK_READ_BUF_SZ 8192ul
 
 namespace c_api {
 
