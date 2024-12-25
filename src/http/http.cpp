@@ -94,12 +94,12 @@ std::string PercentEncode(const std::string& str, const char* dont_encode_set)
 {
     std::string encoded;
     for (size_t i = 0; i < str.size(); ++i) {
-        if (strchr(kUnreserved, str[i]) == NULL &&
-            (dont_encode_set && strchr(dont_encode_set, str[i]) == NULL)) {
-            encoded += '%';
-            encoded += utils::NumericToHexStr(str[i]);
+        unsigned char c = static_cast<unsigned char>(str[i]);
+        if (strchr(kUnreserved, c) != 0 || (dont_encode_set && strchr(dont_encode_set, c) != 0)) {
+            encoded += static_cast<char>(c);
         } else {
-            encoded += str[i];
+            encoded += '%';
+            encoded += utils::NumericToHexStr(c);
         }
     }
     return encoded;

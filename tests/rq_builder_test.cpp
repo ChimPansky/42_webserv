@@ -106,27 +106,27 @@ std::string GetBodyContent_(const http::Request& rq)
         return "";
     }
     utils::maybe<std::string> body_str;
-    body_str = utils::ReadFileToString(rq.body);
+    body_str = utils::ReadFileToString(rq.body.path);
     if (!body_str) {
         ADD_FAILURE() << "Error reading body content from file";
     }
     return *body_str;
 }
 
-class DummyCb : public http::IChooseServerCb {
+class DummyCb : public http::IOnHeadersReadyCb {
   public:
     DummyCb() {}
-    http::ChosenServerParams Call(const http::Request&)
+    http::HeadersValidationResult Call(const http::Request&)
     {
-        http::ChosenServerParams params;
-        params.max_body_size = 1500;
-        return params;
+        http::HeadersValidationResult validation_result(http::HTTP_OK);
+        validation_result.max_body_size = 1500;
+        return validation_result;
     }
 };
 
 http::RequestBuilder CreateBuilder()
 {
-    return http::RequestBuilder(utils::unique_ptr<http::IChooseServerCb>(new DummyCb()));
+    return http::RequestBuilder(utils::unique_ptr<http::IOnHeadersReadyCb>(new DummyCb()));
 }
 
 TEST(ValidWithBody, 1_Bodylen_14)

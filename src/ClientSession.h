@@ -48,10 +48,10 @@ class ClientSession {
         bool close_after_sending_rs_;
     };
 
-    class ChooseServerCb : public http::IChooseServerCb {
+    class ChooseServerCb : public http::IOnHeadersReadyCb {
       public:
         ChooseServerCb(ClientSession& client) : client_(client) {}
-        virtual http::ChosenServerParams Call(const http::Request& rq);
+        virtual http::HeadersValidationResult Call(const http::Request& rq);
 
       private:
         ClientSession& client_;
@@ -86,7 +86,7 @@ class ClientSession {
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
     int master_socket_fd_;
-    utils::shared_ptr<Server> associated_server_;
+    RequestDestination rq_destination_;
     utils::unique_ptr<AResponseProcessor> response_processor_;
     http::RequestBuilder rq_builder_;
     bool connection_closed_;
