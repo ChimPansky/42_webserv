@@ -1,4 +1,5 @@
 add_library(Utils
+    errors.cpp
     file_utils.cpp
     logger.cpp
     rand.cpp

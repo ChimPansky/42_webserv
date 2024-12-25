@@ -1,18 +1,21 @@
 #include "ChildProcessesManager.h"
 
+#include <errors.h>
 #include <fcntl.h>
 #include <file_utils.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
-#include <cstdlib>
 #include <cstring>
+
+#define CHILD_ERROR_EXIT_CODE 7
 
 namespace c_api {
 
 namespace {
 
 // TODO: change exit to smth better mb
-void SetUpChild(const ExecParams& params,
-                utils::unique_ptr<Socket> child_socket)  // noreturn
+void SetUpChild(const ExecParams& params, utils::unique_ptr<Socket> child_socket)
 {
     if (dup2(child_socket->sockfd(), STDOUT_FILENO) < 0) {
         LOG(ERROR) << "Dup2 failed: " << std::strerror(errno);
@@ -22,12 +25,12 @@ void SetUpChild(const ExecParams& params,
     if (!params.redirect_input_from_file.empty()) {
         int rq_body_fd = open(params.redirect_input_from_file.c_str(), O_RDONLY);
         if (rq_body_fd < 0) {
-            LOG(ERROR) << "Open failed: " << std::strerror(errno);
-            exit(EXIT_FAILURE);
+            LOG(ERROR) << "CGI: cannot run script: open: " << utils::GetSystemErrorDescr();
+            utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
         }
         if (dup2(rq_body_fd, STDIN_FILENO) < 0) {
-            LOG(ERROR) << "Dup2 failed: " << std::strerror(errno);
-            exit(EXIT_FAILURE);
+            LOG(ERROR) << "CGI: cannot run script: dup2: " << utils::GetSystemErrorDescr();
+            utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
         }
     }
 
@@ -58,8 +61,8 @@ void SetUpChild(const ExecParams& params,
     // getcwd(cwd, sizeof(cwd));
     // LOG(ERROR) << "Current dir: " << cwd;
     execve(params.interpreter.c_str(), args.data(), env.data());
-    LOG(ERROR) << "CGI failed with error " << std::strerror(errno);
-    exit(EXIT_FAILURE);
+    LOG(ERROR) << "CGI: cannot run script: execve: " << utils::GetSystemErrorDescr();
+    utils::ExitWithCode(CHILD_ERROR_EXIT_CODE);
 }
 
 }  // namespace
@@ -88,7 +91,7 @@ ChildProcessesManager& ChildProcessesManager::get()
 void ChildProcessesManager::CheckOnce()
 {
     for (PidtToCallbackMapIt it = child_processes_.begin(); it != child_processes_.end(); ++it) {
-        if (std::time(NULL) >= it->second.time_to_kill) {
+        if (utils::Now() >= it->second.time_to_kill) {
             LOG(ERROR) << "Timeout exceeded. Terminating child process...";
             kill(it->first, SIGKILL);
         }
@@ -113,7 +116,7 @@ void ChildProcessesManager::CheckOnce()
     }
 }
 
-void ChildProcessesManager::KillChildProcess(pid_t pid)
+void ChildProcessesManager::KillChildProcess(pid_t pid) throw()
 {
     PidtToCallbackMapIt it = child_processes_.find(pid);
     if (it != child_processes_.end()) {
@@ -123,7 +126,7 @@ void ChildProcessesManager::KillChildProcess(pid_t pid)
     }
 }
 
-void ChildProcessesManager::RegisterChildProcess_(pid_t child_pid, time_t timeout_ts,
+void ChildProcessesManager::RegisterChildProcess_(pid_t child_pid, UnixTimestampS timeout_ts,
                                                   utils::unique_ptr<IChildDiedCb> cb)
 {
     LOG(ERROR) << child_pid;
@@ -144,13 +147,13 @@ utils::maybe<ChildProcessDescription> ChildProcessesManager::TryRunChildProcess(
 
     pid_t child_pid = fork();
     if (child_pid < 0) {
-        LOG(ERROR) << "Fork failed: " << std::strerror(errno);
+        LOG(ERROR) << "Fork failed: " << utils::GetSystemErrorDescr();
         return utils::maybe_not();
     } else if (child_pid == 0) {
         parent_socket.reset();
         SetUpChild(params, child_socket);  // noreturn
     }
-    RegisterChildProcess_(child_pid, std::time(NULL) + kDefaultTimeoutSeconds_(), cb);
+    RegisterChildProcess_(child_pid, utils::Now() + kDefaultTimeoutSeconds_(), cb);
     return ChildProcessDescription(child_pid, parent_socket);
 }
 

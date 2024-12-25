@@ -1,15 +1,12 @@
 #ifndef WS_UTILS_FILE_UTILS_H
 #define WS_UTILS_FILE_UTILS_H
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include <fstream>
 #include <string>
 #include <vector>
 
 #include "maybe.h"
+#include "time_utils.h"
 
 #define TMP_FILE_NAME_LEN 20
 // todo move to config?
@@ -49,13 +46,13 @@ enum DirEntryType {
 
 class DirEntry {
   public:
-    DirEntry(const std::string &name, DirEntryType type, time_t last_modified, size_t size)
+    DirEntry(const std::string &name, DirEntryType type, UnixTimestampS last_modified, size_t size)
         : name_(name), type_(type), last_modified_(last_modified), size_(size)
     {}
 
     const std::string &name() const { return name_; }
-    const DirEntryType &type() const { return type_; }
-    const time_t &last_modified() const { return last_modified_; }
+    DirEntryType type() const { return type_; }
+    UnixTimestampS last_modified() const { return last_modified_; }
     size_t size() const { return size_; }
 
     inline bool operator<(const DirEntry rhs) { return name_ < rhs.name_; }
@@ -63,7 +60,7 @@ class DirEntry {
   private:
     std::string name_;
     DirEntryType type_;
-    time_t last_modified_;
+    UnixTimestampS last_modified_;
     size_t size_;
 };
 

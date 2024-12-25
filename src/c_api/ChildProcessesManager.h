@@ -3,10 +3,9 @@
 
 #include <Socket.h>
 #include <logger.h>
-#include <sys/wait.h>
+#include <time_utils.h>
 #include <unique_ptr.h>
 
-#include <ctime>
 #include <map>
 #include <vector>
 
@@ -56,10 +55,11 @@ class ChildProcessesManager {
 
   private:
     struct Child {
-        Child(time_t time, utils::unique_ptr<IChildDiedCb> cb) : time_to_kill(time), cb_on_exit(cb)
+        Child(UnixTimestampS time_to_kill, utils::unique_ptr<IChildDiedCb> cb)
+            : time_to_kill(time_to_kill), cb_on_exit(cb)
         {}
 
-        time_t time_to_kill;
+        UnixTimestampS time_to_kill;
         utils::unique_ptr<IChildDiedCb> cb_on_exit;
     };
 
@@ -68,7 +68,7 @@ class ChildProcessesManager {
     typedef std::map<pid_t, Child>::iterator PidtToCallbackMapIt;
 
     static inline int kDefaultTimeoutSeconds_() { return 5; }
-    void RegisterChildProcess_(pid_t child_pid, time_t timeout_ts,
+    void RegisterChildProcess_(pid_t child_pid, UnixTimestampS timeout_ts,
                                utils::unique_ptr<IChildDiedCb> cb);
 
   public:
@@ -78,7 +78,7 @@ class ChildProcessesManager {
     void CheckOnce();
     utils::maybe<ChildProcessDescription> TryRunChildProcess(const ExecParams&,
                                                              utils::unique_ptr<IChildDiedCb>);
-    void KillChildProcess(pid_t pid);
+    void KillChildProcess(pid_t pid) throw();
 
   private:
     static utils::unique_ptr<ChildProcessesManager> instance_;

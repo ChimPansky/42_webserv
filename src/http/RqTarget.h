@@ -4,8 +4,8 @@
 #include <http.h>
 #include <numeric_utils.h>
 
-#include <cstddef>
 #include <string>
+
 namespace http {
 
 /* RqTarget class:

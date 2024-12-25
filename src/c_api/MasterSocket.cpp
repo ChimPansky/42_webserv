@@ -1,6 +1,6 @@
 #include "MasterSocket.h"
 
-#include <cstring>
+#include <cstring>  // memcmp
 #include <stdexcept>
 
 #include "c_api_utils.h"

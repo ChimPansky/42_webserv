@@ -48,10 +48,10 @@ class ClientSession {
         bool close_after_sending_rs_;
     };
 
-    class ChooseServerCb : public http::IChooseServerCb {
+    class ChooseServerCb : public http::IOnHeadersReadyCb {
       public:
         ChooseServerCb(ClientSession& client) : client_(client) {}
-        virtual http::ChosenServerParams Call(const http::Request& rq);
+        virtual http::HeadersValidationResult Call(const http::Request& rq);
 
       private:
         ClientSession& client_;
@@ -74,7 +74,7 @@ class ClientSession {
 
   public:
     bool connection_closed() const { return connection_closed_; }
-    time_t last_activity_time() const { return last_activity_time_; }
+    UnixTimestampS last_activity_time() const { return last_activity_time_; }
     void ProcessNewData(c_api::RecvPackage& data_pack);
     void CloseConnection();
     void PrepareResponse(utils::unique_ptr<http::Response> rs);
@@ -86,12 +86,12 @@ class ClientSession {
   private:
     utils::unique_ptr<c_api::ClientSocket> client_sock_;
     int master_socket_fd_;
-    utils::shared_ptr<Server> associated_server_;
+    RequestDestination rq_destination_;
     utils::unique_ptr<AResponseProcessor> response_processor_;
     http::RequestBuilder rq_builder_;
     bool connection_closed_;
     CsState read_state_;
-    time_t last_activity_time_;
+    UnixTimestampS last_activity_time_;
 };
 
 #endif  // WS_CLIENT_SESSION_H

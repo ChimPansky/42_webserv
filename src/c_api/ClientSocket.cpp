@@ -4,8 +4,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include <cstring>
-
 namespace c_api {
 
 ClientSocket::ClientSocket(int fd, sockaddr_in addr_in) : sock_(fd), addr_in_(addr_in)

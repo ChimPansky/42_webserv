@@ -1,13 +1,17 @@
 #ifndef WS_UTILS_TIME_UTILS_H
 #define WS_UTILS_TIME_UTILS_H
 
-#include <ctime>
 #include <string>
+
+typedef long UnixTimestampS;
 
 namespace utils {
 
-std::string GetFormatedTime(std::time_t raw_time = 0);
+// TODO: 0 is a valid timestamp, bad value for default;
+std::string GetFormatedTime(UnixTimestampS raw_time = 0);
 
-}
+UnixTimestampS Now();
+
+}  // namespace utils
 
 #endif  // WS_UTILS_TIME_UTILS_H

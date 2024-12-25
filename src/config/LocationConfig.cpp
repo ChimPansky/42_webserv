@@ -2,6 +2,22 @@
 
 namespace config {
 
+bool IsCgiLocation(const std::string& route)
+{
+    const std::string cgi_prefix = "/cgi-bin/";
+
+    size_t cgi_bin_pos = route.find(cgi_prefix);
+    if (cgi_bin_pos == std::string::npos) {
+        return false;
+    }
+
+    size_t next_char_pos = cgi_bin_pos + cgi_prefix.length();
+    if (route[next_char_pos] == '\0') {
+        return true;
+    }
+    return false;
+}
+
 LocationConfig::LocationConfig(
     const std::pair<std::string /*path*/, bool /*is_exact_match*/>& route,
     const std::vector<http::Method>& allowed_methods,
@@ -12,7 +28,7 @@ LocationConfig::LocationConfig(
     : route_(route),
       allowed_methods_(allowed_methods),
       redirect_(InitRedirect(redirect)),
-      is_cgi_(route.first == "/cgi-bin/" || route.first == "/cgi-bin"),
+      is_cgi_(IsCgiLocation(route.first)),
       cgi_extensions_(cgi_extensions),
       alias_dir_(alias_dir),
       default_files_(default_files),
