@@ -9,7 +9,7 @@ class ErrorProcessor : public AResponseProcessor {
   private:
     class GeneratedErrorProcessor : public AResponseProcessor {
       public:
-        GeneratedErrorProcessor(const Server& server,
+        GeneratedErrorProcessor(RequestDestination dest,
                                 utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                                 http::ResponseCode code);
 
@@ -18,7 +18,8 @@ class ErrorProcessor : public AResponseProcessor {
     };
 
   public:
-    ErrorProcessor(const Server& server, utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
+    ErrorProcessor(RequestDestination dest,
+                   utils::unique_ptr<http::IResponseCallback> response_rdy_cb,
                    http::ResponseCode code);
 };
 
