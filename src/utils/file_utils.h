@@ -39,6 +39,8 @@ bool CheckFileExtension(const std::string &file, const std::string &extention);
 
 maybe<std::string /*filename*/> CreateAndOpenTmpFileToStream(std::ofstream &fs);
 
+size_t GetFileSize(const char *path);
+
 enum DirEntryType {
     DE_FILE,
     DE_DIR
