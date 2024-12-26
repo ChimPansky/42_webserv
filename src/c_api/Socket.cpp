@@ -1,6 +1,7 @@
 #include "Socket.h"
 
 #include <fcntl.h>
+#include <logger.h>
 #include <netinet/in.h>
 #include <unistd.h>
 
@@ -61,6 +62,10 @@ RecvPackage Socket::Recv(size_t read_size) const
 
 SockStatus Socket::Send(SendPackage& pack) const
 {
+    if (pack.AllDataSent()) {
+        LOG(WARNING) << "redundant Send call";
+        return RS_OK;
+    }
     ssize_t bytes_sent = ::send(sockfd_, pack.buf.data() + pack.bytes_sent,
                                 pack.buf.size() - pack.bytes_sent, MSG_NOSIGNAL);
     if (bytes_sent > 0) {
@@ -68,6 +73,18 @@ SockStatus Socket::Send(SendPackage& pack) const
         return RS_OK;
     }
     return (bytes_sent == 0 ? RS_SOCK_CLOSED : RS_SOCK_ERR);
+}
+
+SockStatus Socket::Send(SendFilePackage& pack) const
+{
+    if (pack.AllDataSent()) {
+        LOG(WARNING) << "redundant Send call";
+        return RS_OK;
+    }
+    if (!pack.PrepareNextChunk()) {
+        return RS_SOCK_ERR;
+    }
+    return Send(pack.chunk());
 }
 
 utils::maybe<Socket::SocketPair> Socket::CreateLocalNonblockSocketPair()
@@ -81,5 +98,49 @@ utils::maybe<Socket::SocketPair> Socket::CreateLocalNonblockSocketPair()
     return std::make_pair(utils::unique_ptr<Socket>(new Socket(socket_fds[0])),
                           utils::unique_ptr<Socket>(new Socket((socket_fds[1]))));
 }
+
+SendFilePackage::SendFilePackage(const char* path) : chunk_(SOCK_SEND_FILE_BUF_SZ), bytes_sent_(0)
+{
+    ifs_.open(path, std::ios::binary);
+}
+
+utils::unique_ptr<SendFilePackage> SendFilePackage::TryCreate(const char* path)
+{
+    utils::unique_ptr<SendFilePackage> pack(new SendFilePackage(path));
+    if (pack->ifs_.is_open()) {
+        return pack;
+    }
+    LOG(ERROR) << "Cannot open file for package: " << path;
+    return utils::unique_ptr<SendFilePackage>();
+}
+
+bool SendFilePackage::PrepareNextChunk()
+{
+    if (!chunk_.AllDataSent()) {
+        return true;
+    }
+    bytes_sent_ += chunk_.bytes_sent;
+    if (ifs_.eof()) {
+        chunk_.buf.clear();
+        chunk_.bytes_sent = 0;
+        return true;
+    }
+    chunk_.buf.resize(SOCK_SEND_FILE_BUF_SZ);
+    ifs_.read(chunk_.buf.data(), SOCK_SEND_FILE_BUF_SZ);
+    ssize_t read_size = ifs_.gcount();
+    if (read_size < 0) {
+        LOG(ERROR) << "Error reading file";
+        return false;
+    }
+    chunk_.buf.resize(read_size);
+    chunk_.bytes_sent = 0;
+    return true;
+}
+
+bool SendFilePackage::AllDataSent() const
+{
+    return ifs_.eof() && chunk_.AllDataSent();
+}
+
 
 }  // namespace c_api

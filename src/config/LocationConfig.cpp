@@ -90,9 +90,9 @@ const std::string& LocationConfig::upload_dir() const
 std::pair<int /*status_code*/, std::string /*new_route*/> LocationConfig::InitRedirect(
     const std::pair<int, std::string>& value)
 {
-    if (value.first == 0) {
+    if (value.second.empty()) {
         return value;
-    } else if (value.first < 300 || value.first > 399) {
+    } else if (value.first < 100 || value.first > 599) {
         throw std::runtime_error("Invalid configuration file: invalid redirect status code.");
     }
     return value;

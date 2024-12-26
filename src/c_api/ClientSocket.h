@@ -22,6 +22,7 @@ class ClientSocket {
     const sockaddr_in& addr_in() const { return addr_in_; };
     RecvPackage Recv(size_t read_size = SOCK_READ_BUF_SZ) const { return sock_.Recv(read_size); }
     SockStatus Send(SendPackage& pack) const { return sock_.Send(pack); };
+    SockStatus Send(SendFilePackage& pack) const { return sock_.Send(pack); };
 
   private:
     Socket sock_;

@@ -4,9 +4,11 @@
 #include <maybe.h>
 #include <unique_ptr.h>
 
+#include <fstream>
 #include <vector>
 
 #define SOCK_READ_BUF_SZ 8192ul
+#define SOCK_SEND_FILE_BUF_SZ 8192ul
 
 namespace c_api {
 
@@ -22,13 +24,32 @@ struct RecvPackage {
     size_t data_size;
 };
 
-// TODO: imagine copying rs body 3 times till it reaches this point
-//  probably send headers and body separately, and buf is unique ptr to vector
 struct SendPackage {
     SendPackage(std::vector<char> content) : buf(content), bytes_sent(0) {}
+    SendPackage(size_t buflen) : buf(), bytes_sent(0) { buf.reserve(buflen); }
     bool AllDataSent() const { return buf.size() == bytes_sent; }
     std::vector<char> buf;
     size_t bytes_sent;
+};
+
+class SendFilePackage {
+  private:
+    SendFilePackage(const char* path);
+
+  public:
+    static utils::unique_ptr<SendFilePackage> TryCreate(const char* path);
+
+    bool PrepareNextChunk();
+
+    SendPackage& chunk() { return chunk_; }
+    size_t bytes_sent() { return bytes_sent_; }
+
+    bool AllDataSent() const;
+
+  private:
+    SendPackage chunk_;
+    std::ifstream ifs_;
+    size_t bytes_sent_;
 };
 
 enum SockType {
@@ -51,6 +72,7 @@ class Socket {
 
     RecvPackage Recv(size_t max_read_sz = SOCK_READ_BUF_SZ) const;
     SockStatus Send(SendPackage&) const;
+    SockStatus Send(SendFilePackage& pack) const;
 
     typedef std::pair<utils::unique_ptr<Socket>, utils::unique_ptr<Socket> > SocketPair;
     static utils::maybe<SocketPair> CreateLocalNonblockSocketPair();
