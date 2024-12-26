@@ -114,6 +114,8 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
 {
     // TODO: add redirect processor
     if (!rq_dest.loc->redirect().second.empty()) {
+        LOG(DEBUG) << "Location returns " << rq_dest.loc->redirect().first
+                   << " -> Process redirection ";
         return utils::unique_ptr<AResponseProcessor>(
             new RedirectProcessor(rq_dest, cb, http::ResponseCode(rq_dest.loc->redirect().first),
                                   rq_dest.loc->redirect().second));
