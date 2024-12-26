@@ -46,7 +46,7 @@ class CGIProcessor : public AResponseProcessor {
     };
 
   private:
-    void ProceedWithResponse();
+    void ProceedWithRsIfRdy();
 
 
   private:

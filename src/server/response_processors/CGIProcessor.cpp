@@ -80,7 +80,7 @@ CGIProcessor::~CGIProcessor()
     }
 }
 
-void CGIProcessor::ProceedWithResponse()
+void CGIProcessor::ProceedWithRsIfRdy()
 {
     if (state_ != CGI_READY_TO_PROCEED) {
         return;
@@ -118,7 +118,7 @@ void CGIProcessor::ReadChildOutputCallback::Call(int fd)
         LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes\n";
         processor_.state_ |= CGI_CHILD_OUTPUT_READ;
         c_api::EventManager::DeleteCallback(processor_.child_process_description_->sock().sockfd());
-        processor_.ProceedWithResponse();
+        processor_.ProceedWithRsIfRdy();
     }
 }
 
@@ -133,5 +133,5 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
         return;
     }
     processor_.state_ |= CGI_CHILD_EXITED;
-    processor_.ProceedWithResponse();
+    processor_.ProceedWithRsIfRdy();
 }
