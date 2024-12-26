@@ -24,8 +24,6 @@ struct RecvPackage {
     size_t data_size;
 };
 
-// TODO: imagine copying rs body 3 times till it reaches this point
-//  probably send headers and body separately, and buf is unique ptr to vector
 struct SendPackage {
     SendPackage(std::vector<char> content) : buf(content), bytes_sent(0) {}
     SendPackage(size_t buflen) : buf(), bytes_sent(0) { buf.reserve(buflen); }

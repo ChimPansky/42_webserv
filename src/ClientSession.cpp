@@ -21,7 +21,7 @@ ClientSession::ClientSession(utils::unique_ptr<c_api::ClientSocket> sock, int ma
       rq_destination_(default_server),
       rq_builder_(utils::unique_ptr<http::IOnHeadersReadyCb>(new ChooseServerCb(*this))),
       connection_closed_(false),
-      read_state_(CS_READ)
+      session_state_(CS_READY_TO_RECV)
 {
     UpdateLastActivityTime_();
     if (!c_api::EventManager::TryRegisterCallback(
@@ -52,7 +52,7 @@ void ClientSession::ProcessNewData(c_api::RecvPackage& pack)
         LOG(DEBUG) << "ProcessNewData: Done reading Request ("
                    << ((rq_builder_.rq().status == http::HTTP_OK) ? "GOOD)" : "BAD)")
                    << " -> Accept on Server...";
-        read_state_ = CS_IGNORE;
+        session_state_ = CS_BUSY;
         LOG(DEBUG) << rq_builder_.rq().GetDebugString();
         // server returns rs with basic headers and status complete/body generation in process +
         // generator func
@@ -87,7 +87,12 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
 void ClientSession::ResponseSentCleanup(bool close_connection)
 {
     c_api::EventManager::DeleteCallback(client_sock_->sockfd(), c_api::CT_WRITE);
-    read_state_ = CS_READ;
+    session_state_ = CS_READY_TO_RECV;
+    // TODO: sp func to reset
+    rq_builder_.Reset();
+    response_processor_.reset();
+    rq_destination_.loc.reset();
+    rq_destination_.updated_path.clear();
     if (close_connection) {
         CloseConnection();
     }
@@ -134,7 +139,7 @@ http::HeadersValidationResult ClientSession::ChooseServerCb::Call(const http::Re
 void ClientSession::OnReadyToRecvFromClientCb::Call(int /*fd*/)
 {
     LOG(DEBUG) << "OnReadyToRecvFromClientCb::Call";
-    if (client_.read_state_ != CS_IGNORE) {
+    if (client_.session_state_ != CS_BUSY) {
         c_api::RecvPackage pack = client_.client_sock_->Recv();
         // what u gonna do with the closed connection in builder?
         LOG(DEBUG) << "RdCB::Call (not ignored) bytes_recvd: " << pack.data_size

@@ -29,7 +29,7 @@ FileProcessor::FileProcessor(RequestDestination dest,
 void FileProcessor::ProcessPost_()
 {
     LOG(INFO) << "Processing POST request for file: " << dest_.updated_path;
-    // todo: rename from /uploadfolder/.file.txt to /uploadfolder/file.txt
+    // TODO: rename from /uploadfolder/.file.txt to /uploadfolder/file.txt
     // if (std::rename(rq.body.c_str(), file_path.c_str()) != 0) {
     //     LOG(DEBUG) << "Upload of file " << file_path << " failed:";
     //     DelegateToErrProc(http::HTTP_CONFLICT);
@@ -66,9 +66,6 @@ void FileProcessor::ProcessGet_(const http::Request& rq)
                 std::string default_file = dest_.updated_path + loc.default_files()[i];
                 if (utils::DoesPathExist(default_file.c_str()) &&
                     utils::IsRegularFile(default_file.c_str())) {
-                    // delegated_processor_.reset(
-                    //     new RedirectProcessor(dest, response_rdy_cb_, http::HTTP_FOUND,
-                    //                           rq.rqTarget.path() + loc.default_files()[i]));
                     dest_.updated_path = default_file;
                     ProcessGet_(rq);
                     return;
@@ -88,18 +85,8 @@ void FileProcessor::ProcessGet_(const http::Request& rq)
         DelegateToErrProc(http::HTTP_NOT_FOUND);
         return;
     }
-    // std::ifstream file(dest_.updated_path.c_str(), std::ios::binary);
-    // if (!file.is_open()) {
-    //     LOG(ERROR) << "Requested file cannot be opened: " << dest_.updated_path;
-    //     DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
-    //     return;
-    // }
-    // std::vector<char> body =
-    //     std::vector<char>(std::istreambuf_iterator<char>(file),
-    //     std::istreambuf_iterator<char>());
     std::map<std::string, std::string> hdrs;
     hdrs["Content-Type"] = GetContentType_(dest_.updated_path);
-    // hdrs["Connection"] = "Close";
     hdrs["Content-Length"] = utils::NumericToString(utils::GetFileSize(dest_.updated_path.c_str()));
     response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
         new http::Response(http::HTTP_OK, http::HTTP_1_1, hdrs, dest_.updated_path)));
