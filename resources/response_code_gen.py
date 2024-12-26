@@ -62,9 +62,8 @@ def generate_files(input_file, header_file, source_file):
         cpp_file.write("    switch (rc) {\n")
         for code, enum_name, descr, _ in response_codes:
             cpp_file.write(f"        case {enum_name}: return \"{descr}\";\n")
+        cpp_file.write(f"        default: return \"UNKNOWN\";\n")
         cpp_file.write("    }\n")
-
-        cpp_file.write('    throw(std::logic_error("Unknown http response code"));\n')
         cpp_file.write("}\n")
     print(f"Generated {header_file} and {source_file} based on {input_file}.")
 
