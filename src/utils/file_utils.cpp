@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 #include "logger.h"
@@ -146,6 +147,15 @@ utils::maybe<std::string> CreateAndOpenTmpFileToStream(std::ofstream &fs)
         return maybe_not();
     }
     return tmp_name;
+}
+
+size_t GetFileSize(const char *path)
+{
+    struct stat info;
+    if (!IsRegularFile(path) || stat(path, &info) != 0) {
+        return 0;
+    }
+    return static_cast<size_t>(info.st_size);
 }
 
 }  // namespace utils

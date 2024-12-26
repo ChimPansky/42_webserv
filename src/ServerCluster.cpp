@@ -119,7 +119,7 @@ void ServerCluster::Run()
             instance_->KillAllClients_();
         }
         instance_->CheckClients_();
-        LOG(INFO) << utils::GetFormatedTime();
+        LOG(DEBUG) << utils::GetFormatedTime();
     }
 }
 
