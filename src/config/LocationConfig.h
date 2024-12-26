@@ -15,6 +15,7 @@ class LocationConfig {
   private:
     std::pair<int /*status_code*/, std::string /*new_route*/> InitRedirect(
         const std::pair<int, std::string>& value);
+    bool IsCgiLocation(const std::string& route) const;
 
   public:
     LocationConfig(const std::pair<std::string /*path*/, bool /*is_exact_match*/>& route,

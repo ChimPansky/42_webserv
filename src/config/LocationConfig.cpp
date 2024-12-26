@@ -2,7 +2,7 @@
 
 namespace config {
 
-bool IsCgiLocation(const std::string& route)
+bool LocationConfig::IsCgiLocation(const std::string& route) const
 {
     const std::string cgi_prefix = "/cgi-bin/";
 
