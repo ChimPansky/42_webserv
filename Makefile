@@ -1,34 +1,92 @@
-ROOT_NAME = webserv
-NAME = ./build/$(ROOT_NAME)
-DEFAULT_CONF = ./conf/webserv.conf
+NAME = webserv
 
-CMAKE_ARGS = -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
-CMAKE_BUILD_TYPE_ARG ?= Debug
-CMAKE = cmake $(CMAKE_ARGS) -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE_ARG)
+all: $(NAME)
 
-all: $(NAME) bonus
+SOURCE_DIR = src
+BUILD_DIR = build
 
-$(NAME): build
+CXX = c++
+CXXFLAGS = -Wall -Werror -Wextra -Wpedantic
+# CXXFLAGS += -g -Og #-fsanitize=address,undefined,leak
 
-bonus:
-	@echo no bonus yet
+IFLAGS = \
+	-I./src/c_api \
+	-I./src/config \
+	-I./src/http \
+	-I./src/server \
+	-I./src/utils
 
-build:
-	$(CMAKE) -S . -B ./build && make -j -C ./build
-	ln -fs $(NAME) $(ROOT_NAME)
+# LFLAGS =
 
-run: build
-	$(NAME) $(DEFAULT_CONF)
+WS_FILENAMES = \
+	main.cpp \
+	c_api/multiplexers/EpollMultiplexer.cpp \
+	c_api/multiplexers/PollMultiplexer.cpp \
+	c_api/multiplexers/SelectMultiplexer.cpp \
+	c_api/multiplexers/AMultiplexer.cpp \
+	c_api/EventManager.cpp \
+	c_api/ClientSocket.cpp \
+	c_api/Socket.cpp \
+	c_api/c_api_utils.cpp \
+	c_api/ChildProcessesManager.cpp \
+	c_api/MasterSocket.cpp \
+	http/cgi/cgi.cpp \
+	http/ResponseCodes.cpp \
+	http/http.cpp \
+	http/RqTarget.cpp \
+	http/SyntaxChecker.cpp \
+	http/RequestParser.cpp \
+	http/RequestBuilder.cpp \
+	http/Request.cpp \
+	http/Response.cpp \
+	utils/errors.cpp \
+	utils/time_utils.cpp \
+	utils/file_utils.cpp \
+	utils/str_utils.cpp \
+	utils/rand.cpp \
+	utils/logger.cpp \
+	config/ParsedConfig.cpp \
+	config/InheritedSettings.cpp \
+	config/Config.cpp \
+	config/HttpConfig.cpp \
+	config/ServerConfig.cpp \
+	config/ServerConfigBuilder.cpp \
+	config/HttpConfigBuilder.cpp \
+	config/ConfigBuilder.cpp \
+	config/LocationConfig.cpp \
+	config/LocationConfigBuilder.cpp \
+	server/response_processors/DirectoryProcessor.cpp \
+	server/response_processors/ErrorProcessor.cpp \
+	server/response_processors/FileProcessor.cpp \
+	server/response_processors/RedirectProcessor.cpp \
+	server/response_processors/AResponseProcessor.cpp \
+	server/response_processors/CGIProcessor.cpp \
+	server/utils/utils.cpp \
+	server/Location.cpp \
+	server/Server.cpp \
+	ClientSession.cpp \
+	ServerCluster.cpp
+
+SRC = $(addprefix $(SOURCE_DIR)/,$(WS_FILENAMES))
+OBJ = $(SRC:%.cpp=$(BUILD_DIR)/%.o)
+DEP = $(OBJ:%.o=%.d)
+
+$(NAME): $(OBJ)
+	$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME) $(LFLAGS)
+	@echo "Executable $(NAME) created!"
+
+$(BUILD_DIR)/%.o : %.cpp
+	mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(IFLAGS) -MMD -c $< -o $@
+
+-include $(DEP)
 
 clean:
-	find ./build/ -mindepth 1 -maxdepth 1 ! -name '_deps' ! -name $(ROOT_NAME) -exec rm -rf {} +
+	rm -fr $(BUILD_DIR)
 
-fclean:
-	rm -rf ./build $(ROOT_NAME)
+fclean: clean
+	rm -f $(NAME)
 
-re: clean all
+re: fclean all
 
-test: build
-	cd build && ctest
-
-.PHONY: all bonus build run clean fclean re test
+.PHONY: all clean fclean re test
