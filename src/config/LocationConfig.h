@@ -20,7 +20,6 @@ class LocationConfig {
     LocationConfig(const std::pair<std::string /*path*/, bool /*is_exact_match*/>& route,
                    const std::vector<http::Method>& allowed_methods,
                    const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect,
-                   const std::vector<std::string>& cgi_paths,
                    const std::vector<std::string>& cgi_extensions, const std::string& alias_dir,
                    const std::vector<std::string>& default_files, bool dir_listing,
                    unsigned int client_max_body_size, const std::string& upload_dir);
@@ -29,7 +28,6 @@ class LocationConfig {
     const std::vector<http::Method>& allowed_methods() const;
     const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect() const;
     bool is_cgi() const;
-    const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
     const std::string& alias_dir() const;
     const std::vector<std::string>& default_files() const;
@@ -51,12 +49,6 @@ class LocationConfig {
         default_methods.push_back(http::HTTP_GET);
         return default_methods;
     }
-    static inline std::vector<std::string> kDefaultCgiPath()
-    {
-        std::vector<std::string> default_cgi_paths;
-        default_cgi_paths.push_back("/cgi-bin/");
-        return default_cgi_paths;
-    }
     static inline std::vector<std::string> kDefaultCgiExtensions()
     {
         std::vector<std::string> default_cgi_extensions;
@@ -76,7 +68,6 @@ class LocationConfig {
     std::vector<http::Method> allowed_methods_;
     std::pair<int /*status_code*/, std::string /*new_route*/> redirect_;
     bool is_cgi_;
-    std::vector<std::string> cgi_paths_;
     std::vector<std::string> cgi_extensions_;
     std::string alias_dir_;
     std::vector<std::string> default_files_;

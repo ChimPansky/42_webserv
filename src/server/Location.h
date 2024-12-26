@@ -16,7 +16,6 @@ class Location {
     const std::vector<http::Method>& allowed_methods() const;
     const std::pair<int /*status_code*/, std::string /*new_route*/>& redirect() const;
     bool is_cgi() const;
-    const std::vector<std::string>& cgi_paths() const;
     const std::vector<std::string>& cgi_extensions() const;
     const std::string& alias_dir() const;
     const std::vector<std::string>& default_files() const;
@@ -31,7 +30,6 @@ class Location {
     std::vector<http::Method> allowed_methods_;
     std::pair<int /*status_code*/, std::string /*new_route*/> redirect_;
     bool is_cgi_;
-    std::vector<std::string> cgi_paths_;
     std::vector<std::string> cgi_extensions_;
     std::string alias_dir_;
     std::vector<std::string> default_files_;

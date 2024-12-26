@@ -26,13 +26,14 @@ bool IsDirectory(const char *path);
 
 bool IsRegularFile(const char *path);
 
+bool TryChangeDir(const char *path);
+
 utils::maybe<std::string> ReadFileToString(const char *filePath);
 
 inline utils::maybe<std::string> ReadFileToString(const std::string &filePath)
 {
     return ReadFileToString(filePath.c_str());
 }
-
 
 bool CheckFileExtension(const std::string &file, const std::string &extention);
 
@@ -64,6 +65,8 @@ class DirEntry {
 };
 
 utils::maybe<std::vector<DirEntry> > GetDirEntries(const char *directory);
+
+bool CloseProcessFdsButStd();
 
 }  // namespace utils
 

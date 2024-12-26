@@ -21,6 +21,11 @@ ErrorProcessor::ErrorProcessor(RequestDestination dest,
         delegated_processor_.reset(new GeneratedErrorProcessor(dest, response_rdy_cb_, code));
         return;
     }
+    if (!utils::IsRegularFile(file_path.c_str())) {
+        LOG(ERROR) << "Error (" << code << ") page file is not a regular file: " << file_path;
+        delegated_processor_.reset(new GeneratedErrorProcessor(dest, response_rdy_cb_, code));
+        return;
+    }
     std::ifstream file(file_path.c_str(), std::ios::binary);
     if (!file.is_open()) {
         LOG(DEBUG) << "Error (" << code << ") page file cannot be opened: " << file_path;

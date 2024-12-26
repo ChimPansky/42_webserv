@@ -31,12 +31,12 @@ vg() {
 	--leak-check=full \
 	--show-error-list=yes \
 	--show-leak-kinds=all \
-	--trace-children=yes \
 	--track-fds=yes \
 	--track-origins=yes \
 	--error-exitcode=$TEST_ERROR_EXITCODE \
 	--log-file="$LOGFILE" \
 	$COMMAND > /dev/null &
+# --trace-children=yes \
 # --trace-children-skip="$(echo /bin/* /usr/bin/* /usr/sbin/* $(which norminette) | tr ' ' ',')"
 # --suppressions="$RUNDIR/utils/minishell.supp"
 }

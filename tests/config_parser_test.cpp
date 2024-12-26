@@ -97,7 +97,6 @@ TEST(ConfigTest, LoadValidConfig)
                     EXPECT_EQ(location_conf.upload_dir(), "");
                 } else if (location_conf.route().first == "/cgi-bin/") {
                     EXPECT_EQ(location_conf.alias_dir(), "/cgi-bin");
-                    EXPECT_EQ(location_conf.cgi_paths()[0], "/cgi-bin");
                     EXPECT_EQ(location_conf.cgi_extensions()[0], ".php");
                     EXPECT_EQ(location_conf.cgi_extensions()[1], ".py");
                     EXPECT_EQ(location_conf.client_max_body_size(), 1 << 20);

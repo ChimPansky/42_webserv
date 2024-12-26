@@ -11,9 +11,6 @@ namespace {
 // TODO convertion from addrin to addr here is technically a UB
 void BindAndListen(c_api::Socket& sock, struct sockaddr_in& addr_in)
 {
-    if (!sock.TrySetFlags(SOCK_NONBLOCK | SOCK_CLOEXEC)) {
-        throw std::runtime_error("cannot set socket flags");
-    }
     int optval = 1;
     ::setsockopt(sock.sockfd(), SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     // bind socket to ip address and port
