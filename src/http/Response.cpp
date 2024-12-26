@@ -12,6 +12,12 @@ Response::Response(ResponseCode code, http::Version version,
     : code_(code), version_(version), headers_(headers), body_(body)
 {}
 
+Response::Response(ResponseCode code, http::Version version,
+                   const std::map<std::string, std::string>& headers,
+                   const std::string& body_file_path)
+    : code_(code), version_(version), headers_(headers), body_file_path_(body_file_path)
+{}
+
 std::vector<char> Response::Dump() const
 {
     std::string str_dump;
@@ -36,7 +42,7 @@ std::vector<char> Response::Dump() const
     return dump;
 }
 
-std::string Response::DumpToStr() const
+std::string Response::GetDebugString() const
 {
     std::string str_dump;
     str_dump += http::HttpVerToStr(version_);
@@ -53,7 +59,16 @@ std::string Response::DumpToStr() const
         str_dump += http::kCRLF();
     }
     str_dump += http::kCRLF();
-    // std::copy(body_.begin(), body_.end(), std::back_inserter(str_dump));
+    if (!body_.empty()) {
+        str_dump += "has body of size: ";
+        str_dump += utils::NumericToString(body_.size());
+        str_dump += http::kCRLF();
+    }
+    if (body_file_path_) {
+        str_dump += "body is in a file: ";
+        str_dump += *body_file_path_;
+        str_dump += http::kCRLF();
+    }
     return str_dump;
 }
 

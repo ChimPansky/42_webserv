@@ -74,11 +74,11 @@ void ClientSession::PrepareResponse(utils::unique_ptr<http::Response> rs)
         rs->headers().find("Connection");  // TODO add find header case-independent
     bool close_connection = (conn_it != rs->headers().end() && conn_it->second == "Close");
     LOG(DEBUG) << "Sending rs from ClientSession with fd " << this->client_sock_->sockfd();
-    LOG(DEBUG) << "Response:\n" << rs->DumpToStr();
+    LOG(DEBUG) << "Response:\n" << rs->GetDebugString();
     if (!c_api::EventManager::TryRegisterCallback(
             client_sock_->sockfd(), c_api::CT_WRITE,
-            utils::unique_ptr<c_api::ICallback>(
-                new OnReadyToSendToClientCb(*this, rs->Dump(), close_connection)))) {
+            utils::unique_ptr<c_api::ICallback>(new OnReadyToSendToClientCb(
+                *this, rs->Dump(), rs->body_file_path(), close_connection)))) {
         LOG(ERROR) << "Could not register write callback for client: " << client_sock_->sockfd();
         CloseConnection();
     }
@@ -151,27 +151,51 @@ void ClientSession::OnReadyToRecvFromClientCb::Call(int /*fd*/)
     }
 }
 
-ClientSession::OnReadyToSendToClientCb::OnReadyToSendToClientCb(ClientSession& client,
-                                                                std::vector<char> content,
-                                                                bool close_connection)
+ClientSession::OnReadyToSendToClientCb::OnReadyToSendToClientCb(
+    ClientSession& client, std::vector<char> content, const utils::maybe<std::string>& file_body,
+    bool close_connection)
     : client_(client), pack_(content), close_after_sending_rs_(close_connection)
-{}
+{
+    if (file_body) {
+        file_pack_ = c_api::SendFilePackage::TryCreate(file_body->c_str());
+        LOG_IF(ERROR, !file_pack_) << "Cannot create file package";
+    }
+}
 
 void ClientSession::OnReadyToSendToClientCb::Call(int /*fd*/)
 {
     LOG(DEBUG) << "OnReadyToSendToClientCb::Call";
-    c_api::SockStatus status = client_.client_sock_->Send(pack_);
-    if (status != c_api::RS_OK) {
-        LOG_IF(ERROR, status == c_api::RS_SOCK_ERR)
-            << "Error on send: " << utils::GetSystemErrorDescr();
-        client_.CloseConnection();
-        return;
-    }
     client_.UpdateLastActivityTime_();
-    if (pack_.AllDataSent()) {
-        LOG(INFO) << pack_.bytes_sent << " bytes sent into " << client_.client_sock_->sockfd();
-        client_.ResponseSentCleanup(close_after_sending_rs_);
+    if (!pack_.AllDataSent()) {
+        c_api::SockStatus status = client_.client_sock_->Send(pack_);
+        if (status != c_api::RS_OK) {
+            LOG_IF(ERROR, status == c_api::RS_SOCK_ERR)
+                << "Error on send: " << utils::GetSystemErrorDescr();
+            client_.CloseConnection();
+            return;
+        }
+        if (!pack_.AllDataSent()) {
+            return;
+        } else {
+            LOG(INFO) << pack_.bytes_sent << " bytes sent into " << client_.client_sock_->sockfd();
+        }
     }
+    if (file_pack_ && !file_pack_->AllDataSent()) {
+        c_api::SockStatus status = client_.client_sock_->Send(*file_pack_);
+        if (status != c_api::RS_OK) {
+            LOG_IF(ERROR, status == c_api::RS_SOCK_ERR)
+                << "Error on send: " << utils::GetSystemErrorDescr();
+            client_.CloseConnection();
+            return;
+        }
+        if (!file_pack_->AllDataSent()) {
+            return;
+        } else {
+            LOG(INFO) << file_pack_->bytes_sent() << " bytes sent into "
+                      << client_.client_sock_->sockfd();
+        }
+    }
+    client_.ResponseSentCleanup(close_after_sending_rs_);
 }
 
 void ClientSession::ClientProceedWithResponseCallback::Call(utils::unique_ptr<http::Response> rs)
