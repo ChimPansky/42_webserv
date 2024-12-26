@@ -29,7 +29,7 @@ ErrorProcessor::ErrorProcessor(RequestDestination dest,
     std::map<std::string, std::string> hdrs;
     hdrs["Content-Type"] = "text/html";
     hdrs["Connection"] = "Close";
-    hdrs["Content-Length"] = utils::NumericToString(utils::GetFileSize(file_path.c_str()) - 1);
+    hdrs["Content-Length"] = utils::NumericToString(utils::GetFileSize(file_path.c_str()));
     response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
         new http::Response(code, http::HTTP_1_1, hdrs, file_path)));
 }

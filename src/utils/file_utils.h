@@ -9,8 +9,7 @@
 #include "time_utils.h"
 
 #define TMP_FILE_NAME_LEN 20
-// todo move to config?
-#define TMP_DIR "./tmp/"
+#define TMP_DIR "/tmp/"
 
 namespace utils {
 

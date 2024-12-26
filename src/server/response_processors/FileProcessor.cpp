@@ -100,8 +100,7 @@ void FileProcessor::ProcessGet_(const http::Request& rq)
     std::map<std::string, std::string> hdrs;
     hdrs["Content-Type"] = GetContentType_(dest_.updated_path);
     // hdrs["Connection"] = "Close";
-    hdrs["Content-Length"] =
-        utils::NumericToString(utils::GetFileSize(dest_.updated_path.c_str()) - 1);
+    hdrs["Content-Length"] = utils::NumericToString(utils::GetFileSize(dest_.updated_path.c_str()));
     response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
         new http::Response(http::HTTP_OK, http::HTTP_1_1, hdrs, dest_.updated_path)));
 }
