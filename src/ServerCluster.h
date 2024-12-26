@@ -31,8 +31,6 @@ class ServerCluster {
     void CheckClients_() throw();
     void KillAllClients_() throw();  // easy strat for bad_alloc
 
-    static int kKeepAliveTimeoutS() { return 10; };
-
   private:
     class MasterSocketCallback : public c_api::ICallback {
       public:
@@ -58,6 +56,8 @@ class ServerCluster {
     // Clients
     std::map<int /*fd*/, utils::unique_ptr<ClientSession> > clients_;
     typedef std::map<int, utils::unique_ptr<ClientSession> >::iterator client_iterator;
+
+    unsigned keep_alive_timeout_s_;
 
   private:
     static volatile sig_atomic_t run_;

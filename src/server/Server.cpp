@@ -13,6 +13,7 @@
 #include "response_processors/CGIProcessor.h"
 #include "response_processors/ErrorProcessor.h"
 #include "response_processors/FileProcessor.h"
+#include "response_processors/RedirectProcessor.h"
 
 Server::Server(const config::ServerConfig& cfg, std::map<int, std::string> error_pages)
     : access_log_path_(cfg.access_log_path()),
@@ -85,6 +86,8 @@ std::pair<utils::shared_ptr<Location>, LocationType> Server::ChooseLocation(
     }
     if (!matched_location) {
         type = NO_LOCATION;
+    } else if (!matched_location->redirect().second.empty()) {
+        type = REDIRECT;
     } else if (matched_location->is_cgi()) {
         type = CGI;
     } else {
@@ -109,8 +112,13 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     const http::Request& rq, const RequestDestination& rq_dest,
     utils::unique_ptr<http::IResponseCallback> cb) const
 {
-    // TODO: add redirect processor
-    if (rq_dest.loc->is_cgi()) {
+    if (!rq_dest.loc->redirect().second.empty()) {
+        LOG(DEBUG) << "Location returns " << rq_dest.loc->redirect().first
+                   << " -> Process redirection ";
+        return utils::unique_ptr<AResponseProcessor>(
+            new RedirectProcessor(rq_dest, cb, http::ResponseCode(rq_dest.loc->redirect().first),
+                                  rq_dest.loc->redirect().second));
+    } else if (rq_dest.loc->is_cgi()) {
         LOG(DEBUG) << "Location starts with bin/cgi -> Process CGI";
         return utils::unique_ptr<AResponseProcessor>(new CGIProcessor(rq_dest, cb, rq));
     } else {

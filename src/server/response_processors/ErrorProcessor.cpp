@@ -21,25 +21,17 @@ ErrorProcessor::ErrorProcessor(RequestDestination dest,
         delegated_processor_.reset(new GeneratedErrorProcessor(dest, response_rdy_cb_, code));
         return;
     }
-    if (!utils::IsRegularFile(file_path.c_str())) {
-        LOG(ERROR) << "Error (" << code << ") page file is not a regular file: " << file_path;
-        delegated_processor_.reset(new GeneratedErrorProcessor(dest, response_rdy_cb_, code));
-        return;
-    }
-    std::ifstream file(file_path.c_str(), std::ios::binary);
-    if (!file.is_open()) {
+    if (!utils::IsRegularFile(file_path.c_str()) || !utils::IsReadable(file_path.c_str())) {
         LOG(DEBUG) << "Error (" << code << ") page file cannot be opened: " << file_path;
         delegated_processor_.reset(new GeneratedErrorProcessor(dest, response_rdy_cb_, code));
         return;
     }
-    std::vector<char> body =
-        std::vector<char>(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     std::map<std::string, std::string> hdrs;
     hdrs["Content-Type"] = "text/html";
     hdrs["Connection"] = "Close";
-    hdrs["Content-Length"] = utils::NumericToString(body.size());
-    response_rdy_cb_->Call(
-        utils::unique_ptr<http::Response>(new http::Response(code, http::HTTP_1_1, hdrs, body)));
+    hdrs["Content-Length"] = utils::NumericToString(utils::GetFileSize(file_path.c_str()));
+    response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
+        new http::Response(code, http::HTTP_1_1, hdrs, file_path)));
 }
 
 ErrorProcessor::GeneratedErrorProcessor::GeneratedErrorProcessor(

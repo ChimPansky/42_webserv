@@ -39,12 +39,14 @@ class ClientSession {
     class OnReadyToSendToClientCb : public c_api::ICallback {
       public:
         OnReadyToSendToClientCb(ClientSession& client, std::vector<char> buf,
+                                const utils::maybe<std::string>& file_to_send,
                                 bool close_after_sending_rs_);
         virtual void Call(int);
 
       private:
         ClientSession& client_;
         c_api::SendPackage pack_;
+        utils::unique_ptr<c_api::SendFilePackage> file_pack_;
         bool close_after_sending_rs_;
     };
 
@@ -66,10 +68,9 @@ class ClientSession {
         ClientSession& client_;
     };
 
-    // TODO (vilvl) refact somehow, ignore state is invalid
-    enum CsState {
-        CS_READ,
-        CS_IGNORE
+    enum ClientSessionState {
+        CS_READY_TO_RECV,
+        CS_BUSY
     };
 
   public:
@@ -90,7 +91,7 @@ class ClientSession {
     utils::unique_ptr<AResponseProcessor> response_processor_;
     http::RequestBuilder rq_builder_;
     bool connection_closed_;
-    CsState read_state_;
+    ClientSessionState session_state_;
     UnixTimestampS last_activity_time_;
 };
 

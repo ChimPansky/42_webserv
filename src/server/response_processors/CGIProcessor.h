@@ -12,10 +12,10 @@
 #include "AResponseProcessor.h"
 
 enum CgiState {
-    CS_CHILD_OUTPUT_READ = 1,
-    CS_CHILD_EXITED = 2,
-    CS_READY_TO_PROCEED = CS_CHILD_EXITED | CS_CHILD_OUTPUT_READ,
-    CS_DONE = 4 | CS_READY_TO_PROCEED
+    CGI_CHILD_OUTPUT_READ = 1,
+    CGI_CHILD_EXITED = 2,
+    CGI_READY_TO_PROCEED = CGI_CHILD_EXITED | CGI_CHILD_OUTPUT_READ,
+    CGI_DONE = 4 | CGI_READY_TO_PROCEED
 };
 
 class CGIProcessor : public AResponseProcessor {
@@ -36,8 +36,6 @@ class CGIProcessor : public AResponseProcessor {
     };
 
   private:
-    // TODO: client session closed before cb is invoked
-    // dont include proc mb, make it autonomus
     class ChildProcessDoneCb : public c_api::IChildDiedCb {
       public:
         ChildProcessDoneCb(CGIProcessor& processor) : processor_(processor) {}

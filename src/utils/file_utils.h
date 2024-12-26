@@ -9,8 +9,7 @@
 #include "time_utils.h"
 
 #define TMP_FILE_NAME_LEN 20
-// todo move to config?
-#define TMP_DIR "./tmp/"
+#define TMP_DIR "/tmp/"
 
 namespace utils {
 
@@ -38,6 +37,8 @@ inline utils::maybe<std::string> ReadFileToString(const std::string &filePath)
 bool CheckFileExtension(const std::string &file, const std::string &extention);
 
 maybe<std::string /*filename*/> CreateAndOpenTmpFileToStream(std::ofstream &fs);
+
+size_t GetFileSize(const char *path);
 
 enum DirEntryType {
     DE_FILE,

@@ -66,6 +66,7 @@ CGIProcessor::CGIProcessor(RequestDestination dest,
             utils::unique_ptr<c_api::ICallback>(new ReadChildOutputCallback(*this)))) {
         LOG(ERROR) << "Could not register CGI read callback";
         c_api::ChildProcessesManager::KillChildProcess(child_process_description_->pid());
+        child_process_description_.reset();
         DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
@@ -81,10 +82,12 @@ CGIProcessor::~CGIProcessor()
 
 void CGIProcessor::ProceedWithRsIfRdy()
 {
-    if (state_ != CS_READY_TO_PROCEED) {
+    if (state_ != CGI_READY_TO_PROCEED) {
         return;
     }
-    state_ = CS_DONE;
+    state_ = CGI_DONE;
+    // TODO: refact
+    child_process_description_.reset();
     utils::maybe<utils::unique_ptr<http::Response> > rs = cgi::ParseCgiResponse(cgi_out_buffer_);
     if (!rs) {
         LOG(ERROR) << "Invalid cgi output";
@@ -101,13 +104,20 @@ void CGIProcessor::ReadChildOutputCallback::Call(int fd)
     c_api::RecvPackage pack = processor_.child_process_description_->sock().Recv();
     if (pack.status == c_api::RS_SOCK_ERR) {
         LOG(ERROR) << "error on recv" << utils::GetSystemErrorDescr();
+        // TODO: refact
+        c_api::EventManager::DeleteCallback(processor_.child_process_description_->sock().sockfd());
+        c_api::ChildProcessesManager::KillChildProcess(
+            processor_.child_process_description_->pid());
+        processor_.child_process_description_.reset();
+        processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     } else if (pack.status == c_api::RS_OK) {
         buf.reserve(buf.size() + pack.data_size);
         std::copy(pack.data, pack.data + pack.data_size, std::back_inserter(buf));
     } else if (pack.status == c_api::RS_SOCK_CLOSED) {
         LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes\n";
-        processor_.state_ |= CS_CHILD_OUTPUT_READ;
+        processor_.state_ |= CGI_CHILD_OUTPUT_READ;
+        c_api::EventManager::DeleteCallback(processor_.child_process_description_->sock().sockfd());
         processor_.ProceedWithRsIfRdy();
     }
 }
@@ -116,9 +126,12 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
 {
     if (child_exit_status != EXIT_SUCCESS) {
         LOG(ERROR) << "CGI child process failed";
+        // TODO: refact
+        c_api::EventManager::DeleteCallback(processor_.child_process_description_->sock().sockfd());
+        processor_.child_process_description_.reset();
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    processor_.state_ |= CS_CHILD_EXITED;
+    processor_.state_ |= CGI_CHILD_EXITED;
     processor_.ProceedWithRsIfRdy();
 }
