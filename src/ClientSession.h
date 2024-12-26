@@ -66,7 +66,6 @@ class ClientSession {
         ClientSession& client_;
     };
 
-    // TODO (vilvl) refact somehow, ignore state is invalid
     enum ClientSessionState {
         CS_READY_TO_RECV,
         CS_BUSY
