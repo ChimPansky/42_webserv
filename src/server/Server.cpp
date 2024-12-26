@@ -112,7 +112,6 @@ utils::unique_ptr<AResponseProcessor> Server::GetResponseProcessor(
     const http::Request& rq, const RequestDestination& rq_dest,
     utils::unique_ptr<http::IResponseCallback> cb) const
 {
-    // TODO: add redirect processor
     if (!rq_dest.loc->redirect().second.empty()) {
         LOG(DEBUG) << "Location returns " << rq_dest.loc->redirect().first
                    << " -> Process redirection ";
