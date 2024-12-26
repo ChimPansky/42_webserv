@@ -287,11 +287,14 @@ ResponseCode RequestBuilder::InterpretHeaders_()
         body_builder_.remaining_length = *content_length_num;
         rq_has_body_ = true;
     }
-    if (rq_.method == HTTP_POST && !content_length && !transfer_encoding) {
-        LOG(INFO) << "POST request without Content-Length or Transfer-Encoding";
+    if (rq_.method == HTTP_POST && !rq_has_body_) {
+        LOG(INFO) << "POST request without body";
         return HTTP_LENGTH_REQUIRED;
     }
-    // additional semantic checks...
+    if (rq_.method != HTTP_POST && rq_has_body_) {
+        LOG(INFO) << "GET/DELETE request with body";
+        return HTTP_BAD_REQUEST;
+    }
     return HTTP_OK;
 }
 
