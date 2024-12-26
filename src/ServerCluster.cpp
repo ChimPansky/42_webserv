@@ -50,6 +50,7 @@ void ServerCluster::CreateServers_(const config::Config& config)
             new Server(*serv_conf_it, config.http_config().error_pages())));
         MapListenersToServer_(serv_conf_it->listeners(), servers_.back());
     }
+    keep_alive_timeout_s_ = config.http_config().keepalive_timeout();
 }
 
 void ServerCluster::MapListenersToServer_(
@@ -135,7 +136,7 @@ void ServerCluster::CheckClients_() throw()
             clients_.erase(tmp);
             continue;
         }
-        if (now - client.last_activity_time() > kKeepAliveTimeoutS()) {
+        if (now - client.last_activity_time() > keep_alive_timeout_s_) {
             client.CloseConnection();
         }
         ++it;
@@ -177,6 +178,6 @@ void ServerCluster::FillResponseHeaders(http::Response& rs)
 {
     rs.AddHeader(std::make_pair("Server", kServerClusterName()));
     rs.AddHeader(std::make_pair("Date", utils::GetFormatedTime()));
-    rs.AddHeader(std::make_pair(
-        "Connection", "Close"));  // TODO fix or embrace (move to different place if embraced)
+    // rs.AddHeader(std::make_pair(
+    //     "Connection", "Close"));  // TODO fix or embrace (move to different place if embraced)
 }

@@ -81,10 +81,10 @@ CGIProcessor::~CGIProcessor()
 
 void CGIProcessor::ProceedWithResponse()
 {
-    if (state_ != CS_READY_TO_PROCEED) {
+    if (state_ != CGI_READY_TO_PROCEED) {
         return;
     }
-    state_ = CS_DONE;
+    state_ = CGI_DONE;
     utils::maybe<utils::unique_ptr<http::Response> > rs = cgi::ParseCgiResponse(cgi_out_buffer_);
     if (!rs) {
         LOG(ERROR) << "Invalid cgi output";
@@ -107,7 +107,7 @@ void CGIProcessor::ReadChildOutputCallback::Call(int fd)
         std::copy(pack.data, pack.data + pack.data_size, std::back_inserter(buf));
     } else if (pack.status == c_api::RS_SOCK_CLOSED) {
         LOG(INFO) << "Done reading CGI output, got " << buf.size() << " bytes\n";
-        processor_.state_ |= CS_CHILD_OUTPUT_READ;
+        processor_.state_ |= CGI_CHILD_OUTPUT_READ;
         processor_.ProceedWithResponse();
     }
 }
@@ -119,6 +119,6 @@ void CGIProcessor::ChildProcessDoneCb::Call(int child_exit_status)
         processor_.DelegateToErrProc(http::HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
-    processor_.state_ |= CS_CHILD_EXITED;
+    processor_.state_ |= CGI_CHILD_EXITED;
     processor_.ProceedWithResponse();
 }

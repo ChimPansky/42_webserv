@@ -12,10 +12,10 @@
 #include "AResponseProcessor.h"
 
 enum CgiState {
-    CS_CHILD_OUTPUT_READ = 1,
-    CS_CHILD_EXITED = 2,
-    CS_READY_TO_PROCEED = CS_CHILD_EXITED | CS_CHILD_OUTPUT_READ,
-    CS_DONE = 4 | CS_READY_TO_PROCEED
+    CGI_CHILD_OUTPUT_READ = 1,
+    CGI_CHILD_EXITED = 2,
+    CGI_READY_TO_PROCEED = CGI_CHILD_EXITED | CGI_CHILD_OUTPUT_READ,
+    CGI_DONE = 4 | CGI_READY_TO_PROCEED
 };
 
 class CGIProcessor : public AResponseProcessor {

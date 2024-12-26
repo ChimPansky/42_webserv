@@ -67,9 +67,9 @@ class ClientSession {
     };
 
     // TODO (vilvl) refact somehow, ignore state is invalid
-    enum CsState {
-        CS_READ,
-        CS_IGNORE
+    enum ClientSessionState {
+        CS_READY_TO_RECV,
+        CS_BUSY
     };
 
   public:
@@ -90,7 +90,7 @@ class ClientSession {
     utils::unique_ptr<AResponseProcessor> response_processor_;
     http::RequestBuilder rq_builder_;
     bool connection_closed_;
-    CsState read_state_;
+    ClientSessionState session_state_;
     UnixTimestampS last_activity_time_;
 };
 

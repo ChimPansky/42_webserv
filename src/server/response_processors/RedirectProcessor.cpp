@@ -8,6 +8,7 @@ RedirectProcessor::RedirectProcessor(RequestDestination dest,
     : AResponseProcessor(dest, response_rdy_cb)
 {
     std::map<std::string, std::string> hdrs;
+    // TODO: close only if redir to outer resource
     hdrs["Connection"] = "Close";
     hdrs["Location"] = redirect_uri;
     response_rdy_cb_->Call(utils::unique_ptr<http::Response>(
