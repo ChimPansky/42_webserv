@@ -17,7 +17,8 @@ enum MatchType {
 enum LocationType {
     CGI,
     STATIC_PATH,
-    NO_LOCATION
+    NO_LOCATION,
+    REDIRECT
 };
 
 class Server;
