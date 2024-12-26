@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+   <head>
+       <meta charset="UTF-8">
+       <title>CGI Test Form</title>
+       <style>
+           body {
+               font-family: Arial, sans-serif;
+               margin: 20px;
+               background-color: #f9f9f9;
+               color: #333;
+           }
+           h1 {
+               color: #007BFF;
+           }
+           form {
+               background-color: #fff;
+               padding: 20px;
+               border: 1px solid #ccc;
+               border-radius: 8px;
+               width: 300px;
+               margin: 0 auto;
+           }
+           input[type="text"], input[type="submit"] {
+               width: calc(100% - 22px);
+               margin-bottom: 10px;
+               padding: 10px;
+               border: 1px solid #ccc;
+               border-radius: 4px;
+               box-sizing: border-box;
+           }
+           input[type="submit"] {
+               background-color: #007BFF;
+               color: #fff;
+               border: none;
+               cursor: pointer;
+           }
+           input[type="submit"]:hover {
+               background-color: #0056b3;
+           }
+       </style>
+   </head>
+   <body>
+       <h1>CGI Test Form</h1>
+       <p>Please fill out the form below to test the PHP CGI script:</p>
+
+       <form action="/cgi-bin/script.php" method="GET">
+           <label for="first_name">First Name:</label><br>
+           <input type="text" id="first_name" name="first_name" placeholder="Enter your first name" required><br>
+
+           <label for="last_name">Last Name:</label><br>
+           <input type="text" id="last_name" name="last_name" placeholder="Enter your last name" required><br>
+
+           <input type="submit" value="Submit">
+       </form>
+   </body>
+</html>
