@@ -56,17 +56,17 @@ class unique_ptr {
 
     inline T& operator*() const
     {
-        // if (raw_ptr_ == NULL) {
-        //     throw std::runtime_error("unique_ptr: attempt of dereferencing NULL");
-        // }
+        if (raw_ptr_ == NULL) {
+            throw std::runtime_error("unique_ptr: attempt of dereferencing NULL");
+        }
         return *raw_ptr_;
     }
 
     inline T* operator->() const
     {
-        // if (raw_ptr_ == NULL) {
-        //     throw std::runtime_error("unique_ptr: attempt of dereferencing NULL");
-        // }
+        if (raw_ptr_ == NULL) {
+            throw std::runtime_error("unique_ptr: attempt of dereferencing NULL");
+        }
         return raw_ptr_;
     }
 
