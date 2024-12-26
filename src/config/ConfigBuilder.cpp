@@ -106,12 +106,14 @@ Config ConfigBuilder::Build(const ParsedConfig& f,
 const Config ConfigBuilder::GetConfigFromConfFile(const std::string& config_path)
 {
     if (!utils::CheckFileExtension(config_path, ".conf")) {
-        throw std::invalid_argument("Invalid config file suffix.");
+        throw std::invalid_argument("Invalid config file suffix: " + config_path);
     }
-
+    if (!utils::IsRegularFile(config_path.c_str())) {
+        throw std::invalid_argument("Config file is not a regular file: " + config_path);
+    }
     std::ifstream config_file(config_path.c_str());
     if (!config_file.is_open()) {
-        throw std::invalid_argument("Couldn't open config file.");
+        throw std::invalid_argument("Couldn't open config file: " + config_path);
     }
 
     ParsedConfig parser(config_file);
