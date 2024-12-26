@@ -78,8 +78,7 @@ static std::pair<int, std::string> ParseRedirect(const std::vector<std::string>&
 static std::pair<int, std::string> BuildRedirect(const std::vector<std::string>& vals)
 {
     if (vals.empty()) {
-        return std::make_pair(LocationConfig::kDefaultRedirectCode(),
-                              LocationConfig::kDefaultRedirectPath());
+        return std::make_pair(0, std::string());
     } else if (vals.size() > 1) {
         throw std::runtime_error("Invalid configuration file: duplicated return value.");
     }
