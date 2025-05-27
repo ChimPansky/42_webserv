@@ -1,4 +1,0 @@
-DELETE /items/123 HTTP/1.0
-Host: api.items.com
-Authorization: Bearer_some_token
-

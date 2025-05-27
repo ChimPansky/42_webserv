@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  webserver:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./webserv.conf:/etc/webserv/webserv.conf:ro
+      - ./www:/var/www:ro
+    container_name: webserver
